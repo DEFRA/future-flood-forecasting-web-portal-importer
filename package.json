@@ -1,0 +1,20 @@
+{
+  "name": "future-flood-forecasting-web-portal-importer",
+  "version": "0.0.1",
+  "description": "A Node.js Microsoft Azure function that imports flood forecasting data.",
+  "scripts": {
+    "lint": "standard",
+    "test": "npm run lint"
+  },
+  "author": "Department for Environment, Food and Rural Affairs <https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs>.",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#master",
+    "mssql": "^5.1.0",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "standard": "^12.0.1"
+  }
+}
