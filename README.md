@@ -12,19 +12,21 @@ transformation for reporting and visualisation purposes. Queue storage based tri
 * Microsoft Azure storage queue named **fewspiqueue**
 * **Node.js** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
+  * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
+    appropriate firewall rules.
 
 ## Function App Settings/Environment Variables
 
-| name                                           | description                                                                              |
-|------------------------------------------------|------------------------------------------------------------------------------------------|
-| APPINSIGHTS_INSTRUMENTATIONKEY                 | Instrumention key controlling if telemetry is sent to the ApplicationInsights service    |
-| AzureWebJobsStorage                            | Storage account connection string used by the function app                               |
-| AZURE_STORAGE_CONNECTION_STRING                | Storage account connection string used by the function app                               |
-| FEWS_PI_API                                    | Protocol, host and optional port of the core forecasting engine REST API                 |
-| FUNCTIONS_EXTENSION_VERSION                    | Functions runtime version (**must be ~2**)                                               |
-| FUNCTIONS_WORKER_RUNTIME                       | The language worker runtime to load in the function app (**must be node**)               |
-| SQLDB_CONNECTION_STRING                        | [mssql node module](https://www.npmjs.com/package/mssql) connection string               |
-| WEBSITE_NODE_DEFAULT_VERSION                   | Default version of Node.js (**Microsoft Azure default is recommended**)                  |
+| name                            | description                                                                                             |
+|---------------------------------|---------------------------------------------------------------------------------------------------------|
+| APPINSIGHTS_INSTRUMENTATIONKEY  | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                   |
+| AzureWebJobsStorage             | Storage account connection string used by the function app                                              |
+| AZURE_STORAGE_CONNECTION_STRING | Storage account connection string used by the function app                                              |
+| FEWS_PI_API                     | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API         |
+| FUNCTIONS_EXTENSION_VERSION     | Functions runtime version (**must be ~2**)                                                              |
+| FUNCTIONS_WORKER_RUNTIME        | The language worker runtime to load in the function app (**must be node**)                              |
+| SQLDB_CONNECTION_STRING         | [mssql node module](https://www.npmjs.com/package/mssql) connection string                              |
+| WEBSITE_NODE_DEFAULT_VERSION    | Default version of Node.js (**Microsoft Azure default is recommended**)                                 |
 
 ## Installation Activities
 
@@ -35,6 +37,10 @@ does not prescribe how the activities should be performed.
 * Install node modules
 * Install function extensions
 * Deploy the function to the function app
+
+## Running The Function
+
+Messages placed on the storage queue **must** contain only the ID of the location for which data is to be imported.
 
 ## Contributing to this project
 
