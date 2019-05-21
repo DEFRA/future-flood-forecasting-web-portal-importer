@@ -2,12 +2,13 @@ module.exports = async function (context, message) {
   const axios = require('axios')
   const sql = require('mssql')
   const uuidv4 = require('uuid/v4')
-  const { logger } = require('defra-logging-facade')
-  logger.interceptConsole()
+  // Do not use the Defra logging facade until it is enhanced to support use with Azure.
+  // const { logger } = require('defra-logging-facade')
+  // logger.interceptConsole()
 
   // This function is triggered via a queue message drop
-  logger.log('JavaScript queue trigger function processed work item', message)
-  logger.log(context.bindingData)
+  context.log('JavaScript queue trigger function processed work item', message)
+  context.log(context.bindingData)
 
   let pool
   let preparedStatement
@@ -29,20 +30,27 @@ module.exports = async function (context, message) {
     }
     await preparedStatement.execute(parameters)
   } catch (err) {
-    logger.error(err)
+    context.log.error(err)
+    throw err
   } finally {
     try {
       if (preparedStatement) {
         await preparedStatement.unprepare()
       }
-    } catch (err) {}
+    } catch (err) { }
     try {
       if (pool) {
         await pool.close()
       }
-    } catch (err) {}
+    } catch (err) { }
+    try {
+      if (sql) {
+        await sql.close()
+      }
+    } catch (err) { }
   }
   sql.on('error', err => {
-    logger.error(err)
+    context.log.error(err)
+    throw err
   })
 }
