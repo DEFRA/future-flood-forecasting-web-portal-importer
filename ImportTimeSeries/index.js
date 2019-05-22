@@ -2,9 +2,6 @@ module.exports = async function (context, message) {
   const axios = require('axios')
   const sql = require('mssql')
   const uuidv4 = require('uuid/v4')
-  // Do not use the Defra logging facade until it is enhanced to support use with Azure.
-  // const { logger } = require('defra-logging-facade')
-  // logger.interceptConsole()
 
   // This function is triggered via a queue message drop
   context.log('JavaScript queue trigger function processed work item', message)
