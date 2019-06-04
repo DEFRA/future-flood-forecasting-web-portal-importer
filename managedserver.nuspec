@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>DEFRA.FFF.WebPortalImporter</id>
+    <version>1.0.0.0</version>
+    <authors>DEFRA</authors>
+    <owners>DEFRA</owners>
+    <description>DEFRA.FFF.WebPortalImporter - A Node.js Microsoft Azure function responsible for extracting data from the core forecasting engine and importing it into a staging database prior to transformation for reporting and visualisation purposes. Queue storage based triggering is used.</description>
+  </metadata>
+  <files>
+    <file src="**/*.*" target="" exclude=".git/**/*.*" />
+  </files>
+</package>
