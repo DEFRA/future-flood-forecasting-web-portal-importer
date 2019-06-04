@@ -9,7 +9,7 @@
   "author": "Department for Environment, Food and Rural Affairs <https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs>.",
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "mssql": "^5.1.0",
     "uuid": "^3.3.2"
   },
