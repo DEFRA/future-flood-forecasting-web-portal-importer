@@ -15,6 +15,8 @@ transformation for reporting and visualisation purposes. Queue storage based tri
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
 
+## Function App Settings/Environment Variables
+
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                   |
