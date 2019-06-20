@@ -20,7 +20,7 @@ module.exports = async function (context, message) {
     preparedStatement = new sql.PreparedStatement(pool)
     await preparedStatement.input('id', sql.UniqueIdentifier)
     await preparedStatement.input('timeseries', sql.NVarChar)
-    await preparedStatement.prepare('INSERT INTO fffs_staging.timeseries (id, fews_data) VALUES (@id,  @timeseries)')
+    await preparedStatement.prepare(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (id, fews_data) VALUES (@id,  @timeseries)`)
     const parameters = {
       id: uuidv4(),
       timeseries: timeseries
