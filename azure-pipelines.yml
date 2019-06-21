@@ -17,6 +17,12 @@ steps:
 
   - script: npm ci
 
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'build'
+      projects: 'extensions.csproj'
+      arguments: '--output $(Build.SourcesDirectory)/bin'
+
   - task: NuGetCommand@2
     displayName: 'NuGet pack'
     inputs:
