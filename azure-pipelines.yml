@@ -1,7 +1,4 @@
 name: 1.0.0.$(Build.BuildID)
-pr: none
-trigger:
-- master
 
 resources:
   - repo: self
@@ -9,6 +6,7 @@ resources:
 pool:
   vmImage: ubuntu-16.04
 
+pr: none
 trigger:
   - master
 
