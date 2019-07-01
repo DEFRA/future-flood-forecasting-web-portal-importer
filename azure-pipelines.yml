@@ -1,4 +1,7 @@
 name: 1.0.0.$(Build.BuildID)
+pr: none
+trigger:
+- master
 
 resources:
   - repo: self
