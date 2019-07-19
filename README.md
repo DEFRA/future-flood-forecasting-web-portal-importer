@@ -1,7 +1,8 @@
 # Future Flood Forecasting Web Portal Importer
 
 A Node.js Microsoft Azure function responsible for extracting data from the core forecasting engine and importing it into a staging database prior to
-transformation for reporting and visualisation purposes. Queue storage based triggering is used.
+transformation for reporting and visualisation purposes. Queue storage based triggering is used when importing data for a single location.
+Scheduled triggering is used when importing data for multiple locations associated with a display group.
 
 ## Prerequisites
 
@@ -28,6 +29,9 @@ transformation for reporting and visualisation purposes. Queue storage based tri
 | SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string                              |
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                 |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                     |
+| FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
+| FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
+| FEWS_INITIAL_LOAD_HISTORY_HOURS           | Number of hours before the initial import time that core forecasting engine data should be retrieved for|
 
 ## Installation Activities
 
@@ -37,11 +41,24 @@ does not prescribe how the activities should be performed.
 * Configure app settings/environment variables
 * Install node modules
 * Install function extensions
-* Deploy the function to the function app
+* Deploy the functions to the function app
 
-## Running The Function
+## Running The Queue Based Function
 
 Messages placed on the storage queue **must** contain only the ID of the location for which data is to be imported.
+
+## Running The Scheduled Function
+
+The scheduled function is configured to run at:
+
+* 01:45
+* 04:45
+* 07:45
+* 10:45
+* 13:45
+* 16:45
+* 19:45
+* 22:45
 
 ## Contributing to this project
 
