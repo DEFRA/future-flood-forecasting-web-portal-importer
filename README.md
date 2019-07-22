@@ -1,8 +1,8 @@
 # Future Flood Forecasting Web Portal Importer
 
 A Node.js Microsoft Azure function responsible for extracting data from the core forecasting engine and importing it into a staging database prior to
-transformation for reporting and visualisation purposes. Queue storage based triggering is used when importing data for a single location.
-Scheduled triggering is used when importing data for multiple locations associated with a display group.
+transformation for reporting and visualisation purposes. Queue storage based triggering is used when importing data for a single location duriing the
+previous twenty fours hours. Scheduled triggering is used when importing data for multiple locations associated with a display group.
 
 ## Prerequisites
 
@@ -32,6 +32,8 @@ Scheduled triggering is used when importing data for multiple locations associat
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 | FEWS_INITIAL_LOAD_HISTORY_HOURS           | Number of hours before the initial import time that core forecasting engine data should be retrieved for|
+| FEWS_LOAD_HISTORY_HOURS                   | Number of hours before subsequent import times that core forecasting engine data should be retrieved for|
+| FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                           |
 
 ## Installation Activities
 
@@ -49,16 +51,7 @@ Messages placed on the storage queue **must** contain only the ID of the locatio
 
 ## Running The Scheduled Function
 
-The scheduled function is configured to run at:
-
-* 01:45
-* 04:45
-* 07:45
-* 10:45
-* 13:45
-* 16:45
-* 19:45
-* 22:45
+The scheduled function is configured to run using the FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE function app setting/environment variable.
 
 ## Contributing to this project
 

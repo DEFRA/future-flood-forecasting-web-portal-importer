@@ -22,7 +22,7 @@ module.exports = async function (context, importTimeSeriesTimer) {
     const latestLoadEndDateResponse = await latestLoadEndDateRequest.query(`select max(end_time) as latest_end_time from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
     const latestEndTime = latestLoadEndDateResponse.recordset[0].latest_end_time
     const now = moment.utc()
-    const newStartTime = latestEndTime ? moment.utc(latestEndTime).subtract(3, 'hours').toISOString() : moment(now).subtract(process.env['FEWS_INITIAL_LOAD_HISTORY_HOURS'], 'hours').toISOString()
+    const newStartTime = latestEndTime ? moment.utc(latestEndTime).subtract(process.env['FEWS_LOAD_HISTORY_HOURS'], 'hours').toISOString() : moment(now).subtract(process.env['FEWS_INITIAL_LOAD_HISTORY_HOURS'], 'hours').toISOString()
     const newEndTime = moment(now).add(120, 'hours').toISOString()
     const fewsStartTime = `&startTime=${newStartTime.substring(0, 19)}Z`
     const fewsEndTime = `&endTime=${newEndTime.substring(0, 19)}Z`

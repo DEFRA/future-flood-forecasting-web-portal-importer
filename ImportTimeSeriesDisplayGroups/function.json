@@ -4,7 +4,7 @@
       "name": "importTimeSeriesTimer",
       "type": "timerTrigger",
       "direction": "in",
-      "schedule": "0 45 1,4,7,10,13,16,19,22 * * *"
+      "schedule": "%FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE%"
     }
   ]
 }
