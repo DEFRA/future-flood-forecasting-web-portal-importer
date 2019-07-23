@@ -1,8 +1,17 @@
+const moment = require('moment');
+const axios = require('axios');
+const sql = require('mssql');
+const uuidv4 = require('uuid/v4');
+
+// async/await style:
+const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING']);
+const poolConnect = pool.connect();
+
+pool.on('error', err => {
+    // ... error handler. You don't have the context here to log to the azure logger!!
+})
+
 module.exports = async function (context, importTimeSeriesTimer) {
-  const moment = require('moment')
-  const axios = require('axios')
-  const sql = require('mssql')
-  const uuidv4 = require('uuid/v4')
   const plotId = process.env['FEWS_PLOT_ID'] ? '&plotId=' + process.env['FEWS_PLOT_ID'] : ''
   const locationIds = process.env['FEWS_LOCATION_IDS'] ? '&locationIds=' + process.env['FEWS_LOCATION_IDS'].replace(/;/g, '&locationIds=') : ''
 
@@ -12,13 +21,11 @@ module.exports = async function (context, importTimeSeriesTimer) {
 
   // This function is triggered via a timer configured in function json
 
-  let pool
   let insertPreparedStatement
   let latestLoadEndDateRequest
   try {
     // Base the import date range on the dates for the previous import (if any).
-    pool = await sql.connect(process.env['SQLDB_CONNECTION_STRING'])
-    latestLoadEndDateRequest = new sql.Request(pool)
+    latestLoadEndDateRequest = new pool.request();
     const latestLoadEndDateResponse = await latestLoadEndDateRequest.query(`select max(end_time) as latest_end_time from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
     const latestEndTime = latestLoadEndDateResponse.recordset[0].latest_end_time
     const now = moment.utc()
@@ -55,16 +62,6 @@ module.exports = async function (context, importTimeSeriesTimer) {
     try {
       if (insertPreparedStatement) {
         await insertPreparedStatement.unprepare()
-      }
-    } catch (err) { }
-    try {
-      if (pool) {
-        await pool.close()
-      }
-    } catch (err) { }
-    try {
-      if (sql) {
-        await sql.close()
       }
     } catch (err) { }
   }
