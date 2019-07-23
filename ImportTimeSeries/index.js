@@ -3,14 +3,22 @@ module.exports = async function (context, message) {
   const axios = require('axios')
   const sql = require('mssql')
   const uuidv4 = require('uuid/v4')
+  const { logger } = require('defra-logging-facade')
 
   // This function is triggered via a queue message drop
   context.log('JavaScript queue trigger function processed work item', message)
   context.log(context.bindingData)
 
-  let pool
+  // async/await style:
+  const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING'])
+  const pooledConnect = pool.connect()
+  pool.on('error', err => {
+    logger.error(err)
+  })
   let preparedStatement
   try {
+    // Ensure the connection pool is ready
+    await pooledConnect
     // Get the timeseries for the previous day for the location identified in the message from the FEWS PI server.
     const now = moment.utc()
     const startTime = moment(now).utc().subtract(24, 'hours').toISOString()
@@ -18,12 +26,11 @@ module.exports = async function (context, message) {
     const fewsStartTime = `&startTime=${startTime.substring(0, 19)}Z`
     const fewsEndTime = `&endTime=${endTime.substring(0, 19)}Z`
     const fewsParameters = `&locationIds=${message}${fewsStartTime}${fewsEndTime}`
-    const fewsPiEndpoint = `${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries?locationIds=${message}&useDisplayUnits=false&showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`
+    const fewsPiEndpoint = `${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`
     const fewsResponse = await axios.get(fewsPiEndpoint)
     const timeseries = JSON.stringify(fewsResponse.data)
 
     // Insert the timeseries into the staging database
-    pool = await sql.connect(process.env['SQLDB_CONNECTION_STRING'])
     preparedStatement = new sql.PreparedStatement(pool)
     await preparedStatement.input('id', sql.UniqueIdentifier)
     await preparedStatement.input('timeseries', sql.NVarChar)
@@ -44,16 +51,6 @@ module.exports = async function (context, message) {
     try {
       if (preparedStatement) {
         await preparedStatement.unprepare()
-      }
-    } catch (err) { }
-    try {
-      if (pool) {
-        await pool.close()
-      }
-    } catch (err) { }
-    try {
-      if (sql) {
-        await sql.close()
       }
     } catch (err) { }
   }

@@ -1,14 +1,14 @@
-const moment = require('moment');
-const axios = require('axios');
-const sql = require('mssql');
-const uuidv4 = require('uuid/v4');
+const moment = require('moment')
+const axios = require('axios')
+const sql = require('mssql')
+const uuidv4 = require('uuid/v4')
+const { logger } = require('defra-logging-facade')
 
 // async/await style:
-const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING']);
-const poolConnect = pool.connect();
-
+const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING'])
+const pooledConnect = pool.connect()
 pool.on('error', err => {
-    // ... error handler. You don't have the context here to log to the azure logger!!
+  logger.error(err)
 })
 
 module.exports = async function (context, importTimeSeriesTimer) {
@@ -24,8 +24,10 @@ module.exports = async function (context, importTimeSeriesTimer) {
   let insertPreparedStatement
   let latestLoadEndDateRequest
   try {
+    // Ensure the connection pool is ready
+    await pooledConnect
     // Base the import date range on the dates for the previous import (if any).
-    latestLoadEndDateRequest = new pool.request();
+    latestLoadEndDateRequest = new sql.Request(pool)
     const latestLoadEndDateResponse = await latestLoadEndDateRequest.query(`select max(end_time) as latest_end_time from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
     const latestEndTime = latestLoadEndDateResponse.recordset[0].latest_end_time
     const now = moment.utc()
@@ -63,7 +65,7 @@ module.exports = async function (context, importTimeSeriesTimer) {
       if (insertPreparedStatement) {
         await insertPreparedStatement.unprepare()
       }
-    } catch (err) { }
+    } catch (err) {}
   }
   sql.on('error', err => {
     context.log.error(err)

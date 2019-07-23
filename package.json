@@ -10,6 +10,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "axios": "^0.19.0",
+    "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#02459a",
     "moment": "^2.24.0",
     "mssql": "^5.1.0",
     "uuid": "^3.3.2"
