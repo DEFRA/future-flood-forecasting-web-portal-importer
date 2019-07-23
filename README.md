@@ -26,7 +26,7 @@ previous twenty fours hours. Scheduled triggering is used when importing data fo
 | FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API         |
 | FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                              |
 | FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                              |
-| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string                              |
+| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)     |
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                 |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                     |
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
@@ -52,6 +52,12 @@ Messages placed on the storage queue **must** contain only the ID of the locatio
 ## Running The Scheduled Function
 
 The scheduled function is configured to run using the FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE function app setting/environment variable.
+
+### Request Timeout Considerations
+
+The value assigned to FEWS_INITIAL_LOAD_HISTORY_HOURS may cause a request timeout during the initial load of core forecasting engine data
+into the staging database. In this case SQLDB_CONNECTION_STRING needs to be tuned to include a compatible request timeout larger than the
+default of 15 seconds (please see the [mssql node module](https://www.npmjs.com/package/mssql) documentation).
 
 ## Contributing to this project
 
