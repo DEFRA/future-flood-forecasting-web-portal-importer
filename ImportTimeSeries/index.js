@@ -5,16 +5,17 @@ module.exports = async function (context, message) {
   const uuidv4 = require('uuid/v4')
   const { logger } = require('defra-logging-facade')
 
-  // This function is triggered via a queue message drop
-  context.log('JavaScript queue trigger function processed work item', message)
-  context.log(context.bindingData)
-
   // async/await style:
   const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING'])
   const pooledConnect = pool.connect()
   pool.on('error', err => {
     logger.error(err)
   })
+
+  // This function is triggered via a queue message drop
+  context.log('JavaScript queue trigger function processed work item', message)
+  context.log(context.bindingData)
+
   let preparedStatement
   try {
     // Ensure the connection pool is ready
