@@ -1,15 +1,7 @@
 const moment = require('moment')
 const axios = require('axios')
-const sql = require('mssql')
 const uuidv4 = require('uuid/v4')
-const { logger } = require('defra-logging-facade')
-
-// async/await style:
-const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING'])
-const pooledConnect = pool.connect()
-pool.on('error', err => {
-  logger.error(err)
-})
+const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
 
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop
