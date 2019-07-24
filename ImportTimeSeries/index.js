@@ -1,17 +1,17 @@
+const moment = require('moment')
+const axios = require('axios')
+const sql = require('mssql')
+const uuidv4 = require('uuid/v4')
+const { logger } = require('defra-logging-facade')
+
+// async/await style:
+const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING'])
+const pooledConnect = pool.connect()
+pool.on('error', err => {
+  logger.error(err)
+})
+
 module.exports = async function (context, message) {
-  const moment = require('moment')
-  const axios = require('axios')
-  const sql = require('mssql')
-  const uuidv4 = require('uuid/v4')
-  const { logger } = require('defra-logging-facade')
-
-  // async/await style:
-  const pool = new sql.ConnectionPool(process.env['SQLDB_CONNECTION_STRING'])
-  const pooledConnect = pool.connect()
-  pool.on('error', err => {
-    logger.error(err)
-  })
-
   // This function is triggered via a queue message drop
   context.log('JavaScript queue trigger function processed work item', message)
   context.log(context.bindingData)
