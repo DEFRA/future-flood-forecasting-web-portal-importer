@@ -4,7 +4,7 @@
   "description": "A Node.js Microsoft Azure function that imports flood forecasting data.",
   "scripts": {
     "lint": "standard",
-    "test": "npm run lint && jest"
+    "test": "npm run lint && testing/staging-database/bootstrap.sh && jest && testing/staging-database/cleanup.sh"
   },
   "author": "Department for Environment, Food and Rural Affairs <https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs>.",
   "license": "SEE LICENSE IN LICENSE",
@@ -23,5 +23,9 @@
   },
   "standard": {
     "env": [ "jest" ]
+  },
+  "jest": {
+    "resetMocks": true,
+    "restoreMocks": true
   }
 }

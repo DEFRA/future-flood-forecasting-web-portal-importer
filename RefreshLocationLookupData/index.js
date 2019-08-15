@@ -5,7 +5,6 @@ const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop
   context.log('JavaScript queue trigger function processed work item', message)
-  context.log(context.bindingData)
 
   sql.on('error', err => {
     context.log.error(err)

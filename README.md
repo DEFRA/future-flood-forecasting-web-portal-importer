@@ -21,6 +21,18 @@ transformation for reporting and visualisation purposes.
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
+* A UNIX based operating system with bash and the nc utility installed is required to run unit tests.
+  * If using Microsoft Windows, you may wish to consider using the [Windows Subsystem For Linux](https://docs.microsoft.com/en-us/windows/wsl/about).
+
+## Unit Testing Considerations
+
+As this Azure function app is responsible for placing data extracted from the core forecasting engine into an Azure SQL database, unit tests
+need to check that the database is populated correctly. As such, rather than mocking database functionality, a dedicated database instance is required for unit testing purposes. This dedicated database instance must be created in the same way as non-unit test specific instances using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project. Unit test specific environment variables (defined below) must be set to allow the unit tests to utilise a dedicated database instance.
+
+* If unit test specific environment variables identify an existing database instance, the instance will be used by unit tests.
+* If unit test specific environment variables do not identify an existing database instance a docker based Microsoft SQL Server instance will be
+  created for use by the unit tests.
+  * The creation of docker based Microsoft SQL Server instances relies on the prerequisites of the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
 
 ## Function App Settings/Environment Variables
 
@@ -41,6 +53,13 @@ transformation for reporting and visualisation purposes.
 | FEWS_LOAD_HISTORY_HOURS                   | Number of hours before subsequent import times that core forecasting engine data should be retrieved for|
 | FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                           |
 | LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
+
+### Unit Test Specific Environment Variables
+
+| name                                      | description                                                                                             |
+|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| SQLTESTDB_HOST                            | Database host used for unit tests                                                                       |
+| SQLTESTDB_PORT                            | Database port used for unit tests                                                                       |
 
 ## Installation Activities
 

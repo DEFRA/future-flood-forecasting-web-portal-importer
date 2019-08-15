@@ -92,3 +92,7 @@ out
 # IDE directories
 .idea
 .vscode
+
+testing/staging-database/*
+!testing/staging-database/bootstrap.sh
+!testing/staging-database/cleanup.sh
