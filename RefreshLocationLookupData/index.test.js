@@ -24,7 +24,7 @@ beforeEach(() => {
   // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
   // function implementation for the function context needs creating for each test.
   context = require('../testing/mocks/defaultContext')
-  return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+  return request // .batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
 })
 
 afterAll(() => {
@@ -39,6 +39,8 @@ describe('Refresh location lookup data', () => {
       statusText: STATUS_TEXT_OK,
       contentType: 'text/csv'
     }
+    const result = await request.query('select current_user, original_login(), db_name()')
+    context.log(result.recordset[0])
     await mockFetchResponse(data)
     await queueFunction(context, message)
     await checkExpectedNumberOfRecords(0)
