@@ -1,10 +1,11 @@
 {
   "bindings": [
     {
-      "name": "importTimeSeriesTimer",
-      "type": "timerTrigger",
+      "name": "message",
+      "type": "queueTrigger",
       "direction": "in",
-      "schedule": "%FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE%"
+      "queueName": "fewstaskrunqueue",
+      "connection": "AzureWebJobsStorage"
     }
   ]
 }
