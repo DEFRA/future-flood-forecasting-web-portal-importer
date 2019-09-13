@@ -43,7 +43,7 @@ async function isTaskRunApproved (message) {
 }
 
 async function getWorkflowId (message) {
-  const workflowIdRegex = /^task(?: run)? ([^ ]*) /i
+  const workflowIdRegex = /task(?: run)? ([^ ]*) /i
   const workflowIdText = 'workflow ID'
   return extract(message, workflowIdRegex, 2, 1, workflowIdText)
 }
