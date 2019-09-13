@@ -1,0 +1,11 @@
+{
+  "approvedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  }
+}
