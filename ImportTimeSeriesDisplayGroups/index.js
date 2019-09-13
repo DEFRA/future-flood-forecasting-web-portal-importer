@@ -1,6 +1,5 @@
 const moment = require('moment')
 const axios = require('axios')
-const uuidv4 = require('uuid/v4')
 const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
 
 module.exports = async function (context, message) {
@@ -11,7 +10,7 @@ module.exports = async function (context, message) {
     const workflowId = await getWorkflowId(message)
     const locationLookupData = await getLocationLookupData(workflowId, context)
     const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
-    await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData)
+    await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context)
   } else {
     context.log.warn(`Ignoring unapproved task run completion ${message}`)
   }
@@ -154,19 +153,22 @@ async function loadTimeseriesDisplayGroups (data, context) {
 
     await preparedStatement.prepare(`
       insert into
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (id, fews_data, start_time, end_time)
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, start_time, end_time)
+      output
+        inserted.id
       values
-       (@id,  @timeseries, @startTime, @endTime)`
-    )
+       (@timeseries, @startTime, @endTime)
+    `)
 
     for (const index in data.timeseries) {
       const parameters = {
-        id: uuidv4(),
         timeseries: data.timeseries[index],
         startTime: data.startTime,
         endTime: data.endTime
       }
+
       await preparedStatement.execute(parameters)
+      // TO DO - Send a message containing the primary key of the new record to a queue.
     }
   } catch (err) {
     context.log.error(err)
