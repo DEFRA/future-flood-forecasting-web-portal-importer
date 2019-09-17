@@ -37,24 +37,52 @@ afterAll(() => {
   return pool.close()
 })
 
-describe('Import timeseries display groups', () => {
+describe('Message processing for task run completion', () => {
   it('should import data for an approved forecast', async () => {
-    const mockDataValue = 'Timeseries display groups data'
-    const mockResponseData = {
-      data: mockDataValue
+    const mockResponse = {
+      data: 'Timeseries display groups data'
     }
-
-    axios.get.mockResolvedValue(mockResponseData)
-
-    await queueFunction(context, JSON.stringify(taskRunCompleteMessages['approvedForecast']))
-    const result = await request.query(`
-      select
-        -- Remove double quotes surrounding the value returned from the database.
-        substring(fews_data, 2, len(fews_data) -2) as fews_data
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
-    `)
-
-    expect(result.recordset[0].fews_data).toBe(mockDataValue)
+    await processMessageAndCheckImportedData('approvedForecast', mockResponse)
+  })
+  it('should not import data for an unapproved forecast', async () => {
+    await processMessageAndCheckNoDataIsImported('unapprovedForecast')
+  })
+  it('should import data for a forecast approved manually', async () => {
+    const mockResponse = {
+      data: 'Timeseries display groups data'
+    }
+    await processMessageAndCheckImportedData('forecastApprovedManually', mockResponse)
   })
 })
+
+async function processMessage (messageKey, mockResponse) {
+  if (mockResponse) {
+    axios.get.mockResolvedValue(mockResponse)
+  }
+  await queueFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
+}
+
+async function processMessageAndCheckImportedData (messageKey, mockResponse) {
+  await processMessage(messageKey, mockResponse)
+  const result = await request.query(`
+    select
+      -- Remove double quotes surrounding the value returned from the database.
+      top(1) substring(fews_data, 2, len(fews_data) -2) as fews_data
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
+    order by
+      start_time desc
+  `)
+  expect(result.recordset[0].fews_data).toBe(mockResponse.data)
+}
+
+async function processMessageAndCheckNoDataIsImported (messageKey) {
+  await processMessage(messageKey)
+  const result = await request.query(`
+    select
+      count(*) as number
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
+  `)
+  expect(result.recordset[0].number).toBe(0)
+}

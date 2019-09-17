@@ -7,5 +7,23 @@
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
+  },
+  "unapprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "forecastApprovedManually": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task run Test_Workflow (T0=2019-09-13 13:05, Dispatch=2019-09-28 13:05, Id=ukeafffsmc00:000000001) is made current manually",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
   }
 }
