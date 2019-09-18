@@ -8,7 +8,7 @@ module.exports = async function (context, message) {
   const proceedWithImport = await isTaskRunApproved(message)
   if (proceedWithImport) {
     const workflowId = await getWorkflowId(message)
-    const locationLookupData = await getLocationLookupData(workflowId, context)
+    const locationLookupData = await getLocationLookupData(workflowId, message, context)
     const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
     await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context)
   } else {
@@ -48,7 +48,7 @@ async function getWorkflowId (message) {
   return extract(message, workflowIdRegex, 2, 1, workflowIdText)
 }
 
-async function getLocationLookupData (workflowId, context) {
+async function getLocationLookupData (workflowId, message, context) {
   let transaction
   let preparedStatement
   let locationLookupData = {}
@@ -85,7 +85,7 @@ async function getLocationLookupData (workflowId, context) {
     }
 
     if (Object.keys(locationLookupData).length === 0) {
-      // TO DO - No location lookup data. Insert error record in the staging database.
+      await createStagingException(message, `Missing location_lookup data for ${workflowId}`)
     }
 
     return locationLookupData
@@ -146,7 +146,6 @@ async function loadTimeseriesDisplayGroups (data, context) {
   const preparedStatement = new sql.PreparedStatement(pool)
 
   try {
-    await preparedStatement.input('id', sql.UniqueIdentifier)
     await preparedStatement.input('timeseries', sql.NVarChar)
     await preparedStatement.input('startTime', sql.DateTime2)
     await preparedStatement.input('endTime', sql.DateTime2)
@@ -162,7 +161,7 @@ async function loadTimeseriesDisplayGroups (data, context) {
 
     for (const index in data.timeseries) {
       const parameters = {
-        timeseries: data.timeseries[index],
+        timeseries: data.timeseries[index], // .substring(1, data.timeseries[index].length - 1),
         startTime: data.startTime,
         endTime: data.endTime
       }
@@ -170,6 +169,38 @@ async function loadTimeseriesDisplayGroups (data, context) {
       await preparedStatement.execute(parameters)
       // TO DO - Send a message containing the primary key of the new record to a queue.
     }
+  } catch (err) {
+    context.log.error(err)
+    throw err
+  } finally {
+    try {
+      if (preparedStatement) {
+        await preparedStatement.unprepare()
+      }
+    } catch (err) {}
+  }
+}
+
+async function createStagingException (payload, description, context) {
+  const preparedStatement = new sql.PreparedStatement(pool)
+
+  try {
+    await preparedStatement.input('payload', sql.NVarChar)
+    await preparedStatement.input('description', sql.NVarChar)
+
+    await preparedStatement.prepare(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception (payload, description)
+      values
+       (@payload, @description)
+    `)
+
+    const parameters = {
+      payload: payload,
+      description: description
+    }
+
+    await preparedStatement.execute(parameters)
   } catch (err) {
     context.log.error(err)
     throw err

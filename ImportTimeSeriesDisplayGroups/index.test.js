@@ -1,4 +1,5 @@
 const axios = require('axios')
+const Context = require('../testing/mocks/defaultContext')
 const queueFunction = require('./index')
 const taskRunCompleteMessages = require('../testing/messages/task-run-complete/messages')
 const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
@@ -29,7 +30,7 @@ beforeAll(() => {
 beforeEach(() => {
   // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
   // function implementation for the function context needs creating for each test.
-  context = require('../testing/mocks/defaultContext')
+  context = new Context()
   return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
 })
 
@@ -40,7 +41,9 @@ afterAll(() => {
 describe('Message processing for task run completion', () => {
   it('should import data for an approved forecast', async () => {
     const mockResponse = {
-      data: 'Timeseries display groups data'
+      data: {
+        key: 'Timeseries display groups data'
+      }
     }
     await processMessageAndCheckImportedData('approvedForecast', mockResponse)
   })
@@ -53,9 +56,13 @@ describe('Message processing for task run completion', () => {
     }
     await processMessageAndCheckImportedData('forecastApprovedManually', mockResponse)
   })
+  it('should create a staging exception for an unknown workflow', async () => {
+    await processMessageAndCheckStagingExeptionIsCreatedForWorkflow('unknownWorkflow')
+  })
 })
 
 async function processMessage (messageKey, mockResponse) {
+  context.log('Processing message')
   if (mockResponse) {
     axios.get.mockResolvedValue(mockResponse)
   }
@@ -64,16 +71,17 @@ async function processMessage (messageKey, mockResponse) {
 
 async function processMessageAndCheckImportedData (messageKey, mockResponse) {
   await processMessage(messageKey, mockResponse)
+
   const result = await request.query(`
     select
-      -- Remove double quotes surrounding the value returned from the database.
-      top(1) substring(fews_data, 2, len(fews_data) -2) as fews_data
+      top(1) fews_data
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
     order by
       start_time desc
   `)
-  expect(result.recordset[0].fews_data).toBe(mockResponse.data)
+
+  expect(JSON.parse(result.recordset[0].fews_data)).toStrictEqual(mockResponse.data)
 }
 
 async function processMessageAndCheckNoDataIsImported (messageKey) {
@@ -85,4 +93,19 @@ async function processMessageAndCheckNoDataIsImported (messageKey) {
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
   `)
   expect(result.recordset[0].number).toBe(0)
+}
+
+async function processMessageAndCheckStagingExeptionIsCreatedForWorkflow (messageKey) {
+  const workflowId = taskRunCompleteMessages[messageKey].input.workflowId
+  delete taskRunCompleteMessages[messageKey].input.workflowId
+  await processMessage(messageKey)
+  const result = await request.query(`
+    select
+      top(1) description
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
+    order by
+      exception_time desc
+  `)
+  expect(result.recordset[0].description).toBe(`Missing location_lookup data for ${workflowId}`)
 }
