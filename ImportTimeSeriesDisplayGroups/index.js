@@ -12,7 +12,7 @@ module.exports = async function (context, message) {
     const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
     await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context)
   } else {
-    context.log.warn(`Ignoring unapproved task run completion ${message}`)
+    context.log.warn(`Ignoring message ${message}`)
   }
 
   sql.on('error', err => {
@@ -24,12 +24,16 @@ module.exports = async function (context, message) {
 }
 
 async function extract (message, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject) {
-  const errorMessage = `Unable to extract ${errorMessageSubject} from ${message}`
   const matches = regex.exec(message)
+  // If the message contains the expected number of matches from the specified regular expression return
+  // the match indicated by the caller.
   if (matches && matches.length === expectedNumberOfMatches) {
     return matches[matchIndexToReturn]
   } else {
-    throw new Error(errorMessage)
+    // If regular expression matching did not complete successfully, the message is not in an expected
+    // format and cannot be replayed. In this case intervention is needed so create a staging
+    // exception.
+    await createStagingException(message, `Unable to extract ${errorMessageSubject} from message`)
   }
 }
 
@@ -39,7 +43,7 @@ async function isTaskRunApproved (message) {
   const taskRunApprovedRegex = new RegExp(`(?:Approved: )True|False|${isMadeCurrentManuallyMessage}`, 'i')
   const taskRunApprovedText = 'task run approval status'
   const taskRunApprovedString = await extract(message, taskRunApprovedRegex, 1, 0, taskRunApprovedText)
-  return !!taskRunApprovedString.match(new RegExp(`true|${isMadeCurrentManuallyMessage}`, 'i'))
+  return taskRunApprovedString && !!taskRunApprovedString.match(new RegExp(`true|${isMadeCurrentManuallyMessage}`, 'i'))
 }
 
 async function getWorkflowId (message) {
@@ -85,6 +89,8 @@ async function getLocationLookupData (workflowId, message, context) {
     }
 
     if (Object.keys(locationLookupData).length === 0) {
+      // If no location lookup data is available the message is not replayable
+      // without intervention so create a staging exception.
       await createStagingException(message, `Missing location_lookup data for ${workflowId}`)
     }
 

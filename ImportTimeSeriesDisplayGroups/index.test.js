@@ -59,12 +59,16 @@ describe('Message processing for task run completion', () => {
     await processMessageAndCheckImportedData('forecastApprovedManually', mockResponse)
   })
   it('should create a staging exception for an unknown workflow', async () => {
-    await processMessageAndCheckStagingExeptionIsCreatedForWorkflow('unknownWorkflow')
+    const unknownWorkflow = 'unknownWorkflow'
+    const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
+    await processMessageAndCheckStagingExeptionIsCreated(unknownWorkflow, `Missing location_lookup data for ${workflowId}`)
+  })
+  it('should create a staging exception for an invalid message', async () => {
+    await processMessageAndCheckStagingExeptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
   })
 })
 
 async function processMessage (messageKey, mockResponse) {
-  context.log('Processing message')
   if (mockResponse) {
     axios.get.mockResolvedValue(mockResponse)
   }
@@ -97,9 +101,7 @@ async function processMessageAndCheckNoDataIsImported (messageKey) {
   expect(result.recordset[0].number).toBe(0)
 }
 
-async function processMessageAndCheckStagingExeptionIsCreatedForWorkflow (messageKey) {
-  const workflowId = taskRunCompleteMessages[messageKey].input.workflowId
-  delete taskRunCompleteMessages[messageKey].input.workflowId
+async function processMessageAndCheckStagingExeptionIsCreated (messageKey, expectedErrorDescription) {
   await processMessage(messageKey)
   const result = await request.query(`
     select
@@ -109,5 +111,5 @@ async function processMessageAndCheckStagingExeptionIsCreatedForWorkflow (messag
     order by
       exception_time desc
   `)
-  expect(result.recordset[0].description).toBe(`Missing location_lookup data for ${workflowId}`)
+  expect(result.recordset[0].description).toBe(expectedErrorDescription)
 }
