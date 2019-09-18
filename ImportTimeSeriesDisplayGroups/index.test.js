@@ -52,7 +52,9 @@ describe('Message processing for task run completion', () => {
   })
   it('should import data for a forecast approved manually', async () => {
     const mockResponse = {
-      data: 'Timeseries display groups data'
+      data: {
+        key: 'Timeseries display groups data'
+      }
     }
     await processMessageAndCheckImportedData('forecastApprovedManually', mockResponse)
   })
