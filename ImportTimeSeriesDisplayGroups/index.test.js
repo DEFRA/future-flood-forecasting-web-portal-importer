@@ -23,7 +23,25 @@ beforeAll(() => {
     insert into
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
     values
-      ('Test_Workflow', 'Test Plot', 'Test Location')
+      ('Test_Workflow1', 'Test Plot1', 'Test Location1')
+  `)
+})
+
+beforeAll(() => {
+  return request.batch(`
+    insert into
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
+    values
+      ('Test_Workflow2', 'Test Plot2a', 'Test Location2a')
+  `)
+})
+
+beforeAll(() => {
+  return request.batch(`
+    insert into
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
+    values
+      ('Test_Workflow2', 'Test Plot2b', 'Test Location2b')
   `)
 })
 
@@ -39,13 +57,26 @@ afterAll(() => {
 })
 
 describe('Message processing for task run completion', () => {
-  it('should import data for an approved forecast', async () => {
+  it('should import data for a single plot associated with an approved forecast', async () => {
     const mockResponse = {
       data: {
         key: 'Timeseries display groups data'
       }
     }
-    await processMessageAndCheckImportedData('approvedForecast', mockResponse)
+    await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+  })
+  it('should import data for multiple plots associated with an approved forecast', async () => {
+    const mockResponses = [{
+      data: {
+        key: 'First plot timeseries display groups data'
+      }
+    },
+    {
+      data: {
+        key: 'Second plot timeseries display groups data'
+      }
+    }]
+    await processMessageAndCheckImportedData('multiplePlotApprovedForecast', mockResponses)
   })
   it('should not import data for an unapproved forecast', async () => {
     await processMessageAndCheckNoDataIsImported('unapprovedForecast')
@@ -56,38 +87,47 @@ describe('Message processing for task run completion', () => {
         key: 'Timeseries display groups data'
       }
     }
-    await processMessageAndCheckImportedData('forecastApprovedManually', mockResponse)
+    await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
   })
   it('should create a staging exception for an unknown workflow', async () => {
     const unknownWorkflow = 'unknownWorkflow'
     const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
-    await processMessageAndCheckStagingExeptionIsCreated(unknownWorkflow, `Missing location_lookup data for ${workflowId}`)
+    await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing location_lookup data for ${workflowId}`)
   })
   it('should create a staging exception for an invalid message', async () => {
-    await processMessageAndCheckStagingExeptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+    await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
   })
 })
 
-async function processMessage (messageKey, mockResponse) {
-  if (mockResponse) {
-    axios.get.mockResolvedValue(mockResponse)
+async function processMessage (messageKey, mockResponses) {
+  if (mockResponses) {
+    let mock = axios.get
+    for (const mockResponse of mockResponses) {
+      mock = mock.mockReturnValueOnce(mockResponse)
+    }
   }
   await queueFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
 }
 
-async function processMessageAndCheckImportedData (messageKey, mockResponse) {
-  await processMessage(messageKey, mockResponse)
-
+async function processMessageAndCheckImportedData (messageKey, mockResponses) {
+  await processMessage(messageKey, mockResponses)
+  const receivedFewsData = []
   const result = await request.query(`
     select
-      top(1) fews_data
+      top(${mockResponses.length}) fews_data
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
     order by
-      start_time desc
+      start_time
   `)
 
-  expect(JSON.parse(result.recordset[0].fews_data)).toStrictEqual(mockResponse.data)
+  for (const index in result.recordset) {
+    receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
+  }
+
+  for (const mockResponse of mockResponses) {
+    expect(receivedFewsData).toContainEqual(mockResponse.data)
+  }
 }
 
 async function processMessageAndCheckNoDataIsImported (messageKey) {
@@ -101,7 +141,7 @@ async function processMessageAndCheckNoDataIsImported (messageKey) {
   expect(result.recordset[0].number).toBe(0)
 }
 
-async function processMessageAndCheckStagingExeptionIsCreated (messageKey, expectedErrorDescription) {
+async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expectedErrorDescription) {
   await processMessage(messageKey)
   const result = await request.query(`
     select
