@@ -96,15 +96,20 @@ async function getLocationLookupData (workflowId, message, context) {
 
     return locationLookupData
   } catch (err) {
-    try {
-      context.log.error(err)
-      await transaction.rollback()
-      throw err
-    } catch (err) {}
+    context.log.error(err)
+    if (preparedStatement) {
+      await preparedStatement.unprepare()
+      preparedStatement = null
+    }
+    await transaction.rollback()
+    transaction = null
+    throw err
   } finally {
     try {
       if (preparedStatement) {
         await preparedStatement.unprepare()
+      }
+      if (transaction) {
         await transaction.commit()
       }
     } catch (err) { console.error(err) }

@@ -107,6 +107,17 @@ describe('Message processing for task run completion', () => {
     const mockResponse = new Error('connect ECONNREFUSED mockhost')
     await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
   })
+  it('should throw an exception when the location lookup table is being refreshed', async () => {
+    // If the location lookup table is being refreshed messages are elgible for replay a certain number of times
+    // so check that an exception is thrown to facilitate this process.
+    const mockResponse = {
+      data: {
+        key: 'Timeseries display groups data'
+      }
+    }
+    await lockLocationLookupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
+    // Set the test timeout higher than the database request timeout.
+  }, 20000)
 })
 
 async function processMessage (messageKey, mockResponses) {
@@ -172,4 +183,23 @@ async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorRes
   axios.get.mockRejectedValue(mockErrorResponse)
   await expect(queueFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey])))
     .rejects.toThrow(mockErrorResponse)
+}
+
+async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
+  let transaction
+  try {
+    // Lock the location lookup table and then try and process the message.
+    transaction = new sql.Transaction(pool)
+    await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
+    const request = new sql.Request(transaction)
+    await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+    await processMessage(messageKey, [mockResponse])
+  } catch (err) {
+    // Check that a request timeout occurs.
+    expect('ETIMEOUT').toBe(err.code)
+  } finally {
+    try {
+      await transaction.rollback()
+    } catch (err) {}
+  }
 }
