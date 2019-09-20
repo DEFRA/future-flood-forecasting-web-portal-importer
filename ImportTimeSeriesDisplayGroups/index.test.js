@@ -19,6 +19,10 @@ beforeAll(() => {
 })
 
 beforeAll(() => {
+  return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+})
+
+beforeAll(() => {
   return request.batch(`
     insert into
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
@@ -97,6 +101,10 @@ describe('Message processing for task run completion', () => {
   it('should create a staging exception for an invalid message', async () => {
     await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
   })
+  it('should throw an exception when the core engine PI server is unavailable', async () => {
+    const mockResponse = new Error('connect ECONNREFUSED mockhost')
+    await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+  })
 })
 
 async function processMessage (messageKey, mockResponses) {
@@ -152,4 +160,10 @@ async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expe
       exception_time desc
   `)
   expect(result.recordset[0].description).toBe(expectedErrorDescription)
+}
+
+async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {
+  axios.get.mockRejectedValue(mockErrorResponse)
+  await expect(queueFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey])))
+    .rejects.toThrow(mockErrorResponse)
 }
