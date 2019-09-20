@@ -8,59 +8,59 @@ let request
 let context
 jest.mock('axios')
 
-beforeAll(() => {
-  // Ensure the connection pool is ready
-  return pooledConnect
-})
-
-beforeAll(() => {
-  request = new sql.Request(pool)
-  return request
-})
-
-beforeAll(() => {
-  return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
-})
-
-beforeAll(() => {
-  return request.batch(`
-    insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
-    values
-      ('Test_Workflow1', 'Test Plot1', 'Test Location1')
-  `)
-})
-
-beforeAll(() => {
-  return request.batch(`
-    insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
-    values
-      ('Test_Workflow2', 'Test Plot2a', 'Test Location2a')
-  `)
-})
-
-beforeAll(() => {
-  return request.batch(`
-    insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
-    values
-      ('Test_Workflow2', 'Test Plot2b', 'Test Location2b')
-  `)
-})
-
-beforeEach(() => {
-  // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
-  // function implementation for the function context needs creating for each test.
-  context = new Context()
-  return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-})
-
-afterAll(() => {
-  return pool.close()
-})
-
 describe('Message processing for task run completion', () => {
+  beforeAll(() => {
+    // Ensure the connection pool is ready
+    return pooledConnect
+  })
+
+  beforeAll(() => {
+    request = new sql.Request(pool)
+    return request
+  })
+
+  beforeAll(() => {
+    return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+  })
+
+  beforeAll(() => {
+    return request.batch(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
+      values
+        ('Test_Workflow1', 'Test Plot1', 'Test Location1')
+    `)
+  })
+
+  beforeAll(() => {
+    return request.batch(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
+      values
+        ('Test_Workflow2', 'Test Plot2a', 'Test Location2a')
+    `)
+  })
+
+  beforeAll(() => {
+    return request.batch(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
+      values
+        ('Test_Workflow2', 'Test Plot2b', 'Test Location2b')
+    `)
+  })
+
+  beforeEach(() => {
+    // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+    // function implementation for the function context needs creating for each test.
+    context = new Context()
+    return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
+  })
+
+  afterAll(() => {
+    return pool.close()
+  })
+
   it('should import data for a single plot associated with an approved forecast', async () => {
     const mockResponse = {
       data: {
@@ -102,6 +102,8 @@ describe('Message processing for task run completion', () => {
     await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
   })
   it('should throw an exception when the core engine PI server is unavailable', async () => {
+    // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
+    // an exception is thrown to facilitate this process.
     const mockResponse = new Error('connect ECONNREFUSED mockhost')
     await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
   })
@@ -129,6 +131,10 @@ async function processMessageAndCheckImportedData (messageKey, mockResponses) {
       start_time
   `)
 
+  // Database interaction is asynchronous so the order in which records are written
+  // cannot be guaranteed.  To check if records have been persisted correctly, copy
+  // the timeseries data retrieved from the database to an array and then check that
+  // the array contains each expected mock timeseries.
   for (const index in result.recordset) {
     receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
   }
