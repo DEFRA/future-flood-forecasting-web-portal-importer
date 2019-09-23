@@ -1,4 +1,5 @@
 const axios = require('axios')
+const moment = require('moment')
 const Context = require('../testing/mocks/defaultContext')
 const queueFunction = require('./index')
 const taskRunCompleteMessages = require('../testing/messages/task-run-complete/messages')
@@ -93,6 +94,21 @@ describe('Message processing for task run completion', () => {
     }
     await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
   })
+  it('should allow the default forecast start and end times to be overridden using environment variables', async () => {
+    const originalEnvironment = process.env
+    try {
+      process.env['FEWS_START_TIME_OFFSET_HOURS'] = 24
+      process.env['FEWS_END_TIME_OFFSET_HOURS'] = 48
+      const mockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+    } finally {
+      process.env = originalEnvironment
+    }
+  })
   it('should create a staging exception for an unknown workflow', async () => {
     const unknownWorkflow = 'unknownWorkflow'
     const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
@@ -135,7 +151,9 @@ async function processMessageAndCheckImportedData (messageKey, mockResponses) {
   const receivedFewsData = []
   const result = await request.query(`
     select
-      top(${mockResponses.length}) fews_data
+      top(${mockResponses.length}) fews_data,
+      start_time,
+      end_time
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
     order by
@@ -146,8 +164,20 @@ async function processMessageAndCheckImportedData (messageKey, mockResponses) {
   // cannot be guaranteed.  To check if records have been persisted correctly, copy
   // the timeseries data retrieved from the database to an array and then check that
   // the array contains each expected mock timeseries.
+  const now = moment.utc()
   for (const index in result.recordset) {
     receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
+    // Check that the persisted values for the forecast start time and end time are within tolerance
+    // of the expected values taking into acccount that the default values can be overridden by
+    // environment variables.
+    const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 48
+    const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+    const expectedStartTime = moment(now).subtract(startTimeOffsetHours, 'hours')
+    const expectedEndTime = moment(now).add(endTimeOffsetHours, 'hours')
+    const secondsSincePersistedStartTime = moment.duration(expectedStartTime.diff(result.recordset[index].start_time)).asSeconds()
+    const secondsSincePersistedEndTime = moment.duration(expectedEndTime.diff(result.recordset[index].end_time)).asSeconds()
+    expect(secondsSincePersistedStartTime).toBeLessThanOrEqual(1)
+    expect(secondsSincePersistedEndTime).toBeLessThanOrEqual(1)
   }
 
   for (const mockResponse of mockResponses) {
