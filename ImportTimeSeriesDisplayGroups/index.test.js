@@ -196,7 +196,7 @@ async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (messageK
     await processMessage(messageKey, [mockResponse])
   } catch (err) {
     // Check that a request timeout occurs.
-    expect('ETIMEOUT').toBe(err.code)
+    expect(err.code).toBe('ETIMEOUT')
   } finally {
     try {
       await transaction.rollback()
