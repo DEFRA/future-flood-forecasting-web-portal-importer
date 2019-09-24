@@ -12,7 +12,7 @@ module.exports = {
       // through the arguments from the caller.
       return await fn(request, context, ...args)
     } catch (err) {
-      // context.log.error(err)
+      context.log.error(err)
       await transaction.rollback()
       transaction = null
       throw err
