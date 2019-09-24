@@ -1,7 +1,7 @@
 const moment = require('moment')
 const axios = require('axios')
 const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
-const { doPreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
   // Ensure the connection pool is ready
@@ -9,7 +9,7 @@ module.exports = async function (context, message) {
   const proceedWithImport = await isTaskRunApproved(message)
   if (proceedWithImport) {
     const workflowId = await getWorkflowId(message)
-    const locationLookupData = await doPreparedStatementInTransaction(getLocationLookupData, context, workflowId, message)
+    const locationLookupData = await doInTransaction(getLocationLookupData, context, null, workflowId, message)
     const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
     await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context)
   } else {
@@ -53,14 +53,14 @@ async function getWorkflowId (message) {
   return extract(message, workflowIdRegex, 2, 1, workflowIdText)
 }
 
-async function getLocationLookupData (preparedStatement, workflowId, message) {
+async function getLocationLookupData (transactionData, workflowId, message) {
   const locationLookupData = {}
-  await preparedStatement.input('workflowId', sql.NVarChar)
+  await transactionData.preparedStatement.input('workflowId', sql.NVarChar)
 
   // Run the query to retrieve location lookup data in a read only transaction with a table lock held
   // for the duration of the transaction to guard against a location lookup data refresh during
   // data retrieval.
-  await preparedStatement.prepare(`
+  await transactionData.preparedStatement.prepare(`
     select
       plot_id,
       location_ids
@@ -76,7 +76,7 @@ async function getLocationLookupData (preparedStatement, workflowId, message) {
     workflowId: workflowId
   }
 
-  const locationLookupResponse = await preparedStatement.execute(parameters)
+  const locationLookupResponse = await transactionData.preparedStatement.execute(parameters)
 
   for (const record of locationLookupResponse.recordset) {
     locationLookupData[record.plot_id] = record.location_ids
