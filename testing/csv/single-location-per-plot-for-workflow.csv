@@ -1,0 +1,4 @@
+PlotId,LocationId,WorkflowId
+plot1,location4,workflow1
+plot1,location1,workflow2
+plot2,location1,workflow1
