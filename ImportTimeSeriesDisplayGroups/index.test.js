@@ -123,6 +123,13 @@ describe('Message processing for task run completion', () => {
     const mockResponse = new Error('connect ECONNREFUSED mockhost')
     await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
   })
+  it('should create a staging exception when a core engine PI server resource is unavailable', async () => {
+    // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably elgible for replay a certain number of times so
+    // check that an exception is thrown to facilitate this process. If misconfiguration has occurred, the maximum number
+    // of replays will be reached and the message will be transferred to a dead letter queue for manual intervetion.
+    const mockResponse = new Error('Request failed with status code 404')
+    await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+  })
   it('should throw an exception when the location lookup table is being refreshed', async () => {
     // If the location lookup table is being refreshed messages are elgible for replay a certain number of times
     // so check that an exception is thrown to facilitate this process.
