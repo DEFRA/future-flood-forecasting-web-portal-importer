@@ -1,5 +1,6 @@
 const fs = require('fs')
 const fetch = require('node-fetch')
+const Context = require('../testing/mocks/defaultContext')
 const message = require('../testing/mocks/defaultMessage')
 const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
 const queueFunction = require('./index')
@@ -30,7 +31,7 @@ describe('The refresh location lookup data function:', () => {
     // function implementation for the function context needs creating for each test.
     // The SQL TRUNCATE TABLE statement is used to remove all records from a table
 
-    context = require('../testing/mocks/defaultContext')
+    context = new Context()
     return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
   })
 
@@ -219,8 +220,7 @@ describe('The refresh location lookup data function:', () => {
       contentType: TEXT_CSV
     }
 
-    let error = await lockLocationLookupTableAndCheckMessageCannotBeProcessed(mockResponseData)
-    await expect(error.code).toBe('ETIMEOUT')
+    await lockLocationLookupTableAndCheckMessageCannotBeProcessed(mockResponseData)
     // Set the test timeout higher than the database request timeout.
   }, 20000)
 
@@ -290,13 +290,22 @@ async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (mockResp
   try {
     // Lock the location lookup table and then try and process the message.
     transaction = new sql.Transaction(pool)
-    await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
+    await transaction.begin()
     const request = new sql.Request(transaction)
-    await request.batch(`select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+    await request.batch(`
+      select
+        *
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup
+      with
+        (tablock, holdlock)
+    `)
+    await mockFetchResponse(mockResponseData)
+    await queueFunction(context, message)
     await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
   } catch (err) {
     // Check that a request timeout occurs.
-    return err
+    expect(err.code).toBe('ETIMEOUT')
   } finally {
     try {
       await transaction.rollback()

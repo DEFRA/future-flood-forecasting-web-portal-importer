@@ -21,13 +21,13 @@ module.exports = {
       throw err
     } finally {
       try {
-        if (preparedStatement) {
+        if (preparedStatement && preparedStatement.prepared) {
           await preparedStatement.unprepare()
         }
         if (transaction) {
           await transaction.commit()
         }
-      } catch (err) { context.log.error(err) }
+      } catch (err) {}
     }
   }
 }
