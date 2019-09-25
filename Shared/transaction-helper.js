@@ -1,23 +1,29 @@
 const { pool, sql } = require('./connection-pool')
 
 module.exports = {
-  doPreparedStatementInTransaction: async function (fn, context, ...args) {
+  doInTransaction: async function (fn, context, isolationLevel, ...args) {
     let transaction
     let preparedStatement
     try {
       transaction = new sql.Transaction(pool)
-      await transaction.begin()
+      if (isolationLevel) {
+        await transaction.begin(isolationLevel)
+      } else {
+        await transaction.begin()
+      }
       preparedStatement = new sql.PreparedStatement(transaction)
+      const transactionData = {
+        preparedStatement: preparedStatement,
+        transaction: transaction
+      }
       // Call the function that prepares and executes the prepared statement passing
       // through the arguments from the caller.
-      return await fn(preparedStatement, ...args)
+      return await fn(transactionData, ...args)
     } catch (err) {
       if (preparedStatement && preparedStatement.prepared) {
         await preparedStatement.unprepare()
-        preparedStatement = null
       }
       await transaction.rollback()
-      transaction = null
       throw err
     } finally {
       try {

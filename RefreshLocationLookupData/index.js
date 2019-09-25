@@ -1,29 +1,31 @@
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
-const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
-const { doRequestInTransaction } = require('../Shared/transaction-helper-request')
-const { doPreparedStatementInTransaction } = require('../Shared/transaction-helper-statement')
+const { pooledConnect, sql } = require('../Shared/connection-pool')
+const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
-  // This function is triggered via a queue message drop
-  context.log('JavaScript queue trigger function processed work item', message)
+  async function refresh (transactionData) {
+    await createLocationLookupTemporaryTable(new sql.Request(transactionData.transaction), context)
+    await populateLocationLookupTemporaryTable(transactionData.preparedStatement, context)
+    // Future requests will fail until the prepared statement is unprepared.
+    await transactionData.preparedStatement.unprepare()
+    await refreshLocationLookupTable(new sql.Request(transactionData.transaction), context)
+  }
+
+  // Ensure the connection pool is ready
+  await pooledConnect
+
+  await doInTransaction(refresh, context, sql.ISOLATION_LEVEL.SERIALIZABLE)
 
   sql.on('error', err => {
     context.log.error(err)
     throw err
   })
-
-  // Ensure the connection pool is ready
-  await pooledConnect
-  await createLocationLookupTemporaryTable(context)
-  await doPreparedStatementInTransaction(populateLocationLookupTemporaryTable, context)
-  await doRequestInTransaction(refreshLocationLookupTable, context)
 }
 
-async function createLocationLookupTemporaryTable (context) {
+async function createLocationLookupTemporaryTable (request, context) {
   try {
     // Create a global temporary table to hold location lookup CSV data.
-    let request = new sql.Request(pool)
     await request.batch(`
       create table ##location_lookup_temp
       (
@@ -69,7 +71,6 @@ async function refreshLocationLookupTable (request, context) {
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  // const request = new sql.Request(transaction)
   const recordCountResponse = await request.query(`select count(*) as number from ##location_lookup_temp`)
   // Do not refresh the location lookup table if the global temporary table is empty.
   if (recordCountResponse.recordset[0].number > 0) {
