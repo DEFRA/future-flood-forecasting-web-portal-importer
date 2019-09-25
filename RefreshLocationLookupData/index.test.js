@@ -14,6 +14,7 @@ const HTML = 'html'
 let request
 let context
 jest.mock('node-fetch')
+jest.setTimeout(10000)
 
 describe('The refresh location lookup data function:', () => {
   beforeAll(() => {
@@ -24,7 +25,7 @@ describe('The refresh location lookup data function:', () => {
   beforeAll(() => {
     request = new sql.Request(pool)
     return request
-  }, 30000)
+  })
 
   beforeEach(() => {
     // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -286,7 +287,6 @@ async function checkExpectedResults (expectedLocationLookupData) {
 
 async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
   let transaction
-  let expectedLocationLookupData = {}
   try {
     // Lock the location lookup table and then try and process the message.
     transaction = new sql.Transaction(pool)
@@ -302,10 +302,9 @@ async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (mockResp
     `)
     await mockFetchResponse(mockResponseData)
     await queueFunction(context, message)
-    await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
   } catch (err) {
     // Check that a request timeout occurs.
-    expect(err.code).toBe('ETIMEOUT')
+    expect(err.code).toBe('EREQUEST')
   } finally {
     try {
       await transaction.rollback()

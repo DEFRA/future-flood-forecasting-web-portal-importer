@@ -54,6 +54,12 @@ need to check that the database is populated correctly. As such, rather than moc
 | FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                           |
 | LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
 
+### Optional Function App Settings/Environment Variables
+
+| name                                      | description                                                                                             |
+|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| SQLDB_LOCK_TIMEOUT                        | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                           |
+
 ### Unit Test Specific Environment Variables
 
 | name                                      | description                                                                                             |
