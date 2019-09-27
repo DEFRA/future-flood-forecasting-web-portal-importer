@@ -9,6 +9,10 @@ let request
 let context
 jest.mock('axios')
 
+if (process.env['TEST_TIMEOUT']) {
+  jest.setTimeout(parseInt(process.env['TEST_TIMEOUT']))
+}
+
 describe('Message processing for task run completion', () => {
   beforeAll(() => {
     // Ensure the connection pool is ready
@@ -140,7 +144,7 @@ describe('Message processing for task run completion', () => {
     }
     await lockLocationLookupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
     // Set the test timeout higher than the database request timeout.
-  }, 20000)
+  }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
 })
 
 async function processMessage (messageKey, mockResponses) {
@@ -233,7 +237,7 @@ async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (messageK
     await processMessage(messageKey, [mockResponse])
   } catch (err) {
     // Check that a request timeout occurs.
-    expect(err.code).toBe('ETIMEOUT')
+    expect(err.code).toBe('EREQUEST')
   } finally {
     try {
       await transaction.rollback()
