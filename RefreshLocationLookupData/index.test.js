@@ -14,7 +14,10 @@ const HTML = 'html'
 let request
 let context
 jest.mock('node-fetch')
-jest.setTimeout(10000)
+
+if (process.env['TEST_TIMEOUT']) {
+  jest.setTimeout(parseInt(process.env['TEST_TIMEOUT']))
+}
 
 describe('The refresh location lookup data function:', () => {
   beforeAll(() => {
@@ -45,20 +48,6 @@ describe('The refresh location lookup data function:', () => {
   afterAll(() => {
     return pool.close()
   })
-
-  // Test template
-  // it('should...', async () => {
-
-  // process.env.EXAMPLE_ENV = 'set value for test here' - needs resetting in beforeEach()
-
-  // const mockResponseData = {}
-
-  // fetch.mockMethod(mockResponse)
-
-  // const expectedData = {}
-
-  // await function()
-  // })
 
   it('should ignore an empty CSV file', async () => {
     const mockResponseData = {
@@ -223,7 +212,7 @@ describe('The refresh location lookup data function:', () => {
 
     await lockLocationLookupTableAndCheckMessageCannotBeProcessed(mockResponseData)
     // Set the test timeout higher than the database request timeout.
-  }, 20000)
+  }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
 
   // End of describe
 })

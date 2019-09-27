@@ -66,6 +66,8 @@ need to check that the database is populated correctly. As such, rather than moc
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | SQLTESTDB_HOST                            | Database host used for unit tests                                                                       |
 | SQLTESTDB_PORT                            | Database port used for unit tests                                                                       |
+| SQLTESTDB_REQUEST_TIMEOUT                 | The database request timeout for unit tests (in milliseconds) - defaults to 15000ms                     |
+| TEST_TIMEOUT                              | Optional Unit test timeout override (in milliseconds)                                                   |
 
 ## Installation Activities
 

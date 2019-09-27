@@ -3,7 +3,7 @@ const { pool, sql } = require('./connection-pool')
 module.exports = {
   doInTransaction: async function (fn, context, isolationLevel, ...args) {
     let request = new sql.Request(pool)
-    request.batch(`SET LOCK_TIMEOUT ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`) // whenever a lock is enountered, wait this long before (in ms) returning an error
+    await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`) // whenever a lock is enountered, wait this long before (in ms) returning an error
     let transaction
     let preparedStatement
     try {

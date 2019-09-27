@@ -15,6 +15,12 @@ module.exports = async function (context, message) {
   // Ensure the connection pool is ready
   await pooledConnect
 
+  // Refresh the data in the location lookup table within a transaction with a serializable isolation
+  // level so that refresh is prevented if the location lookup table is in use. If the location lookup
+  // table is in use and location lookup table lock acquisition fails, the function invocation will fail.
+  // In most cases function invocation will be retried automatically and should succeed.  In rare
+  // cases where successive retries fail, the message that triggers the function invocation will be
+  // placed on a dead letter queue.  In this case, manual intervention will be required.
   await doInTransaction(refresh, context, sql.ISOLATION_LEVEL.SERIALIZABLE)
 
   sql.on('error', err => {
@@ -65,12 +71,6 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
 }
 
 async function refreshLocationLookupTable (request, context) {
-  // Refresh the data in the location lookup table within a transaction with a serializable isolation
-  // level so that refresh is prevented if the location lookup table is in use. If the location lookup
-  // table is in use and location lookup table lock acquisition fails, the function invocation will fail.
-  // In most cases function invocation will be retried automatically and should succeed.  In rare
-  // cases where successive retries fail, the message that triggers the function invocation will be
-  // placed on a dead letter queue.  In this case, manual intervention will be required.
   const recordCountResponse = await request.query(`select count(*) as number from ##location_lookup_temp`)
   // Do not refresh the location lookup table if the global temporary table is empty.
   if (recordCountResponse.recordset[0].number > 0) {
