@@ -3,7 +3,7 @@ const fetch = require('node-fetch')
 const Context = require('../testing/mocks/defaultContext')
 const message = require('../testing/mocks/defaultMessage')
 const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
-const queueFunction = require('./index')
+const messageFunction = require('./index')
 const STATUS_CODE_200 = 200
 const STATUS_CODE_404 = 404
 const STATUS_TEXT_OK = 'OK'
@@ -196,7 +196,7 @@ describe('The refresh location lookup data function:', () => {
     fetch.mockImplementation(() => {
       throw new Error('connect ECONNREFUSED mockhost')
     })
-    await expect(queueFunction(context, message)).rejects.toEqual(expectedError)
+    await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
   })
 
   it('should throw an exception when the location lookup table is being used', async () => {
@@ -219,7 +219,7 @@ describe('The refresh location lookup data function:', () => {
 
 async function refreshLocationLookupDataAndCheckExpectedResults (mockResponseData, expectedLocationLookupData) {
   await mockFetchResponse(mockResponseData)
-  await queueFunction(context, message) // calling actual function here
+  await messageFunction(context, message) // calling actual function here
   await checkExpectedResults(expectedLocationLookupData)
 }
 
@@ -290,7 +290,7 @@ async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (mockResp
         (tablock, holdlock)
     `)
     await mockFetchResponse(mockResponseData)
-    await queueFunction(context, message)
+    await messageFunction(context, message)
   } catch (err) {
     // Check that a request timeout occurs.
     expect(err.code).toBe('EREQUEST')
