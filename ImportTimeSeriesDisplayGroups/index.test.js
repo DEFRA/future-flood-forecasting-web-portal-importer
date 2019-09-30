@@ -1,7 +1,7 @@
 const axios = require('axios')
 const moment = require('moment')
 const Context = require('../testing/mocks/defaultContext')
-const queueFunction = require('./index')
+const messageFunction = require('./index')
 const taskRunCompleteMessages = require('../testing/messages/task-run-complete/messages')
 const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
 
@@ -154,7 +154,7 @@ async function processMessage (messageKey, mockResponses) {
       mock = mock.mockReturnValueOnce(mockResponse)
     }
   }
-  await queueFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
+  await messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
 }
 
 async function processMessageAndCheckImportedData (messageKey, mockResponses) {
@@ -222,7 +222,7 @@ async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expe
 
 async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {
   axios.get.mockRejectedValue(mockErrorResponse)
-  await expect(queueFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey])))
+  await expect(messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey])))
     .rejects.toThrow(mockErrorResponse)
 }
 
