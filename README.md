@@ -16,7 +16,7 @@ transformation for reporting and visualisation purposes.
 * Microsoft Azure resource group
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
-* Microsoft Azure storage queue named **locationlookupqueue**
+* Microsoft Azure storage queue named **fews-location-lookup-queue**
 * **Node.js** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
