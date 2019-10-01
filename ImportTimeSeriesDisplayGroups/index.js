@@ -13,7 +13,7 @@ module.exports = async function (context, message) {
     const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
     await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context)
   } else {
-    context.log.warn(`Ignoring message ${message}`)
+    context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
   }
 
   sql.on('error', err => {
