@@ -65,9 +65,11 @@ accordingly.
 
 ### Optional Function App Settings/Environment Variables
 
-| name                                      | description                                                                                             |
-|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| SQLDB_LOCK_TIMEOUT                        | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                           |
+| name                         | description                                                                                                          |
+|------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                        |
+| FEWS_START_TIME_OFFSET_HOURS | Number of hours before the current time that core forecasting engine data should be retrieved for (defaults to 48)   |
+| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after the current time that core forecasting engine data should be retrieved for (defaults to 120)   |
 
 ### Unit Test Specific Environment Variables
 
@@ -76,7 +78,7 @@ accordingly.
 | SQLTESTDB_HOST                            | Database host used for unit tests                                                                       |
 | SQLTESTDB_PORT                            | Database port used for unit tests                                                                       |
 | SQLTESTDB_REQUEST_TIMEOUT                 | The database request timeout for unit tests (in milliseconds) - defaults to 15000ms                     |
-| TEST_TIMEOUT                              | Optional Unit test timeout override (in milliseconds)                                                   |
+| TEST_TIMEOUT                              | Optional Unit test timeout override (in milliseconds) - defaults to 5000ms                              |
 
 ## Installation Activities
 
