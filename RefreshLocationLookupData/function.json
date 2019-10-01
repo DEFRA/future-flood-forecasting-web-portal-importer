@@ -4,7 +4,7 @@
       "name": "message",
       "type": "queueTrigger",
       "direction": "in",
-      "queueName": "locationlookupqueue",
+      "queueName": "fews-location-lookup-queue",
       "connection": "AZURE_STORAGE_CONNECTION_STRING"
     }
   ]
