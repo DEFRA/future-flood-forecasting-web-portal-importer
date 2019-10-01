@@ -16,7 +16,7 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure storage queue named **fewspiqueue**
 * Microsoft Azure storage queue named **fews-location-lookup-queue**
 * Microsoft Azure service bus
-* Microsoft Azure service bus queue named **fews-eventcode-queue**
+* Microsoft Azure service bus queue or storage queue named **fews-eventcode-queue**
 * Microsoft Azure service bus topic named **fews-eventcode-topic**
 * **Node.js** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
