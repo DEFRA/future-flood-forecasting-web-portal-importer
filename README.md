@@ -42,6 +42,7 @@ need to check that the database is populated correctly. As such, rather than moc
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                   |
+| AzureWebJobsServiceBus                    | Service bus connection string used by the function app                                                  |
 | AzureWebJobsStorage                       | Storage account connection string used by the function app                                              |
 | AZURE_STORAGE_CONNECTION_STRING           | Storage account connection string used by the function app                                              |
 | FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API         |
