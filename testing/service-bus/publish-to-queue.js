@@ -2,7 +2,7 @@
 
 const { ServiceBusClient } = require('@azure/service-bus')
 
-const connectionString = process.env['AZURE_SERVICE_BUS_CONNECTION_STRING']
+const connectionString = process.env['AzureWebJobsServiceBus']
 const queueName = process.env['AZURE_SERVICE_BUS_QUEUE']
 
 async function main () {
