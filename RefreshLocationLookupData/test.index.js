@@ -50,6 +50,19 @@ module.exports = describe('Refresh location lookup data tests', () => {
       await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
     })
 
+    it('should ignore a CSV file with misspelled headers', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'headers-misspelled.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedLocationLookupData = {}
+
+      await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+    })
+
     it('should group locations by plot ID and workflow ID given single location per workflowId/plotId', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
@@ -215,7 +228,7 @@ module.exports = describe('Refresh location lookup data tests', () => {
     let mockResponse = {}
     mockResponse = {
       status: mockResponseData.statusCode,
-      body: fs.createReadStream(`testing/csv/${mockResponseData.filename}`),
+      body: fs.createReadStream(`testing/location_lookup_files/${mockResponseData.filename}`),
       statusText: mockResponseData.statusText,
       headers: { 'Content-Type': mockResponseData.contentType },
       sendAsJson: false
