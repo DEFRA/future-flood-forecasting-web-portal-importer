@@ -96,3 +96,5 @@ out
 testing/staging-database/*
 !testing/staging-database/bootstrap.sh
 !testing/staging-database/cleanup.sh
+
+build/target/*
