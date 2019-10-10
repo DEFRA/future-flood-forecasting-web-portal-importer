@@ -1,14 +1,15 @@
 module.exports = describe('Refresh location lookup data tests', () => {
-  const fs = require('fs')
-  const fetch = require('node-fetch')
-  const Context = require('../testing/mocks/defaultContext')
   const message = require('../testing/mocks/defaultMessage')
+  const Context = require('../testing/mocks/defaultContext')
   const { pool, sql } = require('../Shared/connection-pool')
   const messageFunction = require('./index')
+  const fetch = require('node-fetch')
+  const fs = require('fs')
+  const JSONFILE = 'application/javascript'
+  const STATUS_TEXT_NOT_FOUND = 'Not found'
   const STATUS_CODE_200 = 200
   const STATUS_CODE_404 = 404
   const STATUS_TEXT_OK = 'OK'
-  const STATUS_TEXT_NOT_FOUND = 'Not found'
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
 
@@ -169,7 +170,7 @@ module.exports = describe('Refresh location lookup data tests', () => {
         statusCode: STATUS_CODE_200,
         filename: 'json-file.json',
         statusText: STATUS_TEXT_OK,
-        contentType: TEXT_CSV
+        contentType: JSONFILE
       }
 
       const expectedLocationLookupData = {

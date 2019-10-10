@@ -5,8 +5,7 @@ const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
   async function refresh (transactionData) {
-    // Future requests will fail until the prepared statement is unprepared.
-    await doThis(transactionData.preparedStatement, transactionData.transaction, context)
+    await refreshForecastLocationData(transactionData.preparedStatement, transactionData.transaction, context)
   }
 
   // Ensure the connection pool is ready
@@ -28,8 +27,8 @@ module.exports = async function (context, message) {
   })
 }
 
-async function doThis (preparedStatement, transaction, context) {
-  const response = await fetch(`${process.env['naf_FORECAST_LOCATION_URL']}`)
+async function refreshForecastLocationData (preparedStatement, transaction, context) {
+  const response = await fetch(`${process.env['FORECAST_LOCATION_URL']}`)
   let rows = await neatCsv(response.body)
   const recordCountResponse = rows.length
 
@@ -59,11 +58,12 @@ async function doThis (preparedStatement, transaction, context) {
         })
       }
     }
+    // Future requests will fail until the prepared statement is unprepared.
     await preparedStatement.unprepare()
   } else {
     context.log.warn('no records detected - Aborting forecast_location refresh')
   }
   let request = new sql.Request(transaction)
-  const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
+  const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
   context.log.info(`The forecast_location table contains ${result.recordset[0].number} records`)
 }
