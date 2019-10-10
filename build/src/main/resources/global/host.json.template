@@ -4,7 +4,7 @@
   "extensions": {
     "serviceBus": {
         "messageHandlerOptions": {
-            "maxConcurrentCalls": "@azure.serviceBus.maximumConcurrentCalls@"
+            "maxConcurrentCalls": @azure.serviceBus.maximumConcurrentCalls@
         }
     }
   }

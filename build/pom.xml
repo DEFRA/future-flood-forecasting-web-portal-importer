@@ -10,32 +10,10 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>future-flood-forecasting-web-portal-importer</name>
     <url>https://github.com/DEFRA/future-flood-forecasting-importer</url>
-
-    <!-- <properties>
-        <liquibase.version>3.6.3</liquibase.version>
-        <sqlserver.version>7.2.2.jre8</sqlserver.version>
-        <azuread.version>1.3.0</azuread.version>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-core</artifactId>
-            <version>${liquibase.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.sqlserver</groupId>
-            <artifactId>mssql-jdbc</artifactId>
-            <version>${sqlserver.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>adal4j</artifactId>
-            <version>${azuread.version}</version>
-        </dependency>
-    </dependencies> -->
     <properties>
-        <azure.serviceBus.maximumConcurrentCalls>${AZURE_SERVICE_BUS_MAXIMUM_CONCURRENT_CALLS}</azure.serviceBus.maximumConcurrentCalls>    
+        <azure.serviceBus.maximumConcurrentCalls>${AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS}</azure.serviceBus.maximumConcurrentCalls>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
     <build>
         <plugins>
@@ -49,13 +27,13 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.basedir}/target/host.json</outputDirectory>
+                            <outputDirectory>${project.basedir}/target/</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>src/main/resources</directory>
+                                    <directory>src/main/resources/global</directory>
                                     <filtering>true</filtering>
                                 </resource>
-                            </resources>
+                             </resources>
                         </configuration>
                     </execution>
                 </executions>

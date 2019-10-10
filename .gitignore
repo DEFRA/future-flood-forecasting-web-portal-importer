@@ -98,3 +98,9 @@ testing/staging-database/*
 !testing/staging-database/cleanup.sh
 
 build/target/*
+build/.classpath
+build/.project
+build/.settings/*
+
+**/function.json
+!build/**/function.json

@@ -2,10 +2,10 @@
   "bindings": [
     {
       "name": "message",
-      "type": "queueTrigger",
+      "type": "serviceBusTrigger",
       "direction": "in",
       "queueName": "fews-location-lookup-queue",
-      "connection": "AZURE_STORAGE_CONNECTION_STRING"
+      "connection": "AzureWebJobsServiceBus"
     }
   ]
 }

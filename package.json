@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "description": "A Node.js Microsoft Azure function that imports flood forecasting data.",
   "scripts": {
+    "queuebuild": "export BUILD_TYPE=queue && build/src/main/resources/scripts/build.sh",
+    "topicbuild": "export BUILD_TYPE=topic && build/src/main/resources/scripts/build.sh",
     "lint": "standard",
     "test": "testing/run.sh"
   },
