@@ -34,5 +34,5 @@ install:
   - npm run queuebuild
 
 script:
-  - markdownlint $PWD --ignore node_modules
+  - markdownlin $PWD --ignore node_modules && npm test
   
