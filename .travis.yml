@@ -5,6 +5,8 @@ dist: bionic
 node_js:
   - "10"
 
+jdk: openjdk8
+
 env:
  - DOCKER_COMPOSE_VERSION=1.24.1
 
@@ -29,7 +31,8 @@ before_install:
 
 install:
   - npm install
+  - npm run build
 
 script:
-  - markdownlint $PWD --ignore node_modules && npm test
+  - markdownlint $PWD --ignore node_modules
   
