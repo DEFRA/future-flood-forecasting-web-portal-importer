@@ -31,7 +31,7 @@ before_install:
 
 install:
   - npm install
-  - npm run queuebuild
+  - npm run build
 
 script:
   - markdownlint $PWD --ignore node_modules && npm test
