@@ -5,7 +5,7 @@
       "type": "serviceBusTrigger",
       "direction": "in",
       "topicName": "fews-eventcode-topic",
-      "subscriptionName": "%AZURE_SERVICE_BUS_SUBSCRIPTION_NAME%",
+      "subscriptionName": "%AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }
   ]
