@@ -300,7 +300,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await messageFunction(context, message)
     } catch (err) {
       // Check that a request timeout occurs.
-      expect(err.code).toBe('EREQUEST')
+      expect(err.code).toTimeout(err.code)
     } finally {
       try {
         await transaction.rollback()

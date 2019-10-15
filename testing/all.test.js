@@ -14,6 +14,17 @@ describe('Run all unit tests in sequence', () => {
     return pool.close()
   })
 
+  expect.extend({
+    toTimeout (error) {
+      if (error === 'EREQUEST' || 'ETIMEOUT') {
+        return {
+          pass: true,
+          message: () => 'Failed to match the error code provided.'
+        }
+      }
+    }
+  })
+
   require('../RefreshLocationLookupData/test.index')
   require('../RefreshForecastLocationData/test.index')
   require('../ImportTimeSeriesDisplayGroups/test.index')
