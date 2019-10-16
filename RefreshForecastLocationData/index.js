@@ -43,19 +43,24 @@ async function refreshForecastLocationData (preparedStatement, transaction, cont
     await preparedStatement.input('FFFS_LOCATION_ID', sql.NVarChar)
     await preparedStatement.input('FFFS_LOCATION_NAME', sql.NVarChar)
     await preparedStatement.input('PLOT_ID', sql.NVarChar)
-    await preparedStatement.prepare(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID) values (@CENTRE, @MFDO_AREA, @CATCHMENT, @FFFS_LOCATION_ID, @FFFS_LOCATION_NAME, @PLOT_ID)`)
-
+    await preparedStatement.input('DRN_ORDER', sql.Int)
+    await preparedStatement.prepare(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) values (@CENTRE, @MFDO_AREA, @CATCHMENT, @FFFS_LOCATION_ID, @FFFS_LOCATION_NAME, @PLOT_ID, @DRN_ORDER)`)
     for (const row of rows) {
       // Ignore rows in the CSV data that do not have entries for all columns.
-      if (row.Centre && row.MFDOArea && row.Catchment && row.FFFSLocID && row.FFFSLocName && row.PlotID) {
-        await preparedStatement.execute({
-          CENTRE: row.Centre,
-          MFDO_AREA: row.MFDOArea,
-          CATCHMENT: row.Catchment,
-          FFFS_LOCATION_ID: row.FFFSLocID,
-          FFFS_LOCATION_NAME: row.FFFSLocName,
-          PLOT_ID: row.PlotID
-        })
+      try {
+        if (row.Centre && row.MFDOArea && row.Catchment && row.FFFSLocID && row.FFFSLocName && row.PlotID && row.DRNOrder) {
+          await preparedStatement.execute({
+            CENTRE: row.Centre,
+            MFDO_AREA: row.MFDOArea,
+            CATCHMENT: row.Catchment,
+            FFFS_LOCATION_ID: row.FFFSLocID,
+            FFFS_LOCATION_NAME: row.FFFSLocName,
+            PLOT_ID: row.PlotID,
+            DRN_ORDER: row.DRNOrder
+          })
+        }
+      } catch (err) {
+        context.log.warn(`an error has been found in a row with the Location ID: ${row.FFFSLocID}.\n  Error : ${err}`)
       }
     }
     // Future requests will fail until the prepared statement is unprepared.

@@ -77,7 +77,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
           Catchemnt: 'Derwent',
           FFFSLocID: '4043',
           FFFSLocName: 'CHATSWORTH',
-          PlotId: 'Fluvial_Gauge_MFDO'
+          PlotId: 'Fluvial_Gauge_MFDO',
+          DRNOrder: 123
         }]
 
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
@@ -87,6 +88,41 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'all-data-rows-missing-some-values.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedForecastLocationData = []
+
+      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+    })
+
+    it('should ignore rows that contains values exceeding a specified limit', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'one-row-has-data-over-specified-limits.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedForecastLocationData = [
+        {
+          Centre: 'Birmingham',
+          MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
+          Catchemnt: 'Derwent',
+          FFFSLocID: '4043',
+          FFFSLocName: 'CHATSWORTH',
+          PlotId: 'Fluvial_Gauge_MFDO',
+          DRNOrder: 123
+        }]
+
+      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+    })
+
+    it('should ignore a csv that has a string value in an integer field', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'string-not-integer.csv',
         statusText: STATUS_TEXT_OK,
         contentType: TEXT_CSV
       }
@@ -162,7 +198,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchemnt: 'Derwent',
         FFFSLocID: 'Ashford+Chatsworth',
         FFFSLocName: 'Ashford+Chatsworth UG Derwent Derb to Wye confl',
-        PlotId: 'Fluvial_Gauge_MFDO'
+        PlotId: 'Fluvial_Gauge_MFDO',
+        DRNOrder: '123'
       },
       {
         Centre: 'Birmingham',
@@ -170,7 +207,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchemnt: 'Derwent',
         FFFSLocID: '4043',
         FFFSLocName: 'CHATSWORTH',
-        PlotId: 'Fluvial_Gauge_MFDO'
+        PlotId: 'Fluvial_Gauge_MFDO',
+        DRNOrder: '123'
       }]
 
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
@@ -255,7 +293,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     let expectedNumberOfRows = expectedForecastLocationData.length
 
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
-    context.log(`databse row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
+    context.log(`database row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
       // FFFSLOCID from expected data
@@ -266,6 +304,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         let FFFSLocID = row.FFFSLocID
         let FFFSLocName = row.FFFSLocName
         let PlotId = row.PlotId
+        let DRNOrder = row.DRNOrder
 
         const databaseResult = await request.query(`
       select count(*) 
@@ -274,7 +313,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       where CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
       and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' 
       and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
-      and PLOT_ID = '${PlotId}'
+      and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
