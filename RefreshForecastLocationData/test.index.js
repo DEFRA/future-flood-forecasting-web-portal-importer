@@ -214,7 +214,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
     })
 
-    it('should refresh given a valid CSV file with empty values in some row cells', async () => {
+    it('should not refresh given a valid CSV file with null values in some row cells', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'empty-values-in-data-rows.csv',
@@ -248,7 +248,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
     })
 
-    it('should throw an exception when the forecast location table is being used', async () => {
+    it('should throw an exception when the forecast location table is in use', async () => {
       // If the location lookup table is being refreshed messages are elgible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
 
