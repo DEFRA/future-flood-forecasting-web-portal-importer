@@ -18,8 +18,8 @@ module.exports = async function (context, message) {
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
 
+  // The function below returns the refresh function with the transaction data object as an argument
   await doInTransaction(refresh, context, sql.ISOLATION_LEVEL.SERIALIZABLE)
-  // function above returns await refresh function with transaction data object
 
   sql.on('error', err => {
     context.log.error(err)
