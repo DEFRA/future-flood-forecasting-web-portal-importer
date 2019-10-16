@@ -2,7 +2,7 @@
 
 Node.js Microsoft Azure functions responsible for extracting data from the core forecasting engine and importing it into a staging database prior to transformation for reporting and visualisation purposes.
 
-* Queue based triggering is used when:
+* Message based triggering is used when:
   * Importing data for a single location during the previous twenty fours hours.
   * Importing data for multiple locations associated with a display group
   * Refreshing the list of forecast locations
@@ -10,24 +10,35 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 
 ## Prerequisites
 
-### Mandatory
+### Build Prerequisites
+
+* Java 8 or above
+* Maven 3.x
+* A UNIX based operating system with bash installed
+
+### Runtime Prerequisites
 
 * Microsoft Azure resource group
+* Microsoft Azure service bus
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
-* Microsoft Azure storage queue named **fews-forecast-location-queue**
-* Microsoft Azure storage queue named **fews-location-lookup-queue**
-* Microsoft Azure service bus
-* Microsoft Azure service bus queue or storage queue named **fews-eventcode-queue**
+* Microsoft Azure service bus queue named **fews-location-lookup-queue**
+* Microsoft Azure service bus topic named **fews-location-lookup-topic**
+* Microsoft Azure service bus queue named **fews-eventcode-queue**
 * Microsoft Azure service bus topic named **fews-eventcode-topic**
-* **Node.js** Microsoft Azure function app with an **application service plan**
+* **JavaScript** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
+
+### Unit Testing
+
+#### Operating System
+
 * A UNIX based operating system with bash and the nc utility installed is required to run unit tests.
   * If using Microsoft Windows, you may wish to consider using the [Windows Subsystem For Linux](https://docs.microsoft.com/en-us/windows/wsl/about).
 
-## Unit Testing Considerations
+#### Additional Considerations
 
 As this Azure function app is responsible for placing data extracted from the core forecasting engine into an Azure SQL database, unit tests
 need to check that the database is populated correctly. As such, rather than mocking database functionality, a dedicated database instance is required for unit testing purposes. This dedicated database instance must be created in the same way as non-unit test specific instances using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project. Unit test specific environment variables (defined below) must be set to allow the unit tests to utilise a dedicated database instance.
@@ -38,6 +49,8 @@ need to check that the database is populated correctly. As such, rather than moc
   * The creation of docker based Microsoft SQL Server instances relies on the prerequisites of the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
 
 ## Function App Settings/Environment Variables
+
+### Mandatory Function App Settings/Environment Variables
 
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
@@ -55,6 +68,8 @@ need to check that the database is populated correctly. As such, rather than moc
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
 | LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
+| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
+| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
 
 ### Redundant Legacy Function App Settings/Environment Variables
 
