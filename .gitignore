@@ -93,14 +93,22 @@ out
 .idea
 .vscode
 
+# Unit test database container directories
 testing/staging-database/*
 !testing/staging-database/bootstrap.sh
 !testing/staging-database/cleanup.sh
 
+# Allow the function app to work with Azure Service Bus queues or topics by putting the function.json file
+# for each queue/topic triggered function in place at build time
+**/function.json
+!build/**/function.json
+
+# As environment variable substitution does not appear to be supported natively in host.json
+# Maven performs this task and host.json is put in place at build time
+host.json
+
+# Maven related directories and files
 build/target/*
 build/.classpath
 build/.project
 build/.settings/*
-
-**/function.json
-!build/**/function.json
