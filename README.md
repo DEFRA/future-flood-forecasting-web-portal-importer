@@ -5,6 +5,7 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Queue based triggering is used when:
   * Importing data for a single location during the previous twenty fours hours.
   * Importing data for multiple locations associated with a display group
+  * Refreshing the list of forecast locations
   * Refreshing the set of locations associated with each display group.
 
 ## Prerequisites
@@ -14,6 +15,7 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure resource group
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
+* Microsoft Azure storage queue named **fews-forecast-location-queue**
 * Microsoft Azure storage queue named **fews-location-lookup-queue**
 * Microsoft Azure service bus
 * Microsoft Azure service bus queue or storage queue named **fews-eventcode-queue**
@@ -50,6 +52,7 @@ need to check that the database is populated correctly. As such, rather than moc
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                     |
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
+| FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
 | LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
 
 ### Redundant Legacy Function App Settings/Environment Variables
@@ -93,7 +96,7 @@ does not prescribe how the activities should be performed.
 ## Running The Queue Based Functions
 
 * Messages placed on the fewspiqueue **must** contain only the ID of the location for which data is to be imported.
-* Messages placed on the fews-location-lookup-queue **must** contain some content; for example {"input": "refresh"}.
+* Messages placed on the fews-location-lookup-queue **and** fews-forecast-location-queue **must** contain some content; for example {"input": "refresh"}.
   The message content is ignored.
 * Messages placed on the fews-eventcode-queue or fews-eventcode-topic **must** adhere to the format used for
   Azure service bus alerts in the core forecasting engine.

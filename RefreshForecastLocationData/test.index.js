@@ -30,7 +30,6 @@ module.exports = describe('Refresh forecast location data tests', () => {
     beforeEach(() => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
-      // The SQL TRUNCATE TABLE statement is used to remove all records from a table
 
       context = new Context()
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
@@ -249,7 +248,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     })
 
     it('should throw an exception when the forecast location table is in use', async () => {
-      // If the location lookup table is being refreshed messages are elgible for replay a certain number of times
+      // If the forecast location table is being refreshed messages are elgible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
 
       const mockResponseData = {
