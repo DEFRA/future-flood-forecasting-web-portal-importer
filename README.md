@@ -23,9 +23,9 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
 * Microsoft Azure service bus queue named **fews-location-lookup-queue**
-* Microsoft Azure service bus topic named **fews-location-lookup-topic**
+* Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-eventcode-queue**
-* Microsoft Azure service bus topic named **fews-eventcode-topic**
+* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
 * **JavaScript** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
@@ -71,6 +71,13 @@ need to check that the database is populated correctly. As such, rather than moc
 | FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
 | AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
 
+### Mandatory Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
+
+| name                                                | description                                                                                   |
+|-----------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME      | Subscription name associated with fews-eventcode-topic                                        |
+| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                  |
+
 ### Redundant Legacy Function App Settings/Environment Variables
 
 The function app settings/environment variables below are no longer used. It is recommended that they should be removed from any existing installation
@@ -107,6 +114,8 @@ does not prescribe how the activities should be performed.
 * Configure app settings/environment variables
 * Install node modules
 * Install function extensions
+* Run npm scripts to configure the functions and run unit tests. For example:
+  * npm run build && npm test
 * Deploy the functions to the function app
 
 ## Running The Queue Based Functions
