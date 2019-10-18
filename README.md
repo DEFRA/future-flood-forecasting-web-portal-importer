@@ -22,6 +22,8 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure service bus
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
+* Microsoft Azure service bus queue named **fews-forecast-location-queue**
+* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-location-lookup-queue**
 * Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-eventcode-queue**
@@ -73,10 +75,11 @@ need to check that the database is populated correctly. As such, rather than moc
 
 ### Mandatory Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
-| name                                                | description                                                                                   |
-|-----------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME      | Subscription name associated with fews-eventcode-topic                                        |
-| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                  |
+| name                                                  | description                                                                                   |
+|-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                        |
+| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME   | Subscription name associated with fews-location-lookup-topic                                  |
+| AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                |
 
 ### Redundant Legacy Function App Settings/Environment Variables
 
