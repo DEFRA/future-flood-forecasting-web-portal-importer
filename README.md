@@ -65,7 +65,14 @@ directory containing this file.
 
 ## Function App Settings/Environment Variables
 
-### Mandatory Function App Settings/Environment Variables
+### Mandatory Build Time Environment Variables
+
+| name                                      | description                                                                                             |
+|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
+| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
+
+### Mandatory Runtime Function App Settings/Environment Variables
 
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
@@ -83,10 +90,8 @@ directory containing this file.
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
 | LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
-| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
-| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
 
-### Mandatory Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
+### Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
 | name                                                  | description                                                                                   |
 |-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
@@ -94,7 +99,7 @@ directory containing this file.
 | AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME   | Subscription name associated with fews-location-lookup-topic                                  |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                |
 
-### Redundant Legacy Function App Settings/Environment Variables
+### Redundant Legacy Runtime Function App Settings/Environment Variables
 
 The function app settings/environment variables below are no longer used. It is recommended that they should be removed from any existing installation
 accordingly.
@@ -105,7 +110,7 @@ accordingly.
 | FEWS_LOAD_HISTORY_HOURS                   | Number of hours before subsequent import times that core forecasting engine data should be retrieved for|
 | FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                           |
 
-### Optional Function App Settings/Environment Variables
+### Optional Runtime Function App Settings/Environment Variables
 
 | name                         | description                                                                                                          |
 |------------------------------|----------------------------------------------------------------------------------------------------------------------|
