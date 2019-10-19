@@ -38,7 +38,9 @@ async function createLocationLookupTemporaryTable (request, context) {
         id uniqueidentifier not null default newid(),
         workflow_id nvarchar(64) not null,
         plot_id nvarchar(64) not null,
-        location_id nvarchar(64) not null
+        location_id nvarchar(64) not null,
+        mfdo_area_id nvarchar(64) not null,
+        centre_id nvarchar(64) not null
         constraint pk_location_lookup_temp primary key(id)
       )
     `)
@@ -56,15 +58,19 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.input('plotId', sql.NVarChar)
   await preparedStatement.input('locationId', sql.NVarChar)
-  await preparedStatement.prepare(`insert into ##location_lookup_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
+  await preparedStatement.input('mfdo_area_id', sql.NVarChar)
+  await preparedStatement.input('centre_id', sql.NVarChar)
+  await preparedStatement.prepare(`insert into ##location_lookup_temp (workflow_id, plot_id, location_id, mfdo_area_id, centre_id) values (@workflowId, @plotId, @locationId, @mfdo_area_id, @centre_id)`)
 
   for (const row of rows) {
     // Ignore rows in the CSV data that do not have entries for all columns.
-    if (row.WorkflowId && row.PlotId && row.LocationId) {
+    if (row.WorkflowID && row.PlotID && row.FFFSLocID && row.MFDOAreaID && row.CentreID) {
       await preparedStatement.execute({
-        workflowId: row.WorkflowId,
-        plotId: row.PlotId,
-        locationId: row.LocationId
+        workflowId: row.WorkflowID,
+        plotId: row.PlotID,
+        locationId: row.FFFSLocID,
+        mfdo_area_id: row.MFDOAreaID,
+        centre_id: row.CentreID
       })
     }
   }
@@ -77,16 +83,20 @@ async function refreshLocationLookupTable (request, context) {
     await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
     // Concatenate all locations for each combination of workflow ID and plot ID.
     await request.query(`
-        insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
+        insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, mfdo_area_id, centre_id, location_ids)
           select
             workflow_id,
             plot_id,
+            mfdo_area_id,
+            centre_id,
             string_agg(location_id, ';')
           from
             ##location_lookup_temp
           group by
             workflow_id,
-            plot_id
+            plot_id,
+            mfdo_area_id,
+            centre_id
       `)
   } else {
     context.log.warn('##location_lookup_temp contains no records - Aborting location_lookup refresh')
