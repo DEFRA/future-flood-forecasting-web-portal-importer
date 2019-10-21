@@ -32,6 +32,10 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
+* The function app must have connectivity to the following locations (identified by environment variables below):
+  * The URL for the core forecasting engine REST API
+  * The URL for retrieving forecast location data
+  * The URL for retrieving location lookup data associated with display groups
 
 ### Testing
 
