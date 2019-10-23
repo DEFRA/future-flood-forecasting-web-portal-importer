@@ -151,7 +151,7 @@ does not prescribe how the activities should be performed.
   * npm run build && npm test
 * Deploy the functions to the function app
 
-## Running The Queue Based Functions
+## Running The Queue/Topic Based Functions
 
 * Messages placed on the fewspiqueue **must** contain only the ID of the location for which data is to be imported.
 * Messages placed on the fews-location-lookup-queue **and** fews-forecast-location-queue **must** contain some content; for example {"input": "refresh"}.
