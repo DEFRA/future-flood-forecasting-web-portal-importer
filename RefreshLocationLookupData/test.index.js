@@ -64,6 +64,23 @@ module.exports = describe('Refresh location lookup data tests', () => {
       await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
     })
 
+    it('should load only PlotId, FFFSLocID and WorkflowId into the db correctly, ignoring extra CSV fields', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'extra-headers.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedLocationLookupData = {
+        workflow1: {
+          plot1: ['location1', 'location2']
+        }
+      }
+
+      await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+    })
+
     it('should group locations by plot ID and workflow ID given single location per workflowId/plotId', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
