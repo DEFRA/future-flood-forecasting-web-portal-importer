@@ -138,6 +138,7 @@ accordingly.
 | AZURE_SERVICE_BUS_QUEUE                   | The Azure service bus queue to which test messages are sent                                             |
 | AZURE_SERVICE_BUS_TOPIC                   | The Azure service bus topic to which test messages are sent                                             |
 | AZURE_SERVICE_BUS_TEST_MESSAGE            | The test message                                                                                        |
+
 ### Unit Test Coverage
 
 Unit test coverage is provided by Istanbul, a test coverage tool built into Jest. Unit test coverage config is handled directly by Jest in the jestconfig file. A LCOV report is created for a unit test script run, it is placed in the testing/coverage directory. LCOV is a graphical front-end for gcov. It collects gcov data for multiple source files and creates HTML pages containing the source code annotated with coverage information. LCOV supports statement, function and branch coverage measurement.
