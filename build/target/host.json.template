@@ -1,0 +1,11 @@
+{
+  "version": "2.0",
+  "watchDirectories": [ "Shared" ],
+  "extensions": {
+    "serviceBus": {
+        "messageHandlerOptions": {
+            "maxConcurrentCalls": ${AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS}
+        }
+    }
+  }
+}
