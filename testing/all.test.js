@@ -5,9 +5,19 @@ if (process.env['TEST_TIMEOUT']) {
 }
 
 describe('Run all unit tests in sequence', () => {
+  const OLD_ENV = process.env
   beforeAll(() => {
     // Ensure the connection pool is ready
     return pooledConnect
+  })
+
+  beforeEach(() => {
+    jest.resetModules() // Resets the module registry - the cache of all required modules.
+    process.env = { ...OLD_ENV }
+  })
+
+  afterEach(() => {
+    process.env = OLD_ENV
   })
 
   afterAll(() => {
