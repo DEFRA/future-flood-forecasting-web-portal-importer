@@ -18,9 +18,9 @@ git:
 services:
   - docker
 
+# Npm caching is enabled by default since July 2019 - but explicitly set it so there's no confusion!
 cache:
-  directories:
-    - node_modules
+  npm: true
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
