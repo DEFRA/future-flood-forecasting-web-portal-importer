@@ -17,6 +17,8 @@ steps:
 
   - script: npm ci
   - script: npm run build
+  - script: npx markdownlint $PWD --ignore node_modules
+  - script: npm test
 
   - task: DotNetCoreCLI@2
     inputs:
