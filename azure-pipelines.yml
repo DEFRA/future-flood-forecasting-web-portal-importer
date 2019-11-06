@@ -16,6 +16,7 @@ steps:
       versionSpec: '10.x' # replace this value with the version that you need for your project
 
   - script: npm ci
+  - script: npm run build
 
   - task: DotNetCoreCLI@2
     inputs:
