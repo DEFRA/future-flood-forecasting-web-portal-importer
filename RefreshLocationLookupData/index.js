@@ -1,6 +1,6 @@
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
-const { pooledConnect, sql } = require('../Shared/connection-pool')
+const { sql } = require('../Shared/connection-pool')
 const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
@@ -11,9 +11,6 @@ module.exports = async function (context, message) {
     await transactionData.preparedStatement.unprepare()
     await refreshLocationLookupTable(new sql.Request(transactionData.transaction), context)
   }
-
-  // Ensure the connection pool is ready
-  await pooledConnect
 
   // Refresh the data in the location lookup table within a transaction with a serializable isolation
   // level so that refresh is prevented if the location lookup table is in use. If the location lookup

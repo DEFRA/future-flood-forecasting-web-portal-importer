@@ -5,7 +5,7 @@ const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
   // Ensure the connection pool is ready
-  await pooledConnect
+  await pooledConnect(pool)
   const proceedWithImport = await isTaskRunApproved(message)
   if (proceedWithImport) {
     const workflowId = await getWorkflowId(message)

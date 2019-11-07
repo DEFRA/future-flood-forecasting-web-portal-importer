@@ -11,7 +11,7 @@ module.exports = async function (context, message) {
   let preparedStatement
   try {
     // Ensure the connection pool is ready
-    await pooledConnect
+    await pooledConnect(pool)
     // Get the timeseries for the previous day for the location identified in the message from the FEWS PI server.
     const now = moment.utc()
     const startTime = moment(now).utc().subtract(24, 'hours').toISOString()

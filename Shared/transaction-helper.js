@@ -1,7 +1,11 @@
-const { pool, sql } = require('./connection-pool')
+const { pool, sql, pooledConnect } = require('./connection-pool')
 
 module.exports = {
   doInTransaction: async function (fn, context, isolationLevel, ...args) {
+    // Ensure the connection pool is ready
+    // if (process.env.JEST_WORKER_ID === undefined) { // connection has already been created in tests
+    await pooledConnect(pool)
+    // }
     let request = new sql.Request(pool)
     await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)
     let transaction
@@ -35,7 +39,10 @@ module.exports = {
         if (transaction) {
           await transaction.commit()
         }
-      } catch (err) {}
+        // if (process.env.JEST_WORKER_ID === undefined) {
+        await pool.close() // shuts all connections down manually (removes temp database issue)
+        // }
+      } catch (err) { }
     }
   }
 }
