@@ -1,12 +1,18 @@
-const { pool, sql, pooledConnect } = require('./connection-pool')
+// const { pool, sql, pooledConnect } = require('./connection-pool')
+const Connection = require('../Shared/connection-pool')
+const sql = require('mssql')
+// const pooledConnect = connection.pooledConnect
 
 module.exports = {
   doInTransaction: async function (fn, context, isolationLevel, ...args) {
+    const connection = new Connection()
+    const pool = connection.pool
+    const pooledConnect = connection.pooledConnect
+    const request = new sql.Request(pool)
+
     // Ensure the connection pool is ready
-    // if (process.env.JEST_WORKER_ID === undefined) { // connection has already been created in tests
-    await pooledConnect(pool)
-    // }
-    let request = new sql.Request(pool)
+    await pooledConnect
+
     await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)
     let transaction
     let preparedStatement

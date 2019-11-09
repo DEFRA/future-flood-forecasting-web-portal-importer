@@ -1,6 +1,8 @@
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
-const { sql } = require('../Shared/connection-pool')
+const sql = require('mssql')
+// const { sql } = require('../Shared/connection-pool')
+// const Connection = require('../Shared/connection-pool')
 const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
@@ -20,10 +22,10 @@ module.exports = async function (context, message) {
   // placed on a dead letter queue.  In this case, manual intervention will be required.
   await doInTransaction(refresh, context, sql.ISOLATION_LEVEL.SERIALIZABLE)
 
-  sql.on('error', err => {
-    context.log.error(err)
-    throw err
-  })
+  // sql.on('error', err => {
+  //   context.log.error(err)
+  //   throw err
+  // })
 }
 
 async function createLocationLookupTemporaryTable (request, context) {
