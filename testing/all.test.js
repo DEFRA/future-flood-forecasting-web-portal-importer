@@ -6,8 +6,8 @@ describe('Run all unit tests in sequence', () => {
   const OLD_ENV = process.env
 
   beforeEach(() => {
-    jest.resetModules() // Resets the module registry - the cache of all required modules.
-    process.env = { ...OLD_ENV }
+    // jest.resetModules() // Resets the module registry - the cache of all required modules.
+    // process.env = { ...OLD_ENV }
   })
 
   afterEach(() => {
