@@ -15,9 +15,11 @@ module.exports = {
 
     await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)
     let transaction
+    let transactionRolledBack = false
     let preparedStatement
     try {
       transaction = new sql.Transaction(pool)
+
       if (isolationLevel) {
         await transaction.begin(isolationLevel)
       } else {
@@ -35,20 +37,24 @@ module.exports = {
       if (preparedStatement && preparedStatement.prepared) {
         await preparedStatement.unprepare()
       }
-      await transaction.rollback()
+      if (transaction) {
+        await transaction.rollback()
+        transactionRolledBack = true
+      }
       throw err
     } finally {
       try {
         if (preparedStatement && preparedStatement.prepared) {
           await preparedStatement.unprepare()
         }
-        if (transaction) {
+        if (transaction && !transactionRolledBack) {
           await transaction.commit()
         }
-        // if (process.env.JEST_WORKER_ID === undefined) {
-        await pool.close() // shuts all connections down manually (removes temp database issue)
-        // }
-      } catch (err) { }
+
+        if (pool) {
+          await pool.close() // shuts all connections down manually (removes temp database issue)
+        }
+      } catch (err) { context.log.error(err) }
     }
   }
 }
