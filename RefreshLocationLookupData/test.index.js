@@ -47,7 +47,7 @@ module.exports =
 
       afterAll(() => {
         // Closing the DB connection allows Jest to exit successfully.
-        pool.close()
+        return pool.close()
       })
 
       it('should ignore an empty CSV file', async () => {
