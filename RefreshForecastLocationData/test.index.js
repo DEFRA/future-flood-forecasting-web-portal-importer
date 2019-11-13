@@ -1,10 +1,12 @@
 module.exports = describe('Refresh forecast location data tests', () => {
-  const { pooledConnect, pool, sql } = require('../Shared/connection-pool')
   const Context = require('../testing/mocks/defaultContext')
   const message = require('../testing/mocks/defaultMessage')
+  const Connection = require('../Shared/connection-pool')
   const messageFunction = require('./index')
   const fetch = require('node-fetch')
+  const sql = require('mssql')
   const fs = require('fs')
+
   const JSONFILE = 'application/javascript'
   const STATUS_TEXT_NOT_FOUND = 'Not found'
   const STATUS_CODE_200 = 200
@@ -12,27 +14,30 @@ module.exports = describe('Refresh forecast location data tests', () => {
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
-
-  let request
-  let context
   jest.mock('node-fetch')
+
+  let context
+
+  const jestConnection = new Connection()
+  const pool = jestConnection.pool
+  const request = new sql.Request(pool)
 
   describe('The refresh forecast location data function:', () => {
     beforeAll(() => {
+      const pooledConnect = jestConnection.pooledConnect
       return pooledConnect
-    })
-
-    beforeAll(() => {
-      request = new sql.Request(pool)
-      return request
     })
 
     beforeEach(() => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
-
       context = new Context()
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
+    })
+
+    afterAll(() => {
+      // Closing the DB connection allows Jest to exit successfully.
+      return pool.close()
     })
 
     it('should ignore an empty CSV file', async () => {

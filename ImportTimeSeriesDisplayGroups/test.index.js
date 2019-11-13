@@ -1,19 +1,23 @@
 module.exports = describe('Tests for import timeseries display groups', () => {
-  const axios = require('axios')
-  const moment = require('moment')
-  const Context = require('../testing/mocks/defaultContext')
-  const messageFunction = require('./index')
   const taskRunCompleteMessages = require('../testing/messages/task-run-complete/messages')
-  const { pool, sql } = require('../Shared/connection-pool')
+  const Context = require('../testing/mocks/defaultContext')
+  const Connection = require('../Shared/connection-pool')
+  const messageFunction = require('./index')
+  const moment = require('moment')
+  const axios = require('axios')
+  const sql = require('mssql')
 
-  let request
   let context
   jest.mock('axios')
 
+  const jestConnection = new Connection()
+  const pool = jestConnection.pool
+  const request = new sql.Request(pool)
+
   describe('Message processing for task run completion', () => {
     beforeAll(() => {
-      request = new sql.Request(pool)
-      return request
+      const pooledConnect = jestConnection.pooledConnect
+      return pooledConnect
     })
 
     beforeAll(() => {
@@ -52,6 +56,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // function implementation for the function context needs creating for each test.
       context = new Context()
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
+    })
+
+    afterAll(() => {
+      // Closing the DB connection allows Jest to exit successfully.
+      return pool.close()
     })
 
     it('should import data for a single plot associated with an approved forecast', async () => {

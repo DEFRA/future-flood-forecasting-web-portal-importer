@@ -2,10 +2,12 @@ module.exports =
   describe('Refresh location lookup data tests', () => {
     const message = require('../testing/mocks/defaultMessage')
     const Context = require('../testing/mocks/defaultContext')
+    const Connection = require('../Shared/connection-pool')
     const messageFunction = require('./index')
     const fetch = require('node-fetch')
     const sql = require('mssql')
     const fs = require('fs')
+
     const JSONFILE = 'application/javascript'
     const STATUS_TEXT_NOT_FOUND = 'Not found'
     const STATUS_CODE_200 = 200
@@ -16,8 +18,6 @@ module.exports =
     jest.mock('node-fetch')
 
     let context
-
-    const Connection = require('../Shared/connection-pool')
 
     const jestConnection = new Connection()
     const pool = jestConnection.pool
@@ -32,8 +32,6 @@ module.exports =
       beforeEach(() => {
         // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
         // function implementation for the function context needs creating for each test.
-        // The SQL TRUNCATE TABLE statement is used to remove all records from a table
-        // let sql = jestConnection.sql
         context = new Context()
         return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
       })

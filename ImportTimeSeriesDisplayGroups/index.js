@@ -1,30 +1,30 @@
 const moment = require('moment')
 const axios = require('axios')
-const { pool, pooledConnect, sql } = require('../Shared/connection-pool')
+const sql = require('mssql')
 const { doInTransaction } = require('../Shared/transaction-helper')
 
 module.exports = async function (context, message) {
-  // Ensure the connection pool is ready
-  await pooledConnect(pool)
-  const proceedWithImport = await isTaskRunApproved(message)
-  if (proceedWithImport) {
-    const workflowId = await getWorkflowId(message)
-    const locationLookupData = await doInTransaction(getLocationLookupData, context, null, workflowId, message)
-    const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
-    await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context)
-  } else {
-    context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
+  async function timeseriesRefresh (transactionData) {
+    const proceedWithImport = await isTaskRunApproved(message, context, transactionData.preparedStatement)
+    if (proceedWithImport) {
+      const workflowId = await getWorkflowId(message, context, transactionData.preparedStatement)
+      const locationLookupData = await getLocationLookupData(transactionData, workflowId, message, context, transactionData.preparedStatement)
+      const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
+      await loadTimeseriesDisplayGroups(timeSeriesDisplayGroupsData, context, transactionData.preparedStatement)
+    } else {
+      context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
+    }
+
+    sql.on('error', err => {
+      context.log.error(err)
+      throw err
+    })
+    // done() not requried as the async function returns the desired result, there is no output binding to be activated.
+    // context.done()
   }
-
-  sql.on('error', err => {
-    context.log.error(err)
-    throw err
-  })
-  // done() not requried as the async function returns the desired result, there is no output binding to be activated.
-  // context.done()
+  await doInTransaction(timeseriesRefresh, context, null)
 }
-
-async function extract (message, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject) {
+async function extract (message, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject, context, preparedStatement) {
   const matches = regex.exec(message)
   // If the message contains the expected number of matches from the specified regular expression return
   // the match indicated by the caller.
@@ -34,26 +34,26 @@ async function extract (message, regex, expectedNumberOfMatches, matchIndexToRet
     // If regular expression matching did not complete successfully, the message is not in an expected
     // format and cannot be replayed. In this case intervention is needed so create a staging
     // exception.
-    await createStagingException(message, `Unable to extract ${errorMessageSubject} from message`)
+    await createStagingException(message, `Unable to extract ${errorMessageSubject} from message`, context, preparedStatement)
   }
 }
 
-async function isTaskRunApproved (message) {
+async function isTaskRunApproved (message, context, preparedStatement) {
   const isMadeCurrentManuallyMessage = 'is made current manually'
   // Test for automatic and manual task run approval.
   const taskRunApprovedRegex = new RegExp(`(?:Approved: )True|False|${isMadeCurrentManuallyMessage}`, 'i')
   const taskRunApprovedText = 'task run approval status'
-  const taskRunApprovedString = await extract(message, taskRunApprovedRegex, 1, 0, taskRunApprovedText)
+  const taskRunApprovedString = await extract(message, taskRunApprovedRegex, 1, 0, taskRunApprovedText, context, preparedStatement)
   return taskRunApprovedString && !!taskRunApprovedString.match(new RegExp(`true|${isMadeCurrentManuallyMessage}`, 'i'))
 }
 
-async function getWorkflowId (message) {
+async function getWorkflowId (message, context, preparedStatement) {
   const workflowIdRegex = /task(?: run)? ([^ ]*) /i
   const workflowIdText = 'workflow ID'
-  return extract(message, workflowIdRegex, 2, 1, workflowIdText)
+  return extract(message, workflowIdRegex, 2, 1, workflowIdText, context, preparedStatement)
 }
 
-async function getLocationLookupData (transactionData, workflowId, message) {
+async function getLocationLookupData (transactionData, workflowId, message, context, preparedStatement) {
   const locationLookupData = {}
   await transactionData.preparedStatement.input('workflowId', sql.NVarChar)
 
@@ -81,11 +81,15 @@ async function getLocationLookupData (transactionData, workflowId, message) {
   for (const record of locationLookupResponse.recordset) {
     locationLookupData[record.plot_id] = record.location_ids
   }
+  // this statement has to be before another call to a funciton using a prepared statement
+  if (preparedStatement && preparedStatement.prepared) {
+    await preparedStatement.unprepare()
+  }
 
   if (Object.keys(locationLookupData).length === 0) {
     // If no location lookup data is available the message is not replayable
     // without intervention so create a staging exception.
-    await createStagingException(message, `Missing location_lookup data for ${workflowId}`)
+    await createStagingException(message, `Missing location_lookup data for ${workflowId}`, context, preparedStatement)
   }
 
   return locationLookupData
@@ -119,7 +123,7 @@ async function getTimeseriesDisplayGroups (locationLookupData) {
 
     // Get the timeseries display groups for the configured plot, locations and date range.
     const fewsPiEndpoint =
-     `${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
+      `${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
         &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`
 
     const fewsResponse = await axios.get(fewsPiEndpoint)
@@ -128,9 +132,7 @@ async function getTimeseriesDisplayGroups (locationLookupData) {
   return data
 }
 
-async function loadTimeseriesDisplayGroups (data, context) {
-  const preparedStatement = new sql.PreparedStatement(pool)
-
+async function loadTimeseriesDisplayGroups (data, context, preparedStatement) {
   try {
     await preparedStatement.input('timeseries', sql.NVarChar)
     await preparedStatement.input('startTime', sql.DateTime2)
@@ -163,13 +165,13 @@ async function loadTimeseriesDisplayGroups (data, context) {
       if (preparedStatement) {
         await preparedStatement.unprepare()
       }
-    } catch (err) {}
+    } catch (err) {
+      context.log(err)
+    }
   }
 }
 
-async function createStagingException (payload, description, context) {
-  const preparedStatement = new sql.PreparedStatement(pool)
-
+async function createStagingException (payload, description, context, preparedStatement) {
   try {
     await preparedStatement.input('payload', sql.NVarChar)
     await preparedStatement.input('description', sql.NVarChar)
@@ -195,6 +197,8 @@ async function createStagingException (payload, description, context) {
       if (preparedStatement) {
         await preparedStatement.unprepare()
       }
-    } catch (err) {}
+    } catch (err) {
+      context.log(err)
+    }
   }
 }

@@ -1,7 +1,7 @@
+const { doInTransaction } = require('../Shared/transaction-helper')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
-const { sql } = require('../Shared/connection-pool')
-const { doInTransaction } = require('../Shared/transaction-helper')
+const sql = require('mssql')
 
 module.exports = async function (context, message) {
   async function refresh (transactionData) {
