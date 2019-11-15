@@ -24,8 +24,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
 
   describe('The refresh forecast location data function:', () => {
     beforeAll(() => {
-      const pooledConnect = jestConnection.pooledConnect
-      return pooledConnect
+      return jestConnection.pool.connect()
     })
 
     beforeEach(() => {

@@ -20,6 +20,7 @@ module.exports = async function (context, message) {
     context.log.error(err)
     throw err
   })
+  // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
 async function refreshForecastLocationData (preparedStatement, transaction, context) {

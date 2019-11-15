@@ -25,8 +25,7 @@ module.exports =
 
     describe('The refresh location lookup data function:', () => {
       beforeAll(() => {
-        const pooledConnect = jestConnection.pooledConnect
-        return pooledConnect
+        return jestConnection.pool.connect()
       })
 
       beforeEach(() => {
@@ -40,7 +39,7 @@ module.exports =
         // As the jestConnection pool is only closed at the end of the test suite the global temporary table used by each function
         // invocation needs to be dropped manually between each test case.
         // console.log(pool)
-        return request.batch(`drop table if exists ##location_lookup_temp`)
+        return request.batch(`drop table if exists #location_lookup_temp`)
       })
 
       afterAll(() => {

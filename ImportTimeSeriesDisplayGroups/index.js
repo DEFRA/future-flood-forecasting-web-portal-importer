@@ -19,10 +19,9 @@ module.exports = async function (context, message) {
       context.log.error(err)
       throw err
     })
-    // done() not requried as the async function returns the desired result, there is no output binding to be activated.
-    // context.done()
   }
   await doInTransaction(timeseriesRefresh, context, null)
+  // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 async function extract (message, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject, context, preparedStatement) {
   const matches = regex.exec(message)
@@ -198,7 +197,7 @@ async function createStagingException (payload, description, context, preparedSt
         await preparedStatement.unprepare()
       }
     } catch (err) {
-      context.log(err)
+      context.log.error(err)
     }
   }
 }

@@ -7,8 +7,6 @@ module.exports = async function (context, message) {
   async function refresh (transactionData) {
     await createLocationLookupTemporaryTable(new sql.Request(transactionData.transaction), context)
     await populateLocationLookupTemporaryTable(transactionData.preparedStatement, context)
-    // Future requests will fail until the prepared statement is unprepared.
-    await transactionData.preparedStatement.unprepare()
     await refreshLocationLookupTable(new sql.Request(transactionData.transaction), context)
   }
 
@@ -24,25 +22,20 @@ module.exports = async function (context, message) {
     context.log.error(err)
     throw err
   })
+  // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
 async function createLocationLookupTemporaryTable (request, context) {
-  try {
-    // Create a global temporary table to hold location lookup CSV data.
-    await request.batch(`
-      create table ##location_lookup_temp
+  // Create a local temporary table to hold location lookup CSV data.
+  await request.batch(`
+      create table #location_lookup_temp
       (
         id uniqueidentifier not null default newid(),
         workflow_id nvarchar(64) not null,
         plot_id nvarchar(64) not null,
         location_id nvarchar(64) not null
-        constraint pk_location_lookup_temp primary key(id)
       )
     `)
-  } catch (err) {
-    context.log.error(err)
-    throw err
-  }
 }
 
 async function populateLocationLookupTemporaryTable (preparedStatement, context) {
@@ -53,7 +46,7 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.input('plotId', sql.NVarChar)
   await preparedStatement.input('locationId', sql.NVarChar)
-  await preparedStatement.prepare(`insert into ##location_lookup_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
+  await preparedStatement.prepare(`insert into #location_lookup_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
 
   for (const row of rows) {
     // Ignore rows in the CSV data that do not have entries for all columns.
@@ -65,10 +58,12 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
       })
     }
   }
+  // Future requests will fail until the prepared statement is unprepared.
+  await preparedStatement.unprepare()
 }
 
 async function refreshLocationLookupTable (request, context) {
-  const recordCountResponse = await request.query(`select count(*) as number from ##location_lookup_temp`)
+  const recordCountResponse = await request.query(`select count(*) as number from #location_lookup_temp`)
   // Do not refresh the location lookup table if the global temporary table is empty.
   if (recordCountResponse.recordset[0].number > 0) {
     await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
@@ -80,13 +75,13 @@ async function refreshLocationLookupTable (request, context) {
             plot_id,
             string_agg(location_id, ';')
           from
-            ##location_lookup_temp
+            #location_lookup_temp
           group by
             workflow_id,
             plot_id
       `)
   } else {
-    context.log.warn('##location_lookup_temp contains no records - Aborting location_lookup refresh')
+    context.log.warn('#location_lookup_temp contains no records - Aborting location_lookup refresh')
   }
   const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
   context.log.info(`The location_lookup table contains ${result.recordset[0].number} records`)
