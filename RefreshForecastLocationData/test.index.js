@@ -17,6 +17,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
   jest.mock('node-fetch')
 
   let context
+  let dummyData
 
   const jestConnection = new Connection()
   const pool = jestConnection.pool
@@ -34,6 +35,23 @@ module.exports = describe('Refresh forecast location data tests', () => {
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
     })
 
+    beforeEach(() => {
+      dummyData = {
+        Centre: 'dummyData',
+        MFDOArea: 'dummyData',
+        Catchemnt: 'dummyData',
+        FFFSLocID: 'dummyData',
+        FFFSLocName: 'dummyData',
+        PlotId: 'dummyData',
+        DRNOrder: 123
+      }
+      return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123)`)
+    })
+
+    afterAll(() => {
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
+    })
+
     afterAll(() => {
       // Closing the DB connection allows Jest to exit successfully.
       return pool.close()
@@ -47,8 +65,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
-
+      const expectedForecastLocationData = [dummyData]
+      // Caught be if length = 0 statement
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
     })
 
@@ -60,8 +78,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
-
+      const expectedForecastLocationData = [dummyData]
+      // Caught be if length = 0 statment
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
     })
 
@@ -95,9 +113,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should ignore rows that contains values exceeding a specified limit', async () => {
@@ -130,9 +148,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should ignore a csv that has no header row, only data rows', async () => {
@@ -143,9 +161,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should ignore a csv that has a missing header row', async () => {
@@ -156,9 +174,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should ignore a csv that has a misspelled header row', async () => {
@@ -169,9 +187,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should not refresh when a non-csv file is supplied', async () => {
@@ -182,9 +200,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: JSONFILE
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should refresh given a valid CSV file', async () => {
@@ -217,7 +235,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
     })
 
-    it('should not refresh given a valid CSV file with null values in some row cells', async () => {
+    it('should not refresh given a valid CSV file with null values in some of all row cells', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'empty-values-in-data-rows.csv',
@@ -225,9 +243,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedForecastLocationData = []
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -238,9 +256,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         filename: '404-html.html'
       }
 
-      const expectedLocationLookupData = []
+      const expectedLocationLookupData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedLocationLookupData)
     })
 
     it('should throw an exception when the csv server is unavailable', async () => {
@@ -275,6 +293,15 @@ module.exports = describe('Refresh forecast location data tests', () => {
     await checkExpectedResults(expectedForecastLocationData)
   }
 
+  // The following function us used in scenarios where a csv is succeaafully processed but due to errors in the csv will end up attempting
+  // to insert nothing into the database. This is caught and rejected in the function code (hence expecting this error/rejection).
+  async function refreshForecastLocationDataAndCheckRejectionResults (mockResponseData, expectedForecastLocationData) {
+    let expectedError = new Error(`A null database overwrite is not allowed`)
+    await mockFetchResponse(mockResponseData)
+    await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+    await checkExpectedResults(expectedForecastLocationData)
+  }
+
   async function mockFetchResponse (mockResponseData) {
     let mockResponse = {}
     mockResponse = {
@@ -296,7 +323,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     let expectedNumberOfRows = expectedForecastLocationData.length
 
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
-    context.log(`database row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
+    context.log(`Live data row count: ${result.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
       // FFFSLOCID from expected data

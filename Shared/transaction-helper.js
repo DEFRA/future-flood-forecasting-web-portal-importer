@@ -35,9 +35,14 @@ module.exports = {
       if (preparedStatement && preparedStatement.prepared) {
         await preparedStatement.unprepare()
       }
-      if (transaction) {
+      // Check whether the transaction has been automatically aborted
+      if (transaction._aborted) {
+        transactionRolledBack = true // position?
+        context.log.warn('The transaction has been aborted.')
+      } else {
+        transactionRolledBack = true // position?
         await transaction.rollback()
-        transactionRolledBack = true
+        context.log.warn('The transaction has been rolled back.')
       }
       throw err
     } finally {

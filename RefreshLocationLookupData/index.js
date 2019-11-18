@@ -16,7 +16,12 @@ module.exports = async function (context, message) {
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refresh, context, sql.ISOLATION_LEVEL.SERIALIZABLE)
+  try {
+    await doInTransaction(refresh, context, sql.ISOLATION_LEVEL.SERIALIZABLE)
+  } catch (err) {
+    context.log.error(`Transaction failed: The location_lookup refresh has failed with the following error: ${err}`)
+    throw err
+  }
 
   sql.on('error', err => {
     context.log.error(err)
@@ -39,36 +44,42 @@ async function createLocationLookupTemporaryTable (request, context) {
 }
 
 async function populateLocationLookupTemporaryTable (preparedStatement, context) {
-  // Use the fetch API to retrieve the CSV data as a stream and then parse it
-  // into rows ready for insertion into the local temporary table.
-  const response = await fetch(`${process.env['LOCATION_LOOKUP_URL']}`)
-  let rows = await neatCsv(response.body)
-  await preparedStatement.input('workflowId', sql.NVarChar)
-  await preparedStatement.input('plotId', sql.NVarChar)
-  await preparedStatement.input('locationId', sql.NVarChar)
-  await preparedStatement.prepare(`insert into #location_lookup_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
+  try {
+    // Use the fetch API to retrieve the CSV data as a stream and then parse it
+    // into rows ready for insertion into the local temporary table.
+    const response = await fetch(`${process.env['LOCATION_LOOKUP_URL']}`)
+    let rows = await neatCsv(response.body)
+    await preparedStatement.input('workflowId', sql.NVarChar)
+    await preparedStatement.input('plotId', sql.NVarChar)
+    await preparedStatement.input('locationId', sql.NVarChar)
+    await preparedStatement.prepare(`insert into #location_lookup_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
 
-  for (const row of rows) {
-    // Ignore rows in the CSV data that do not have entries for all columns.
-    if (row.WorkflowID && row.PlotID && row.FFFSLocID) {
-      await preparedStatement.execute({
-        workflowId: row.WorkflowID,
-        plotId: row.PlotID,
-        locationId: row.FFFSLocID
-      })
+    for (const row of rows) {
+      // Ignore rows in the CSV data that do not have entries for all columns.
+      if (row.WorkflowID && row.PlotID && row.FFFSLocID) {
+        await preparedStatement.execute({
+          workflowId: row.WorkflowID,
+          plotId: row.PlotID,
+          locationId: row.FFFSLocID
+        })
+      }
+      // Future requests will fail until the prepared statement is unprepared.
+      await preparedStatement.unprepare()
     }
+  } catch (err) {
+    context.log.error(`Populate temp location loookup table failed: ${err}`)
+    throw err
   }
-  // Future requests will fail until the prepared statement is unprepared.
-  await preparedStatement.unprepare()
 }
 
 async function refreshLocationLookupTable (request, context) {
-  const recordCountResponse = await request.query(`select count(*) as number from #location_lookup_temp`)
-  // Do not refresh the location lookup table if the local temporary table is empty.
-  if (recordCountResponse.recordset[0].number > 0) {
-    await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
-    // Concatenate all locations for each combination of workflow ID and plot ID.
-    await request.query(`
+  try {
+    const recordCountResponse = await request.query(`select count(*) as number from #location_lookup_temp`)
+    // Do not refresh the location lookup table if the local temporary table is empty.
+    if (recordCountResponse.recordset[0].number > 0) {
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+      // Concatenate all locations for each combination of workflow ID and plot ID.
+      await request.query(`
         insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup (workflow_id, plot_id, location_ids)
           select
             workflow_id,
@@ -80,9 +91,13 @@ async function refreshLocationLookupTable (request, context) {
             workflow_id,
             plot_id
       `)
-  } else {
-    context.log.warn('#location_lookup_temp contains no records - Aborting location_lookup refresh')
+    } else {
+      context.log.warn('#location_lookup_temp contains no records - Aborting location_lookup refresh')
+    }
+    const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+    context.log.info(`The location_lookup table contains ${result.recordset[0].number} records`)
+  } catch (err) {
+    context.log.error(`Refresh location lookup data failed: ${err}`)
+    throw err
   }
-  const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
-  context.log.info(`The location_lookup table contains ${result.recordset[0].number} records`)
 }
