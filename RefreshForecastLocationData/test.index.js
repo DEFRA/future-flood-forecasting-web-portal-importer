@@ -293,8 +293,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
     await checkExpectedResults(expectedForecastLocationData)
   }
 
-  // The following function us used in scenarios where a csv is succeaafully processed but due to errors in the csv will end up attempting
-  // to insert nothing into the database. This is caught and rejected in the function code (hence expecting this error/rejection).
+  // The following function is used in scenarios where a csv is successfully processed, but due to errors in the csv the app will then
+  // attempt to overwrite and insert nothing into the database. This is caught and rejected in the function code (hence expecting this error/rejection).
   async function refreshForecastLocationDataAndCheckRejectionResults (mockResponseData, expectedForecastLocationData) {
     let expectedError = new Error(`A null database overwrite is not allowed`)
     await mockFetchResponse(mockResponseData)
