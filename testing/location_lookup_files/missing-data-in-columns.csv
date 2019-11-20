@@ -1,4 +1,4 @@
-PlotId,FFFSLocID,WorkflowId
+PlotID,FFFSLocID,WorkflowID
 plot1,workflow1
 plot1,location1,workflow2
 plot2,location1
