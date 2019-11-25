@@ -40,7 +40,7 @@ async function createLocationLookupTemporaryTable (request, context) {
 
 async function populateLocationLookupTemporaryTable (preparedStatement, context) {
   // Use the fetch API to retrieve the CSV data as a stream and then parse it
-  // into rows ready for insertion into the global temporary table.
+  // into rows ready for insertion into the local temporary table.
   const response = await fetch(`${process.env['LOCATION_LOOKUP_URL']}`)
   let rows = await neatCsv(response.body)
   await preparedStatement.input('workflowId', sql.NVarChar)
@@ -64,7 +64,7 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
 
 async function refreshLocationLookupTable (request, context) {
   const recordCountResponse = await request.query(`select count(*) as number from #location_lookup_temp`)
-  // Do not refresh the location lookup table if the global temporary table is empty.
+  // Do not refresh the location lookup table if the local temporary table is empty.
   if (recordCountResponse.recordset[0].number > 0) {
     await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
     // Concatenate all locations for each combination of workflow ID and plot ID.

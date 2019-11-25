@@ -25,7 +25,7 @@ module.exports =
 
     describe('The refresh location lookup data function:', () => {
       beforeAll(() => {
-        return jestConnection.pool.connect()
+        return pool.connect()
       })
 
       beforeEach(() => {

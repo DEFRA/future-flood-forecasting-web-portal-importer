@@ -13,7 +13,7 @@ module.exports = {
 
     try {
       // Begin the connection to the DB and ensure the connection pool is ready
-      await connection.pool.connect()
+      await pool.connect()
       await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)
       // The transaction is created immediately for use
       transaction = new sql.Transaction(pool)

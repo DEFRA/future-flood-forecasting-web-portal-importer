@@ -24,7 +24,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
 
   describe('The refresh forecast location data function:', () => {
     beforeAll(() => {
-      return jestConnection.pool.connect()
+      return pool.connect()
     })
 
     beforeEach(() => {
@@ -310,12 +310,16 @@ module.exports = describe('Refresh forecast location data tests', () => {
         let DRNOrder = row.DRNOrder
 
         const databaseResult = await request.query(`
-      select count(*) 
-      as number 
-      from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION
-      where CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
-      and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' 
-      and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
+      select 
+       count(*) 
+      as 
+        number 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION
+      where 
+        CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
+        and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' 
+        and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
       and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)

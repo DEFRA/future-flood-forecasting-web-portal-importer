@@ -16,7 +16,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   describe('Message processing for task run completion', () => {
     beforeAll(() => {
-      return jestConnection.pool.connect()
+      return pool.connect()
     })
 
     beforeAll(() => {
