@@ -63,9 +63,9 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
           locationId: row.FFFSLocID
         })
       }
-      // Future requests will fail until the prepared statement is unprepared.
-      await preparedStatement.unprepare()
     }
+    // Future requests will fail until the prepared statement is unprepared.
+    await preparedStatement.unprepare()
   } catch (err) {
     context.log.error(`Populate temp location loookup table failed: ${err}`)
     throw err
