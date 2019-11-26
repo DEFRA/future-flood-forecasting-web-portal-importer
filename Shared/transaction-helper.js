@@ -2,7 +2,7 @@ const Connection = require('../Shared/connection-pool')
 const sql = require('mssql')
 
 module.exports = {
-  doInTransaction: async function (fn, context, isolationLevel, ...args) {
+  doInTransaction: async function (fn, context, errorMessage, isolationLevel, ...args) {
     const connection = new Connection()
     const pool = connection.pool
     const request = new sql.Request(pool)
@@ -32,17 +32,18 @@ module.exports = {
       // through the arguments from the caller.
       return await fn(transactionData, ...args)
     } catch (err) {
+      context.log.error(`Transaction failed: ${errorMessage} ${err}`)
       if (preparedStatement && preparedStatement.prepared) {
         await preparedStatement.unprepare()
       }
       // Check whether the transaction has been automatically aborted
       if (transaction._aborted) {
-        context.log.warn('The transaction has been aborted.')
         transactionRolledBack = true
+        context.log.warn('The transaction has been aborted.')
       } else {
         transactionRolledBack = true
-        context.log.warn('The transaction has been rolled back.')
         await transaction.rollback()
+        context.log.warn('The transaction has been rolled back.')
       }
       throw err
     } finally {
