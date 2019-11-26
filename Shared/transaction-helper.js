@@ -37,12 +37,12 @@ module.exports = {
       }
       // Check whether the transaction has been automatically aborted
       if (transaction._aborted) {
-        transactionRolledBack = true // position?
         context.log.warn('The transaction has been aborted.')
+        transactionRolledBack = true
       } else {
-        transactionRolledBack = true // position?
-        await transaction.rollback()
+        transactionRolledBack = true
         context.log.warn('The transaction has been rolled back.')
+        await transaction.rollback()
       }
       throw err
     } finally {

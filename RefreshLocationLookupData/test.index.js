@@ -220,7 +220,7 @@ module.exports =
       })
 
       it('should throw an exception when the csv server is unavailable', async () => {
-        let expectedError = new Error(`connect ECONNREFUSED mockhost`)
+        const expectedError = new Error(`connect ECONNREFUSED mockhost`)
         fetch.mockImplementation(() => {
           throw new Error('connect ECONNREFUSED mockhost')
         })

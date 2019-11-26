@@ -31,12 +31,12 @@ module.exports = async function (context, message) {
 async function refreshForecastLocationData (preparedStatement, transaction, context) {
   try {
     const response = await fetch(`${process.env['FORECAST_LOCATION_URL']}`)
-    let rows = await neatCsv(response.body)
+    const rows = await neatCsv(response.body)
     const recordCountResponse = rows.length
 
     // Do not refresh the forecast location table if the csv is empty.
     if (recordCountResponse > 0) {
-      let request = new sql.Request(transaction)
+      const request = new sql.Request(transaction)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
 
       await preparedStatement.input('CENTRE', sql.NVarChar)
@@ -70,7 +70,7 @@ async function refreshForecastLocationData (preparedStatement, transaction, cont
     } else {
       context.log.warn('No records detected - Aborting forecast_location refresh')
     }
-    let request = new sql.Request(transaction)
+    const request = new sql.Request(transaction)
     const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
     context.log.info(`The forecast_location table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {

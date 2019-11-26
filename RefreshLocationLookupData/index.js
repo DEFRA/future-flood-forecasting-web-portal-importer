@@ -48,7 +48,7 @@ async function populateLocationLookupTemporaryTable (preparedStatement, context)
     // Use the fetch API to retrieve the CSV data as a stream and then parse it
     // into rows ready for insertion into the local temporary table.
     const response = await fetch(`${process.env['LOCATION_LOOKUP_URL']}`)
-    let rows = await neatCsv(response.body)
+    const rows = await neatCsv(response.body)
     await preparedStatement.input('workflowId', sql.NVarChar)
     await preparedStatement.input('plotId', sql.NVarChar)
     await preparedStatement.input('locationId', sql.NVarChar)

@@ -66,7 +66,6 @@ module.exports = describe('Refresh forecast location data tests', () => {
       }
 
       const expectedForecastLocationData = [dummyData]
-      // Caught be if length = 0 statement
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
     })
 
@@ -79,7 +78,6 @@ module.exports = describe('Refresh forecast location data tests', () => {
       }
 
       const expectedForecastLocationData = [dummyData]
-      // Caught be if length = 0 statment
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
     })
 
@@ -262,7 +260,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     })
 
     it('should throw an exception when the csv server is unavailable', async () => {
-      let expectedError = new Error(`connect ECONNREFUSED mockhost`)
+      const expectedError = new Error(`connect ECONNREFUSED mockhost`)
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
@@ -296,7 +294,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
   // The following function is used in scenarios where a csv is successfully processed, but due to errors in the csv the app will then
   // attempt to overwrite and insert nothing into the database. This is caught and rejected in the function code (hence expecting this error/rejection).
   async function refreshForecastLocationDataAndCheckRejectionResults (mockResponseData, expectedForecastLocationData) {
-    let expectedError = new Error(`A null database overwrite is not allowed`)
+    const expectedError = new Error(`A null database overwrite is not allowed`)
     await mockFetchResponse(mockResponseData)
     await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
     await checkExpectedResults(expectedForecastLocationData)
@@ -320,7 +318,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
        as number
        from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION
        `)
-    let expectedNumberOfRows = expectedForecastLocationData.length
+    const expectedNumberOfRows = expectedForecastLocationData.length
 
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Live data row count: ${result.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
@@ -328,13 +326,13 @@ module.exports = describe('Refresh forecast location data tests', () => {
     if (expectedNumberOfRows > 0) {
       // FFFSLOCID from expected data
       for (const row of expectedForecastLocationData) {
-        let Centre = row.Centre
-        let MFDOArea = row.MFDOArea
-        let Catchment = row.Catchemnt
-        let FFFSLocID = row.FFFSLocID
-        let FFFSLocName = row.FFFSLocName
-        let PlotId = row.PlotId
-        let DRNOrder = row.DRNOrder
+        const Centre = row.Centre
+        const MFDOArea = row.MFDOArea
+        const Catchment = row.Catchemnt
+        const FFFSLocID = row.FFFSLocID
+        const FFFSLocName = row.FFFSLocName
+        const PlotId = row.PlotId
+        const DRNOrder = row.DRNOrder
 
         const databaseResult = await request.query(`
       select 
