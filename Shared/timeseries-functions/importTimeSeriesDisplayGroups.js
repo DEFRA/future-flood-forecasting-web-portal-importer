@@ -3,48 +3,17 @@ const axios = require('axios')
 const sql = require('mssql')
 const createStagingException = require('../create-staging-exception')
 
-module.exports = async function timeseriesRefresh (context, message, workflowId, preparedStatement) {
-  const locationLookupData = await getLocationLookupData(context, message, workflowId, preparedStatement)
+module.exports = async function timeseriesRefresh (context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement) {
+  const locationLookupData = await getLocationLookupData(context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement)
   const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(locationLookupData)
   await loadTimeseriesDisplayGroups(context, timeSeriesDisplayGroupsData, preparedStatement)
-
-  sql.on('error', err => {
-    context.log.error(err)
-    throw err
-  })
 }
 
-async function getLocationLookupData (context, message, workflowId, preparedStatement) {
+async function getLocationLookupData (context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement) {
   const locationLookupData = {}
-  await preparedStatement.input('workflowId', sql.NVarChar)
 
-  // Run the query to retrieve location lookup data in a read only transaction with a table lock held
-  // for the duration of the transaction to guard against a location lookup data refresh during
-  // data retrieval.
-  await preparedStatement.prepare(`
-    select
-      plot_id,
-      location_ids
-    from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup
-    with
-      (tablock holdlock)
-    where
-      workflow_id = @workflowId
-  `)
-
-  const parameters = {
-    workflowId: workflowId
-  }
-
-  const locationLookupResponse = await preparedStatement.execute(parameters)
-
-  for (const record of locationLookupResponse.recordset) {
+  for (const record of fluvialDisplayGroupWorkflowsResponse.recordset) {
     locationLookupData[record.plot_id] = record.location_ids
-  }
-  // this statement has to be before another call to a funciton using a prepared statement
-  if (preparedStatement && preparedStatement.prepared) {
-    await preparedStatement.unprepare()
   }
 
   if (Object.keys(locationLookupData).length === 0) {

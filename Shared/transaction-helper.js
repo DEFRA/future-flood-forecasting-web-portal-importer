@@ -12,6 +12,10 @@ module.exports = {
     let preparedStatement
 
     try {
+      sql.on('error', err => {
+        context.log.error(err)
+        throw err
+      })
       // Begin the connection to the DB and ensure the connection pool is ready
       await pool.connect()
       await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)

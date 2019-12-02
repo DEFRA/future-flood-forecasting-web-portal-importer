@@ -15,11 +15,6 @@ module.exports = async function (context, message) {
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
   await doInTransaction(refresh, context, 'The forecast_location refresh has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
-
-  sql.on('error', err => {
-    context.log.error(err)
-    throw err
-  })
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
