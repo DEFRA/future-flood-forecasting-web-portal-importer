@@ -1,4 +1,4 @@
-const extract = require('./extract')
+const extract = require('../../Shared/extract')
 
 module.exports = async function isTaskRunApproved (context, message, preparedStatement) {
   const isMadeCurrentManuallyMessage = 'is made current manually'

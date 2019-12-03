@@ -1,4 +1,4 @@
-const extract = require('./extract')
+const extract = require('../../Shared/extract')
 
 module.exports = async function getWorkflowId (context, message, preparedStatement) {
   const workflowIdRegex = /task(?: run)? ([^ ]*) /i

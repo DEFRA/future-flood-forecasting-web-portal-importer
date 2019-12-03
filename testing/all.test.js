@@ -27,5 +27,6 @@ describe('Run all unit tests in sequence', () => {
 
   require('../RefreshLocationLookupData/test.index')
   require('../RefreshForecastLocationData/test.index')
-  require('../ImportTimeseriesRouter/test.index')
+  require('../ImportTimeseriesRouter/test.timeseries.index')
+  require('../ImportTimeseriesRouter/test.timeseriesDisplayGroup.index')
 })
