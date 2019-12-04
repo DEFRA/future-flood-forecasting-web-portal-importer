@@ -8,8 +8,7 @@ if [ -d "testing/coverage" ]; then
 rm -r testing/coverage
 echo -e "******* The most recent unit test 'coverage' folder has been removed.\n*\n******* Running a new unit test suite."
 fi
-# npm run lint && testing/staging-database/bootstrap.sh && 
-jest --config jestconfig.json
+npm run lint && testing/staging-database/bootstrap.sh && jest --config jestconfig.json
 exitCode=$?
-# testing/staging-database/cleanup.sh
+testing/staging-database/cleanup.sh
 exit ${exitCode}

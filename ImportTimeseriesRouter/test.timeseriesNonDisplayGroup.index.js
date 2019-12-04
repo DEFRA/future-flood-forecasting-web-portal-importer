@@ -253,4 +253,3 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     }
   }
 })
-
