@@ -1,5 +1,5 @@
 module.exports = describe('Tests for import timeseries display groups', () => {
-  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/messages')
+  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/non-display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
   const messageFunction = require('./index')
@@ -20,6 +20,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
 
     beforeAll(() => {
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+    })
+
+    beforeAll(() => {
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
     })
 
@@ -37,7 +41,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         insert into
           ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id)
         values
-          ('Test_Workflow2', 'Test Filter2')
+          ('Test_Workflow2', 'Test Filter2a')
       `)
     })
 
@@ -46,7 +50,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         insert into
           ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id)
         values
-          ('Test_Workflow3', 'Test Filter3')
+          ('Test_Workflow2', 'Test Filter2b')
       `)
     })
 
@@ -58,19 +62,27 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
 
     afterAll(() => {
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+    })
+
+    afterAll(() => {
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
+    })
+
+    afterAll(() => {
       // Closing the DB connection allows Jest to exit successfully.
       return pool.close()
     })
 
-    it('should import data for a single plot associated with an approved forecast', async () => {
+    it('should import data for a single filter associated with an approved forecast', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+      await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
     })
-    it('should import data for multiple plots associated with an approved forecast', async () => {
+    it('should import data for multiple filters associated with an approved forecast', async () => {
       const mockResponses = [{
         data: {
           key: 'First plot timeseries display groups data'
@@ -81,7 +93,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Second plot timeseries display groups data'
         }
       }]
-      await processMessageAndCheckImportedData('multiplePlotApprovedForecast', mockResponses)
+      await processMessageAndCheckImportedData('multipleFilterApprovedForecast', mockResponses)
     })
     it('should not import data for an unapproved forecast', async () => {
       await processMessageAndCheckNoDataIsImported('unapprovedForecast')
@@ -104,7 +116,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
             key: 'Timeseries display groups data'
           }
         }
-        await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+        await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
       } finally {
         process.env = originalEnvironment
       }
@@ -112,7 +124,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
-      await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing location_lookup data for ${workflowId}`)
+      await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing timeseries data for ${workflowId}`)
     })
     it('should create a staging exception for an invalid message', async () => {
       await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
@@ -121,24 +133,24 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
       // an exception is thrown to facilitate this process.
       const mockResponse = new Error('connect ECONNREFUSED mockhost')
-      await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+      await processMessageAndCheckExceptionIsThrown('singleFilterApprovedForecast', mockResponse)
     })
     it('should create a staging exception when a core engine PI server resource is unavailable', async () => {
       // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably elgible for replay a certain number of times so
       // check that an exception is thrown to facilitate this process. If misconfiguration has occurred, the maximum number
       // of replays will be reached and the message will be transferred to a dead letter queue for manual intervetion.
       const mockResponse = new Error('Request failed with status code 404')
-      await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+      await processMessageAndCheckExceptionIsThrown('singleFilterApprovedForecast', mockResponse)
     })
-    it('should throw an exception when the location lookup table is being refreshed', async () => {
-      // If the location lookup table is being refreshed messages are elgible for replay a certain number of times
+    it('should throw an exception when the non display group table is being refreshed', async () => {
+      // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
         }
       }
-      await lockLocationLookupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
+      await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
@@ -222,14 +234,14 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       .rejects.toThrow(mockErrorResponse)
   }
 
-  async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
+  async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
     let transaction
     try {
-      // Lock the location lookup table and then try and process the message.
+      // Lock the non display group table and then try and process the message.
       transaction = new sql.Transaction(pool)
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
       await processMessage(messageKey, [mockResponse])
     } catch (err) {
       // Check that a request timeout occurs.
@@ -241,3 +253,4 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     }
   }
 })
+

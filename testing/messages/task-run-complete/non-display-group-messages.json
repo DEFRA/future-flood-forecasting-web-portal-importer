@@ -1,0 +1,56 @@
+{
+  "singleFilterApprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "multipleFilterApprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "unapprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "forecastApprovedManually": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task run Test_Workflow1 (T0=2019-09-13 13:05, Dispatch=2019-09-13 13:05, Id=ukeafffsmc00:000000001) is made current manually",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "unknownWorkflow": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "forecastWithoutApprovalStatus": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True, More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  }
+}

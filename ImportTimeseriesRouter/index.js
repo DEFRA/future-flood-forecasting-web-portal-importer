@@ -78,7 +78,6 @@ async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, w
     where
       workflow_id = @workflowId
   `)
-  // TABLE DOESNT EXIST YET!!
   const parameters = {
     workflowId: workflowId
   }
@@ -101,6 +100,6 @@ async function route (context, workflowId, fluvialDisplayGroupWorkflowsResponse,
     context.log.info('Message has been routed to the filter function')
     await ImportTimeSeries(context, message, fluvialNonDisplayGroupWorkflowsResponse, workflowId, preparedStatement)
   } else {
-    await createStagingException(context, message, `Missing location_lookup data for ${workflowId}`, preparedStatement)
+    await createStagingException(context, message, `Missing timeseries data for ${workflowId}`, preparedStatement)
   }
 }

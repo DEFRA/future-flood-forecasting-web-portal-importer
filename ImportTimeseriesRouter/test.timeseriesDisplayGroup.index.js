@@ -1,5 +1,5 @@
 module.exports = describe('Tests for import timeseries display groups', () => {
-  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/messages')
+  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
   const messageFunction = require('./index')
@@ -21,6 +21,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
     beforeAll(() => {
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+    })
+
+    beforeAll(() => {
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
     })
 
     beforeAll(() => {
@@ -54,6 +58,14 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
+    })
+
+    afterAll(() => {
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+    })
+
+    afterAll(() => {
       return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
     })
 
@@ -112,7 +124,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
-      await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing location_lookup data for ${workflowId}`)
+      await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing timeseries data for ${workflowId}`)
     })
     it('should create a staging exception for an invalid message', async () => {
       await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
