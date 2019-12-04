@@ -30,7 +30,7 @@ module.exports = async function (context, message) {
 
 // get list of workflows associated with display groups (from ${FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA}.lookup_lookup)
 async function getfluvialDisplayGroupWorkflows (context, preparedStatement, workflowId) {
-  await preparedStatement.input('workflowId', sql.NVarChar)
+  await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve location lookup data in a read only transaction with a table lock held
   // for the duration of the transaction to guard against a location lookup data refresh during
@@ -44,11 +44,11 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
     with
       (tablock holdlock)
     where
-      workflow_id = @workflowId
+      workflow_id = @displayGroupWorkflowId
   `)
 
   const parameters = {
-    workflowId: workflowId
+    displayGroupWorkflowId: workflowId
   }
 
   const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
@@ -63,7 +63,7 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
 
 // get list of display groups associated with timeseries (from £{FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA}.lookup_filter)
 async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
-  await preparedStatement.input('workflowId', sql.NVarChar)
+  await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve location lookup data in a read only transaction with a table lock held
   // for the duration of the transaction to guard against a location lookup data refresh during
@@ -76,10 +76,10 @@ async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, w
     with
       (tablock holdlock)
     where
-      workflow_id = @workflowId
+      workflow_id = @nonDisplayGroupWorkflowId
   `)
   const parameters = {
-    workflowId: workflowId
+    nonDisplayGroupWorkflowId: workflowId
   }
 
   const fluvialNonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
