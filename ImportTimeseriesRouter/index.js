@@ -32,15 +32,15 @@ module.exports = async function (context, message) {
 async function getfluvialDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
 
-  // Run the query to retrieve location lookup data in a read only transaction with a table lock held
-  // for the duration of the transaction to guard against a location lookup data refresh during
+  // Run the query to retrieve display group data in a read only transaction with a table lock held
+  // for the duration of the transaction to guard against a display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
     select
       plot_id,
       location_ids
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW
     with
       (tablock holdlock)
     where
@@ -65,8 +65,8 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
 async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
-  // Run the query to retrieve location lookup data in a read only transaction with a table lock held
-  // for the duration of the transaction to guard against a location lookup data refresh during
+  // Run the query to retrieve non display group data in a read only transaction with a table lock held
+  // for the duration of the transaction to guard against a non display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
     select

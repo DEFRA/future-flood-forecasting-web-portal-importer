@@ -5,7 +5,7 @@
       "type": "serviceBusTrigger",
       "direction": "in",
       "topicName": "fews-location-lookup-topic",
-      "subscriptionName": "%AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME%",
+      "subscriptionName": "%AZURE_SERVICE_BUS_TIMESERIES_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }
   ]

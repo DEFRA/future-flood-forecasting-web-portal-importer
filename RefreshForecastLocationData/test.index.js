@@ -254,9 +254,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         filename: '404-html.html'
       }
 
-      const expectedLocationLookupData = [dummyData]
+      const expectedForecastLocationData = [dummyData]
 
-      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedLocationLookupData)
+      await refreshForecastLocationDataAndCheckRejectionResults(mockResponseData, expectedForecastLocationData)
     })
 
     it('should throw an exception when the csv server is unavailable', async () => {
@@ -355,7 +355,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
   async function lockForecastLocationTableAndCheckMessageCannotBeProcessed (mockResponseData) {
     let transaction
     try {
-      // Lock the location lookup table and then try and process the message.
+      // Lock the forecast location table and then try and process the message.
       transaction = new sql.Transaction(pool)
       await transaction.begin()
       const request = new sql.Request(transaction)

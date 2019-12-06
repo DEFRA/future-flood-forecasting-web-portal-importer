@@ -35,7 +35,7 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * The function app must have connectivity to the following locations (identified by environment variables below):
   * The URL for the core forecasting engine REST API
   * The URL for retrieving forecast location data
-  * The URL for retrieving location lookup data associated with display groups
+  * The URL for retrieving fluvial_display_group_workflow  & fluvial_non_display_group_workflow  data associated with display groups
 
 ### Testing
 
@@ -93,14 +93,15 @@ directory containing this file.
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
-| LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
+| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide display groups workflow reference data                                              |
+| FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide non display groups workflow reference data                                          |
 
 ### Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
 | name                                                  | description                                                                                   |
 |-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                        |
-| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME   | Subscription name associated with fews-location-lookup-topic                                  |
+| AZURE_SERVICE_BUS_TIMESERIES_SUBSCRIPTION_NAME        | Subscription name associated with fews-timeseries-topic                                       |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                |
 
 ### Redundant Legacy Runtime Function App Settings/Environment Variables

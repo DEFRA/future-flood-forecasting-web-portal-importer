@@ -1,5 +1,5 @@
 module.exports =
-  describe('Refresh location lookup data tests', () => {
+  describe('Insert fluvial_display_group_workflow data tests', () => {
     const message = require('../testing/mocks/defaultMessage')
     const Context = require('../testing/mocks/defaultContext')
     const Connection = require('../Shared/connection-pool')
@@ -23,7 +23,7 @@ module.exports =
     const pool = jestConnection.pool
     const request = new sql.Request(pool)
 
-    describe('The refresh location lookup data function:', () => {
+    describe('The refresh fluvial_display_group_workflow data function:', () => {
       beforeAll(() => {
         return pool.connect()
       })
@@ -32,14 +32,14 @@ module.exports =
         // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
         // function implementation for the function context needs creating for each test.
         context = new Context()
-        return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+        return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
       })
 
       afterEach(() => {
         // As the jestConnection pool is only closed at the end of the test suite the global temporary table used by each function
         // invocation needs to be dropped manually between each test case.
         // console.log(pool)
-        return request.batch(`drop table if exists #location_lookup_temp`)
+        return request.batch(`drop table if exists #fluvial_display_group_workflow_temp`)
       })
 
       afterAll(() => {
@@ -55,9 +55,9 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {}
+        const expectedDisplayGroupData = {}
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should ignore a CSV file with misspelled headers', async () => {
@@ -68,9 +68,9 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {}
+        const expectedDisplayGroupData = {}
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should load only PlotId, FFFSLocID and WorkflowId into the db correctly, ignoring extra CSV fields', async () => {
@@ -81,13 +81,13 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
           workflow1: {
             plot1: ['location1', 'location2']
           }
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should group locations by plot ID and workflow ID given single location per workflowId/plotId', async () => {
@@ -98,7 +98,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
           workflow1: {
             plot1: ['location4'],
             plot2: ['location1']
@@ -108,7 +108,7 @@ module.exports =
           }
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should group locations by plot ID and workflow ID given multiple combinations of workflowId and plotId', async () => {
@@ -119,7 +119,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
           workflow1: {
             plot1: ['location1', 'location2', 'location3', 'location4'],
             plot2: ['location1']
@@ -129,7 +129,7 @@ module.exports =
           }
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should not refresh with valid header row but no data rows', async () => {
@@ -140,10 +140,10 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should reject insert if there is no header row, expect the first row to be treated as the header', async () => {
@@ -154,10 +154,10 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should ommit rows with missing values in columns', async () => {
@@ -168,13 +168,13 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
           workflow2: {
             plot1: ['location1']
           }
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should ommit rows with missing values in entire column', async () => {
@@ -185,10 +185,10 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should not refresh when a non-csv file (JSON) is provided', async () => {
@@ -199,10 +199,10 @@ module.exports =
           contentType: JSONFILE
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -213,10 +213,10 @@ module.exports =
           filename: '404-html.html'
         }
 
-        const expectedLocationLookupData = {
+        const expectedDisplayGroupData = {
         }
 
-        await refreshLocationLookupDataAndCheckExpectedResults(mockResponseData, expectedLocationLookupData)
+        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
       it('should throw an exception when the csv server is unavailable', async () => {
@@ -227,8 +227,8 @@ module.exports =
         await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       })
 
-      it('should throw an exception when the location lookup table is being used', async () => {
-        // If the location lookup table is being refreshed messages are elgible for replay a certain number of times
+      it('should throw an exception when the fluvial_display_group_workflow table is being used', async () => {
+        // If the fluvial_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
         // so check that an exception is thrown to facilitate this process.
 
         const mockResponseData = {
@@ -238,24 +238,24 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        await lockLocationLookupTableAndCheckMessageCannotBeProcessed(mockResponseData)
+        await lockDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
         // Set the test timeout higher than the database request timeout.
       }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
 
       // End of describe
     })
 
-    async function refreshLocationLookupDataAndCheckExpectedResults (mockResponseData, expectedLocationLookupData) {
+    async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedDisplayGroupData) {
       await mockFetchResponse(mockResponseData)
       await messageFunction(context, message) // calling actual function here
-      await checkExpectedResults(expectedLocationLookupData)
+      await checkExpectedResults(expectedDisplayGroupData)
     }
 
     async function mockFetchResponse (mockResponseData) {
       let mockResponse = {}
       mockResponse = {
         status: mockResponseData.statusCode,
-        body: fs.createReadStream(`testing/location_lookup_files/${mockResponseData.filename}`),
+        body: fs.createReadStream(`testing/fluvial_display_group_workflow_files/${mockResponseData.filename}`),
         statusText: mockResponseData.statusText,
         headers: { 'Content-Type': mockResponseData.contentType },
         sendAsJson: false
@@ -263,15 +263,15 @@ module.exports =
       fetch.mockResolvedValue(mockResponse)
     }
 
-    async function checkExpectedResults (expectedLocationLookupData) {
-      const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
-      const workflowIds = Object.keys(expectedLocationLookupData)
+    async function checkExpectedResults (expectedDisplayGroupData) {
+      const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+      const workflowIds = Object.keys(expectedDisplayGroupData)
       let expectedNumberOfRows = 0
 
       // The number of rows returned from the database should be equal to the sum of plot ID elements nested within
-      // all workflow ID elements of the expected location lookup data.
+      // all workflow ID elements of the expected fluvial_display_group_workflow data.
       for (const workflowId of workflowIds) {
-        expectedNumberOfRows += Object.keys(expectedLocationLookupData[workflowId]).length
+        expectedNumberOfRows += Object.keys(expectedDisplayGroupData[workflowId]).length
       }
 
       // Query the database and check that the locations associated with each grouping of workflow ID and plot ID areas expected.
@@ -279,9 +279,9 @@ module.exports =
       context.log(`databse row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
       if (expectedNumberOfRows > 0) {
-        const workflowIds = Object.keys(expectedLocationLookupData)
+        const workflowIds = Object.keys(expectedDisplayGroupData)
         for (const workflowId of workflowIds) { // ident single workflowId within expected data
-          const plotIds = expectedLocationLookupData[`${workflowId}`] // ident group of plot ids for workflowId
+          const plotIds = expectedDisplayGroupData[`${workflowId}`] // ident group of plot ids for workflowId
           for (const plotId in plotIds) { // ident single plot id within workflowId to access locations
             // expected data layout
             const locationIds = plotIds[`${plotId}`] // ident group of location ids for single plotid and single workflowid combination
@@ -290,7 +290,7 @@ module.exports =
             // actual db data
             const locationQuery = await request.query(`
           SELECT *
-          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup
+          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
           WHERE workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
             const rows = locationQuery.recordset
@@ -302,10 +302,10 @@ module.exports =
       }
     }
 
-    async function lockLocationLookupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
+    async function lockDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
       let transaction
       try {
-        // Lock the location lookup table and then try and process the message.
+        // Lock the fluvial_display_group_workflow table and then try and process the message.
         transaction = new sql.Transaction(pool)
         await transaction.begin()
         const request = new sql.Request(transaction)

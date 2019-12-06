@@ -24,7 +24,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
 
     beforeAll(() => {
-      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup`)
+      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW`)
     })
 
     beforeAll(() => {
