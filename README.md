@@ -101,10 +101,10 @@ directory containing this file.
 | name                                                  | description                                                                                 |
 |-------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                      |
-| AZURE_SERVICE_BUS_TIMESERIES_SUBSCRIPTION_NAME        | Subscription name associated with fews-timeseries-topic                                     |
 | AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic                                  |
 | AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                              |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                              |
+| AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                              |
 
 ### Redundant Legacy Runtime Function App Settings/Environment Variables
 
