@@ -4,9 +4,11 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 
 * Message based triggering is used when:
   * Importing data for a single location during the previous twenty fours hours.
-  * Importing data for multiple locations associated with a display group
-  * Refreshing the list of forecast locations
-  * Refreshing the set of locations associated with each display group.
+  * Importing data for multiple locations associated with a core forecasting engine display group.
+  * Refreshing the list of fluvial forecast locations.
+  * Refreshing the set of fluvial locations associated with each core forecasting engine display group.
+  * Refreshing the set of core forecasting engine filters associated with each workflow.
+  * Refreshing the set of core forecasting engine ignored workflows.
 
 ## Prerequisites
 
@@ -22,20 +24,34 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure service bus
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
-* Microsoft Azure service bus queue named **fews-forecast-location-queue**
-* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus queue named **fews-location-lookup-queue**
-* Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-eventcode-queue**
+* Microsoft Azure service bus queue named **fews-forecast-location-queue**
+* Microsoft Azure service bus queue named **fews-display-group-queue**
+* Microsoft Azure service bus queue named **fews-non-display-group-queue**
+* Microsoft Azure service bus queue named **fews-ignored-workflows-queue**
 * Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
 * **JavaScript** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
 * The function app must have connectivity to the following locations (identified by environment variables below):
-  * The URL for the core forecasting engine REST API
-  * The URL for retrieving forecast location data
-  * The URL for retrieving fluvial_display_group_workflow  & fluvial_non_display_group_workflow  data associated with display groups
+  * The URL for the core forecasting engine REST API.
+  * The URL for retrieving fluvial forecast location data.
+  * The URL for retrieving the set of fluvial locations associated with each core forecasting engine display group.
+  * The URL for retrieving the set of core forecasting engine filters associated with each workflow.
+  * The URL for retrieving the set of ignored workflows.
+
+### Redundant Legacy Prerequisites
+
+The function app prerequisites below are no longer required. It is recommended that they should be removed from any existing installation
+accordingly.
+
+* Microsoft Azure service bus queue named **fews-location-lookup-queue**
+* Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
 
 ### Testing
 
@@ -93,8 +109,9 @@ directory containing this file.
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
-| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide display groups workflow reference data                                              |
-| FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide non display groups workflow reference data                                          |
+| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                  |
+| FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide the fluvial non display groups workflow reference data                              |
+| IGNORED_WORKFLOWS_URL                     | URL used to provide the ignored workflows                                                               |
 
 ### Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
@@ -163,8 +180,11 @@ does not prescribe how the activities should be performed.
 ## Running The Queue/Topic Based Functions
 
 * Messages placed on the fewspiqueue **must** contain only the ID of the location for which data is to be imported.
-* Messages placed on the fews-location-lookup-queue **and** fews-forecast-location-queue **must** contain some content; for example {"input": "refresh"}.
-  The message content is ignored.
+* Messages placed on the following queues **must** contain some content (for example {"input": "refresh"}), the message content is ignored:  
+  * fews-display-group-queue
+  * fews-non-display-group-queue
+  * fews-forecast-location-queue
+  * fews-ignored-workflows-queue
 * Messages placed on the fews-eventcode-queue or fews-eventcode-topic **must** adhere to the format used for
   Azure service bus alerts in the core forecasting engine.
 
