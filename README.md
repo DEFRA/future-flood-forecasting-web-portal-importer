@@ -98,11 +98,13 @@ directory containing this file.
 
 ### Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
-| name                                                  | description                                                                                   |
-|-------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                        |
-| AZURE_SERVICE_BUS_TIMESERIES_SUBSCRIPTION_NAME        | Subscription name associated with fews-timeseries-topic                                       |
-| AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                |
+| name                                                  | description                                                                                 |
+|-------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                      |
+| AZURE_SERVICE_BUS_TIMESERIES_SUBSCRIPTION_NAME        | Subscription name associated with fews-timeseries-topic                                     |
+| AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic                                  |
+| AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                              |
+| AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                              |
 
 ### Redundant Legacy Runtime Function App Settings/Environment Variables
 
@@ -114,7 +116,8 @@ accordingly.
 | FEWS_INITIAL_LOAD_HISTORY_HOURS           | Number of hours before the initial import time that core forecasting engine data should be retrieved for|
 | FEWS_LOAD_HISTORY_HOURS                   | Number of hours before subsequent import times that core forecasting engine data should be retrieved for|
 | FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                           |
-
+| LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
+| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                  |          
 ### Optional Runtime Function App Settings/Environment Variables
 
 | name                         | description                                                                                                          |
