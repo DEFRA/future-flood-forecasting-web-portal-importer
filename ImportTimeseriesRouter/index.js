@@ -7,8 +7,7 @@ const getWorkflowId = require('./helpers/get-workflowid')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  // 'message' is the name of the variable that contains the queue item payload in the function code.
-  // This function is triggered via a queue message drop
+  // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload
   context.log.info('JavaScript import time series function processed work item', message)
   context.log.info(context.bindingData)
 
@@ -25,14 +24,14 @@ module.exports = async function (context, message) {
     }
   }
   await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
-  // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
+  // context.done() is not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-// get list of workflows associated with display groups (from ${FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA}.lookup_lookup)
+// Get a list of workflows associated with display groups
 async function getfluvialDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
 
-  // Run the query to retrieve display group data in a read only transaction with a table lock held
+  // Run the query to retrieve display group data in a full transaction with a table lock held
   // for the duration of the transaction to guard against a display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
@@ -53,7 +52,6 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
 
   const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
 
-  // this statement has to be before another call to a funciton using a prepared statement
   if (preparedStatement && preparedStatement.prepared) {
     await preparedStatement.unprepare()
   }
@@ -61,11 +59,11 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
   return fluvialDisplayGroupWorkflowsResponse
 }
 
-// get list of display groups associated with timeseries (from £{FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA}.lookup_filter)
+// Get list of workflows associated with non display groups
 async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
-  // Run the query to retrieve non display group data in a read only transaction with a table lock held
+  // Run the query to retrieve non display group data in a full transaction with a table lock held
   // for the duration of the transaction to guard against a non display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
@@ -84,7 +82,6 @@ async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, w
 
   const fluvialNonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
 
-  // this statement has to be before another call to a funciton using a prepared statement
   if (preparedStatement && preparedStatement.prepared) {
     await preparedStatement.unprepare()
   }
