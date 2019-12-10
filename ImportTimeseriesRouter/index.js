@@ -11,7 +11,7 @@ module.exports = async function (context, message) {
   context.log.info('JavaScript import time series function processed work item', message)
   context.log.info(context.bindingData)
 
-  async function routeMessage (transactionData) {
+  async function routeMessage (transactionData, context) {
     context.log('JavaScript router ServiceBus queue trigger function processed message', message)
     const proceedWithImport = await isTaskRunApproved(context, message, transactionData.preparedStatement)
     if (proceedWithImport) {

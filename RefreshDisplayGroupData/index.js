@@ -4,7 +4,7 @@ const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function refresh (transactionData) {
+  async function refresh (transactionData, context) {
     await createDisplayGroupTemporaryTable(new sql.Request(transactionData.transaction), context)
     await populateDisplayGroupTemporaryTable(transactionData.preparedStatement, context)
     await refreshDisplayGroupTable(new sql.Request(transactionData.transaction), context)

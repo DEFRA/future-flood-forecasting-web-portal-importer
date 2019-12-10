@@ -34,7 +34,7 @@ module.exports = {
       }
       // Call the function that prepares and executes the prepared statement passing
       // through the arguments from the caller.
-      return await fn(transactionData, ...args)
+      return await fn(transactionData, context, ...args)
     } catch (err) {
       context.log.error(`Transaction failed: ${errorMessage} ${err}`)
       if (preparedStatement && preparedStatement.prepared) {
