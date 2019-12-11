@@ -108,7 +108,7 @@ testing/staging-database/*
 host.json
 
 # Maven related directories and files
-build/target/*
+build/target
 build/.classpath
 build/.project
-build/.settings/*
+build/.settings
