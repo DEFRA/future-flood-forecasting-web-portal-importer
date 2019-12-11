@@ -24,7 +24,7 @@ module.exports = async function (context, message) {
     }
   }
   await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
-  // context.done() is not requried as the async function returns the desired result, there is no output binding to be activated.
+  context.done()
 }
 
 // Get a list of workflows associated with display groups

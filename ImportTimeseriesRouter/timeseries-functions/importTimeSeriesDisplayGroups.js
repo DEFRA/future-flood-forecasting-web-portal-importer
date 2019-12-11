@@ -67,6 +67,7 @@ async function loadTimeseriesDisplayGroups (context, timeSeriesDisplayGroupsData
     await preparedStatement.input('timeseries', sql.NVarChar)
     await preparedStatement.input('startTime', sql.DateTime2)
     await preparedStatement.input('endTime', sql.DateTime2)
+    await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
     await preparedStatement.prepare(`
       insert into
@@ -77,15 +78,23 @@ async function loadTimeseriesDisplayGroups (context, timeSeriesDisplayGroupsData
        (@timeseries, @startTime, @endTime)
     `)
 
+    context.bindings.stagedTimeseries = []
+
     for (const index in timeSeriesDisplayGroupsData.timeseries) {
       const parameters = {
-        timeseries: timeSeriesDisplayGroupsData.timeseries[index], // .substring(1, timeSeriesDisplayGroupsData.timeseries[index].length - 1),
+        timeseries: timeSeriesDisplayGroupsData.timeseries[index],
         startTime: timeSeriesDisplayGroupsData.startTime,
         endTime: timeSeriesDisplayGroupsData.endTime
       }
 
-      await preparedStatement.execute(parameters)
-      // TO DO - Send a message containing the primary key of the new record to a queue.
+      const result = await preparedStatement.execute(parameters)
+
+      // Prepare to send a message containing the primary key of the inserted record.
+      if (result.recordset && result.recordset[0] && result.recordset[0].id) {
+        context.bindings.stagedTimeseries.push({
+          id: result.recordset[0].id
+        })
+      }
     }
   } catch (err) {
     context.log.error(err)

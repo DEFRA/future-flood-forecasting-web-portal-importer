@@ -6,6 +6,13 @@
       "direction": "in",
       "queueName": "fews-eventcode-queue",
       "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "stagedTimeseries",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "staged-timeseries-queue",
+      "connection": "AzureWebJobsServiceBus"
     }
   ]
 }
