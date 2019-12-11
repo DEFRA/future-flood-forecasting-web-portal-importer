@@ -167,10 +167,14 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function processMessageAndCheckImportedData (messageKey, mockResponses) {
     await processMessage(messageKey, mockResponses)
+
     const receivedFewsData = []
+    const receivedPrimaryKeys = []
+
     const result = await request.query(`
       select
-        top(${mockResponses.length}) fews_data,
+        top(${mockResponses.length}) id,
+        fews_data,
         start_time,
         end_time
       from
@@ -180,12 +184,18 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     `)
 
     // Database interaction is asynchronous so the order in which records are written
-    // cannot be guaranteed.  To check if records have been persisted correctly, copy
-    // the timeseries data retrieved from the database to an array and then check that
-    // the array contains each expected mock timeseries.
+    // cannot be guaranteed.
+    // To check if records have been persisted correctly, copy the timeseries data
+    // retrieved from the database to an array and then check that the array contains
+    // each expected mock timeseries.
+    // To check if messages containing the primary keys of the timeseries records will be
+    // sent to a queue/topic for reporting and visualisation purposes, copy the primary
+    // keys retrieved from the database to an array and check that the ouput binding for
+    // staged timeseries contains each expected primary key.
     const now = moment.utc()
     for (const index in result.recordset) {
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
+      receivedPrimaryKeys.push(result.recordset[index].id)
       // Check that the persisted values for the forecast start time and end time are within tolerance
       // of the expected values taking into acccount that the default values can be overridden by
       // environment variables.
@@ -202,8 +212,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     for (const mockResponse of mockResponses) {
       expect(receivedFewsData).toContainEqual(mockResponse.data)
     }
-  }
 
+    for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+      expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+    }
+  }
   async function processMessageAndCheckNoDataIsImported (messageKey) {
     await processMessage(messageKey)
     const result = await request.query(`
