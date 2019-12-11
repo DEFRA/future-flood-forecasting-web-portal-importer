@@ -9,6 +9,8 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
   * Refreshing the set of fluvial locations associated with each core forecasting engine display group.
   * Refreshing the set of core forecasting engine filters associated with each workflow.
   * Refreshing the set of core forecasting engine ignored workflows.
+* Messages containing the primary keys of staging database records holding data extracted from the core forecasting engine
+  are used to trigger reporting and visualisation activities.
 
 ## Prerequisites
 
@@ -25,11 +27,13 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure storage account
 * Microsoft Azure storage queue named **fewspiqueue**
 * Microsoft Azure service bus queue named **fews-eventcode-queue**
+* Microsoft Azure service bus queue named **fews-staged-timeseries-queue**
 * Microsoft Azure service bus queue named **fews-forecast-location-queue**
 * Microsoft Azure service bus queue named **fews-display-group-queue**
 * Microsoft Azure service bus queue named **fews-non-display-group-queue**
 * Microsoft Azure service bus queue named **fews-ignored-workflows-queue**
 * Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-display-group-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
@@ -118,6 +122,7 @@ directory containing this file.
 | name                                                  | description                                                                                 |
 |-------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                      |
+| AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME | Subscription name associated with fews-staged-timeseries-topic                              |
 | AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic                                  |
 | AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                              |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                              |
@@ -187,6 +192,8 @@ does not prescribe how the activities should be performed.
   * fews-ignored-workflows-queue
 * Messages placed on the fews-eventcode-queue or fews-eventcode-topic **must** adhere to the format used for
   Azure service bus alerts in the core forecasting engine.
+* Messages placed on the fews-staged-timeseries-queue or fews-staged-timeseries-topic **must** contain only the primary key of the
+  staging database record holding data obtained from the core forecasting engine.
 
 ## Contributing to this project
 
