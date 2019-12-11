@@ -4,8 +4,8 @@
       "name": "message",
       "type": "serviceBusTrigger",
       "direction": "in",
-      "topicName": "fews-location-lookup-topic",
-      "subscriptionName": "%AZURE_SERVICE_BUS_TIMESERIES_SUBSCRIPTION_NAME%",
+      "topicName": "fews-display-group-topic",
+      "subscriptionName": "%AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }
   ]
