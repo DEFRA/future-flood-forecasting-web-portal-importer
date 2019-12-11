@@ -15,6 +15,7 @@ module.exports =
     const STATUS_TEXT_OK = 'OK'
     const TEXT_CSV = 'text/csv'
     const HTML = 'html'
+
     jest.mock('node-fetch')
 
     let context
@@ -38,7 +39,6 @@ module.exports =
       afterEach(() => {
         // As the jestConnection pool is only closed at the end of the test suite the global temporary table used by each function
         // invocation needs to be dropped manually between each test case.
-        // console.log(pool)
         return request.batch(`drop table if exists #fluvial_display_group_workflow_temp`)
       })
 
@@ -245,7 +245,7 @@ module.exports =
 
     async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedDisplayGroupData) {
       await mockFetchResponse(mockResponseData)
-      await messageFunction(context, message) // calling actual function here
+      await messageFunction(context, message) // This is a call to the function index
       await checkExpectedResults(expectedDisplayGroupData)
     }
 

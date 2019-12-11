@@ -55,7 +55,7 @@ async function refreshNonDisplayGroupData (transactionData, context) {
     }
     const request = new sql.Request(transaction)
     const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW`)
-    context.log.info(`The fluvial_non_display_group_workflow table contains ${result.recordset[0].number} records`)
+    context.log.info(`The fluvial_non_display_group_workflow table now contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       context.log.warn('There are no new records to insert, rolling back fluvial_non_display_group_workflow refresh')
       throw new Error('A null database overwrite is not allowed')
