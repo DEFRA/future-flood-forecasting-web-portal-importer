@@ -7,6 +7,14 @@
       "topicName": "fews-eventcode-topic",
       "subscriptionName": "%AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "stagedTimeseries",
+      "type": "serviceBus",
+      "direction": "out",
+      "topicName": "staged-timeseries-topic",
+      "subscriptionName": "%AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME%",
+      "connection": "AzureWebJobsServiceBus"
     }
   ]
 }
