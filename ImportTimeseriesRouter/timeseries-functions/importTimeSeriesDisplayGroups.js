@@ -90,7 +90,7 @@ async function loadTimeseriesDisplayGroups (context, timeSeriesDisplayGroupsData
       }
     }
   } catch (err) {
-    context.log.error(err)
+    // context.log.error(err)
     throw err
   } finally {
     try {

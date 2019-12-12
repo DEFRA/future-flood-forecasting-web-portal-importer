@@ -80,7 +80,7 @@ async function loadTimeseriesNonDisplayGroups (context, timeSeriesNonDisplayGrou
       // TO DO - Send a message containing the primary key of the new record to a queue.
     }
   } catch (err) {
-    context.log.error(err)
+    // context.log.error(err)
     throw err
   } finally {
     try {
