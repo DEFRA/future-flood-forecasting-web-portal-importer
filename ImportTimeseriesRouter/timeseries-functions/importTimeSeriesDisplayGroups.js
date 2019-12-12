@@ -1,7 +1,6 @@
 const moment = require('moment')
 const axios = require('axios')
 const sql = require('mssql')
-const createStagingException = require('../../Shared/create-staging-exception')
 
 module.exports = async function timeseriesRefresh (context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement) {
   const displayGroupData = await getDisplayGroupData(context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement)
@@ -14,12 +13,6 @@ async function getDisplayGroupData (context, message, fluvialDisplayGroupWorkflo
 
   for (const record of fluvialDisplayGroupWorkflowsResponse.recordset) {
     displayGroupData[record.plot_id] = record.location_ids
-  }
-
-  if (Object.keys(displayGroupData).length === 0) {
-    // If no display group data is available the message is not replayable
-    // without intervention so create a staging exception.
-    await createStagingException(context, message, `Missing display_group data for ${workflowId}`, preparedStatement)
   }
 
   return displayGroupData
