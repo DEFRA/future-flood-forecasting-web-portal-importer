@@ -272,7 +272,7 @@ module.exports =
         expectedNumberOfRows += Object.keys(expectedDisplayGroupData[workflowId]).length
       }
 
-      // Query the database and check that the locations associated with each grouping of workflow ID and plot ID areas expected.
+      // Query the database and check that the locations associated with each grouping of workflow ID and plot ID are as expected.
       expect(result.recordset[0].number).toBe(expectedNumberOfRows)
       context.log(`databse row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
