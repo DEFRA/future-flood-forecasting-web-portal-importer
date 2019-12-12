@@ -19,6 +19,7 @@ module.exports =
     jest.mock('node-fetch')
 
     let context
+    let dummyData
 
     const jestConnection = new Connection()
     const pool = jestConnection.pool
@@ -34,6 +35,15 @@ module.exports =
         // function implementation for the function context needs creating for each test.
         context = new Context()
         return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+      })
+
+      beforeEach(() => {
+        dummyData = {
+          dummyWorkflow: {
+            dummyPlot: ['dummyLocation']
+          }
+        }
+        return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
       })
 
       afterEach(() => {
@@ -55,7 +65,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedDisplayGroupData = {}
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
@@ -68,7 +78,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedDisplayGroupData = {}
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
@@ -140,8 +150,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedDisplayGroupData = {
-        }
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
@@ -154,8 +163,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedDisplayGroupData = {
-        }
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
@@ -185,8 +193,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedDisplayGroupData = {
-        }
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
@@ -199,8 +206,7 @@ module.exports =
           contentType: JSONFILE
         }
 
-        const expectedDisplayGroupData = {
-        }
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
@@ -213,8 +219,7 @@ module.exports =
           filename: '404-html.html'
         }
 
-        const expectedDisplayGroupData = {
-        }
+        const expectedDisplayGroupData = dummyData
 
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })

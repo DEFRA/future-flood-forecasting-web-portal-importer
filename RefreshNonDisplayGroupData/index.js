@@ -50,14 +50,18 @@ async function refreshNonDisplayGroupData (preparedStatement, transaction, conte
           context.log.warn(`an error has been found in a row with the Workflow ID: ${row.WorkflowID}.\n  Error : ${err}`)
         }
       }
+      // Future requests will fail until the prepared statement is unprepared.
       await preparedStatement.unprepare()
     } else {
+      // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting fluvial_non_display_group_workflows refresh')
     }
     const request = new sql.Request(transaction)
     const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW`)
     context.log.info(`The fluvial_non_display_group_workflow table now contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
+      // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
+      // after thr table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
       context.log.warn('There are no new records to insert, rolling back fluvial_non_display_group_workflow refresh')
       throw new Error('A null database overwrite is not allowed')
     }
