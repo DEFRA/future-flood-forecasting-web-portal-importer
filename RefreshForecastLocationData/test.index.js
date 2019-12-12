@@ -281,8 +281,6 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await lockForecastLocationTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-
-    // End of describe
   })
 
   async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData) {

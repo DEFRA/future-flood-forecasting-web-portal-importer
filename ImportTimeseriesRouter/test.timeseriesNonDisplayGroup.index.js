@@ -239,7 +239,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     try {
       // Lock the timeseries table and then try and process the message.
       transaction = new sql.Transaction(pool)
-      await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
+      await transaction.begin()
       const request = new sql.Request(transaction)
       await request.batch(`
       INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id) 
