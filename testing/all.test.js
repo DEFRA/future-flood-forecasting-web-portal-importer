@@ -18,6 +18,10 @@ describe('Run all unit tests in sequence', () => {
   expect.extend({
     toBeTimeoutError (error, tableName) {
       const pass = error.message === 'Lock request time out period exceeded.'
+      // Note: this custom matcher returns a message for both cases (success and failure),
+      // because it allows you to use .not. The test will fail with the corresponding
+      // message depending on whether you want it to pass the validation (for example:
+      // '.toBeTimeoutError()' OR '.not.toBeTimeoutError()').
       if (pass) {
         return {
           message: () => `Concerning table: ${tableName}. Expected received message: '${error.message}' to equal expected: 'Lock request time out period exceeded.'.`,
