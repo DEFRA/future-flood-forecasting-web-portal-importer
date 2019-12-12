@@ -150,7 +150,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await lockDisplayGroupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
+      await lockTimeseriesTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
@@ -247,22 +247,33 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       .rejects.toThrow(mockErrorResponse)
   }
 
-  async function lockDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
+  async function lockTimeseriesTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
     let transaction
+    const tableName = 'timeseries'
     try {
-      // Lock the fluvial_display_group_workflow  table and then try and process the message.
+      // Lock the timeseries table and then try and process the message.
       transaction = new sql.Transaction(pool)
-      await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
+      await transaction.begin()
       const request = new sql.Request(transaction)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW`)
+      await request.batch(`
+      select
+        *
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
+      with
+        (tablock, holdlock)
+    `)
       await processMessage(messageKey, [mockResponse])
     } catch (err) {
       // Check that a request timeout occurs.
-      expect(err.code).toBe('EREQUEST')
+      expect(err).toBeTimeoutError(tableName) // a custom matcher
     } finally {
-      try {
+      if (transaction._aborted) {
+        context.log.warn('The transaction has been aborted.')
+      } else {
         await transaction.rollback()
-      } catch (err) { }
+        context.log.warn('The transaction has been rolled back.')
+      }
     }
   }
 })

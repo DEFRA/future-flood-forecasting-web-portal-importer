@@ -304,6 +304,7 @@ module.exports =
 
     async function lockDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
       let transaction
+      const tableName = 'fluvial_display_group_workflow'
       try {
         // Lock the fluvial_display_group_workflow table and then try and process the message.
         transaction = new sql.Transaction(pool)
@@ -313,7 +314,7 @@ module.exports =
         select
           *
         from
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.location_lookup
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
         with
           (tablock, holdlock)
       `)
@@ -321,11 +322,14 @@ module.exports =
         await messageFunction(context, message)
       } catch (err) {
         // Check that a request timeout occurs.
-        expect(err.code).toTimeout(err.code)
+        expect(err).toBeTimeoutError(tableName) // a custom matcher
       } finally {
-        try {
+        if (transaction._aborted) {
+          context.log.warn('The transaction has been aborted.')
+        } else {
           await transaction.rollback()
-        } catch (err) { }
+          context.log.warn('The transaction has been rolled back.')
+        }
       }
     }
   }
