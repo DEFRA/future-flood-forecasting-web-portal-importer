@@ -32,15 +32,23 @@ async function refreshNonDisplayGroupData (preparedStatement, transaction, conte
       await preparedStatement.input('FILTER_ID', sql.NVarChar)
 
       await preparedStatement.prepare(`
-        INSERT INTO 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
-        (WORKFLOW_ID, FILTER_ID) 
-        values 
-        (@WORKFLOW_ID, @FILTER_ID)`)
+        If Not Exists(
+        select *
+        from  ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
+        where WORKFLOW_ID=@WORKFLOW_ID AND FILTER_ID=@FILTER_ID
+        )
+        Begin
+            INSERT INTO 
+             ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
+                (WORKFLOW_ID, FILTER_ID)
+            values
+                (@WORKFLOW_ID, @FILTER_ID)
+        End`)
       for (const row of rows) {
         // Ignore rows in the CSV data that do not have entries for all columns.
         try {
           if (row.WorkflowID && row.FilterID) {
+            // console.log(preparedStatement.statement)
             await preparedStatement.execute({
               WORKFLOW_ID: row.WorkflowID,
               FILTER_ID: row.FilterID
@@ -61,9 +69,11 @@ async function refreshNonDisplayGroupData (preparedStatement, transaction, conte
     context.log.info(`The fluvial_non_display_group_workflow table now contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
-      // after thr table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
-      context.log.warn('There are no new records to insert, rolling back fluvial_non_display_group_workflow refresh')
-      throw new Error('A null database overwrite is not allowed')
+      // after the table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
+      context.log.warn('There are no new records to insert, rolling back fluvial_non_display_group_workflow refresh.')
+      context.log.info('A null database overwrite is not allowed, rolling back.')
+      await transaction.rollback()
+      context.log.info('Transaction rolled back.')
     }
   } catch (err) {
     context.log.error(`Refresh fluvial non display group workflow data failed: ${err}`)

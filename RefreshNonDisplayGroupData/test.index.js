@@ -60,7 +60,23 @@ module.exports =
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
       })
-      it('should load a valid csv correctly', async () => {
+      it('should load a valid csv correctly - single filter per workflow', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'single-filter-per-workflow.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = {
+          'test_non_display_workflow_1': ['test_filter_1'],
+          'test_non_display_workflow_3': ['test_filter_3'],
+          'test_non_display_workflow_2': ['test_filter_2']
+        }
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should load a valid csv correctly - multiple filters per workflow', async () => {
         const mockResponseData = {
           statusCode: STATUS_CODE_200,
           filename: 'multiple-filters-per-workflow.csv',
@@ -77,6 +93,63 @@ module.exports =
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
       })
+      it('should not load duplicate rows in a csv', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'duplicate-rows.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = {
+          'test_non_display_workflow_1': ['test_filter_1'],
+          'test_non_display_workflow_3': ['test_filter_3'],
+          'test_non_display_workflow_2': ['test_filter_2']
+        }
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should ignore a CSV file with misspelled headers', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'headers-misspelled.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = dummyData
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should load WorkflowId and FilterId correctly into the db correctly with extra CSV fields present', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'extra-headers.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = {
+          'test_non_display_workflow_1': ['test_filter_1'],
+          'test_non_display_workflow_2': ['test_filter_2']
+        }
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should throw an exception when the fluvial_non_display_group_workflow table is being used', async () => {
+        // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+        // so check that an exception is thrown to facilitate this process.
+
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'single-filter-per-workflow.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
+        // Set the test timeout higher than the database request timeout.
+      }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     })
 
     async function refreshNonDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedNonDisplayGroupData) {
@@ -134,34 +207,28 @@ module.exports =
         }
       }
     }
-    // async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
-    //   let transaction
-    //   const tableName = 'fluvial_non_display_group_workflow'
-    //   try {
-    //     // Lock the fluvial_display_group_workflow table and then try and process the message.
-    //     transaction = new sql.Transaction(pool)
-    //     await transaction.begin()
-    //     const request = new sql.Request(transaction)
-    //     await request.batch(`
-    //     select
-    //       *
-    //     from
-    //     ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
-    //     with
-    //       (tablock, holdlock)
-    //   `)
-    //     await mockFetchResponse(mockResponseData)
-    //     await messageFunction(context, message)
-    //   } catch (err) {
-    //     // Check that a request timeout occurs.
-    //     expect(err).toBeTimeoutError(tableName) // a custom matcher
-    //   } finally {
-    //     if (transaction._aborted) {
-    //       context.log.warn('The transaction has been aborted.')
-    //     } else {
-    //       await transaction.rollback()
-    //       context.log.warn('The transaction has been rolled back.')
-    //     }
-    //   }
-    // }
-  })
+    async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
+      let transaction
+      const tableName = 'fluvial_non_display_group_workflow'
+      try {
+        transaction = new sql.Transaction(pool)
+        await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
+        const request = new sql.Request(transaction)
+        await request.batch(`
+          INSERT INTO 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, filter_id) 
+          values 
+          ('testWorkflow', 'testFilter')`)
+        await mockFetchResponse(mockResponseData)
+        await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
+      } finally {
+        if (transaction._aborted) {
+          context.log.warn('The transaction has been aborted.')
+        } else {
+          await transaction.rollback()
+          context.log.warn('The transaction has been rolled back.')
+        }
+      }
+    }
+  }
+  )
