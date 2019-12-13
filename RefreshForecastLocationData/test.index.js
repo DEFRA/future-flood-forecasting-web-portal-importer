@@ -356,7 +356,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
     let transaction
     const tableName = 'forecast_location'
     try {
-      // Lock the forecast_location table and then try and process the message.
+      // The fucntion app code will attempt to lock the forecast_location table and this should fail as there is already a transaction
+      // with a shared lock (tablock, holdlock) holding the table created here in this function.
       transaction = new sql.Transaction(pool)
       await transaction.begin()
       const request = new sql.Request(transaction)
