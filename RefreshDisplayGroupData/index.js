@@ -34,6 +34,9 @@ async function createDisplayGroupTemporaryTable (request, context) {
 }
 
 async function populateDisplayGroupTemporaryTable (preparedStatement, context) {
+  // The temp table provides two functions:
+  // - a preliminary check of the csv data before it is inserted into the staging table
+  // - the ability to aggregate location data in the fluvial_display_group_workflow table
   try {
     // Use the fetch API to retrieve the CSV data as a stream and then parse it
     // into rows ready for insertion into the local temporary table.
@@ -65,7 +68,7 @@ async function populateDisplayGroupTemporaryTable (preparedStatement, context) {
 async function refreshDisplayGroupTable (request, context) {
   try {
     const recordCountResponse = await request.query(`select count(*) as number from #fluvial_display_group_workflow_temp`)
-    // Do not refresh the fluvial_display_group_workflow table if the local temporary table is empty.
+    // Check the local temporary table for records. If empty do not refresh the fluvial_display_group_workflow table.
     if (recordCountResponse.recordset[0].number > 0) {
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
       // Concatenate all locations for each combination of workflow ID and plot ID.
@@ -82,6 +85,7 @@ async function refreshDisplayGroupTable (request, context) {
             plot_id
       `)
     } else {
+      // If the temp table is empty then the file is essentially ignored to prevent a blank database overwrite
       context.log.warn('#fluvial_display_group_workflow_temp contains no records - Aborting fluvial_display_group_workflow refresh')
     }
     const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
