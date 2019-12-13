@@ -319,10 +319,7 @@ module.exports =
           (tablock, holdlock)
       `)
         await mockFetchResponse(mockResponseData)
-        await messageFunction(context, message)
-      } catch (err) {
-        // Check that a request timeout occurs.
-        expect(err).toBeTimeoutError(tableName) // a custom matcher
+        await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
       } finally {
         if (transaction._aborted) {
           context.log.warn('The transaction has been aborted.')

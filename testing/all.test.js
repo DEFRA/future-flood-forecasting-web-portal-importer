@@ -14,6 +14,7 @@ describe('Run all unit tests in sequence', () => {
     process.env = OLD_ENV
   })
 
+  // A custom Jest matcher to test table timeouts
   expect.extend({
     toBeTimeoutError (error, tableName) {
       const pass = error.message === `Lock request time out period exceeded.`

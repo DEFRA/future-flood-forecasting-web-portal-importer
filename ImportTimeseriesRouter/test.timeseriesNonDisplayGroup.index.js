@@ -142,8 +142,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singleFilterApprovedForecast', mockResponse)
     })
-    it('should throw an exception when the non display group table is being refreshed', async () => {
-      // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+    it('should throw an exception when the timeseries table is being updated by another function', async () => {
+      // If the timeseries table is being updated the data load will be blocked, messages are elgible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
@@ -151,6 +151,17 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         }
       }
       await lockTimeseriesTableAndCheckMessageCannotBeProcessed('singleFilterApprovedForecast', mockResponse)
+      // Set the test timeout higher than the database request timeout.
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    it('should throw an exception when the fluvial_non_display_group_workflow table is being refreshed', async () => {
+      // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+      // so check that an exception is thrown to facilitate this process.
+      const mockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
@@ -250,10 +261,33 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       with
         (tablock, holdlock)
     `)
-      await processMessage(messageKey, [mockResponse])
-    } catch (err) {
-      // Check that a request timeout occurs.
-      expect(err).toBeTimeoutError(tableName) // a custom matcher
+      await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
+    } finally {
+      if (transaction._aborted) {
+        context.log.warn('The transaction has been aborted.')
+      } else {
+        await transaction.rollback()
+        context.log.warn('The transaction has been rolled back.')
+      }
+    }
+  }
+  async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
+    let transaction
+    const tableName = 'fluvial_non_display_group_workflow'
+    try {
+      // Lock the timeseries table and then try and process the message.
+      transaction = new sql.Transaction(pool)
+      await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
+      const request = new sql.Request(transaction)
+      await request.batch(`
+      select
+        *
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
+      with
+        (tablockx, holdlock)
+    `)
+      await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
     } finally {
       if (transaction._aborted) {
         context.log.warn('The transaction has been aborted.')
