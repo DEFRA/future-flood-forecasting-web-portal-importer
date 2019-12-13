@@ -306,18 +306,14 @@ module.exports =
       let transaction
       const tableName = 'fluvial_display_group_workflow'
       try {
-        // The fucntion app code will attempt to lock the fluvial_display_group_workflow table and this should fail as there is already a transaction
-        // with a shared lock (tablock, holdlock) holding the table, created here in this function.
         transaction = new sql.Transaction(pool)
-        await transaction.begin()
+        await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
         const request = new sql.Request(transaction)
         await request.batch(`
-        select
-          *
-        from
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
-        with
-          (tablock, holdlock)
+        insert into 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
+        values 
+        ('workflow_id', 'plot_id', 'loc_id')
       `)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)

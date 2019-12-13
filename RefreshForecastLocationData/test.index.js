@@ -356,18 +356,14 @@ module.exports = describe('Refresh forecast location data tests', () => {
     let transaction
     const tableName = 'forecast_location'
     try {
-      // The fucntion app code will attempt to lock the forecast_location table and this should fail as there is already a transaction
-      // with a shared lock (tablock, holdlock) holding the table, created here in this function.
       transaction = new sql.Transaction(pool)
-      await transaction.begin()
+      await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.batch(`
-      select
-        *
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
-      with
-        (tablock, holdlock)
+      insert into 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) 
+      values 
+      ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'plotid', 123)
     `)
       await mockFetchResponse(mockResponseData)
       await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
