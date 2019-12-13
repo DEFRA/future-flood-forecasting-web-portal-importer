@@ -307,7 +307,7 @@ module.exports =
       const tableName = 'fluvial_display_group_workflow'
       try {
         // The fucntion app code will attempt to lock the fluvial_display_group_workflow table and this should fail as there is already a transaction
-        // with a shared lock (tablock, holdlock) holding the table created here in this function.
+        // with a shared lock (tablock, holdlock) holding the table, created here in this function.
         transaction = new sql.Transaction(pool)
         await transaction.begin()
         const request = new sql.Request(transaction)
