@@ -185,7 +185,7 @@ module.exports =
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
-      it('should ommit rows with missing values in entire column', async () => {
+      it('should ommit all rows as there is missing values for the entire column', async () => {
         const mockResponseData = {
           statusCode: STATUS_CODE_200,
           filename: 'missing-data-in-entire-column.csv',

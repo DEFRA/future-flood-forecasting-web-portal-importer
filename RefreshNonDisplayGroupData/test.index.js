@@ -8,13 +8,13 @@ module.exports =
     const sql = require('mssql')
     const fs = require('fs')
 
-    // const JSONFILE = 'application/javascript'
-    // const STATUS_TEXT_NOT_FOUND = 'Not found'
+    const JSONFILE = 'application/javascript'
+    const STATUS_TEXT_NOT_FOUND = 'Not found'
     const STATUS_CODE_200 = 200
-    // const STATUS_CODE_404 = 404
+    const STATUS_CODE_404 = 404
     const STATUS_TEXT_OK = 'OK'
     const TEXT_CSV = 'text/csv'
-    // const HTML = 'html'
+    const HTML = 'html'
 
     jest.mock('node-fetch')
 
@@ -135,6 +135,87 @@ module.exports =
         }
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should not refresh with valid header row but no data rows', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'valid-header-row-no-data-rows.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = dummyData
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should reject insert if there is no header row, expect the first row to be treated as the header', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'valid-data-rows-no-header-row.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = dummyData
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should ommit rows with missing values', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'missing-data-in-some-rows.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = {
+          'test_non_display_workflow_2': ['test_filter_a']
+        }
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should ommit all rows as there is missing values for the entire column', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'missing-data-in-entire-column.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = dummyData
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should not refresh when a non-csv file (JSON) is provided', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'json-file.json',
+          statusText: STATUS_TEXT_OK,
+          contentType: JSONFILE
+        }
+
+        const expectedNonDisplayGroupData = dummyData
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should not refresh if csv endpoint is not found(404)', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_404,
+          statusText: STATUS_TEXT_NOT_FOUND,
+          contentType: HTML,
+          filename: '404-html.html'
+        }
+
+        const expectedNonDisplayGroupData = dummyData
+
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      })
+      it('should throw an exception when the csv server is unavailable', async () => {
+        const expectedError = new Error(`connect ECONNREFUSED mockhost`)
+        fetch.mockImplementation(() => {
+          throw new Error('connect ECONNREFUSED mockhost')
+        })
+        await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       })
       it('should throw an exception when the fluvial_non_display_group_workflow table is being used', async () => {
         // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times

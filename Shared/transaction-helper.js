@@ -55,17 +55,17 @@ module.exports = {
         if (preparedStatement && preparedStatement.prepared) {
           await preparedStatement.unprepare()
         }
-      } catch (err) { context.log.error(err.message) }
+      } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
       try {
         if (transaction && !transactionRolledBack) {
           await transaction.commit()
         }
-      } catch (err) { context.log.error(err.message) }
+      } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
       try {
         if (pool) {
           await pool.close()
         }
-      } catch (err) { context.log.error(err.message) }
+      } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
     }
   }
 }
