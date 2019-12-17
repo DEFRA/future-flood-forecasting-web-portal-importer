@@ -273,7 +273,7 @@ module.exports =
           // actual db data
           const filterQuery = await request.query(`
           SELECT *
-          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_Non_display_group_workflow
+          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow
           WHERE workflow_id = '${workflowId}'
           `)
           let rows = filterQuery.recordset
