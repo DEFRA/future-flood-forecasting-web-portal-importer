@@ -3,7 +3,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-01-01 00:00:00 End time: 2019-01-01 00:01:00 More text",
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -12,7 +12,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-01-01 00:00:00 End time: 2019-01-01 00:01:00 More text",
+      "description": "Task Test_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -21,7 +21,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False Start time: 2019-01-01 00:00:00 End time: 2019-01-01 00:01:00 More text",
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -39,7 +39,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-01-01 00:00:00 End time: 2019-01-01 00:01:00 More text",
+      "description": "Task Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -48,7 +48,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Start time: 2019-01-01 00:00:00 End time: 2019-01-01 00:01:00 More text",
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }

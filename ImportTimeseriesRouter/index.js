@@ -3,7 +3,7 @@ const importTimeSeries = require('./timeseries-functions/importTimeSeries')
 const createStagingException = require('../Shared/create-staging-exception')
 const { doInTransaction } = require('../Shared/transaction-helper')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
-// const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
+const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const getWorkflowId = require('./helpers/get-workflow-id')
 const sql = require('mssql')
@@ -21,7 +21,7 @@ module.exports = async function (context, message) {
       }
       routeData.workflowId = await getWorkflowId(context, message, transactionData.preparedStatement)
       routeData.taskRunId = await getTaskRunId(context, message, transactionData.preparedStatement)
-      // routeData.taskRunCompletionDate = await getTaskRunCompletionDate(context, message, transactionData.preparedStatement)
+      routeData.taskRunCompletionDate = await getTaskRunCompletionDate(context, message, transactionData.preparedStatement)
       routeData.transactionData = transactionData
 
       routeData.fluvialDisplayGroupWorkflowsResponse =
