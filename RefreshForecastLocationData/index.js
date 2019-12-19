@@ -5,7 +5,7 @@ const sql = require('mssql')
 
 module.exports = async function (context, message) {
   async function refresh (transactionData, context) {
-    await refreshForecastLocationData(transactionData.preparedStatement, transactionData.transaction, context)
+    await refreshForecastLocationData(transactionData.preparedStatement, new sql.Request(transactionData.transaction), context)
   }
 
   // Refresh the data in the forecast location table within a transaction with a serializable isolation
@@ -18,7 +18,7 @@ module.exports = async function (context, message) {
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function refreshForecastLocationData (preparedStatement, transaction, context) {
+async function refreshForecastLocationData (preparedStatement, request, context) {
   try {
     const response = await fetch(`${process.env['FORECAST_LOCATION_URL']}`)
     const rows = await neatCsv(response.body)
@@ -26,7 +26,7 @@ async function refreshForecastLocationData (preparedStatement, transaction, cont
 
     // Do not refresh the forecast location table if the csv is empty.
     if (recordCountResponse > 0) {
-      await new sql.Request(transaction).batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
 
       await preparedStatement.input('CENTRE', sql.NVarChar)
       await preparedStatement.input('MFDO_AREA', sql.NVarChar)
@@ -60,7 +60,7 @@ async function refreshForecastLocationData (preparedStatement, transaction, cont
       // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting forecast_location refresh')
     }
-    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
+    const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
     context.log.info(`The forecast_location table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records

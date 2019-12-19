@@ -5,7 +5,7 @@ const sql = require('mssql')
 
 module.exports = async function (context, message) {
   async function refresh (transactionData, context) {
-    await refreshNonDisplayGroupData(transactionData.preparedStatement, transactionData.transaction, context)
+    await refreshNonDisplayGroupData(transactionData.preparedStatement, transactionData.transaction, new sql.Request(transactionData.transaction), context)
   }
   // Refresh the data in the fluvial_non_display_group_workflow table within a transaction with a serializable isolation
   // level so that refresh is prevented if the fluvial_non_display_group_workflow table is in use. If the fluvial_non_display_group_workflow
@@ -17,7 +17,7 @@ module.exports = async function (context, message) {
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function refreshNonDisplayGroupData (preparedStatement, transaction, context) {
+async function refreshNonDisplayGroupData (preparedStatement, transaction, request, context) {
   context.log.info('running')
   try {
     const response = await fetch(`${process.env['FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL']}`)
@@ -25,7 +25,6 @@ async function refreshNonDisplayGroupData (preparedStatement, transaction, conte
     const recordCountResponse = rows.length
 
     if (recordCountResponse > 0) {
-      const request = new sql.Request(transaction)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW`)
 
       await preparedStatement.input('WORKFLOW_ID', sql.NVarChar)
@@ -64,7 +63,6 @@ async function refreshNonDisplayGroupData (preparedStatement, transaction, conte
       // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting fluvial_non_display_group_workflows refresh')
     }
-    const request = new sql.Request(transaction)
     const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW`)
     context.log.info(`The fluvial_non_display_group_workflow table now contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
