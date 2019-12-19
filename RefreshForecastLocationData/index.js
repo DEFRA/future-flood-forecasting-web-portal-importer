@@ -1,11 +1,11 @@
-const { doInTransaction } = require('../Shared/transaction-helper')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function refresh (transactionData, context) {
-    await refreshForecastLocationData(transactionData.preparedStatement, transactionData.transaction, context)
+  async function refresh (transaction) {
+    await executePreparedStatementInTransaction(refreshForecastLocationData, context, transaction)
   }
 
   // Refresh the data in the forecast location table within a transaction with a serializable isolation
@@ -18,8 +18,9 @@ module.exports = async function (context, message) {
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function refreshForecastLocationData (preparedStatement, transaction, context) {
+async function refreshForecastLocationData (context, preparedStatement) {
   try {
+    const transaction = preparedStatement.parent
     const response = await fetch(`${process.env['FORECAST_LOCATION_URL']}`)
     const rows = await neatCsv(response.body)
     const recordCountResponse = rows.length
@@ -27,7 +28,6 @@ async function refreshForecastLocationData (preparedStatement, transaction, cont
     // Do not refresh the forecast location table if the csv is empty.
     if (recordCountResponse > 0) {
       await new sql.Request(transaction).batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
-
       await preparedStatement.input('CENTRE', sql.NVarChar)
       await preparedStatement.input('MFDO_AREA', sql.NVarChar)
       await preparedStatement.input('CATCHMENT', sql.NVarChar)

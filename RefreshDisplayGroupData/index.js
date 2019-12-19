@@ -1,13 +1,13 @@
-const { doInTransaction } = require('../Shared/transaction-helper')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function refresh (transactionData, context) {
-    await createDisplayGroupTemporaryTable(transactionData.transaction, context)
-    await populateDisplayGroupTemporaryTable(transactionData.preparedStatement, context)
-    await refreshDisplayGroupTable(transactionData.transaction, context)
+  async function refresh (transaction) {
+    await createDisplayGroupTemporaryTable(transaction, context)
+    await executePreparedStatementInTransaction(populateDisplayGroupTemporaryTable, context, transaction)
+    await refreshDisplayGroupTable(transaction, context)
   }
 
   // Refresh the data in the fluvial_display_group_workflow table within a transaction with a serializable isolation
@@ -33,10 +33,7 @@ async function createDisplayGroupTemporaryTable (transaction, context) {
     `)
 }
 
-async function populateDisplayGroupTemporaryTable (preparedStatement, context) {
-  // The temp table provides two functions:
-  // - a preliminary check of the csv data before it is inserted into the staging table
-  // - the ability to aggregate location data in the fluvial_display_group_workflow table
+async function populateDisplayGroupTemporaryTable (context, preparedStatement) {
   try {
     // Use the fetch API to retrieve the CSV data as a stream and then parse it
     // into rows ready for insertion into the local temporary table.

@@ -1,6 +1,6 @@
 const sql = require('mssql')
 
-module.exports = async function (context, payload, description, preparedStatement) {
+module.exports = async function (context, preparedStatement, payload, description) {
   try {
     await preparedStatement.input('payload', sql.NVarChar)
     await preparedStatement.input('description', sql.NVarChar)

@@ -2,7 +2,7 @@ const moment = require('moment')
 const axios = require('axios')
 const sql = require('mssql')
 
-module.exports = async function timeseriesRefresh (context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement) {
+module.exports = async function timeseriesRefresh (context, preparedStatement, message, fluvialDisplayGroupWorkflowsResponse, workflowId) {
   const displayGroupData = await getDisplayGroupData(context, message, fluvialDisplayGroupWorkflowsResponse, workflowId, preparedStatement)
   const timeSeriesDisplayGroupsData = await getTimeseriesDisplayGroups(displayGroupData)
   await loadTimeseriesDisplayGroups(context, timeSeriesDisplayGroupsData, preparedStatement)

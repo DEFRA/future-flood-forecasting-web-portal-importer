@@ -9,7 +9,6 @@ module.exports = {
 
     let transaction
     let transactionRolledBack = false
-    let preparedStatement
 
     try {
       sql.on('error', err => {
@@ -27,20 +26,13 @@ module.exports = {
       } else {
         await transaction.begin()
       }
-      preparedStatement = new sql.PreparedStatement(transaction)
-      const transactionData = {
-        preparedStatement: preparedStatement,
-        transaction: transaction
-      }
-      // Call the function that prepares and executes the prepared statement passing
+
+      // Call the function to be executed in the transaction passing
       // through the arguments from the caller.
-      return await fn(transactionData, context, ...args)
+      return await fn(transaction, ...args)
     } catch (err) {
       context.log.error(`Transaction failed: ${errorMessage} ${err}`)
-      if (preparedStatement && preparedStatement.prepared) {
-        await preparedStatement.unprepare()
-      }
-      // Check whether the transaction has been automatically aborted
+
       if (transaction._aborted) {
         transactionRolledBack = true
         context.log.warn('The transaction has been aborted.')
@@ -52,11 +44,6 @@ module.exports = {
       throw err
     } finally {
       try {
-        if (preparedStatement && preparedStatement.prepared) {
-          await preparedStatement.unprepare()
-        }
-      } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
-      try {
         if (transaction && !transactionRolledBack) {
           await transaction.commit()
         }
@@ -66,6 +53,21 @@ module.exports = {
           await pool.close()
         }
       } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
+    }
+  },
+  executePreparedStatementInTransaction: async function (fn, context, transaction, ...args) {
+    let preparedStatement
+    try {
+      preparedStatement = new sql.PreparedStatement(transaction)
+      // Call the function that prepares and executes the prepared statement passing
+      // through the arguments from the caller.
+      return await fn(context, preparedStatement, ...args)
+    } finally {
+      try {
+        if (preparedStatement && preparedStatement.prepared) {
+          await preparedStatement.unprepare()
+        }
+      } catch (err) { context.log.error(err) }
     }
   }
 }

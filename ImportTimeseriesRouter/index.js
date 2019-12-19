@@ -1,7 +1,7 @@
 const importTimeSeriesDisplayGroups = require('./timeseries-functions/importTimeSeriesDisplayGroups')
 const importTimeSeries = require('./timeseries-functions/importTimeSeries')
 const createStagingException = require('../Shared/create-staging-exception')
-const { doInTransaction } = require('../Shared/transaction-helper')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
 const getTaskRunId = require('./helpers/get-task-run-id')
@@ -13,22 +13,22 @@ module.exports = async function (context, message) {
   context.log.info('JavaScript import time series function processed work item', message)
   context.log.info(context.bindingData)
 
-  async function routeMessage (transactionData) {
+  async function routeMessage (transaction) {
     context.log('JavaScript router ServiceBus queue trigger function processed message', message)
-    const proceedWithImport = await isTaskRunApproved(context, message, transactionData.preparedStatement)
+    const proceedWithImport = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, message)
     if (proceedWithImport) {
       const routeData = {
       }
-      routeData.workflowId = await getWorkflowId(context, message, transactionData.preparedStatement)
-      routeData.taskRunId = await getTaskRunId(context, message, transactionData.preparedStatement)
-      routeData.taskRunCompletionDate = await getTaskRunCompletionDate(context, message, transactionData.preparedStatement)
-      routeData.transactionData = transactionData
+      routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
+      routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
+      routeData.taskRunCompletionDate = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
+      routeData.transaction = transaction
 
       routeData.fluvialDisplayGroupWorkflowsResponse =
-        await getfluvialDisplayGroupWorkflows(context, transactionData.preparedStatement, routeData.workflowId)
+        await executePreparedStatementInTransaction(getfluvialDisplayGroupWorkflows, context, transaction, routeData.workflowId)
 
       routeData.fluvialNonDisplayGroupWorkflowsResponse =
-        await getfluvialNonDisplayGroupWorkflows(context, transactionData.preparedStatement, routeData.workflowId)
+        await executePreparedStatementInTransaction(getfluvialNonDisplayGroupWorkflows, context, transaction, routeData.workflowId)
 
       await route(context, message, routeData)
     } else {
@@ -63,11 +63,6 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
   }
 
   const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
-
-  if (preparedStatement && preparedStatement.prepared) {
-    await preparedStatement.unprepare()
-  }
-
   return fluvialDisplayGroupWorkflowsResponse
 }
 
@@ -93,38 +88,37 @@ async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, w
   }
 
   const fluvialNonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
-
-  if (preparedStatement && preparedStatement.prepared) {
-    await preparedStatement.unprepare()
-  }
-
   return fluvialNonDisplayGroupWorkflowsResponse
 }
 
 async function route (context, message, routeData) {
   if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
     context.log.info('Message routed to the plot function')
-    await importTimeSeriesDisplayGroups(
+    await executePreparedStatementInTransaction(
+      importTimeSeriesDisplayGroups,
       context,
+      routeData.transaction,
       message,
       routeData.fluvialDisplayGroupWorkflowsResponse,
-      routeData.workflowId,
-      routeData.transactionData.preparedStatement
+      routeData.workflowId
     )
   } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
     context.log.info('Message has been routed to the filter function')
-    await importTimeSeries(
+    await executePreparedStatementInTransaction(
+      importTimeSeries,
       context,
+      routeData.transaction,
       message,
       routeData.fluvialNonDisplayGroupWorkflowsResponse,
-      routeData.workflowId,
-      routeData.transactionData.preparedStatement
+      routeData.workflowId
     )
   } else {
-    await createStagingException(
+    await executePreparedStatementInTransaction(
+      createStagingException,
       context,
+      routeData.transaction,
       message,
-      `Missing timeseries data for ${routeData.workflowId}`, routeData.transactionData.preparedStatement
+      `Missing timeseries data for ${routeData.workflowId}`
     )
   }
 }
