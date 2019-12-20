@@ -97,6 +97,7 @@ async function route (context, workflowId, fluvialDisplayGroupWorkflowsResponse,
     context.log.info('Message has been routed to the filter function')
     await ImportTimeSeries(context, message, fluvialNonDisplayGroupWorkflowsResponse, workflowId, preparedStatement)
   } else {
+    context.log.warn(`The workflow: '${workflowId}' was not found in the staging reference tables.`)
     await createStagingException(context, message, `Missing timeseries data for ${workflowId}`, preparedStatement)
   }
 }
