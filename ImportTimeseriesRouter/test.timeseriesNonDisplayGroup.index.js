@@ -242,7 +242,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await transaction.begin()
       const request = new sql.Request(transaction)
       await request.batch(`
-      INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id) 
+      INSERT INTO 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id) 
       values
       ('dummyWorkflow', 'dummyFilter')
     `)

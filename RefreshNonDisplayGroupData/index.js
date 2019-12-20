@@ -32,18 +32,11 @@ async function refreshNonDisplayGroupData (preparedStatement, transaction, conte
       await preparedStatement.input('FILTER_ID', sql.NVarChar)
 
       await preparedStatement.prepare(`
-        If Not Exists(
-        select *
-        from  ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
-        where WORKFLOW_ID=@WORKFLOW_ID AND FILTER_ID=@FILTER_ID
-        )
-        Begin
             INSERT INTO 
              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
                 (WORKFLOW_ID, FILTER_ID)
             values
-                (@WORKFLOW_ID, @FILTER_ID)
-        End`)
+                (@WORKFLOW_ID, @FILTER_ID)`)
       for (const row of rows) {
         // Ignore rows in the CSV data that do not have entries for all columns.
         try {
