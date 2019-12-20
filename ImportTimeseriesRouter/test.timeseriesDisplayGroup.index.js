@@ -128,9 +128,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should create a staging exception for an invalid message', async () => {
       await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
     })
-    // it('should create a staging exception for an invalid message', async () => {
-    //   await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutCompletionDate', 'Unable to extract task run completion date from message')
-    // })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
       // an exception is thrown to facilitate this process.
@@ -258,8 +255,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.batch(`
-      INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
-      values
+      INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids) 
+      values 
       ('dummyWorkflow', 'dummyPlot', 'dummyLocation')
     `)
       await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)

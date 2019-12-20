@@ -5,9 +5,9 @@ const sql = require('mssql')
 
 module.exports = async function (context, message) {
   async function refresh (transactionData, context) {
-    await createDisplayGroupTemporaryTable(new sql.Request(transactionData.transaction), context)
+    await createDisplayGroupTemporaryTable(transactionData.transaction, context)
     await populateDisplayGroupTemporaryTable(transactionData.preparedStatement, context)
-    await refreshDisplayGroupTable(new sql.Request(transactionData.transaction), context)
+    await refreshDisplayGroupTable(transactionData.transaction, context)
   }
 
   // Refresh the data in the fluvial_display_group_workflow table within a transaction with a serializable isolation
@@ -20,9 +20,9 @@ module.exports = async function (context, message) {
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function createDisplayGroupTemporaryTable (request, context) {
+async function createDisplayGroupTemporaryTable (transaction, context) {
   // Create a local temporary table to hold fluvial_display_group CSV data.
-  await request.batch(`
+  await new sql.Request(transaction).batch(`
       create table #fluvial_display_group_workflow_temp
       (
         id uniqueidentifier not null default newid(),
@@ -65,14 +65,14 @@ async function populateDisplayGroupTemporaryTable (preparedStatement, context) {
   }
 }
 
-async function refreshDisplayGroupTable (request, context) {
+async function refreshDisplayGroupTable (transaction, context) {
   try {
-    const recordCountResponse = await request.query(`select count(*) as number from #fluvial_display_group_workflow_temp`)
+    const recordCountResponse = await new sql.Request(transaction).query(`select count(*) as number from #fluvial_display_group_workflow_temp`)
     // Do not refresh the fluvial_display_group_workflow table if the local temporary table is empty.
     if (recordCountResponse.recordset[0].number > 0) {
-      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+      await new sql.Request(transaction).query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
       // Concatenate all locations for each combination of workflow ID and plot ID.
-      await request.query(`
+      await new sql.Request(transaction).query(`
         insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
           select
             workflow_id,
@@ -88,7 +88,7 @@ async function refreshDisplayGroupTable (request, context) {
       // If the csv is empty then the file is essentially ignored
       context.log.warn('#fluvial_display_group_workflow_temp contains no records - Aborting fluvial_display_group_workflow refresh')
     }
-    const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
     context.log.info(`The fluvial_display_group_workflow table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
