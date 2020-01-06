@@ -4,8 +4,8 @@
       "name": "message",
       "type": "serviceBusTrigger",
       "direction": "in",
-      "topicName": "fews-display-group-topic",
-      "subscriptionName": "%AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME%",
+      "topicName": "fews-fluvial-display-group-topic",
+      "subscriptionName": "%AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }
   ]

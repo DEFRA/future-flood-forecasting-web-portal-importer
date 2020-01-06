@@ -29,14 +29,18 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure service bus queue named **fews-eventcode-queue**
 * Microsoft Azure service bus queue named **fews-staged-timeseries-queue**
 * Microsoft Azure service bus queue named **fews-forecast-location-queue**
-* Microsoft Azure service bus queue named **fews-display-group-queue**
-* Microsoft Azure service bus queue named **fews-non-display-group-queue**
+* Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
+* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**
+* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**
+* Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**
 * Microsoft Azure service bus queue named **fews-ignored-workflows-queue**
 * Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
 * **JavaScript** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
@@ -123,8 +127,8 @@ directory containing this file.
 |-------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                      |
 | AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME | Subscription name associated with fews-staged-timeseries-topic                              |
-| AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic                                  |
-| AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                              |
+| AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic                          |
+| AZURE_SERVICE_BUS_FLUVIAL_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                      |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                              |
 | AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                              |
 
@@ -187,8 +191,10 @@ does not prescribe how the activities should be performed.
 
 * Messages placed on the fewspiqueue **must** contain only the ID of the location for which data is to be imported.
 * Messages placed on the following queues **must** contain some content (for example {"input": "refresh"}), the message content is ignored:  
-  * fews-display-group-queue
-  * fews-non-display-group-queue
+  * fews-fluvial-display-group-queue
+  * fews-coastal-display-group-queue
+  * fews-fluvial-non-display-group-queue  
+  * fews-coastal-non-display-group-queue
   * fews-forecast-location-queue
   * fews-ignored-workflows-queue
 * Messages placed on the fews-eventcode-queue or fews-eventcode-topic **must** adhere to the format used for
