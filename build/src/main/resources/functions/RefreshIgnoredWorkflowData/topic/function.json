@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "topicName": "fews-ignored-workflow-topic",
+      "subscriptionName": "%AZURE_SERVICE_BUS_IGNORED_WORKFLOW_SUBSCRIPTION_NAME%",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}
