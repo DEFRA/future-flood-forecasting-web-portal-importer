@@ -60,6 +60,10 @@ accordingly.
 
 * Microsoft Azure service bus queue named **fews-location-lookup-queue**
 * Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
+* Microsoft Azure service bus queue named **fews-display-group-queue**
+* Microsoft Azure service bus topic named **fews-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus queue named **fews-non-display-group-queue**
+* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
 
 ### Testing
 
@@ -137,13 +141,15 @@ directory containing this file.
 The function app settings/environment variables below are no longer used. It is recommended that they should be removed from any existing installation
 accordingly.
 
-| name                                      | description                                                                                             |
-|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| FEWS_INITIAL_LOAD_HISTORY_HOURS           | Number of hours before the initial import time that core forecasting engine data should be retrieved for|
-| FEWS_LOAD_HISTORY_HOURS                   | Number of hours before subsequent import times that core forecasting engine data should be retrieved for|
-| FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                           |
-| LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                 |
-| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                  |
+| name                                      | description                                                                                                |
+|-------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| FEWS_INITIAL_LOAD_HISTORY_HOURS           | Number of hours before the initial import time that core forecasting engine data should be retrieved for   |
+| FEWS_LOAD_HISTORY_HOURS                   | Number of hours before subsequent import times that core forecasting engine data should be retrieved for   |
+| FEWS_IMPORT_DISPLAY_GROUPS_SCHEDULE       | UNIX Cron expression controlling when time series display groups are imported                              |
+| LOCATION_LOOKUP_URL                       | URL used to provide location lookup data associated with display groups                                    |
+| AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                     |
+| AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic (no fluvial/coastal distinction)    |
+| AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
 
 ### Optional Runtime Function App Settings/Environment Variables
 
