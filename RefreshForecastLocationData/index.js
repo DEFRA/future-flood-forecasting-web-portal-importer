@@ -64,7 +64,7 @@ async function refreshForecastLocationData (context, preparedStatement) {
     context.log.info(`The forecast_location table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
-      // after thr table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
+      // after the table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
       context.log.warn('There are no new records to insert, rolling back forecast_location refresh')
       throw new Error('A null database overwrite is not allowed')
     }
