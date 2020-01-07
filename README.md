@@ -25,23 +25,6 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * Microsoft Azure resource group
 * Microsoft Azure service bus
 * Microsoft Azure storage account
-* Microsoft Azure storage queue named **fewspiqueue**
-* Microsoft Azure service bus queue named **fews-eventcode-queue**
-* Microsoft Azure service bus queue named **fews-staged-timeseries-queue**
-* Microsoft Azure service bus queue named **fews-forecast-location-queue**
-* Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
-* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**
-* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**
-* Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**
-* Microsoft Azure service bus queue named **fews-ignored-workflows-queue**
-* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
 * **JavaScript** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
@@ -53,11 +36,34 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
   * The URL for retrieving the set of core forecasting engine filters associated with each workflow.
   * The URL for retrieving the set of ignored workflows.
 
+#### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
+
+* Microsoft Azure service bus queue named **fews-eventcode-queue**
+* Microsoft Azure service bus queue named **fews-staged-timeseries-queue**
+* Microsoft Azure service bus queue named **fews-forecast-location-queue**
+* Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
+* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**
+* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**
+* Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**
+* Microsoft Azure service bus queue named **fews-ignored-workflows-queue**
+
+#### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
+
+* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
+
 ### Redundant Legacy Prerequisites
 
 The function app prerequisites below are no longer required. It is recommended that they should be removed from any existing installation
 accordingly.
 
+* Microsoft Azure storage queue named **fewspiqueue**
 * Microsoft Azure service bus queue named **fews-location-lookup-queue**
 * Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-display-group-queue**
