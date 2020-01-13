@@ -39,7 +39,7 @@ module.exports =
 
       beforeEach(() => {
         dummyData = {
-          'dummyWorkflow': ['dummyFilter']
+          dummyWorkflow: ['dummyFilter']
         }
         return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id) values ('dummyWorkflow', 'dummyFilter')`)
       })
@@ -69,9 +69,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          'test_non_display_workflow_1': ['test_filter_1'],
-          'test_non_display_workflow_3': ['test_filter_3'],
-          'test_non_display_workflow_2': ['test_filter_2']
+          test_non_display_workflow_1: ['test_filter_1'],
+          test_non_display_workflow_3: ['test_filter_3'],
+          test_non_display_workflow_2: ['test_filter_2']
         }
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
@@ -85,10 +85,10 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          'test_non_display_workflow_1': ['test_filter_1', 'test_filter_1a'],
-          'test_non_display_workflow_3': ['test_filter_3'],
-          'test_non_display_workflow_2': ['test_filter_2'],
-          'test_non_display_workflow_4': ['test_filter_4']
+          test_non_display_workflow_1: ['test_filter_1', 'test_filter_1a'],
+          test_non_display_workflow_3: ['test_filter_3'],
+          test_non_display_workflow_2: ['test_filter_2'],
+          test_non_display_workflow_4: ['test_filter_4']
         }
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
@@ -102,9 +102,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          'test_non_display_workflow_1': ['test_filter_1'],
-          'test_non_display_workflow_3': ['test_filter_3'],
-          'test_non_display_workflow_2': ['test_filter_2']
+          test_non_display_workflow_1: ['test_filter_1'],
+          test_non_display_workflow_3: ['test_filter_3'],
+          test_non_display_workflow_2: ['test_filter_2']
         }
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
@@ -130,8 +130,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          'test_non_display_workflow_1': ['test_filter_1'],
-          'test_non_display_workflow_2': ['test_filter_2']
+          test_non_display_workflow_1: ['test_filter_1'],
+          test_non_display_workflow_2: ['test_filter_2']
         }
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
@@ -169,7 +169,7 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          'test_non_display_workflow_2': ['test_filter_a']
+          test_non_display_workflow_2: ['test_filter_a']
         }
 
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
@@ -276,8 +276,8 @@ module.exports =
           FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow
           WHERE workflow_id = '${workflowId}'
           `)
-          let rows = filterQuery.recordset
-          let dbFilterIds = []
+          const rows = filterQuery.recordset
+          const dbFilterIds = []
           rows.forEach(row =>
             dbFilterIds.push(row.FILTER_ID)
           )
