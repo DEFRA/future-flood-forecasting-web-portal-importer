@@ -12,7 +12,7 @@
       "name": "stagedTimeseries",
       "type": "serviceBus",
       "direction": "out",
-      "topicName": "staged-timeseries-topic",
+      "topicName": "fews-staged-timeseries-topic",
       "subscriptionName": "%AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }

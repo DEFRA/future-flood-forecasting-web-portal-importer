@@ -11,7 +11,7 @@
       "name": "stagedTimeseries",
       "type": "serviceBus",
       "direction": "out",
-      "queueName": "staged-timeseries-queue",
+      "queueName": "fews-staged-timeseries-queue",
       "connection": "AzureWebJobsServiceBus"
     }
   ]
