@@ -84,9 +84,11 @@ module.exports = describe('Ignored workflow loader tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedIgnoredWorkflowData = [dummyData]
+      const expectedIgnoredWorkflowData = [{
+        WorkflowId: 'workflow787'
+      }]
 
-      await refreshIgnoredWorkflowDataAndCheckRejectionResults(mockResponseData, expectedIgnoredWorkflowData)
+      await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData)
     })
 
     it('should ignore a csv that has no header row, only data rows', async () => {

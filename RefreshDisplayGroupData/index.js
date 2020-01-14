@@ -88,8 +88,9 @@ async function refreshDisplayGroupTable (transaction, context) {
     const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
     context.log.info(`The fluvial_display_group_workflow table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
-      // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
-      // after thr table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
+      // If all the records in the csv (inserted into the temp table) are invalid, the function will overwrite records in the table with no new records
+      // after the table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
+      // # The temporary table protects this from happening greatly reducing the likelihood of occurance.
       context.log.warn('There are no new records to insert, rolling back fluvial_display_group_workflow refresh')
       throw new Error('A null database overwrite is not allowed')
     }
