@@ -1,11 +1,11 @@
-const { doInTransaction } = require('../Shared/transaction-helper')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function refresh (transactionData, context) {
-    await refreshNonDisplayGroupData(transactionData.preparedStatement, transactionData.transaction, context)
+  async function refresh (transaction) {
+    await executePreparedStatementInTransaction(refreshNonDisplayGroupData, context, transaction)
   }
   // Refresh the data in the fluvial_non_display_group_workflow table within a transaction with a serializable isolation
   // level so that refresh is prevented if the fluvial_non_display_group_workflow table is in use. If the fluvial_non_display_group_workflow
@@ -17,15 +17,16 @@ module.exports = async function (context, message) {
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function refreshNonDisplayGroupData (preparedStatement, transaction, context) {
+async function refreshNonDisplayGroupData (context, preparedStatement) {
   context.log.info('running')
+  const transaction = preparedStatement.parent
   try {
     const response = await fetch(`${process.env['FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL']}`)
     const rows = await neatCsv(response.body)
     const recordCountResponse = rows.length
 
     if (recordCountResponse > 0) {
-      const request = new sql.Request(transaction)
+      const request = new sql.Request(preparedStatement.parent)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW`)
 
       await preparedStatement.input('WORKFLOW_ID', sql.NVarChar)
