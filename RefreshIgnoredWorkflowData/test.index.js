@@ -225,7 +225,6 @@ module.exports = describe('Ignored workflow loader tests', () => {
     context.log(`Live data row count: ${result.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
-      // FFFSLOCID from expected data
       for (const row of expectedIgnoredWorkflowData) {
         const WorkflowId = row.WorkflowId
 
