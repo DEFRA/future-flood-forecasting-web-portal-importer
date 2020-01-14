@@ -28,8 +28,8 @@ module.exports = {
       }
 
       // Call the function to be executed in the transaction passing
-      // through the arguments from the caller.
-      return await fn(transaction, ...args)
+      // through the transaction, context and arguments from the caller.
+      return await fn(transaction, context, ...args)
     } catch (err) {
       context.log.error(`Transaction failed: ${errorMessage} ${err}`)
 

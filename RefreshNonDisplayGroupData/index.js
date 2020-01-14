@@ -4,7 +4,7 @@ const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function refresh (transaction) {
+  async function refresh (transaction, context) {
     await executePreparedStatementInTransaction(refreshNonDisplayGroupData, context, transaction)
   }
   // Refresh the data in the fluvial_non_display_group_workflow table within a transaction with a serializable isolation
