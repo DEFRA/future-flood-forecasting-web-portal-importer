@@ -1,13 +1,13 @@
 
-## Prerequisites
+# Prerequisites
 
-### Build Prerequisites
+## Build Prerequisites
 
 * Java 8 or above
 * Maven 3.x
 * A UNIX based operating system with bash installed
 
-### Runtime Prerequisites
+## Runtime Prerequisites
 
 * Microsoft Azure resource group
 * Microsoft Azure service bus
@@ -23,7 +23,7 @@
   * The URL for retrieving the set of core forecasting engine filters associated with each workflow.
   * The URL for retrieving the set of ignored workflows.
 
-#### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
+### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
 
 * Microsoft Azure service bus queue named **fews-eventcode-queue**  
 An input binding for the 'ImportTimseseriesRouter' function.
@@ -42,7 +42,7 @@ An input binding for the 'CoastalRefreshNonDisplayGroupData' function (The *Coas
 * Microsoft Azure service bus queue named **fews-ignored-workflows-queue**  
 An input binding for the 'RefreshIgnoredWorkflowData' function.
 
-#### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
+### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
 
 * Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription  
 An input binding for the 'ImportTimseseriesRouter' function.
@@ -61,7 +61,7 @@ An input binding for the 'CoastalRefreshNonDisplayGroupData' function (The *Coas
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription  
 An input binding for the 'RefreshIgnoredWorkflowData' function.
 
-### Redundant Legacy Prerequisites
+## Redundant Legacy Prerequisites
 
 The function app prerequisites below are no longer required. It is recommended that they should be removed from any existing installation
 accordingly.

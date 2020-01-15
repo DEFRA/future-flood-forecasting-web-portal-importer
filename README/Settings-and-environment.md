@@ -1,13 +1,13 @@
-## Function App Settings/Environment Variables
+# Function App Settings/Environment Variables
 
-### Mandatory Build Time Environment Variables
+## Mandatory Build Time Environment Variables
 
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
 | AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
 
-### Mandatory Runtime Function App Settings/Environment Variables
+## Mandatory Runtime Function App Settings/Environment Variables
 
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
@@ -28,7 +28,7 @@
 | FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide the fluvial non display groups workflow reference data                              |
 | IGNORED_WORKFLOWS_URL                     | URL used to provide the ignored workflows                                                               |
 
-### Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
+## Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
 | name                                                  | description                                                                                 |
 |-------------------------------------------------------|---------------------------------------------------------------------------------------------|
@@ -39,7 +39,7 @@
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                              |
 | AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                              |
 
-### Redundant Legacy Runtime Function App Settings/Environment Variables
+## Redundant Legacy Runtime Function App Settings/Environment Variables
 
 The function app settings/environment variables below are no longer used. It is recommended that they should be removed from any existing installation
 accordingly.
@@ -54,7 +54,7 @@ accordingly.
 | AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic (no fluvial/coastal distinction)    |
 | AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
 
-### Optional Runtime Function App Settings/Environment Variables
+## Optional Runtime Function App Settings/Environment Variables
 
 | name                         | description                                                                                                          |
 |------------------------------|----------------------------------------------------------------------------------------------------------------------|

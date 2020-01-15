@@ -1,4 +1,4 @@
-## Installation Activities
+# Installation Activities
 
 The following activities need to be performed for the function to run. While the documentation states what activities need to be performed it
 does not prescribe how the activities should be performed.
