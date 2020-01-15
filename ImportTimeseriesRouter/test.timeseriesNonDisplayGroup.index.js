@@ -167,40 +167,71 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function processMessageAndCheckImportedData (messageKey, mockResponses) {
     await processMessage(messageKey, mockResponses)
+    const messageDescription = taskRunCompleteMessages[messageKey].input.description
+    const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
+    const expectedTaskCompletionTime = moment(taskRunCompleteMessages['commonMessageData'].completionTime)
+    const expectedTaskId = taskRunCompleteMessages[messageKey].input.source
+    const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
     const receivedFewsData = []
+    const receivedPrimaryKeys = []
+
     const result = await request.query(`
       select
-        top(${mockResponses.length}) fews_data,
-        start_time,
-        end_time
+        t.id,
+        th.workflow_id,
+        th.task_id,
+        th.task_completion_time,
+        th.start_time,
+        th.end_time,
+        t.fews_data
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
-      order by
-        start_time
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      where
+        th.id = t.timeseries_header_id
     `)
 
+    expect(result.recordset.length).toBe(mockResponses.length)
+
     // Database interaction is asynchronous so the order in which records are written
-    // cannot be guaranteed.  To check if records have been persisted correctly, copy
-    // the timeseries data retrieved from the database to an array and then check that
-    // the array contains each expected mock timeseries.
-    const now = moment.utc()
+    // cannot be guaranteed.
+    // To check if records have been persisted correctly, copy the timeseries data
+    // retrieved from the database to an array and then check that the array contains
+    // each expected mock timeseries.
+    // To check if messages containing the primary keys of the timeseries records will be
+    // sent to a queue/topic for reporting and visualisation purposes, copy the primary
+    // keys retrieved from the database to an array and check that the ouput binding for
+    // staged timeseries contains each expected primary key.
     for (const index in result.recordset) {
+      // Check that data common to all timeseries has been persisted correctly.
+      if (index === '0') {
+        const taskCompletionTime = moment(result.recordset[index].task_completion_time)
+        const startTime = moment(result.recordset[index].start_time)
+        const endTime = moment(result.recordset[index].end_time)
+
+        expect(taskCompletionTime.toISOString()).toBe(expectedTaskCompletionTime.toISOString())
+        expect(result.recordset[index].task_id).toBe(expectedTaskId)
+        expect(result.recordset[index].workflow_id).toBe(expectedWorkflowId)
+
+        // Check that the persisted values for the forecast start time and end time are based within expected range of
+        // the task completion time taking into acccount that the default values can be overridden by environment variables.
+        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 48
+        const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+        const expectedStartTime = moment(taskCompletionTime).subtract(startTimeOffsetHours, 'hours')
+        const expectedEndTime = moment(taskCompletionTime).add(endTimeOffsetHours, 'hours')
+        expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
+        expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
+      }
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
-      // Check that the persisted values for the forecast start time and end time are within tolerance
-      // of the expected values taking into acccount that the default values can be overridden by
-      // environment variables.
-      const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 48
-      const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-      const expectedStartTime = moment(now).subtract(startTimeOffsetHours, 'hours')
-      const expectedEndTime = moment(now).add(endTimeOffsetHours, 'hours')
-      const secondsSincePersistedStartTime = moment.duration(expectedStartTime.diff(result.recordset[index].start_time)).asSeconds()
-      const secondsSincePersistedEndTime = moment.duration(expectedEndTime.diff(result.recordset[index].end_time)).asSeconds()
-      expect(secondsSincePersistedStartTime).toBeLessThanOrEqual(1)
-      expect(secondsSincePersistedEndTime).toBeLessThanOrEqual(1)
+      receivedPrimaryKeys.push(result.recordset[index].id)
     }
 
     for (const mockResponse of mockResponses) {
       expect(receivedFewsData).toContainEqual(mockResponse.data)
+    }
+
+    for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+      expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
     }
   }
 

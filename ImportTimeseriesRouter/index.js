@@ -1,5 +1,6 @@
-const importTimeSeriesDisplayGroups = require('./timeseries-functions/importTimeSeriesDisplayGroups')
-const importTimeSeries = require('./timeseries-functions/importTimeSeries')
+const moment = require('moment')
+const getTimeSeriesDisplayGroups = require('./timeseries-functions/importTimeSeriesDisplayGroups')
+const getTimeSeriesNonDisplayGroups = require('./timeseries-functions/importTimeSeries')
 const createStagingException = require('../Shared/create-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
@@ -19,9 +20,16 @@ module.exports = async function (context, message) {
     if (proceedWithImport) {
       const routeData = {
       }
+      // Retrieve data from two days before the task run completed to five days after the task run completed by default.
+      // This time period can be overridden by the two environment variables
+      // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
+      const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 48
+      const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+      routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
+      routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+      routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
       routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
-      routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
-      routeData.taskRunCompletionDate = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
+      routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
       routeData.transaction = transaction
 
       routeData.fluvialDisplayGroupWorkflowsResponse =
@@ -91,26 +99,104 @@ async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, w
   return fluvialNonDisplayGroupWorkflowsResponse
 }
 
+async function createTimeseriesHeader (context, preparedStatement, message, routeData) {
+  let timeseriesHeaderId
+
+  await preparedStatement.input('startTime', sql.DateTime2)
+  await preparedStatement.input('endTime', sql.DateTime2)
+  await preparedStatement.input('taskCompletionTime', sql.DateTime2)
+  await preparedStatement.input('taskId', sql.NVarChar)
+  await preparedStatement.input('workflowId', sql.NVarChar)
+  await preparedStatement.output('insertedId', sql.UniqueIdentifier)
+
+  await preparedStatement.prepare(`
+    insert into
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
+        (start_time, end_time, task_completion_time, task_id, workflow_id)
+    output
+      inserted.id
+    values
+      (@startTime, @endTime, @taskCompletionTime, @taskId, @workflowId)
+  `)
+
+  const parameters = {
+    startTime: routeData.startTime,
+    endTime: routeData.endTime,
+    taskCompletionTime: routeData.taskCompletionTime,
+    taskId: routeData.taskId,
+    workflowId: routeData.workflowId
+  }
+
+  const result = await preparedStatement.execute(parameters)
+
+  // Return the primary key of the new TIMESERIES_HEADER record so that
+  // new TIMESERIES records can link to it.
+  if (result.recordset && result.recordset[0] && result.recordset[0].id) {
+    timeseriesHeaderId = result.recordset[0].id
+  }
+  return timeseriesHeaderId
+}
+
+async function loadTimeseries (context, preparedStatement, timeSeriesDisplayGroupsData, routeData) {
+  await preparedStatement.input('fewsData', sql.NVarChar)
+  await preparedStatement.input('fewsParameters', sql.NVarChar)
+  await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
+  await preparedStatement.output('insertedId', sql.UniqueIdentifier)
+
+  await preparedStatement.prepare(`
+    insert into
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, fews_parameters, timeseries_header_id)
+    output
+      inserted.id
+    values
+      (@fewsData, @fewsParameters, @timeseriesHeaderId)
+  `)
+
+  context.bindings.stagedTimeseries = []
+
+  for (const index in timeSeriesDisplayGroupsData) {
+    const parameters = {
+      fewsData: timeSeriesDisplayGroupsData[index].fewsData,
+      fewsParameters: timeSeriesDisplayGroupsData[index].fewsParameters,
+      timeseriesHeaderId: routeData.timeseriesHeaderId
+    }
+
+    const result = await preparedStatement.execute(parameters)
+
+    // Prepare to send a message containing the primary key of the inserted record.
+    if (result.recordset && result.recordset[0] && result.recordset[0].id) {
+      context.bindings.stagedTimeseries.push({
+        id: result.recordset[0].id
+      })
+    }
+  }
+}
+
 async function route (context, message, routeData) {
-  if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
-    context.log.info('Message routed to the plot function')
-    await executePreparedStatementInTransaction(
-      importTimeSeriesDisplayGroups,
+  if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0 ||
+      routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
+    let timeseriesData
+    routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+      createTimeseriesHeader,
       context,
       routeData.transaction,
       message,
-      routeData.fluvialDisplayGroupWorkflowsResponse,
-      routeData.workflowId
+      routeData
     )
-  } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-    context.log.info('Message has been routed to the filter function')
+
+    if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
+      context.log.info('Message routed to the plot function')
+      timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
+    } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
+      context.log.info('Message has been routed to the filter function')
+      timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
+    }
     await executePreparedStatementInTransaction(
-      importTimeSeries,
+      loadTimeseries,
       context,
       routeData.transaction,
-      message,
-      routeData.fluvialNonDisplayGroupWorkflowsResponse,
-      routeData.workflowId
+      timeseriesData,
+      routeData
     )
   } else {
     await executePreparedStatementInTransaction(
