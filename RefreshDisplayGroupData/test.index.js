@@ -34,7 +34,7 @@ module.exports =
         // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
         // function implementation for the function context needs creating for each test.
         context = new Context()
-        return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
       })
 
       beforeEach(() => {
