@@ -33,10 +33,10 @@ module.exports = async function (context, message) {
       routeData.transaction = transaction
 
       routeData.fluvialDisplayGroupWorkflowsResponse =
-        await executePreparedStatementInTransaction(getfluvialDisplayGroupWorkflows, context, transaction, routeData.workflowId)
+        await executePreparedStatementInTransaction(getFluvialDisplayGroupWorkflows, context, transaction, routeData.workflowId)
 
       routeData.fluvialNonDisplayGroupWorkflowsResponse =
-        await executePreparedStatementInTransaction(getfluvialNonDisplayGroupWorkflows, context, transaction, routeData.workflowId)
+        await executePreparedStatementInTransaction(getFluvialNonDisplayGroupWorkflows, context, transaction, routeData.workflowId)
 
       await route(context, message, routeData)
     } else {
@@ -48,7 +48,7 @@ module.exports = async function (context, message) {
 }
 
 // Get a list of workflows associated with display groups
-async function getfluvialDisplayGroupWorkflows (context, preparedStatement, workflowId) {
+async function getFluvialDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve display group data in a full transaction with a table lock held
@@ -75,7 +75,7 @@ async function getfluvialDisplayGroupWorkflows (context, preparedStatement, work
 }
 
 // Get list of workflows associated with non display groups
-async function getfluvialNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
+async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve non display group data in a full transaction with a table lock held
