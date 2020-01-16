@@ -13,7 +13,7 @@ module.exports = async function (context, preparedStatement, payload, descriptio
     `)
 
     const parameters = {
-      payload: payload,
+      payload: JSON.stringify(payload),
       description: description
     }
 
