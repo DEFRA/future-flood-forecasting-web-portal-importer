@@ -137,7 +137,7 @@ async function createTimeseriesHeader (context, preparedStatement, message, rout
   return timeseriesHeaderId
 }
 
-async function loadTimeseries (context, preparedStatement, timeSeriesDisplayGroupsData, routeData) {
+async function loadTimeseries (context, preparedStatement, timeSeriesData, routeData) {
   await preparedStatement.input('fewsData', sql.NVarChar)
   await preparedStatement.input('fewsParameters', sql.NVarChar)
   await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
@@ -154,10 +154,10 @@ async function loadTimeseries (context, preparedStatement, timeSeriesDisplayGrou
 
   context.bindings.stagedTimeseries = []
 
-  for (const index in timeSeriesDisplayGroupsData) {
+  for (const index in timeSeriesData) {
     const parameters = {
-      fewsData: timeSeriesDisplayGroupsData[index].fewsData,
-      fewsParameters: timeSeriesDisplayGroupsData[index].fewsParameters,
+      fewsData: timeSeriesData[index].fewsData,
+      fewsParameters: timeSeriesData[index].fewsParameters,
       timeseriesHeaderId: routeData.timeseriesHeaderId
     }
 
