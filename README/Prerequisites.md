@@ -25,41 +25,34 @@
 
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
 
-* Microsoft Azure service bus queue named **fews-eventcode-queue**  
-An input binding for the 'ImportTimseseriesRouter' function.
-* Microsoft Azure service bus queue named **fews-staged-timeseries-queue**  
-An output binding for the 'ImportTimseseriesRouter' function.
-* Microsoft Azure service bus queue named **fews-forecast-location-queue**  
-An input binding for the 'RefreshForecastLocationData' function.
-* Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**  
-An input binding for the 'RefreshDisplayGroupData' function (to be renamed *FluvialRefreshDisplayGroupData*).
-* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**  
-An input binding for the 'RefreshNonDisplayGroupData' function (to be renamed *FluvialRefreshNonDisplayGroupData*).
-* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**  
-An input binding for the 'CoastalRefreshDisplayGroupData' function (The *CoastalRefreshDisplayGroupData* function has not yet been created).
-* Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**  
-An input binding for the 'CoastalRefreshNonDisplayGroupData' function (The *CoastalRefreshNonDisplayGroupData* function has not yet been created).
-* Microsoft Azure service bus queue named **fews-ignored-workflows-queue**  
-An input binding for the 'RefreshIgnoredWorkflowData' function.
+* **Microsoft Azure service bus queue named _fews-eventcode-queue_**  
+Messages are placed on this queue when a taskrun has completed within the third-party core engine. The messages placed on this queue provide information on the completed workflow to be processed by the _ImportTimeSeriesRouter_ function, this information is used to inform a timeseries retrieval query to the PI server API.
+* **Microsoft Azure service bus queue named _fews-staged-timeseries-queue_**  
+Messages are placed on this queue when the function app has finished a timeseries data load into the staging database. The messages placed on this queue are issued by the _ImportTimeSeriesRouter_ function, this queue  is used to inform the consumer application of a staging database update. A new message is created for each row inserted into the _TIMESERIES_ table.
+* **Microsoft Azure service bus queue named _fews-forecast-location-queue_**  
+Messages are placed on this queue when there has been an update to the remote forecast location reference data file, this file provides greater detail on each forecast location. The _RefreshForecastLocationData_ function is triggered to load the new file and provide up-to-date reference data in the _FORECAST_LOCATION_ table of the staging database.
+* **Microsoft Azure service bus queue named _fews-fluvial-display-group-queue_**
+Messages are placed on this queue when there has been an update to the remote fluvial display groups workflow reference data file, this file provides display group data (plotid & locationid) associated with each workflow listed. The _RefreshDisplayGroupData_ function (to be renamed _FluvialRefreshDisplayGroupData_) is triggered to load the new file and provide up-to-date reference data in the _FLUVIAL_DISPLAY_GROUP_WORKFLOW_ table of the staging database.
+* **Microsoft Azure service bus queue named _fews-fluvial-non-display-group-queue_**  
+Messages are placed on this queue when there has been an update to the remote fluvial non display groups workflow reference data file, this file provides non-display group data (filterid & locationid) associated with each workflow listed. The _RefreshNonDisplayGroupData_ function (to be renamed _FluvialRefreshNonDisplayGroupData_) is triggered to load the new file and provide up-to-date reference data in the _FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_ table of the staging database.
+* **Microsoft Azure service bus queue named _fews-coastal-display-group-queue_**  
+Messages are placed on this queue when there has been an update to the remote coastal display groups workflow reference data file, this file provides display group data (plotid & locationid) associated with each workflow listed. The _CoastalRefreshDisplayGroupData_ function (not yet created) is triggered to load the new file and provide up-to-date reference data in the _TBC_ table of the staging database.
+* **Microsoft Azure service bus queue named _fews-coastal-non-display-group-queue_**  
+Messages are placed on this queue when there has been an update to the remote coastal non display groups workflow reference data file, this file provides non-display group data (filterid & locationid) associated with each workflow listed. The _CoastalRefreshNonDisplayGroupData_ function (not yet created) is triggered to load the new file and provide up-to-date reference data in the _TBC_ table of the staging database.
+* **Microsoft Azure service bus queue named _fews-ignored-workflows-queue_**  
+Messages are placed on this queue when there has been an update to the remote ignored workflows reference data file, this file provides a list of workflows that should be ignored by the web portal. When a new message arrives on the queue, the _RefreshIgnoredWorkflowData_ function is triggered to load the new file and provide up-to-date reference data in the _IGNORED_WORKFLOW_ table of the staging database.
 
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
 
 * Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription  
-An input binding for the 'ImportTimseseriesRouter' function.
 * Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription  
-An output binding for the 'ImportTimseseriesRouter' function.
 * Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription  
-An input binding for the 'RefreshForecastLocationData' function.
 * Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription  
-An input binding for the 'RefreshDisplayGroupData' function (to be renamed *FluvialRefreshDisplayGroupData*).
 * Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription  
-An input binding for the 'RefreshNonDisplayGroupData' function (to be renamed *FluvialRefreshNonDisplayGroupData*).  
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
-An input binding for the 'CoastalRefreshDisplayGroupData' function (The *CoastalRefreshDisplayGroupData* function has not yet been created).
 * Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription  
-An input binding for the 'CoastalRefreshNonDisplayGroupData' function (The *CoastalRefreshNonDisplayGroupData* function has not yet been created).
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription  
-An input binding for the 'RefreshIgnoredWorkflowData' function.
+An input binding for the RefreshIgnoredWorkflowData function.
 
 ## Redundant Legacy Prerequisites
 
