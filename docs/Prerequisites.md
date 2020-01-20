@@ -25,22 +25,22 @@
 
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
 
-* **Microsoft Azure service bus queue named _fews-eventcode-queue_**  
-Messages are placed on this queue when a taskrun has completed within the third-party core engine. The messages placed on this queue provide information on the completed workflow to be processed by the _ImportTimeSeriesRouter_ function, this information is used to inform a timeseries retrieval query to the PI server API.
-* **Microsoft Azure service bus queue named _fews-staged-timeseries-queue_**  
-Messages are placed on this queue when the function app has finished a timeseries data load into the staging database. The messages placed on this queue are issued by the _ImportTimeSeriesRouter_ function, this queue  is used to inform the consumer application of a staging database update. A new message is created for each row inserted into the _TIMESERIES_ table.
-* **Microsoft Azure service bus queue named _fews-forecast-location-queue_**  
-Messages are placed on this queue when there has been an update to the remote forecast location reference data file, this file provides greater detail on each forecast location. The _RefreshForecastLocationData_ function is triggered to load the new file and provide up-to-date reference data in the _FORECAST_LOCATION_ table of the staging database.
-* **Microsoft Azure service bus queue named _fews-fluvial-display-group-queue_**
-Messages are placed on this queue when there has been an update to the remote fluvial display groups workflow reference data file, this file provides display group data (plotid & locationid) associated with each workflow listed. The _RefreshDisplayGroupData_ function (to be renamed _FluvialRefreshDisplayGroupData_) is triggered to load the new file and provide up-to-date reference data in the _FLUVIAL_DISPLAY_GROUP_WORKFLOW_ table of the staging database.
-* **Microsoft Azure service bus queue named _fews-fluvial-non-display-group-queue_**  
-Messages are placed on this queue when there has been an update to the remote fluvial non display groups workflow reference data file, this file provides non-display group data (filterid & locationid) associated with each workflow listed. The _RefreshNonDisplayGroupData_ function (to be renamed _FluvialRefreshNonDisplayGroupData_) is triggered to load the new file and provide up-to-date reference data in the _FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_ table of the staging database.
-* **Microsoft Azure service bus queue named _fews-coastal-display-group-queue_**  
-Messages are placed on this queue when there has been an update to the remote coastal display groups workflow reference data file, this file provides display group data (plotid & locationid) associated with each workflow listed. The _CoastalRefreshDisplayGroupData_ function (not yet created) is triggered to load the new file and provide up-to-date reference data in the _TBC_ table of the staging database.
-* **Microsoft Azure service bus queue named _fews-coastal-non-display-group-queue_**  
-Messages are placed on this queue when there has been an update to the remote coastal non display groups workflow reference data file, this file provides non-display group data (filterid & locationid) associated with each workflow listed. The _CoastalRefreshNonDisplayGroupData_ function (not yet created) is triggered to load the new file and provide up-to-date reference data in the _TBC_ table of the staging database.
-* **Microsoft Azure service bus queue named _fews-ignored-workflows-queue_**  
-Messages are placed on this queue when there has been an update to the remote ignored workflows reference data file, this file provides a list of workflows that should be ignored by the web portal. When a new message arrives on the queue, the _RefreshIgnoredWorkflowData_ function is triggered to load the new file and provide up-to-date reference data in the _IGNORED_WORKFLOW_ table of the staging database.
+* Microsoft Azure service bus queue named **fews-eventcode-queue**  
+  * Messages are placed on this queue when a task run has completed within the core forecasting engine. Messages placed on this queue provide information on the completed task run to be processed by the **ImportTimeSeriesRouter** function.  The **ImportTimeSeriesRouter** function extracts timeseries from the core forecasting engine and loads the data into the staging database.
+* Microsoft Azure service bus queue named **fews-staged-timeseries-queue**  
+  * Messages are placed on this queue when the **ImportTimeSeriesRouter** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
+* Microsoft Azure service bus queue named **fews-fluvial-forecast-location-queue**  
+  * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
+* Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial forecast data is updated. Messages are processed by the **RefreshDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_DISPLAY_GROUP_WORKFLOW** table.
+* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**  
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial non-forecast data is updated. Messages are processed by the **RefreshNonDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW** table.
+* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**  
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal forecast data is updated. Messages are processed by the **TBD** function. Message processing retrieves the updated data and uses it to replace the content of the **TBD** table.
+* Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**  
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal non-forecast data is updated. Messages are processed by the **TBD** function. Message processing retrieves the updated data and uses it to replace the content of the **TBD** table.
+* Microsoft Azure service bus queue named **fews-ignored-workflows-queue**  
+  * Messages are placed on this queue when the set of core forecasting engine workflows that should be ignored for staging puposes is updated . Messages are processed by the **RefreshIgnoredWorkflowData** function. Message processing retrieves the updated data and uses it to replace the content of the **IGNORED_WORKFLOW** table.
 
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
 
@@ -52,7 +52,6 @@ Messages are placed on this queue when there has been an update to the remote ig
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription  
-An input binding for the RefreshIgnoredWorkflowData function.
 
 ## Redundant Legacy Prerequisites
 
