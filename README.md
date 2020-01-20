@@ -14,11 +14,11 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 
 ## Contents
 
-* [Prerequisites](README/Prerequisites.md)
-* [Installation activities](README/Installation-acitivities.md)
-* [Function app settings and environment variables](README/Settings-and-environment.md)
-* [Running the function](README/Running-the-function.md)
-* [Testing](README/Testing.md)
+* [Prerequisites](DOCS/Prerequisites.md)
+* [Installation activities](DOCS/Installation-activities.md)
+* [Function app settings and environment variables](DOCS/Settings-and-environment.md)
+* [Running the Queue/Topic based functions](DOCS/Running-the-queue-topic-function.md)
+* [Testing](DOCS/Testing.md)
 
 ## Contributing to this project
 

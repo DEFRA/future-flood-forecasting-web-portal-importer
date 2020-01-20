@@ -21,8 +21,8 @@ need to check that the database is populated correctly. As such, rather than moc
 ### Sending Messages To Azure Service Bus Queues/Topics
 
 In the absence of other means to send messages to Azure Service Bus Queues/Topics such as [Service Bus Explorer](https://code.msdn.microsoft.com/windowsapps/Service-Bus-Explorer-f2abca5a), basic test clients are provided. Mandatory and test client
-specific environment variables need to be set (see below) and then one of the following commands should be run from the
-directory containing this file.
+specific environment variables need to be set (see below) and then one of the following commands should be run from the route
+directory.
 
 * node testing/service-bus/publish-to-queue.js
 * node testing/service-bus/publish-to-topic.js

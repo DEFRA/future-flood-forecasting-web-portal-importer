@@ -1,4 +1,4 @@
-# Function App Settings/Environment Variables
+# Non-test Function App Settings/Environment Variables
 
 ## Mandatory Build Time Environment Variables
 
@@ -21,8 +21,6 @@
 | SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string                              |
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                 |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                     |
-| FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
-| FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                  |
 | FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide the fluvial non display groups workflow reference data                              |
@@ -53,6 +51,8 @@ accordingly.
 | AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                     |
 | AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic (no fluvial/coastal distinction)    |
 | AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
+| FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
+| FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
 
 ## Optional Runtime Function App Settings/Environment Variables
 
