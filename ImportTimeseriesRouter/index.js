@@ -58,15 +58,14 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, work
   // for the duration of the transaction to guard against a display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
-select
-plot_id,
-location_ids
-from
-${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW
-with
-(tablock holdlock)
-where
-workflow_id = @displayGroupWorkflowId
+  select
+    plot_id, location_ids
+  from
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW
+  with
+    (tablock holdlock)
+  where
+    workflow_id = @displayGroupWorkflowId
 `)
 
   const parameters = {
@@ -85,14 +84,14 @@ async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, w
   // for the duration of the transaction to guard against a non display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
-select
-filter_id
-from
-${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
-with
-(tablock holdlock)
-where
-workflow_id = @nonDisplayGroupWorkflowId
+  select
+    filter_id
+  from
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
+  with
+    (tablock holdlock)
+  where
+    workflow_id = @nonDisplayGroupWorkflowId
 `)
   const parameters = {
     nonDisplayGroupWorkflowId: workflowId
@@ -110,14 +109,14 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
   // for the duration of the transaction to guard against a ignored workflow data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
-select
-workflow_id
-from
-${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
-with
-(tablock holdlock)
-where
-workflow_id = @workflowId
+  select
+    workflow_id
+  from
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
+  with
+    (tablock holdlock)
+  where
+    workflow_id = @workflowId
 `)
   const parameters = {
     workflowId
@@ -138,13 +137,12 @@ async function createTimeseriesHeader (context, preparedStatement, message, rout
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
   await preparedStatement.prepare(`
-insert into
-${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
-(start_time, end_time, task_completion_time, task_id, workflow_id)
-output
-inserted.id
-values
-(@startTime, @endTime, @taskCompletionTime, @taskId, @workflowId)
+  insert into
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (start_time, end_time, task_completion_time, task_id, workflow_id)
+  output
+    inserted.id
+  values
+    (@startTime, @endTime, @taskCompletionTime, @taskId, @workflowId)
 `)
 
   const parameters = {
@@ -172,12 +170,12 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
   await preparedStatement.prepare(`
-insert into
-${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, fews_parameters, timeseries_header_id)
-output
-inserted.id
-values
-(@fewsData, @fewsParameters, @timeseriesHeaderId)
+  insert into
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, fews_parameters, timeseries_header_id)
+  output
+    inserted.id
+  values
+    (@fewsData, @fewsParameters, @timeseriesHeaderId)
 `)
 
   context.bindings.stagedTimeseries = []
