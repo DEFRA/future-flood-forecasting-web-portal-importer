@@ -38,6 +38,9 @@ module.exports = async function (context, message) {
       routeData.fluvialNonDisplayGroupWorkflowsResponse =
         await executePreparedStatementInTransaction(getFluvialNonDisplayGroupWorkflows, context, transaction, routeData.workflowId)
 
+      routeData.ignoredWorkflowsResponse =
+        await executePreparedStatementInTransaction(getIgnoredWorkflows, context, transaction, routeData.workflowId)
+
       await route(context, message, routeData)
     } else {
       context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
@@ -55,16 +58,16 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, work
   // for the duration of the transaction to guard against a display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
-    select
-      plot_id,
-      location_ids
-    from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW
-    with
-      (tablock holdlock)
-    where
-      workflow_id = @displayGroupWorkflowId
-  `)
+select
+plot_id,
+location_ids
+from
+${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW
+with
+(tablock holdlock)
+where
+workflow_id = @displayGroupWorkflowId
+`)
 
   const parameters = {
     displayGroupWorkflowId: workflowId
@@ -82,21 +85,46 @@ async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, w
   // for the duration of the transaction to guard against a non display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
-    select
-      filter_id
-    from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
-    with
-      (tablock holdlock)
-    where
-      workflow_id = @nonDisplayGroupWorkflowId
-  `)
+select
+filter_id
+from
+${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
+with
+(tablock holdlock)
+where
+workflow_id = @nonDisplayGroupWorkflowId
+`)
   const parameters = {
     nonDisplayGroupWorkflowId: workflowId
   }
 
   const fluvialNonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
   return fluvialNonDisplayGroupWorkflowsResponse
+}
+
+// Get list of ignored workflows
+async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
+  await preparedStatement.input('workflowId', sql.NVarChar)
+
+  // Run the query to retrieve ignored workflow data in a full transaction with a table lock held
+  // for the duration of the transaction to guard against a ignored workflow data refresh during
+  // data retrieval.
+  await preparedStatement.prepare(`
+select
+workflow_id
+from
+${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
+with
+(tablock holdlock)
+where
+workflow_id = @workflowId
+`)
+  const parameters = {
+    workflowId
+  }
+
+  const ignoredWorkflowsResponse = await preparedStatement.execute(parameters)
+  return ignoredWorkflowsResponse
 }
 
 async function createTimeseriesHeader (context, preparedStatement, message, routeData) {
@@ -110,14 +138,14 @@ async function createTimeseriesHeader (context, preparedStatement, message, rout
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
   await preparedStatement.prepare(`
-    insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
-        (start_time, end_time, task_completion_time, task_id, workflow_id)
-    output
-      inserted.id
-    values
-      (@startTime, @endTime, @taskCompletionTime, @taskId, @workflowId)
-  `)
+insert into
+${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
+(start_time, end_time, task_completion_time, task_id, workflow_id)
+output
+inserted.id
+values
+(@startTime, @endTime, @taskCompletionTime, @taskId, @workflowId)
+`)
 
   const parameters = {
     startTime: routeData.startTime,
@@ -144,13 +172,13 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
   await preparedStatement.prepare(`
-    insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, fews_parameters, timeseries_header_id)
-    output
-      inserted.id
-    values
-      (@fewsData, @fewsParameters, @timeseriesHeaderId)
-  `)
+insert into
+${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, fews_parameters, timeseries_header_id)
+output
+inserted.id
+values
+(@fewsData, @fewsParameters, @timeseriesHeaderId)
+`)
 
   context.bindings.stagedTimeseries = []
 
@@ -173,38 +201,48 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
 }
 
 async function route (context, message, routeData) {
-  if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0 ||
+  if (routeData.ignoredWorkflowsResponse.recordset.length === 0) {
+    if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0 ||
       routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-    let timeseriesData
-    routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
-      createTimeseriesHeader,
-      context,
-      routeData.transaction,
-      message,
-      routeData
-    )
+      let timeseriesData
+      routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+        createTimeseriesHeader,
+        context,
+        routeData.transaction,
+        message,
+        routeData
+      )
 
-    if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
-      context.log.info('Message routed to the plot function')
-      timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
-    } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-      context.log.info('Message has been routed to the filter function')
-      timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
+      if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
+        context.log.info('Message routed to the plot function')
+        timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
+      } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
+        context.log.info('Message has been routed to the filter function')
+        timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
+      }
+      await executePreparedStatementInTransaction(
+        loadTimeseries,
+        context,
+        routeData.transaction,
+        timeseriesData,
+        routeData
+      )
+    } else {
+      await executePreparedStatementInTransaction(
+        createStagingException,
+        context,
+        routeData.transaction,
+        message,
+        `Missing timeseries data for ${routeData.workflowId}`
+      )
     }
-    await executePreparedStatementInTransaction(
-      loadTimeseries,
-      context,
-      routeData.transaction,
-      timeseriesData,
-      routeData
-    )
   } else {
     await executePreparedStatementInTransaction(
       createStagingException,
       context,
       routeData.transaction,
       message,
-      `Missing timeseries data for ${routeData.workflowId}`
+      `${routeData.workflowId} is an ignored workflow`
     )
   }
 }
