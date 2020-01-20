@@ -12,7 +12,7 @@
 * Microsoft Azure resource group
 * Microsoft Azure service bus
 * Microsoft Azure storage account
-* **JavaScript** Microsoft Azure function app with an **application service plan**
+* **NodeJS** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
