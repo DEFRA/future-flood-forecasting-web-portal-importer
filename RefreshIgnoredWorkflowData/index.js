@@ -1,11 +1,11 @@
-const { doInTransaction } = require('../Shared/transaction-helper')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function refresh (transactionData, context) {
-    await refreshIgnoredWorkflowData(transactionData.preparedStatement, transactionData.transaction, context)
+  async function refresh (transaction, context) {
+    await executePreparedStatementInTransaction(refreshIgnoredWorkflowData, context, transaction)
   }
 
   // Refresh with a serializable isolation level so that refresh is prevented if the ignored_workflow table is in use.
@@ -17,8 +17,9 @@ module.exports = async function (context, message) {
   // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function refreshIgnoredWorkflowData (preparedStatement, transaction, context) {
+async function refreshIgnoredWorkflowData (context, preparedStatement) {
   try {
+    const transaction = preparedStatement.parent
     const response = await fetch(`${process.env['IGNORED_WORKFLOW_URL']}`)
     const rows = await neatCsv(response.body)
     const recordCountResponse = rows.length
