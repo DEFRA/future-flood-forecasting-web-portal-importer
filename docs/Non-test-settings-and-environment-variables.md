@@ -24,7 +24,7 @@
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                  |
 | FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide the fluvial non display groups workflow reference data                              |
-| IGNORED_WORKFLOWS_URL                     | URL used to provide the ignored workflows                                                               |
+| IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                               |
 
 ## Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
