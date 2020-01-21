@@ -12,11 +12,11 @@
 * Microsoft Azure resource group
 * Microsoft Azure service bus
 * Microsoft Azure storage account
-* **NodeJS** Microsoft Azure function app with an **application service plan**
+* **Node.js** Microsoft Azure function app with an **application service plan**
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
-* The function app must have connectivity to the following locations (identified by environment variables below):
+* The function app must have connectivity to the following locations (identified in the [environment variables](Non-test-settings-and-environment.md) section):
   * The URL for the core forecasting engine REST API.
   * The URL for retrieving fluvial forecast location data.
   * The URL for retrieving the set of fluvial locations associated with each core forecasting engine display group.
