@@ -21,8 +21,8 @@ need to check that the database is populated correctly. As such, rather than moc
 ### Sending Messages To Azure Service Bus Queues/Topics
 
 In the absence of other means to send messages to Azure Service Bus Queues/Topics such as [Service Bus Explorer](https://code.msdn.microsoft.com/windowsapps/Service-Bus-Explorer-f2abca5a), basic test clients are provided. Mandatory and test client
-specific environment variables need to be set (see below) and then one of the following commands should be run from the route
-directory.
+specific environment variables need to be set (see below) and then one of the following commands should be run from the root
+directory of this project.
 
 * node testing/service-bus/publish-to-queue.js
 * node testing/service-bus/publish-to-topic.js
@@ -42,7 +42,7 @@ directory.
 | SQLTESTDB_HOST                            | Database host used for unit tests                                                                       |
 | SQLTESTDB_PORT                            | Database port used for unit tests                                                                       |
 | SQLTESTDB_REQUEST_TIMEOUT                 | The database request timeout for unit tests (in milliseconds) - defaults to 15000ms                     |
-| TEST_TIMEOUT                              | Optional Unit test timeout override (in milliseconds) - defaults to 5000ms                              |
+| TEST_TIMEOUT                              | Optional unit test timeout override (in milliseconds) - defaults to 5000ms                              |
 
 ### Unit Test Coverage
 

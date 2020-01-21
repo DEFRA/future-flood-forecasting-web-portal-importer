@@ -16,7 +16,7 @@
 * Microsoft Azure SQL database configured using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   * The function app must have connectivity to the Azure SQL database either through the use of a Microsoft Azure virtual network or
     appropriate firewall rules.
-* The function app must have connectivity to the following locations (identified in the [environment variables](Non-test-settings-and-environment.md) section):
+* The function app must have connectivity to the following locations (identified in the [environment variables](Non-test-settings-and-environment-variables.md) document):
   * The URL for the core forecasting engine REST API.
   * The URL for retrieving fluvial forecast location data.
   * The URL for retrieving the set of fluvial locations associated with each core forecasting engine display group.
@@ -51,7 +51,9 @@
 * Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription  
+* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
+
+The purpose of each topic is analagous to that of each corresponding queue.
 
 ## Redundant Legacy Prerequisites
 

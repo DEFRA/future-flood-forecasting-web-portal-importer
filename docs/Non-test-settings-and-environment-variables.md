@@ -1,4 +1,4 @@
-# Non-test Function App Settings/Environment Variables
+# Non-Test Function App Settings/Environment Variables
 
 ## Mandatory Build Time Environment Variables
 
@@ -51,13 +51,13 @@ accordingly.
 | AZURE_SERVICE_BUS_LOCATION_LOOKUP_SUBSCRIPTION_NAME | Subscription name associated with fews-location-lookup-topic                                     |
 | AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME     | Subscription name associated with fews-display-group-topic (no fluvial/coastal distinction)    |
 | AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
-| FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                      |
-| FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                         |
+| FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                         |
+| FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                            |
 
 ## Optional Runtime Function App Settings/Environment Variables
 
-| name                         | description                                                                                                          |
-|------------------------------|----------------------------------------------------------------------------------------------------------------------|
-| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                        |
-| FEWS_START_TIME_OFFSET_HOURS | Number of hours before the current time that core forecasting engine data should be retrieved for (defaults to 48)   |
-| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after the current time that core forecasting engine data should be retrieved for (defaults to 120)   |
+| name                         | description                                                                                                             |
+|------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                           |
+| FEWS_START_TIME_OFFSET_HOURS | Number of hours before task completion time that core forecasting engine data should be retrieved for (defaults to 48)  |
+| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task completion time that core forecasting engine data should be retrieved for (defaults to 120)  |
