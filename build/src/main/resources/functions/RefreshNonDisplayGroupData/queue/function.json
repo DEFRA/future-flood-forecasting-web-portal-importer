@@ -4,7 +4,7 @@
       "name": "message",
       "type": "serviceBusTrigger",
       "direction": "in",
-      "queueName": "fews-fluvial-non-display-group-queue",
+      "queueName": "fews-non-display-group-queue",
       "connection": "AzureWebJobsServiceBus"
     }
   ]

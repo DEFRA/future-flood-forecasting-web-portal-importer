@@ -20,7 +20,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
 
     beforeAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
     })
 
     beforeAll(() => {
@@ -34,7 +34,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     beforeAll(() => {
       return request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id)
         values
           ('Test_Workflow1', 'Test Filter1')
       `)
@@ -43,7 +43,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     beforeAll(() => {
       return request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id)
         values
           ('Test_Workflow2', 'Test Filter2a')
       `)
@@ -52,7 +52,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     beforeAll(() => {
       return request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id)
         values
           ('Test_Workflow2', 'Test Filter2b')
       `)
@@ -70,7 +70,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
 
     afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
     })
 
     afterAll(() => {
@@ -156,8 +156,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
     })
-    it('should throw an exception when the fluvial_non_display_group_workflow table is being refreshed', async () => {
-      // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+    it('should throw an exception when the non_display_group_workflow table is being refreshed', async () => {
+      // If the non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
@@ -269,7 +269,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   }
   async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
     let transaction
-    const tableName = 'fluvial_non_display_group_workflow'
+    const tableName = 'non_display_group_workflow'
     try {
       // Lock the timeseries table and then try and process the message.
       transaction = new sql.Transaction(pool)

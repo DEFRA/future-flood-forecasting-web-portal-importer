@@ -33,12 +33,10 @@
   * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
 * Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
   * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial forecast data is updated. Messages are processed by the **RefreshDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_DISPLAY_GROUP_WORKFLOW** table.
-* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**  
-  * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial non-forecast data is updated. Messages are processed by the **RefreshNonDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW** table.
+* Microsoft Azure service bus queue named **fews-non-display-group-queue**  
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial non-forecast data is updated. Messages are processed by the **RefreshNonDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **NON_DISPLAY_GROUP_WORKFLOW** table.
 * Microsoft Azure service bus queue named **fews-coastal-display-group-queue**  
   * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal forecast data is updated. Messages are processed by the **TBD** function. Message processing retrieves the updated data and uses it to replace the content of the **TBD** table.
-* Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**  
-  * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal non-forecast data is updated. Messages are processed by the **TBD** function. Message processing retrieves the updated data and uses it to replace the content of the **TBD** table.
 * Microsoft Azure service bus queue named **fews-ignored-workflows-queue**  
   * Messages are placed on this queue when the set of core forecasting engine workflows that should be ignored for staging puposes is updated . Messages are processed by the **RefreshIgnoredWorkflowData** function. Message processing retrieves the updated data and uses it to replace the content of the **IGNORED_WORKFLOW** table.
 
@@ -48,9 +46,8 @@
 * Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription  
+* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
 
 The purpose of each topic is analagous to that of each corresponding queue.

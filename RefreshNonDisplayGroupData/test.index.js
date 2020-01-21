@@ -1,5 +1,5 @@
 module.exports =
-  describe('Insert fluvial_non_display_group_workflow data tests', () => {
+  describe('Insert non_display_group_workflow data tests', () => {
     const message = require('../testing/mocks/defaultMessage')
     const Context = require('../testing/mocks/defaultContext')
     const Connection = require('../Shared/connection-pool')
@@ -25,7 +25,7 @@ module.exports =
     const pool = jestConnection.pool
     const request = new sql.Request(pool)
 
-    describe('The refresh fluvial_non_display_group_workflow data function', () => {
+    describe('The refresh non_display_group_workflow data function', () => {
       beforeAll(() => {
         return pool.connect()
       })
@@ -34,14 +34,14 @@ module.exports =
         // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
         // function implementation for the function context needs creating for each test.
         context = new Context()
-        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
       })
 
       beforeEach(() => {
         dummyData = {
           dummyWorkflow: ['dummyFilter']
         }
-        return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow (workflow_id, filter_id) values ('dummyWorkflow', 'dummyFilter')`)
+        return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id) values ('dummyWorkflow', 'dummyFilter')`)
       })
 
       afterAll(() => {
@@ -217,8 +217,8 @@ module.exports =
         })
         await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       })
-      it('should throw an exception when the fluvial_non_display_group_workflow table is being used', async () => {
-        // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+      it('should throw an exception when the non_display_group_workflow table is being used', async () => {
+        // If the non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
         // so check that an exception is thrown to facilitate this process.
 
         const mockResponseData = {
@@ -243,7 +243,7 @@ module.exports =
       let mockResponse = {}
       mockResponse = {
         status: mockResponseData.statusCode,
-        body: fs.createReadStream(`testing/fluvial_non_display_group_workflow_files/${mockResponseData.filename}`),
+        body: fs.createReadStream(`testing/non_display_group_workflow_files/${mockResponseData.filename}`),
         statusText: mockResponseData.statusText,
         headers: { 'Content-Type': mockResponseData.contentType },
         sendAsJson: false
@@ -252,11 +252,11 @@ module.exports =
     }
 
     async function checkExpectedResults (expectedNonDisplayGroupData) {
-      const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+      const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
       const workflowIds = Object.keys(expectedNonDisplayGroupData)
       let expectedNumberOfRows = 0
 
-      // The number of rows returned from the database should be equal to the sum of the elements nested within the expected fluvial_non_display_group_workflow expected data.
+      // The number of rows returned from the database should be equal to the sum of the elements nested within the expected non_display_group_workflow expected data.
       for (const workflowId of workflowIds) {
         expectedNumberOfRows += Object.keys(expectedNonDisplayGroupData[workflowId]).length
       }
@@ -273,7 +273,7 @@ module.exports =
           // actual db data
           const filterQuery = await request.query(`
           SELECT *
-          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow
+          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
           WHERE workflow_id = '${workflowId}'
           `)
           const rows = filterQuery.recordset
@@ -290,7 +290,7 @@ module.exports =
     }
     async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
       let transaction
-      const tableName = 'fluvial_non_display_group_workflow'
+      const tableName = 'non_display_group_workflow'
       try {
         transaction = new sql.Transaction(pool)
         await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)

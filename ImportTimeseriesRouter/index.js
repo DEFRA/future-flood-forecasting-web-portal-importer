@@ -83,15 +83,15 @@ async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, w
   // for the duration of the transaction to guard against a non display group data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
-  select
-    filter_id
-  from
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW
-  with
-    (tablock holdlock)
-  where
-    workflow_id = @nonDisplayGroupWorkflowId
-`)
+    select
+      filter_id
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.NON_DISPLAY_GROUP_WORKFLOW
+    with
+      (tablock holdlock)
+    where
+      workflow_id = @nonDisplayGroupWorkflowId
+  `)
   const parameters = {
     nonDisplayGroupWorkflowId: workflowId
   }
