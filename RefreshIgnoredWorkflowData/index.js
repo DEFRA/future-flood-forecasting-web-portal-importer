@@ -24,12 +24,12 @@ async function refreshIgnoredWorkflowData (context, preparedStatement) {
     const rows = await neatCsv(response.body)
     const recordCountResponse = rows.length
 
-    // Do not refresh the forecast location table if the csv is empty.
+    // Do not refresh the ignored workflow table if the csv is empty.
     if (recordCountResponse > 0) {
-      await new sql.Request(transaction).batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW`)
+      await new sql.Request(transaction).batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
 
       await preparedStatement.input('WORKFLOW_ID', sql.NVarChar)
-      await preparedStatement.prepare(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW (WORKFLOW_ID) values (@WORKFLOW_ID)`)
+      await preparedStatement.prepare(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow (WORKFLOW_ID) values (@WORKFLOW_ID)`)
       for (const row of rows) {
         // Ignore rows in the CSV data that do not have entries for all columns.
         try {
@@ -48,7 +48,7 @@ async function refreshIgnoredWorkflowData (context, preparedStatement) {
       // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting ignored_workflow refresh')
     }
-    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW`)
+    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
     context.log.info(`The ignored workflow table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
