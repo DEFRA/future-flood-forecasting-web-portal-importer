@@ -106,7 +106,7 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('workflowId', sql.NVarChar)
 
   // Run the query to retrieve ignored workflow data in a full transaction with a table lock held
-  // for the duration of the transaction to guard against a ignored workflow data refresh during
+  // for the duration of the transaction to guard against an ignored workflow data refresh during
   // data retrieval.
   await preparedStatement.prepare(`
   select
@@ -235,12 +235,6 @@ async function route (context, message, routeData) {
       )
     }
   } else {
-    await executePreparedStatementInTransaction(
-      createStagingException,
-      context,
-      routeData.transaction,
-      message,
-      `${routeData.workflowId} is an ignored workflow`
-    )
+    context.log(`${routeData.workflowId} is an ignored workflow`)
   }
 }
