@@ -134,7 +134,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
-      const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
+      const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(/\s+/)[1]
       await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing timeseries data for ${workflowId}`)
     })
     it('should create a staging exception for an invalid message', async () => {
@@ -179,10 +179,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   async function processMessageAndCheckImportedData (messageKey, mockResponses) {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
-    const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
+    const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
     const expectedTaskCompletionTime = moment(taskRunCompleteMessages['commonMessageData'].completionTime)
     const expectedTaskId = taskRunCompleteMessages[messageKey].input.source
-    const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
+    const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(/\s+/)[messageDescriptionIndex]
     const receivedFewsData = []
     const receivedPrimaryKeys = []
 
