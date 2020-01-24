@@ -226,12 +226,16 @@ async function route (context, message, routeData) {
         routeData
       )
     } else {
+      const errorMessage =
+       routeData.workflowId ? `Missing PI Server input data for ${routeData.workflowId}`
+         : 'Unable to determine PI Server input data for unknown workflow'
+
       await executePreparedStatementInTransaction(
         createStagingException,
         context,
         routeData.transaction,
         message,
-        `Missing timeseries data for ${routeData.workflowId}`
+        errorMessage
       )
     }
   } else {
