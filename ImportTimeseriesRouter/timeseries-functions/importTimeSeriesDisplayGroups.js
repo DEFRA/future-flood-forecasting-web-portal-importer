@@ -28,19 +28,25 @@ async function getTimeseriesDisplayGroupsInternal (displayGroupData, routeData) 
 
   for (const key of Object.keys(displayGroupData)) {
     const plotId = `&plotId=${key}`
-    const locationIds = `&locationIds=${displayGroupData[key].replace(/;/g, '&locationIds=')}`
-    const fewsParameters = `${plotId}${locationIds}${fewsStartTime}${fewsEndTime}`
+    const locationIds = displayGroupData[key].split(';')
+    // const locationIds = `&locationIds=${displayGroupData[key].replace(/;/g, '&locationIds=')}`
 
-    // Get the timeseries display groups for the configured plot, locations and date range.
-    const fewsPiEndpoint =
-      encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
+    for (const locationId of locationIds) {
+      const fewsParameters = `${plotId}${locationId}${fewsStartTime}${fewsEndTime}`
 
-    const fewsResponse = await axios.get(fewsPiEndpoint)
-    timeseriesDisplayGroupsData.push({
-      fewsParameters: fewsParameters,
-      fewsData: JSON.stringify(fewsResponse.data)
-    })
+      // Get the timeseries display groups for the configured plot, locations and date range.
+
+      const fewsPiEndpoint =
+        encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
+          &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
+
+      const fewsResponse = await axios.get(fewsPiEndpoint)
+
+      timeseriesDisplayGroupsData.push({
+        fewsParameters: fewsParameters,
+        fewsData: JSON.stringify(fewsResponse.data)
+      })
+    }
   }
   return timeseriesDisplayGroupsData
 }
