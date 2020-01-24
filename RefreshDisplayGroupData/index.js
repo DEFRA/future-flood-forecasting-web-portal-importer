@@ -1,4 +1,5 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const createCSVStagingException = require('../Shared/create-csv-staging-exception')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -34,6 +35,8 @@ async function createDisplayGroupTemporaryTable (transaction, context) {
 }
 
 async function populateDisplayGroupTemporaryTable (context, preparedStatement) {
+  const failedRows = []
+  const transaction = preparedStatement.parent
   try {
     // Use the fetch API to retrieve the CSV data as a stream and then parse it
     // into rows ready for insertion into the local temporary table.
@@ -45,17 +48,46 @@ async function populateDisplayGroupTemporaryTable (context, preparedStatement) {
     await preparedStatement.prepare(`insert into #fluvial_display_group_workflow_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
 
     for (const row of rows) {
-      // Ignore rows in the CSV data that do not have entries for all columns.
-      if (row.WorkflowID && row.PlotID && row.FFFSLocID) {
-        await preparedStatement.execute({
-          workflowId: row.WorkflowID,
-          plotId: row.PlotID,
-          locationId: row.FFFSLocID
-        })
+      try {
+        // Ignore rows in the CSV data that do not have entries for all columns.
+        if (row.WorkflowID && row.PlotID && row.FFFSLocID) {
+          await preparedStatement.execute({
+            workflowId: row.WorkflowID,
+            plotId: row.PlotID,
+            locationId: row.FFFSLocID
+          })
+        } else {
+          let failedRowInfo = {
+            rowData: row,
+            errorMessage: `A row is missing data`,
+            errorCode: `NA`
+          }
+          failedRows.push(failedRowInfo)
+        }
+      } catch (err) {
+        context.log.warn(`an error has been found in a row with the Workflow ID: ${row.WorkflowID}.\n  Error : ${err}`)
+        let failedRowInfo = {
+          rowData: row,
+          errorMessage: err.message,
+          errorCode: err.code
+        }
+        failedRows.push(failedRowInfo)
       }
     }
     // Future requests will fail until the prepared statement is unprepared.
     await preparedStatement.unprepare()
+
+    for (let i = 0; i < failedRows.length; i++) {
+      await executePreparedStatementInTransaction(
+        createCSVStagingException, // function
+        context, // context
+        transaction, // transaction
+        `Display group data`, // args - csv file
+        failedRows[i].rowData, // args - row data
+        failedRows[i].errorMessage // args - error description
+      )
+    }
+    context.log.error(`The display group csv loader has ${failedRows.length} failed row inserts.`)
   } catch (err) {
     context.log.error(`Populate temp location loookup table failed: ${err}`)
     throw err
