@@ -42,19 +42,27 @@ async function refreshIgnoredWorkflowData (context, preparedStatement) {
           }
         } catch (err) {
           context.log.warn(`an error has been found in a row with the WorkflowID: ${row.WorkflowID}.\n  Error : ${err}`)
-          failedRows.push(row)
+          let failedRowInfo = {
+            workflowID: row.WorkflowID,
+            errorMessage: err.message,
+            errorCode: err.code
+          }
+          failedRows.push(failedRowInfo)
         }
       }
       // Future requests will fail until the prepared statement is unprepared.
       await preparedStatement.unprepare()
-      await executePreparedStatementInTransaction(
-        createCSVStagingException, // function
-        context, // context
-        transaction, // transaction
-        `Ignored workflows`, // args - csv file
-        failedRows, // args - row data
-        `Row was not inserted into staging` // args - description
-      )
+
+      for (let i = 0; i < failedRows.length; i++) {
+        await executePreparedStatementInTransaction(
+          createCSVStagingException, // function
+          context, // context
+          transaction, // transaction
+          `Ignored workflows`, // args - csv file
+          failedRows[i], // args - row data
+          failedRows[i].errorMessage // args - error description
+        )
+      }
       context.log.error(`The ignored workflow csv loader has ${failedRows.length} failed row inserts.`)
     } else {
       // If the csv is empty then the file is essentially ignored
