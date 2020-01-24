@@ -1,4 +1,5 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const createCSVStagingException = require('../Shared/create-csv-staging-exception')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -29,6 +30,7 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
       const request = new sql.Request(preparedStatement.parent)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
 
+      const failedRows = []
       await preparedStatement.input('WORKFLOW_ID', sql.NVarChar)
       await preparedStatement.input('FILTER_ID', sql.NVarChar)
 
@@ -42,18 +44,42 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
         // Ignore rows in the CSV data that do not have entries for all columns.
         try {
           if (row.WorkflowID && row.FilterID) {
-            // console.log(preparedStatement.statement)
             await preparedStatement.execute({
               WORKFLOW_ID: row.WorkflowID,
               FILTER_ID: row.FilterID
             })
+          } else {
+            let failedRowInfo = {
+              rowData: row,
+              errorMessage: `A row is missing data`,
+              errorCode: `NA`
+            }
+            failedRows.push(failedRowInfo)
           }
         } catch (err) {
           context.log.warn(`an error has been found in a row with the Workflow ID: ${row.WorkflowID}.\n  Error : ${err}`)
+          let failedRowInfo = {
+            rowData: row,
+            errorMessage: err.message,
+            errorCode: err.code
+          }
+          failedRows.push(failedRowInfo)
         }
       }
       // Future requests will fail until the prepared statement is unprepared.
       await preparedStatement.unprepare()
+
+      for (let i = 0; i < failedRows.length; i++) {
+        await executePreparedStatementInTransaction(
+          createCSVStagingException, // function
+          context, // context
+          transaction, // transaction
+          `Non display group data`, // args - csv file
+          failedRows[i].rowData, // args - row data
+          failedRows[i].errorMessage // args - error description
+        )
+      }
+      context.log.error(`The non display group csv loader has ${failedRows.length} failed row inserts.`)
     } else {
       // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting non_display_group_workflow refresh')

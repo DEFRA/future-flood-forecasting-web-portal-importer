@@ -39,11 +39,18 @@ async function refreshIgnoredWorkflowData (context, preparedStatement) {
             await preparedStatement.execute({
               WORKFLOW_ID: row.WorkflowID
             })
+          } else {
+            let failedRowInfo = {
+              rowData: row,
+              errorMessage: `A row is missing data`,
+              errorCode: `NA`
+            }
+            failedRows.push(failedRowInfo)
           }
         } catch (err) {
           context.log.warn(`an error has been found in a row with the WorkflowID: ${row.WorkflowID}.\n  Error : ${err}`)
           let failedRowInfo = {
-            workflowID: row.WorkflowID,
+            rowData: row,
             errorMessage: err.message,
             errorCode: err.code
           }
@@ -59,7 +66,7 @@ async function refreshIgnoredWorkflowData (context, preparedStatement) {
           context, // context
           transaction, // transaction
           `Ignored workflows`, // args - csv file
-          failedRows[i], // args - row data
+          failedRows[i].rowData, // args - row data
           failedRows[i].errorMessage // args - error description
         )
       }
