@@ -164,6 +164,7 @@ async function createTimeseriesHeader (context, preparedStatement, message, rout
 }
 
 async function loadTimeseries (context, preparedStatement, timeSeriesData, routeData) {
+  context.log('Loading timeseries data')
   await preparedStatement.input('fewsData', sql.NVarChar)
   await preparedStatement.input('fewsParameters', sql.NVarChar)
   await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
@@ -196,6 +197,7 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
       })
     }
   }
+  context.log('Loaded timeseries data')
 }
 
 async function route (context, message, routeData) {

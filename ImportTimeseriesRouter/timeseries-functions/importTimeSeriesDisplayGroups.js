@@ -2,7 +2,7 @@ const axios = require('axios')
 
 module.exports = async function getTimeseriesDisplayGroups (context, routeData) {
   const displayGroupData = await getDisplayGroupData(routeData.fluvialDisplayGroupWorkflowsResponse)
-  const timeseriesDisplayGroups = await getTimeseriesDisplayGroupsInternal(displayGroupData, routeData)
+  const timeseriesDisplayGroups = await getTimeseriesDisplayGroupsInternal(context, displayGroupData, routeData)
   return timeseriesDisplayGroups
 }
 
@@ -18,7 +18,7 @@ async function getDisplayGroupData (fluvialDisplayGroupWorkflowsResponse) {
   return displayGroupData
 }
 
-async function getTimeseriesDisplayGroupsInternal (displayGroupData, routeData) {
+async function getTimeseriesDisplayGroupsInternal (context, displayGroupData, routeData) {
   // The database in which data is loaded requires fractional seconds to be included in dates. By contrast
   // the REST interface of the core forecasting engine requires fractional seconds to be excluded from dates.
   const fewsStartTime = `&startTime=${routeData.startTime.substring(0, 19)}Z`
@@ -36,7 +36,9 @@ async function getTimeseriesDisplayGroupsInternal (displayGroupData, routeData) 
       encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
         &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
 
+    context.log(`Retrieving timeseries display groups for plot ID ${plotId}`)
     const fewsResponse = await axios.get(fewsPiEndpoint)
+    context.log(`Preparing retrieved timeseries display groups for plot ID ${plotId}`)
     timeseriesDisplayGroupsData.push({
       fewsParameters: fewsParameters,
       fewsData: JSON.stringify(fewsResponse.data)
