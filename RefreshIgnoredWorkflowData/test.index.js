@@ -40,11 +40,15 @@ module.exports = describe('Ignored workflow loader tests', () => {
       dummyData = {
         WorkflowId: 'dummyData'
       }
-      return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW (WORKFLOW_ID) values ('dummyData')`)
+      return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
     })
 
     afterAll(() => {
-      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
+    })
+
+    afterAll(() => {
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
     })
 
     afterAll(() => {
@@ -186,6 +190,19 @@ module.exports = describe('Ignored workflow loader tests', () => {
       await lockIgnoredWorkflowTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+
+    it('should load unloadable rows into csv exceptions table', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'invalid-row.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedErrorDescription = 'A row is missing data.'
+
+      await refreshIgnoredWorkflowDataAndCheckExceptionIsCreated(mockResponseData, expectedErrorDescription)
+    })
   })
 
   async function refreshIgnoredWorkflowDataAndCheckExpectedResults (mockResponseData, expectedIgnoredWorkflowData) {
@@ -268,5 +285,19 @@ module.exports = describe('Ignored workflow loader tests', () => {
         context.log.warn('The transaction has been rolled back.')
       }
     }
+  }
+
+  async function refreshIgnoredWorkflowDataAndCheckExceptionIsCreated (mockResponseData, expectedErrorDescription) {
+    await mockFetchResponse(mockResponseData)
+    await messageFunction(context, message) // This is a call to the function index
+    const result = await request.query(`
+    select
+      top(1) description
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+    order by
+      exception_time desc
+  `)
+    expect(result.recordset[0].description).toBe(expectedErrorDescription)
   }
 })

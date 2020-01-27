@@ -32,7 +32,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
     })
 
     beforeEach(() => {
@@ -45,11 +45,15 @@ module.exports = describe('Refresh forecast location data tests', () => {
         PlotId: 'dummyData',
         DRNOrder: 123
       }
-      return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123)`)
+      return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123)`)
     })
 
     afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
+    })
+
+    afterAll(() => {
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
     })
 
     afterAll(() => {
@@ -281,6 +285,19 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await lockForecastLocationTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+
+    it('should load unloadable rows into csv exceptions table', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'invalid-row.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedErrorDescription = 'A row is missing data.'
+
+      await refreshForecastLocationDataAndCheckExceptionIsCreated(mockResponseData, expectedErrorDescription)
+    })
   })
 
   async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData) {
@@ -373,5 +390,19 @@ module.exports = describe('Refresh forecast location data tests', () => {
         context.log.warn('The transaction has been rolled back.')
       }
     }
+  }
+
+  async function refreshForecastLocationDataAndCheckExceptionIsCreated (mockResponseData, expectedErrorDescription) {
+    await mockFetchResponse(mockResponseData)
+    await messageFunction(context, message) // This is a call to the function index
+    const result = await request.query(`
+    select
+      top(1) description
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+    order by
+      exception_time desc
+  `)
+    expect(result.recordset[0].description).toBe(expectedErrorDescription)
   }
 })

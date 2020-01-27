@@ -43,13 +43,21 @@ module.exports =
             dummyPlot: ['dummyLocation']
           }
         }
-        return request.batch(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
+        return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
       })
 
       afterEach(() => {
         // As the jestConnection pool is only closed at the end of the test suite the global temporary table used by each function
         // invocation needs to be dropped manually between each test case.
         return request.batch(`drop table if exists #fluvial_display_group_workflow_temp`)
+      })
+
+      afterAll(() => {
+        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+      })
+
+      afterAll(() => {
+        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       })
 
       afterAll(() => {
@@ -246,6 +254,19 @@ module.exports =
         await lockDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
         // Set the test timeout higher than the database request timeout.
       }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+
+      it('should load unloadable rows into csv exceptions table', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'invalid-row.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedErrorDescription = 'String or binary data would be truncated.'
+
+        await refreshDisplayGroupDataAndCheckExceptionIsCreated(mockResponseData, expectedErrorDescription)
+      })
     })
 
     async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedDisplayGroupData) {
@@ -328,6 +349,20 @@ module.exports =
           context.log.warn('The transaction has been rolled back.')
         }
       }
+    }
+
+    async function refreshDisplayGroupDataAndCheckExceptionIsCreated (mockResponseData, expectedErrorDescription) {
+      await mockFetchResponse(mockResponseData)
+      await messageFunction(context, message) // This is a call to the function index
+      const result = await request.query(`
+      select
+        top(1) description
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+      order by
+        exception_time desc
+    `)
+      expect(result.recordset[0].description).toBe(expectedErrorDescription)
     }
   }
   )

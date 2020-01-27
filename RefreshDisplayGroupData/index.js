@@ -59,7 +59,7 @@ async function populateDisplayGroupTemporaryTable (context, preparedStatement) {
         } else {
           let failedRowInfo = {
             rowData: row,
-            errorMessage: `A row is missing data`,
+            errorMessage: `A row is missing data.`,
             errorCode: `NA`
           }
           failedRows.push(failedRowInfo)
