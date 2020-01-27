@@ -18,13 +18,19 @@
 | FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API         |
 | FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                              |
 | FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                              |
-| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string                              |
+| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)     |
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                 |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                     |
 | FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                  |
 | FLUVIAL_NON_DISPLAY_GROUP_WORKFLOW_URL    | URL used to provide the fluvial non display groups workflow reference data                              |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                               |
+
+### Request Timeout Considerations
+
+Successful loading of core forecasting engine data into the staging database requires a compatible database request timeout larger than the
+default of 15 seconds. Request timeout tuning is achieved through the mssql connection string (please see the
+[mssql node module](https://www.npmjs.com/package/mssql) documentation) specified in the SQLDB_CONNECTION_STRING application setting.
 
 ## Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
