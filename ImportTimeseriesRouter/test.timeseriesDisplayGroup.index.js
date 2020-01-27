@@ -226,7 +226,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 48
+        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
         const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
         const expectedStartTime = moment(taskCompletionTime).subtract(startTimeOffsetHours, 'hours')
         const expectedEndTime = moment(taskCompletionTime).add(endTimeOffsetHours, 'hours')
