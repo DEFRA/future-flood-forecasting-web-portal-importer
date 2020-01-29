@@ -60,7 +60,7 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, work
   select
     plot_id, location_ids
   from
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_DISPLAY_GROUP_WORKFLOW
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
   with
     (tablock holdlock)
   where
@@ -86,7 +86,7 @@ async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, w
     select
       filter_id
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.NON_DISPLAY_GROUP_WORKFLOW
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
     with
       (tablock holdlock)
     where
@@ -111,7 +111,7 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
   select
     workflow_id
   from
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow
   with
     (tablock holdlock)
   where

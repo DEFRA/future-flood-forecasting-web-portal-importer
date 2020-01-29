@@ -24,7 +24,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
 
     beforeAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.NON_DISPLAY_GROUP_WORKFLOW`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
     })
 
     beforeAll(() => {

@@ -62,5 +62,5 @@ accordingly.
 * Microsoft Azure service bus topic named **fews-location-lookup-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-display-group-queue**
 * Microsoft Azure service bus topic named **fews-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus queue named **fews-non-display-group-queue**
-* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus queue named **fews-fluvial-non-display-group-queue**
+* Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription

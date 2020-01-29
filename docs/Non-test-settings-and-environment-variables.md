@@ -58,6 +58,7 @@ accordingly.
 | AZURE_SERVICE_BUS_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-display-group-topic (no fluvial/coastal distinction)        |
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                         |
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                            |
+| AZURE_SERVICE_BUS_FLUVIAL_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                         |
 
 ## Optional Runtime Function App Settings/Environment Variables
 
