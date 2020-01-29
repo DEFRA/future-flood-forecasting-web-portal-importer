@@ -89,7 +89,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should import data for a single filter associated with an approved forecast', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          key: 'Timeseries non-display groups data'
         }
       }
       await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
@@ -97,23 +97,28 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should import data for multiple filters associated with an approved forecast', async () => {
       const mockResponses = [{
         data: {
-          key: 'First plot timeseries display groups data'
+          key: 'First filter timeseries non-display groups data'
         }
       },
       {
         data: {
-          key: 'Second plot timeseries display groups data'
+          key: 'Second filter timeseries non-display groups data'
         }
       }]
       await processMessageAndCheckImportedData('multipleFilterApprovedForecast', mockResponses)
     })
-    it('should not import data for an unapproved forecast', async () => {
-      await processMessageAndCheckNoDataIsImported('unapprovedForecast')
+    it('should import data for an unapproved forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('unapprovedForecast', [mockResponse])
     })
     it('should import data for a forecast approved manually', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          key: 'Timeseries non-display groups data'
         }
       }
       await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
@@ -125,7 +130,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         process.env['FEWS_END_TIME_OFFSET_HOURS'] = 48
         const mockResponse = {
           data: {
-            key: 'Timeseries display groups data'
+            key: 'Timeseries non-display groups data'
           }
         }
         await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
@@ -138,8 +143,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
       await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
-    it('should create a staging exception for an invalid message', async () => {
+    it('should create a staging exception for a forecast without an approval status', async () => {
       await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+    })
+    it('should create a staging exception for a forecast without an end time', async () => {
+      await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutEndTime', 'Unable to extract task run completion date from message')
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
@@ -159,7 +167,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          key: 'Timeseries non-display groups data'
         }
       }
       await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterApprovedForecast', mockResponse)
@@ -245,17 +253,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     for (const stagedTimeseries of context.bindings.stagedTimeseries) {
       expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
     }
-  }
-
-  async function processMessageAndCheckNoDataIsImported (messageKey) {
-    await processMessage(messageKey)
-    const result = await request.query(`
-      select
-        count(*) as number
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
-    `)
-    expect(result.recordset[0].number).toBe(0)
   }
 
   async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expectedErrorDescription) {

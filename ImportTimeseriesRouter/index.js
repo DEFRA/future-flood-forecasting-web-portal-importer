@@ -11,27 +11,25 @@ const sql = require('mssql')
 
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload
-  context.log.info('JavaScript import time series function processed work item', message)
+  context.log.info('JavaScript import time series function processing work item', message)
   context.log.info(context.bindingData)
 
   async function routeMessage (transaction, context) {
-    context.log('JavaScript router ServiceBus queue trigger function processed message', message)
-    const proceedWithImport = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, message)
-    if (proceedWithImport) {
-      const routeData = {
-      }
-      // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
-      // This time period can be overridden by the two environment variables
-      // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-      const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
-      const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-      routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
-      routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-      routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
-      routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
-      routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
-      routeData.transaction = transaction
+    const routeData = {
+    }
+    // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
+    // This time period can be overridden by the two environment variables
+    // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
+    const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
+    const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+    routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
+    routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+    routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+    routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
+    routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
+    routeData.transaction = transaction
 
+    if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId) {
       routeData.fluvialDisplayGroupWorkflowsResponse =
         await executePreparedStatementInTransaction(getFluvialDisplayGroupWorkflows, context, transaction, routeData.workflowId)
 
@@ -42,8 +40,6 @@ module.exports = async function (context, message) {
         await executePreparedStatementInTransaction(getIgnoredWorkflows, context, transaction, routeData.workflowId)
 
       await route(context, message, routeData)
-    } else {
-      context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
     }
   }
   await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
@@ -213,20 +209,42 @@ async function route (context, message, routeData) {
         routeData
       )
 
-      if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
-        context.log.info('Message routed to the plot function')
-        timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
-      } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-        context.log.info('Message has been routed to the filter function')
-        timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
+      try {
+        // Check if the task run is approved, forcing an exception to be thrown if the approval status cannot be determined.
+        let proceedWithImport = await executePreparedStatementInTransaction(isTaskRunApproved, context, routeData.transaction, message, true)
+
+        if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
+          // Do not import data for unapproved task runs of display group workflows.
+          if (proceedWithImport) {
+            context.log.info('Message routed to the plot function')
+            timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
+          }
+        } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
+          // Data for task runs of non-display group workflows must be imported regardless of approval status.
+          proceedWithImport = true
+          context.log.info('Message has been routed to the filter function')
+          timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
+        }
+
+        if (proceedWithImport) {
+          await executePreparedStatementInTransaction(
+            loadTimeseries,
+            context,
+            routeData.transaction,
+            timeseriesData,
+            routeData
+          )
+        } else {
+          context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
+        }
+      } catch (err) {
+        if (err.message && !err.message.includes(' does not match regular expression')) {
+          // Propagate the exception if it was thrown for a reason other than failure to match a regular expresssion.
+          // Failure to match a regular expression causes creation of a staging exception database record.  In this case,
+          // an exception should not be propagated.
+          throw err
+        }
       }
-      await executePreparedStatementInTransaction(
-        loadTimeseries,
-        context,
-        routeData.transaction,
-        timeseriesData,
-        routeData
-      )
     } else {
       const errorMessage =
        routeData.workflowId ? `Missing PI Server input data for ${routeData.workflowId}`
