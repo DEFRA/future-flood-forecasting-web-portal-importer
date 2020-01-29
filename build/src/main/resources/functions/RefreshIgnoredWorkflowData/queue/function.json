@@ -4,7 +4,7 @@
       "name": "message",
       "type": "serviceBusTrigger",
       "direction": "in",
-      "queueName": "fews-ignored-workflow-queue",
+      "queueName": "fews-ignored-workflows-queue",
       "connection": "AzureWebJobsServiceBus"
     }
   ]
