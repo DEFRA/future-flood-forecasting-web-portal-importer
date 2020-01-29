@@ -200,42 +200,45 @@ async function route (context, message, routeData) {
   if (routeData.ignoredWorkflowsResponse.recordset.length === 0) {
     if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0 ||
       routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-      let timeseriesData
-      routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
-        createTimeseriesHeader,
-        context,
-        routeData.transaction,
-        message,
-        routeData
-      )
-
       try {
         // Check if the task run is approved, forcing an exception to be thrown if the approval status cannot be determined.
         let proceedWithImport = await executePreparedStatementInTransaction(isTaskRunApproved, context, routeData.transaction, message, true)
 
-        if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
-          // Do not import data for unapproved task runs of display group workflows.
-          if (proceedWithImport) {
-            context.log.info('Message routed to the plot function')
-            timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
-          }
-        } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-          // Data for task runs of non-display group workflows must be imported regardless of approval status.
-          proceedWithImport = true
-          context.log.info('Message has been routed to the filter function')
-          timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
-        }
-
-        if (proceedWithImport) {
-          await executePreparedStatementInTransaction(
-            loadTimeseries,
+        if (proceedWithImport || routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
+          // Import data for approved task runs of display group workflows and all tasks runs of non-display group workflows.
+          let timeseriesData
+          routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+            createTimeseriesHeader,
             context,
             routeData.transaction,
-            timeseriesData,
+            message,
             routeData
           )
-        } else {
-          context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
+
+          if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
+            // Do not import data for unapproved task runs of display group workflows.
+            if (proceedWithImport) {
+              context.log.info('Message routed to the plot function')
+              timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
+            }
+          } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
+            // Data for task runs of non-display group workflows must be imported regardless of approval status.
+            proceedWithImport = true
+            context.log.info('Message has been routed to the filter function')
+            timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
+          }
+
+          if (proceedWithImport) {
+            await executePreparedStatementInTransaction(
+              loadTimeseries,
+              context,
+              routeData.transaction,
+              timeseriesData,
+              routeData
+            )
+          } else {
+            context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
+          }
         }
       } catch (err) {
         if (err.message && !err.message.includes(' does not match regular expression')) {
