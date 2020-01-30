@@ -20,12 +20,6 @@ steps:
   - script: npx markdownlint $PWD --ignore node_modules
   - script: npm test
 
-  - task: DotNetCoreCLI@2
-    inputs:
-      command: 'build'
-      projects: 'extensions.csproj'
-      arguments: '--output $(Build.SourcesDirectory)/bin'
-
   - task: NuGetCommand@2
     displayName: 'NuGet pack'
     inputs:
