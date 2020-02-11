@@ -86,15 +86,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       return pool.close()
     })
 
-    it('should import data for a single filter associated with an approved forecast', async () => {
+    it('should import data for a single filter associated with a non-forecast', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
         }
       }
-      await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
+      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
-    it('should import data for multiple filters associated with an approved forecast', async () => {
+    it('should import data for multiple filters associated with a non-forecast', async () => {
       const mockResponses = [{
         data: {
           key: 'First filter timeseries non-display groups data'
@@ -105,25 +105,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Second filter timeseries non-display groups data'
         }
       }]
-      await processMessageAndCheckImportedData('multipleFilterApprovedForecast', mockResponses)
+      await processMessageAndCheckImportedData('multipleFilterNonForecast', mockResponses)
     })
-    it('should import data for an unapproved forecast', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('unapprovedForecast', [mockResponse])
-    })
-    it('should import data for a forecast approved manually', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
-    })
-    it('should allow the default forecast start and end times to be overridden using environment variables', async () => {
+    it('should allow the default task run start and end times to be overridden using environment variables', async () => {
       const originalEnvironment = process.env
       try {
         process.env['FEWS_START_TIME_OFFSET_HOURS'] = 24
@@ -133,7 +117,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
             key: 'Timeseries non-display groups data'
           }
         }
-        await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
+        await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
       } finally {
         process.env = originalEnvironment
       }
@@ -143,24 +127,34 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
       await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
-    it('should create a staging exception for a forecast without an approval status', async () => {
+    it('should create a staging exception for a missing workflow', async () => {
+      const missingWorkflow = 'missingWorkflow'
+      await processMessageAndCheckStagingExceptionIsCreated(missingWorkflow, 'Missing PI Server input data for with')
+    })
+    it('should create a staging exception for a non-forecast without an approval status', async () => {
       await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
     })
-    it('should create a staging exception for a forecast without an end time', async () => {
+    it('should create a staging exception for a message containing the boolean false', async () => {
+      await processMessageAndCheckStagingExceptionIsCreated('booleanFalseMessage', 'Message must be either a string or a pure object')
+    })
+    it('should create a staging exception for a message containing the number 1', async () => {
+      await processMessageAndCheckStagingExceptionIsCreated('numericMessage', 'Message must be either a string or a pure object')
+    })
+    it('should create a staging exception for a non-forecast without an end time', async () => {
       await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutEndTime', 'Unable to extract task run completion date from message')
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
       // an exception is thrown to facilitate this process.
       const mockResponse = new Error('connect ECONNREFUSED mockhost')
-      await processMessageAndCheckExceptionIsThrown('singleFilterApprovedForecast', mockResponse)
+      await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
     })
     it('should create a staging exception when a core engine PI server resource is unavailable', async () => {
       // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably elgible for replay a certain number of times so
       // check that an exception is thrown to facilitate this process. If misconfiguration has occurred, the maximum number
       // of replays will be reached and the message will be transferred to a dead letter queue for manual intervetion.
       const mockResponse = new Error('Request failed with status code 404')
-      await processMessageAndCheckExceptionIsThrown('singleFilterApprovedForecast', mockResponse)
+      await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
     })
     it('should throw an exception when the fluvial_non_display_group_workflow table is being refreshed', async () => {
       // If the fluvial_non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
@@ -170,7 +164,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries non-display groups data'
         }
       }
-      await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterApprovedForecast', mockResponse)
+      await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterNonForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
@@ -182,7 +176,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         mock = mock.mockReturnValueOnce(mockResponse)
       }
     }
-    await messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
+    await messageFunction(context, taskRunCompleteMessages[messageKey])
   }
 
   async function processMessageAndCheckImportedData (messageKey, mockResponses) {
@@ -270,7 +264,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {
     axios.get.mockRejectedValue(mockErrorResponse)
-    await expect(messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey])))
+    await expect(messageFunction(context, taskRunCompleteMessages[messageKey]))
       .rejects.toThrow(mockErrorResponse)
   }
   async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {

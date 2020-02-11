@@ -1,6 +1,6 @@
 const createStagingException = require('./create-staging-exception')
 
-module.exports = async function (context, message, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject, preparedStatement, throwExceptionOnNonMatch) {
+module.exports = async function (context, message, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject, preparedStatement) {
   const matches = regex.exec(message)
   // If the message contains the expected number of matches from the specified regular expression return
   // the match indicated by the caller.
@@ -11,9 +11,5 @@ module.exports = async function (context, message, regex, expectedNumberOfMatche
     // format and cannot be replayed. In this case intervention is needed so create a staging
     // exception.
     await createStagingException(context, preparedStatement, message, `Unable to extract ${errorMessageSubject} from message`)
-
-    if (throwExceptionOnNonMatch) {
-      throw new Error(`Message ${message} does not match regular expression ${regex}}`)
-    }
   }
 }

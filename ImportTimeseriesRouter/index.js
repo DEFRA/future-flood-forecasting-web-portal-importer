@@ -3,45 +3,47 @@ const getTimeSeriesDisplayGroups = require('./timeseries-functions/importTimeSer
 const getTimeSeriesNonDisplayGroups = require('./timeseries-functions/importTimeSeries')
 const createStagingException = require('../Shared/create-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const isForecast = require('./helpers/is-forecast')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const getWorkflowId = require('./helpers/get-workflow-id')
+const preprocessMessage = require('./helpers/preprocess-message')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload
-  context.log.info('JavaScript import time series function processing work item', message)
-  context.log.info(context.bindingData)
-
   async function routeMessage (transaction, context) {
     const routeData = {
     }
-    // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
-    // This time period can be overridden by the two environment variables
-    // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-    const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
-    const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-    routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
-    routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-    routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
-    routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
-    routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
-    routeData.transaction = transaction
 
-    if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId) {
-      routeData.fluvialDisplayGroupWorkflowsResponse =
-        await executePreparedStatementInTransaction(getFluvialDisplayGroupWorkflows, context, transaction, routeData.workflowId)
+    // If a JSON message is received convert it to a string.
+    const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message, true)
 
-      routeData.fluvialNonDisplayGroupWorkflowsResponse =
-        await executePreparedStatementInTransaction(getFluvialNonDisplayGroupWorkflows, context, transaction, routeData.workflowId)
+    if (preprocessedMessage) {
+      // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
+      // This time period can be overridden by the two environment variables
+      // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
+      const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
+      const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+      routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, preprocessedMessage)
+      routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+      routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+      routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, preprocessedMessage)
+      routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, preprocessedMessage)
+      routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, preprocessedMessage)
+      routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, preprocessedMessage)
+      routeData.transaction = transaction
 
-      routeData.ignoredWorkflowsResponse =
-        await executePreparedStatementInTransaction(getIgnoredWorkflows, context, transaction, routeData.workflowId)
-
-      await route(context, message, routeData)
+      if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
+        typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
+        await route(context, preprocessedMessage, routeData)
+      }
     }
   }
+
+  // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload
+  context.log.info('JavaScript import time series function processing work item', message)
+  context.log.info(context.bindingData)
   await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
   context.done()
 }
@@ -197,61 +199,57 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
 }
 
 async function route (context, message, routeData) {
-  if (routeData.ignoredWorkflowsResponse.recordset.length === 0) {
-    if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0 ||
-      routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-      try {
-        // Check if the task run is approved, forcing an exception to be thrown if the approval status cannot be determined.
-        let proceedWithImport = await executePreparedStatementInTransaction(isTaskRunApproved, context, routeData.transaction, message, true)
+  const ignoredWorkflowsResponse =
+    await executePreparedStatementInTransaction(getIgnoredWorkflows, context, routeData.transaction, routeData.workflowId)
 
-        if (proceedWithImport || routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-          // Import data for approved task runs of display group workflows and all tasks runs of non-display group workflows.
-          let timeseriesData
-          routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
-            createTimeseriesHeader,
-            context,
-            routeData.transaction,
-            message,
-            routeData
-          )
+  const ignoredWorkflow = ignoredWorkflowsResponse.recordset.length > 0
 
-          if (routeData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0) {
-            // Do not import data for unapproved task runs of display group workflows.
-            if (proceedWithImport) {
-              context.log.info('Message routed to the plot function')
-              timeseriesData = await getTimeSeriesDisplayGroups(context, routeData)
-            }
-          } else if (routeData.fluvialNonDisplayGroupWorkflowsResponse.recordset.length > 0) {
-            // Data for task runs of non-display group workflows must be imported regardless of approval status.
-            proceedWithImport = true
-            context.log.info('Message has been routed to the filter function')
-            timeseriesData = await getTimeSeriesNonDisplayGroups(context, routeData)
-          }
+  if (ignoredWorkflow) {
+    context.log(`${routeData.workflowId} is an ignored workflow`)
+  } else if (routeData.forecast && !routeData.approved) {
+    context.log.warn(`Ignoring unapproved forecast message ${JSON.stringify(message)}`)
+  } else {
+    // Import data for approved task runs of display group workflows and all tasks runs of non-display group workflows.
+    let timeseriesData
+    let timeseriesDataFunction
+    let timeseriesDataFunctionType
+    let workflowDataProperty
+    let workflowsFunction
 
-          if (proceedWithImport) {
-            await executePreparedStatementInTransaction(
-              loadTimeseries,
-              context,
-              routeData.transaction,
-              timeseriesData,
-              routeData
-            )
-          } else {
-            context.log.warn(`Ignoring message ${JSON.stringify(message)}`)
-          }
-        }
-      } catch (err) {
-        if (err.message && !err.message.includes(' does not match regular expression')) {
-          // Propagate the exception if it was thrown for a reason other than failure to match a regular expresssion.
-          // Failure to match a regular expression causes creation of a staging exception database record.  In this case,
-          // an exception should not be propagated.
-          throw err
-        }
-      }
+    routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+      createTimeseriesHeader,
+      context,
+      routeData.transaction,
+      message,
+      routeData
+    )
+
+    if (routeData.forecast) {
+      workflowsFunction = getFluvialDisplayGroupWorkflows
+      timeseriesDataFunction = getTimeSeriesDisplayGroups
+      timeseriesDataFunctionType = 'plot'
+      workflowDataProperty = 'fluvialDisplayGroupWorkflowsResponse'
     } else {
-      const errorMessage =
-       routeData.workflowId ? `Missing PI Server input data for ${routeData.workflowId}`
-         : 'Unable to determine PI Server input data for unknown workflow'
+      workflowsFunction = getFluvialNonDisplayGroupWorkflows
+      timeseriesDataFunction = getTimeSeriesNonDisplayGroups
+      timeseriesDataFunctionType = 'filter'
+      workflowDataProperty = 'fluvialNonDisplayGroupWorkflowsResponse'
+    }
+
+    routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData.workflowId)
+
+    if (routeData[workflowDataProperty].recordset.length > 0) {
+      context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
+      timeseriesData = await timeseriesDataFunction(context, routeData)
+      await executePreparedStatementInTransaction(
+        loadTimeseries,
+        context,
+        routeData.transaction,
+        timeseriesData,
+        routeData
+      )
+    } else {
+      const errorMessage = `Missing PI Server input data for ${routeData.workflowId}`
 
       await executePreparedStatementInTransaction(
         createStagingException,
@@ -261,7 +259,5 @@ async function route (context, message, routeData) {
         errorMessage
       )
     }
-  } else {
-    context.log(`${routeData.workflowId} is an ignored workflow`)
   }
 }

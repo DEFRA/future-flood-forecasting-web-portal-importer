@@ -2,38 +2,20 @@
   "commonMessageData": {
     "completionTime": "2019-09-13 13:06:00"
   },
-  "singleFilterApprovedForecast": {
+  "singleFilterNonForecast": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
   },
-  "multipleFilterApprovedForecast": {
+  "multipleFilterNonForecast": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
-    }
-  },
-  "unapprovedForecast": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False  Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
-    }
-  },
-  "forecastApprovedManually": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task run Test_Workflow1 (T0=2019-09-13 13:05, Dispatch=2019-09-13 13:06, Id=ukeafffsmc00:000000001) is made current manually",
+      "description": "Task Test_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -42,7 +24,16 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "description": "Task Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "missingWorkflow": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -51,7 +42,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
@@ -60,9 +51,11 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task  Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 More text",
+      "description": "Task  Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False iApproved: False Start time: 2019-09-13 13:05:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
-  }
+  },
+  "booleanFalseMessage": false,
+  "numericMessage": 1
 }
