@@ -23,7 +23,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
     })
 
     beforeAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_non_display_group_workflow`)
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
     })
 
     beforeAll(() => {
