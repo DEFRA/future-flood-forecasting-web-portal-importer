@@ -23,13 +23,5 @@ module.exports = async function (context, preparedStatement, sourceFile, rowData
   } catch (err) {
     context.log.error(err)
     throw err
-  } finally {
-    try {
-      if (preparedStatement) {
-        await preparedStatement.unprepare()
-      }
-    } catch (err) {
-      context.log.error(err)
-    }
   }
 }
