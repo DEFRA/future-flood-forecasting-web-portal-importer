@@ -34,6 +34,7 @@ module.exports = async function (context, message) {
       routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, preprocessedMessage)
       routeData.transaction = transaction
 
+      // As the forecast and approved indicators are booleans progression must be based on them being defined.
       if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
         typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
         await route(context, preprocessedMessage, routeData)
@@ -224,6 +225,8 @@ async function route (context, message, routeData) {
       routeData
     )
 
+    // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
+    // reference data held in the staging database.
     if (routeData.forecast) {
       workflowsFunction = getFluvialDisplayGroupWorkflows
       timeseriesDataFunction = getTimeSeriesDisplayGroups
@@ -236,10 +239,12 @@ async function route (context, message, routeData) {
       workflowDataProperty = 'fluvialNonDisplayGroupWorkflowsResponse'
     }
 
+    // Retrieve workflow reference data from the staging database.
     routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData.workflowId)
 
     if (routeData[workflowDataProperty].recordset.length > 0) {
       context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
+      // Retrieve timeseries data from the core engine PI server and load it into the staging database.
       timeseriesData = await timeseriesDataFunction(context, routeData)
       await executePreparedStatementInTransaction(
         loadTimeseries,
