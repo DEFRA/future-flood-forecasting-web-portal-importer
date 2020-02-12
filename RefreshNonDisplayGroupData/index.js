@@ -70,7 +70,7 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
       context.log.info('Transaction rolled back.')
     }
   } catch (err) {
-    context.log.error(`Refresh fluvial non display group workflow data failed: ${err}`)
+    context.log.error(`Refresh non display group workflow data failed: ${err}`)
     throw err
   }
 }

@@ -76,7 +76,7 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, work
 }
 
 // Get list of workflows associated with non display groups
-async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
+async function getNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve non display group data in a full transaction with a table lock held
@@ -96,8 +96,8 @@ async function getFluvialNonDisplayGroupWorkflows (context, preparedStatement, w
     nonDisplayGroupWorkflowId: workflowId
   }
 
-  const fluvialNonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
-  return fluvialNonDisplayGroupWorkflowsResponse
+  const nonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
+  return nonDisplayGroupWorkflowsResponse
 }
 
 // Get list of ignored workflows
@@ -233,10 +233,10 @@ async function route (context, message, routeData) {
       timeseriesDataFunctionType = 'plot'
       workflowDataProperty = 'fluvialDisplayGroupWorkflowsResponse'
     } else {
-      workflowsFunction = getFluvialNonDisplayGroupWorkflows
+      workflowsFunction = getNonDisplayGroupWorkflows
       timeseriesDataFunction = getTimeSeriesNonDisplayGroups
       timeseriesDataFunctionType = 'filter'
-      workflowDataProperty = 'fluvialNonDisplayGroupWorkflowsResponse'
+      workflowDataProperty = 'nonDisplayGroupWorkflowsResponse'
     }
 
     // Retrieve workflow reference data from the staging database.
