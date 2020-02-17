@@ -1,4 +1,4 @@
-module.exports = describe('Tests for import timeseries display groups', () => {
+module.exports = describe('Tests for import timeseries non-display groups', () => {
   const taskRunCompleteMessages = require('../testing/messages/task-run-complete/non-display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
@@ -69,6 +69,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
     })
 
+    beforeEach(() => {
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception`)
+    })
+
     afterAll(() => {
       return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
     })
@@ -79,6 +83,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
     afterAll(() => {
       return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
+    })
+
+    afterAll(() => {
+      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception`)
     })
 
     afterAll(() => {
@@ -276,8 +284,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await transaction.begin()
       const request = new sql.Request(transaction)
       await request.batch(`
-      INSERT INTO 
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id) 
+      INSERT INTO
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id)
       values
       ('dummyWorkflow', 'dummyFilter')
     `)
