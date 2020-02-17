@@ -5,7 +5,7 @@
       "type": "serviceBusTrigger",
       "direction": "in",
       "topicName": "fews-ignored-workflows-topic",
-      "subscriptionName": "%AZURE_SERVICE_BUS_IGNORED_WORKFLOW_SUBSCRIPTION_NAME%",
+      "subscriptionName": "%AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }
   ]
