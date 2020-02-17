@@ -14,5 +14,5 @@ module.exports = async function getIndicator (context, preparedStatement, messag
       indicator = indicatorString && !!indicatorString.match(/true/i)
     }
   }
-  return indicator
+  return Promise.resolve(indicator)
 }

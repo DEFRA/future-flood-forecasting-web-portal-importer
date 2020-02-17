@@ -7,17 +7,17 @@ module.exports = async function preprocessMessage (context, preparedStatement, m
   if (message) {
     switch (message.constructor.name) {
       case 'String':
-        returnValue = message
+        returnValue = Promise.resolve(message)
         break
       case 'Object':
-        returnValue = JSON.stringify(message)
+        returnValue = Promise.resolve(JSON.stringify(message))
         break
       default:
-        await createStagingException(context, preparedStatement, message, errorMessage)
+        returnValue = createStagingException(context, preparedStatement, message, errorMessage)
         break
     }
   } else {
-    await createStagingException(context, preparedStatement, message, errorMessage)
+    returnValue = createStagingException(context, preparedStatement, message, errorMessage)
   }
   return returnValue
 }
