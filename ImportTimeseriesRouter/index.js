@@ -5,6 +5,7 @@ const createStagingException = require('../Shared/create-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
+const isTaskRunImported = require('./helpers/is-task-run-imported')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const getWorkflowId = require('./helpers/get-workflow-id')
@@ -12,40 +13,10 @@ const preprocessMessage = require('./helpers/preprocess-message')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  async function routeMessage (transaction, context) {
-    const routeData = {
-    }
-
-    // If a JSON message is received convert it to a string.
-    const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message, true)
-
-    if (preprocessedMessage) {
-      // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
-      // This time period can be overridden by the two environment variables
-      // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-      const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
-      const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-      routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, preprocessedMessage)
-      routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-      routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
-      routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, preprocessedMessage)
-      routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, preprocessedMessage)
-      routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, preprocessedMessage)
-      routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, preprocessedMessage)
-      routeData.transaction = transaction
-
-      // As the forecast and approved indicators are booleans progression must be based on them being defined.
-      if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
-        typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
-        await route(context, preprocessedMessage, routeData)
-      }
-    }
-  }
-
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload
   context.log.info('JavaScript import time series function processing work item', message)
   context.log.info(context.bindingData)
-  await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
+  await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', null, message)
   context.done()
 }
 
@@ -263,6 +234,42 @@ async function route (context, message, routeData) {
         message,
         errorMessage
       )
+    }
+  }
+}
+
+async function parseMessage (context, transaction, message) {
+  const routeData = {
+  }
+  // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
+  // This time period can be overridden by the two environment variables
+  // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
+  const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
+  const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+  routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
+  routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+  routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
+  routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
+  routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, message)
+  routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, message)
+  routeData.transaction = transaction
+  return routeData
+}
+
+async function routeMessage (transaction, context, message) {
+  // If a JSON message is received convert it to a string.
+  const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message, true)
+  if (preprocessedMessage) {
+    const routeData = await parseMessage(context, transaction, preprocessedMessage)
+    if (await executePreparedStatementInTransaction(isTaskRunImported, context, transaction, routeData.taskId)) {
+      context.log.warn(`Ignoring message for task run ${routeData.taskId} - data has been imported already`)
+    } else {
+      // As the forecast and approved indicators are booleans progression must be based on them being defined.
+      if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
+        typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
+        await route(context, preprocessedMessage, routeData)
+      }
     }
   }
 }

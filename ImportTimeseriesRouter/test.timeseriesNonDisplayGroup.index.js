@@ -175,6 +175,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterNonForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    it('should not import data for duplicate task runs', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessage('singleFilterNonForecast', [mockResponse])
+      await processMessageAndCheckDataIsNotImported('singleFilterNonForecast', [mockResponse])
+    })
   })
 
   async function processMessage (messageKey, mockResponses) {
@@ -255,6 +264,19 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     for (const stagedTimeseries of context.bindings.stagedTimeseries) {
       expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
     }
+  }
+
+  async function processMessageAndCheckDataIsNotImported (messageKey, mockResponses) {
+    const query = `
+      select
+        id
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
+    `
+    const numberOfRowsBeforeMessageProcessing = (await request.query(query)).recordset.length
+    await processMessage(messageKey, mockResponses)
+    const numberOfRowsAfterMessageProcessing = (await request.query(query)).recordset.length
+    expect(numberOfRowsAfterMessageProcessing).toBe(numberOfRowsBeforeMessageProcessing)
   }
 
   async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expectedErrorDescription) {
