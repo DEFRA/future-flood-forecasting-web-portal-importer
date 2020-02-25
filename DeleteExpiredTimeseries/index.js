@@ -13,23 +13,14 @@ module.exports = async function (context, myTimer) {
   context.log('JavaScript timer trigger function ran!', timeStamp)
 
   async function removeExpiredTimeseries (transaction, context) {
-    // calculate the hard and soft dates before which records should be deleted
-    // current date                     :-------------------------------------->|
-    // soft date                        :---------------------|                  - delete all completed records before this date
-    // hard date                        :------------|                           - delete all records before this date
-    // delete only complete records here:            |--------|
-    const HARD_DELETION_DATE = timeStamp.subtract(process.env['HARD_EXPIRY_LIMIT']).toISOString
-    const SOFT_DELETION_DATE = timeStamp.subtract(process.env['SOFT_EXPIRY_LIMIT']).toISOString
+    await createTempTable(transaction, context)
 
-    // collect all records to delete by id
-    const deleteIds = {}
-    deleteIds.completedIds = await executePreparedStatementInTransaction(gatherCompletedIds, context, transaction, SOFT_DELETION_DATE)
-    deleteIds.expiredIds = await executePreparedStatementInTransaction(gatherExpiredIds, context, transaction, HARD_DELETION_DATE)
+    await executePreparedStatementInTransaction(insertSoftDataIntoTemp, context, transaction)
+    await executePreparedStatementInTransaction(insertHardDataIntoTemp, context, transaction)
 
-    // delete all records from tables conforming to referential integrity
-    await executePreparedStatementInTransaction(deleteFromReporting, context, transaction, deleteIds.completed.reportingId, deleteIds.expired.reportingId)
-    await executePreparedStatementInTransaction(deleteFromTimeseries, context, transaction, deleteIds.completed.timeseriesId, deleteIds.expired.timeseriesId)
-    await executePreparedStatementInTransaction(deleteFromHeader, context, transaction, deleteIds.completed.headerId, deleteIds.expired.headerId)
+    await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
   }
 
   // Refresh with a serializable isolation level so that record deletion is prevented if the tables are in use.
@@ -40,121 +31,98 @@ module.exports = async function (context, myTimer) {
   // context.done() not requried as there is no output binding to be activated.
 }
 
-async function gatherCompletedIds (context, preparedStatement, SOFT_DELETION_DATE) {
+async function createTempTable (transaction, context) {
+  // Create a local temporary table
+  await new sql.Request(transaction).batch(`
+      create table #delete_staging_data_temp
+      (
+        id uniqueidentifier not null default newid(),
+        timeseries_id uniqueidentifier not null,
+        timeseries_header_id uniqueidentifier not null,
+        job_status int not null
+      )
+    `)
+}
+
+async function insertSoftDataIntoTemp (context, preparedStatement) {
+
+  const SOFT_DELETION_DATE = process.env['SOFT_EXPIRY_LIMIT']
+  const FME_COMPLETE_JOB_STATUS = process.env['FME_COMPLETE_JOB_STATUS']
+
   await preparedStatement.input('softDate', sql.DateTime2)
-  await preparedStatement.input('hardDate', sql.DateTime2)
+  await preparedStatement.input('jobStatus', sql.Int)
 
   await preparedStatement.prepare(
-    `SELECT ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB.ID AS reportingID, ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES.ID AS timeseriesID, ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER.ID AS headerID
-      FROM [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES 
-    JOIN ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB ON [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES.ID = ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB.TIMESERIES_ID
-    JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES_HEADER ON [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES.TIMESERIES_HEADER_ID = ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER.ID
-      WHERE
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB.JOB_STATUS = 6 
+    `INSERT INTO ##r_timeseries_job_temp
+    SELECT r.ID, r.TIMESERIES_ID, r.JOB_STATUS, t.TIMESERIES_HEADER_ID
+    FROM [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].TIMESERIES_JOB r
+      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES t ON t.ID = r.TIMESERIES_ID
+      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES_HEADER h ON t.TIMESERIES_HEADER_ID = h.ID
+    WHERE
+      r.JOB_STATUS = @completeStatus
       AND
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER.IMPORT_TIME < CAST(@softDate AS datetime2)`
+      h.IMPORT_TIME < CAST('@softDate' AS datetime2)`
   )
 
   const parameters = {
-    softDate: SOFT_DELETION_DATE
+    softDate: SOFT_DELETION_DATE,
+    jobStatus: FME_COMPLETE_JOB_STATUS
   }
 
-  const completedIds = await preparedStatement.execute(parameters)
-  return completedIds
+  await preparedStatement.execute(parameters)
 }
 
-async function gatherExpiredIds (context, preparedStatement, SOFT_DELETION_DATE, HARD_DELETION_DATE) {
-  await preparedStatement.input('softDate', sql.DateTime2)
+async function insertHardDataIntoTemp (context, preparedStatement) {
+  const HARD_DELETION_DATE = process.env['HARD_EXPIRY_LIMIT']
+
   await preparedStatement.input('hardDate', sql.DateTime2)
 
   await preparedStatement.prepare(
-    `SELECT ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB.ID AS reportingID, ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES.ID AS timeseriesID, ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER.ID AS headerID
-      FROM [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES 
-    JOIN ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB ON [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES.ID = ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB.TIMESERIES_ID
-    JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES_HEADER ON [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES.TIMESERIES_HEADER_ID = ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER.ID
-      WHERE
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER.IMPORT_TIME < CAST(@hardDate AS datetime2)`
+    `INSERT INTO ##r_timeseries_job_temp
+    SELECT r.ID, r.TIMESERIES_ID, r.JOB_STATUS, t.TIMESERIES_HEADER_ID
+    FROM [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].TIMESERIES_JOB r
+      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES t ON t.ID = r.TIMESERIES_ID
+      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES_HEADER h ON t.TIMESERIES_HEADER_ID = h.ID
+    WHERE
+      h.IMPORT_TIME < CAST('@hardDate' AS datetime2)`
   )
 
   const parameters = {
     hardDate: HARD_DELETION_DATE
   }
 
-  const expiredIds = await preparedStatement.execute(parameters)
-  return expiredIds
-}
-
-async function deleteFromReporting (context, preparedStatement, completedReportingIds, expiredReportingIds) {
-  // Combine Ids
-  const idsToDelete = {}
-  Object.assign(idsToDelete, completedReportingIds, expiredReportingIds)
-  const commaSeperatedIdsToDeleteString = JSON.stringify(idsToDelete)
-  // e.g '1d91fa4c-2232-41c7-99ce-5d7ae1804f41', '437a4cd7-af4a-42c0-be83-190531f2861e'
-
-  await preparedStatement.input('ids')
-
-  await preparedStatement.prepare(
-    `
-    DELETE 
-      FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB 
-    WHERE ID IN 
-    (@ids)
-    `
-  )
-
-  const parameters = {
-    ids: commaSeperatedIdsToDeleteString
-  }
-
   await preparedStatement.execute(parameters)
 }
 
-async function deleteFromTimeseries (context, preparedStatement, completedTimeseriesIds, expiredTimeseriesIds) {
-  // Combine Ids
-  const idsToDelete = {}
-  Object.assign(idsToDelete, completedTimeseriesIds, expiredTimeseriesIds)
-  const commaSeperatedIdsToDeleteString = JSON.stringify(idsToDelete)
-  // e.g '1d91fa4c-2232-41c7-99ce-5d7ae1804f41', '437a4cd7-af4a-42c0-be83-190531f2861e'
-
-  await preparedStatement.input('ids')
+async function deleteReportingRows (context, preparedStatement) {
 
   await preparedStatement.prepare(
-    `
-    DELETE 
-      FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES
-    WHERE ID IN 
-    (@ids)
-    `
+    `DELETE r FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB r
+    INNER JOIN ##r_timeseries_job_temp te
+    ON te.id = r.ID`
   )
 
-  const parameters = {
-    ids: commaSeperatedIdsToDeleteString
-  }
-
-  await preparedStatement.execute(parameters)
+  await preparedStatement.execute()
 }
 
-async function deleteFromHeader (context, preparedStatement, completedHeaderIds, expiredHeaderIds) {
-  // Combine Ids
-  const idsToDelete = {}
-  Object.assign(idsToDelete, completedHeaderIds + expiredHeaderIds)
-  const commaSeperatedIdsToDeleteString = JSON.stringify(idsToDelete)
-  // e.g '1d91fa4c-2232-41c7-99ce-5d7ae1804f41', '437a4cd7-af4a-42c0-be83-190531f2861e'
-
-  await preparedStatement.input('ids')
+async function deleteTimeseriesRows (context, preparedStatement) {
 
   await preparedStatement.prepare(
-    `
-    DELETE 
-      FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER
-    WHERE ID IN 
-    (@ids)
-    `
+    `DELETE t FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES t
+    INNER JOIN ##delete_staging_data_temp te
+    ON te.timeseries_id = t.id`
   )
 
-  const parameters = {
-    ids: commaSeperatedIdsToDeleteString
-  }
+  await preparedStatement.execute()
+}
 
-  await preparedStatement.execute(parameters)
+async function deleteHeaderRows (context, preparedStatement) {
+
+  await preparedStatement.prepare(
+    `DELETE th FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER th
+    INNER JOIN ##delete_staging_data_temp te
+    ON te.timeseries_header_id = th.id`
+  )
+
+  await preparedStatement.execute()
 }
