@@ -4,6 +4,7 @@ const getTimeSeriesNonDisplayGroups = require('./timeseries-functions/importTime
 const createStagingException = require('../Shared/create-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
+const isLatestTaskRunForWorkflow = require('./helpers/is-latest-task-run-for-workflow')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const isTaskRunImported = require('./helpers/is-task-run-imported')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
@@ -268,7 +269,13 @@ async function routeMessage (transaction, context, message) {
       // As the forecast and approved indicators are booleans progression must be based on them being defined.
       if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
         typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
-        await route(context, preprocessedMessage, routeData)
+        // Do not import out of date forecast data.
+        if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
+          await route(context, preprocessedMessage, routeData)
+        } else {
+          context.log.warn(`Ignoring message for task run ${routeData.taskId} completed on ${routeData.taskCompletionTime}` +
+          ` - ${routeData.latestTaskId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
+        }
       }
     }
   }
