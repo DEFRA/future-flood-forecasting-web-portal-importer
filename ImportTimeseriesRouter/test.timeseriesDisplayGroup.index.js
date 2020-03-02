@@ -180,7 +180,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
-    const expectedTaskCompletionTime = moment(taskRunCompleteMessages['commonMessageData'].completionTime)
+    const expectedTaskCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
     const expectedTaskId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(/\s+/)[messageDescriptionIndex]
     const receivedFewsData = []
