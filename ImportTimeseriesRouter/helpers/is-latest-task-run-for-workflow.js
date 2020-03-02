@@ -29,7 +29,7 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
   if (result.recordset && result.recordset[0] && result.recordset[0].latest_staged_task_id) {
     routeData.latestTaskId = result.recordset[0].latest_staged_task_id
     routeData.latestTaskCompletionTime =
-      moment(result.recordset[0].latest_staged_task_completion_time).format('YYYY-MM-DD HH:mm:ss Z')
+      moment(result.recordset[0].latest_staged_task_completion_time).toISOString()
   } else {
     routeData.latestTaskId = routeData.taskId
     routeData.latestTaskCompletionTime = routeData.taskCompletionTime

@@ -247,7 +247,12 @@ async function parseMessage (context, transaction, message) {
   // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
   const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
   const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-  routeData.taskCompletionTime = await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)
+
+  // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
+  // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
+  routeData.taskCompletionTime =
+    moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)} UTC`)).toISOString()
+
   routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
   routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
