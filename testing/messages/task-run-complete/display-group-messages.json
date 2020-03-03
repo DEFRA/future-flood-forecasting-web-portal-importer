@@ -11,6 +11,15 @@
       "level": "INFO"
     }
   },
+  "earlierSinglePlotApprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task  Test_Workflow1 with ID ukeafffsmc00:000000002 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:05:59 More text",
+      "source": "ukeafffsmc00:000000002",
+      "level": "INFO"
+    }
+  },
   "multiplePlotApprovedForecast": {
     "input": {
       "code": "TASKRUN.Complete",

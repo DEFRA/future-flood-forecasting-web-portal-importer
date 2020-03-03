@@ -109,6 +109,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should not import data for an unapproved forecast', async () => {
       await processMessageAndCheckNoDataIsImported('unapprovedForecast')
     })
+    it('should not import data for an out of date forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+      await processMessageAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast', 1)
+    })
     it('should import data for a forecast approved manually', async () => {
       const mockResponse = {
         data: {
@@ -245,7 +254,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
     }
   }
-  async function processMessageAndCheckNoDataIsImported (messageKey) {
+  async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
     await processMessage(messageKey)
     const result = await request.query(`
       select
@@ -253,7 +262,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       from
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
     `)
-    expect(result.recordset[0].number).toBe(0)
+    expect(result.recordset[0].number).toBe(expectedNumberOfRecords || 0)
   }
 
   async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expectedErrorDescription) {

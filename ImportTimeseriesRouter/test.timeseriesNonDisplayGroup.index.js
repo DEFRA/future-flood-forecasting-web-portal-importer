@@ -101,6 +101,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    })
+    it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
     it('should import data for multiple filters associated with a non-forecast', async () => {
       const mockResponses = [{
