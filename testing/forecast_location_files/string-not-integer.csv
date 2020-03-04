@@ -1,3 +1,3 @@
-Centre,MFDOArea,Catchment,FFFSLocID,FFFSLocName,PlotID,DRNOrder
-Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,Ashford+Chatsworth,Ashford+Chatsworth UG Derwent Derb to Wye confl,Fluvial_Gauge_MFDO,string
-Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,4043,CHATSWORTH,Fluvial_Gauge_MFDO,string
+Centre,MFDOArea,Catchment,FFFSLocID,FFFSLocName,PlotID,DRNOrder,Order,Datum
+Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,Ashford+Chatsworth,Ashford+Chatsworth UG Derwent Derb to Wye confl,Fluvial_Gauge_MFDO,string,string,mALD
+Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,4043,CHATSWORTH,Fluvial_Gauge_MFDO,string,string,mALD

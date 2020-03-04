@@ -38,11 +38,14 @@ async function refreshForecastLocationData (context, preparedStatement) {
       await preparedStatement.input('FFFS_LOCATION_NAME', sql.NVarChar)
       await preparedStatement.input('PLOT_ID', sql.NVarChar)
       await preparedStatement.input('DRN_ORDER', sql.Int)
-      await preparedStatement.prepare(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) values (@CENTRE, @MFDO_AREA, @CATCHMENT, @FFFS_LOCATION_ID, @FFFS_LOCATION_NAME, @PLOT_ID, @DRN_ORDER)`)
+      await preparedStatement.input('DISPLAY_ORDER', sql.Int)
+      await preparedStatement.input('DATUM', sql.NVarChar)
+
+      await preparedStatement.prepare(`INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FORECAST_LOCATION (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values (@CENTRE, @MFDO_AREA, @CATCHMENT, @FFFS_LOCATION_ID, @FFFS_LOCATION_NAME, @PLOT_ID, @DRN_ORDER, @DISPLAY_ORDER, @DATUM)`)
       for (const row of rows) {
         // Ignore rows in the CSV data that do not have entries for all columns.
         try {
-          if (row.Centre && row.MFDOArea && row.Catchment && row.FFFSLocID && row.FFFSLocName && row.PlotID && row.DRNOrder) {
+          if (row.Centre && row.MFDOArea && row.Catchment && row.FFFSLocID && row.FFFSLocName && row.PlotID && row.DRNOrder && row.Order && row.Datum) {
             await preparedStatement.execute({
               CENTRE: row.Centre,
               MFDO_AREA: row.MFDOArea,
@@ -50,7 +53,9 @@ async function refreshForecastLocationData (context, preparedStatement) {
               FFFS_LOCATION_ID: row.FFFSLocID,
               FFFS_LOCATION_NAME: row.FFFSLocName,
               PLOT_ID: row.PlotID,
-              DRN_ORDER: row.DRNOrder
+              DRN_ORDER: row.DRNOrder,
+              DISPLAY_ORDER: row.Order,
+              DATUM: row.Datum
             })
           } else {
             let failedRowInfo = {

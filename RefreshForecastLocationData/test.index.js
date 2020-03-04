@@ -43,9 +43,11 @@ module.exports = describe('Refresh forecast location data tests', () => {
         FFFSLocID: 'dummyData',
         FFFSLocName: 'dummyData',
         PlotId: 'dummyData',
-        DRNOrder: 123
+        DRNOrder: 123,
+        Order: 8888,
+        Datum: 'mALD'
       }
-      return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123)`)
+      return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
     })
 
     afterAll(() => {
@@ -101,7 +103,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
           FFFSLocID: '4043',
           FFFSLocName: 'CHATSWORTH',
           PlotId: 'Fluvial_Gauge_MFDO',
-          DRNOrder: 123
+          DRNOrder: 123,
+          Order: 8888,
+          Datum: 'mALD'
         }]
 
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
@@ -136,7 +140,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
           FFFSLocID: '4043',
           FFFSLocName: 'CHATSWORTH',
           PlotId: 'Fluvial_Gauge_MFDO',
-          DRNOrder: 123
+          DRNOrder: 123,
+          Order: 8888,
+          Datum: 'mALD'
         }]
 
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
@@ -222,7 +228,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         FFFSLocID: 'Ashford+Chatsworth',
         FFFSLocName: 'Ashford+Chatsworth UG Derwent Derb to Wye confl',
         PlotId: 'Fluvial_Gauge_MFDO',
-        DRNOrder: '123'
+        DRNOrder: '123',
+        Order: 8888,
+        Datum: 'mALD'
       },
       {
         Centre: 'Birmingham',
@@ -231,7 +239,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         FFFSLocID: '4043',
         FFFSLocName: 'CHATSWORTH',
         PlotId: 'Fluvial_Gauge_MFDO',
-        DRNOrder: '123'
+        DRNOrder: '123',
+        Order: 8888,
+        Datum: 'mALD'
       }]
 
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData)
