@@ -6,17 +6,16 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
   await preparedStatement.input('workflowId', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    select
-      max(task_id) as latest_staged_task_id,
-      max(task_completion_time) as latest_staged_task_completion_time
+    select top(1)
+      task_id as latest_staged_task_id,
+      task_completion_time as latest_staged_task_completion_time
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
     where
-      workflow_id = @workflowId
-    group by
-      workflow_id
-    having
-      max(task_completion_time) >= convert(datetime2, @taskCompletionTime, 126) at time zone 'UTC'
+      workflow_id = @workflowId and
+      task_completion_time >= convert(datetime2, @taskCompletionTime, 126) at time zone 'UTC'
+    order by
+      task_completion_time desc
   `)
 
   const parameters = {
