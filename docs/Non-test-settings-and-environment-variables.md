@@ -6,25 +6,27 @@
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
 | AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
+| CRON_EXPRESSION                           | The expression dictating how often stale timeseries data is removed from staging.                       |
 
 ## Mandatory Runtime Function App Settings/Environment Variables
 
-| name                                      | description                                                                                             |
-|-------------------------------------------|---------------------------------------------------------------------------------------------------------|
-| APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                   |
-| AzureWebJobsServiceBus                    | Service bus connection string used by the function app                                                  |
-| AzureWebJobsStorage                       | Storage account connection string used by the function app                                              |
-| AZURE_STORAGE_CONNECTION_STRING           | Storage account connection string used by the function app                                              |
-| FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API         |
-| FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                              |
-| FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                              |
-| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)     |
-| WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                 |
-| FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                     |
-| FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                          |
-| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                  |
-| NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                      |
-| IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                               |
+| name                                      | description                                                                                                                           |
+|-------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                                                 |
+| AzureWebJobsServiceBus                    | Service bus connection string used by the function app                                                                                |
+| AzureWebJobsStorage                       | Storage account connection string used by the function app                                                                            |
+| AZURE_STORAGE_CONNECTION_STRING           | Storage account connection string used by the function app                                                                            |
+| FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API                                       |
+| FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                                                            |
+| FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                                                            |
+| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)                                   |
+| WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                               |
+| FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging schema name                                                                                                                   |
+| FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                                                        |
+| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                |
+| NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                    |
+| IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                             |
+| FME_COMPLETE_JOB_STATUS                   | The code (integer provided by an ETL process) in the staging database which indicates timeseries data has been successfully processed |
 
 ### Request Timeout Considerations
 
@@ -62,8 +64,10 @@ accordingly.
 
 ## Optional Runtime Function App Settings/Environment Variables
 
-| name                         | description                                                                                                             |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                           |
-| FEWS_START_TIME_OFFSET_HOURS | Number of hours before task completion time that core forecasting engine data should be retrieved for (defaults to 12\)  |
-| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task completion time that core forecasting engine data should be retrieved for (defaults to 120)  |
+| name                         | description                                                                                                                                    |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                  |
+| FEWS_START_TIME_OFFSET_HOURS | Number of hours before task completion time that core forecasting engine data should be retrieved for (defaults to 12)                         |
+| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task completion time that core forecasting engine data should be retrieved for (defaults to 120)                         |
+| SOFT_EXPIRY_LIMIT            | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to 168 hours/7 days) |
+| HARD_EXPIRY_LIMIT            | The number of hours before the current time before which all timeseries data should be removed (defaults to 672 hours/28 days)                 |

@@ -1,32 +1,40 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-// const createStagingException = require('../Shared/create-staging-exception')
 const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = async function (context, myTimer) {
   // current time
-  var timeStamp = moment()
+  const timeStamp = moment().format()
 
   if (myTimer.isPastDue) {
     context.log('JavaScript is running late!')
   }
-  context.log('JavaScript timer trigger function ran!', timeStamp)
-
   async function removeExpiredTimeseries (transaction, context) {
+    // The default limits can be overridden by the two environment variables
+    const hardLimit = process.env['HARD_EXPIRY_LIMIT'] ? parseInt(process.env['HARD_EXPIRY_LIMIT']) : 48
+    const softLimit = process.env['SOFT_EXPIRY_LIMIT'] ? parseInt(process.env['SOFT_EXPIRY_LIMIT']) : 24
+
+    // Limits are in hours
+    // Dates need to be specified as UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
+    // Any timeseries older than the hard date will be removed. Not using toUTCString() as toISOSTRInG() supports ms.
+    const hardDate = moment.utc().subtract(hardLimit, 'hours').toDate().toISOString()
+    const softDate = moment.utc().subtract(softLimit, 'hours').toDate().toISOString()
+
     await createTempTable(transaction, context)
 
-    await executePreparedStatementInTransaction(insertSoftDataIntoTemp, context, transaction)
-    await executePreparedStatementInTransaction(insertHardDataIntoTemp, context, transaction)
+    await executePreparedStatementInTransaction(insertHardDataIntoTemp, context, transaction, hardDate)
+    await executePreparedStatementInTransaction(insertSoftDataIntoTemp, context, transaction, softDate)
 
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
+
+    context.log('JavaScript timer trigger function ran!', timeStamp)
   }
 
-  // Refresh with a serializable isolation level so that record deletion is prevented if the tables are in use.
-  // If the table is in use and table lock acquisition fails, the function invocation will fail.
-  // In most cases function invocation will be retried automatically and should succeed.  In rare
-  // cases where successive retries fail, manual intervention will be required.
+  // Refresh with a READ COMMITTED isolation level (the SQL server default). Allows a transaction to read data previously read (not modified)
+  // by another transaction without waiting for the first transaction to complete. The SQL Server Database Engine keeps write
+  // locks (acquired on selected data) until the end of the transaction, but read locks are released as soon as the SELECT operation is performed.
   await doInTransaction(removeExpiredTimeseries, context, 'The expired timeseries deletion has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
   // context.done() not requried as there is no output binding to be activated.
 }
@@ -34,7 +42,7 @@ module.exports = async function (context, myTimer) {
 async function createTempTable (transaction, context) {
   // Create a local temporary table
   await new sql.Request(transaction).batch(`
-      create table #delete_staging_data_temp
+      create table #deletion_job_temp
       (
         id uniqueidentifier not null default newid(),
         timeseries_id uniqueidentifier not null,
@@ -44,84 +52,77 @@ async function createTempTable (transaction, context) {
     `)
 }
 
-async function insertSoftDataIntoTemp (context, preparedStatement) {
-
-  const SOFT_DELETION_DATE = process.env['SOFT_EXPIRY_LIMIT']
-  const FME_COMPLETE_JOB_STATUS = process.env['FME_COMPLETE_JOB_STATUS']
+async function insertSoftDataIntoTemp (context, preparedStatement, softDate) {
+  const FME_COMPLETE_JOB_STATUS = parseInt(process.env['FME_COMPLETE_JOB_STATUS'])
 
   await preparedStatement.input('softDate', sql.DateTime2)
-  await preparedStatement.input('jobStatus', sql.Int)
+  await preparedStatement.input('completeStatus', sql.Int)
 
   await preparedStatement.prepare(
-    `INSERT INTO ##r_timeseries_job_temp
-    SELECT r.ID, r.TIMESERIES_ID, r.JOB_STATUS, t.TIMESERIES_HEADER_ID
-    FROM [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].TIMESERIES_JOB r
-      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES t ON t.ID = r.TIMESERIES_ID
-      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES_HEADER h ON t.TIMESERIES_HEADER_ID = h.ID
-    WHERE
-      r.JOB_STATUS = @completeStatus
-      AND
-      h.IMPORT_TIME < CAST('@softDate' AS datetime2)`
+    `insert into #deletion_job_temp (id, timeseries_id, job_status, timeseries_header_id)
+    select r.id, r.timeseries_id, r.job_status, t.timeseries_header_id
+    from [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].timeseries_job r
+      join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries t on t.id = r.timeseries_id
+      join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries_header h on t.timeseries_header_id = h.id
+    where
+      r.job_status = @completeStatus
+      and
+      h.import_time < cast(@softDate as datetime2)`
   )
 
+  // console.log(preparedStatement.statement)
+
   const parameters = {
-    softDate: SOFT_DELETION_DATE,
-    jobStatus: FME_COMPLETE_JOB_STATUS
+    softDate: softDate,
+    completeStatus: FME_COMPLETE_JOB_STATUS
   }
 
   await preparedStatement.execute(parameters)
 }
 
-async function insertHardDataIntoTemp (context, preparedStatement) {
-  const HARD_DELETION_DATE = process.env['HARD_EXPIRY_LIMIT']
-
+async function insertHardDataIntoTemp (context, preparedStatement, hardDate) {
   await preparedStatement.input('hardDate', sql.DateTime2)
 
   await preparedStatement.prepare(
-    `INSERT INTO ##r_timeseries_job_temp
-    SELECT r.ID, r.TIMESERIES_ID, r.JOB_STATUS, t.TIMESERIES_HEADER_ID
-    FROM [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].TIMESERIES_JOB r
-      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES t ON t.ID = r.TIMESERIES_ID
-      JOIN [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].TIMESERIES_HEADER h ON t.TIMESERIES_HEADER_ID = h.ID
-    WHERE
-      h.IMPORT_TIME < CAST('@hardDate' AS datetime2)`
+    `insert into #deletion_job_temp (id, timeseries_id, job_status, timeseries_header_id)
+    select r.id, r.timeseries_id, r.job_status, t.timeseries_header_id
+    from [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].timeseries_job r
+      join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries t on t.id = r.timeseries_id
+      join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries_header h on t.timeseries_header_id = h.id
+    where
+      h.import_time < cast(@hardDate as datetime2)`
   )
-
   const parameters = {
-    hardDate: HARD_DELETION_DATE
+    hardDate: hardDate
   }
-
   await preparedStatement.execute(parameters)
 }
 
 async function deleteReportingRows (context, preparedStatement) {
-
   await preparedStatement.prepare(
-    `DELETE r FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB r
-    INNER JOIN ##r_timeseries_job_temp te
-    ON te.id = r.ID`
+    `delete r from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB r
+    inner join #deletion_job_temp te
+    on te.id = r.ID`
   )
 
   await preparedStatement.execute()
 }
 
 async function deleteTimeseriesRows (context, preparedStatement) {
-
   await preparedStatement.prepare(
-    `DELETE t FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES t
-    INNER JOIN ##delete_staging_data_temp te
-    ON te.timeseries_id = t.id`
+    `delete t from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES t
+    inner join #deletion_job_temp te
+    on te.timeseries_id = t.id`
   )
 
   await preparedStatement.execute()
 }
 
 async function deleteHeaderRows (context, preparedStatement) {
-
   await preparedStatement.prepare(
-    `DELETE th FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER th
-    INNER JOIN ##delete_staging_data_temp te
-    ON te.timeseries_header_id = th.id`
+    `delete th from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER th
+    inner join #deletion_job_temp te
+    on te.timeseries_header_id = th.id`
   )
 
   await preparedStatement.execute()

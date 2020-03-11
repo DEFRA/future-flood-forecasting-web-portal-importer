@@ -10,7 +10,8 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
   * Refreshing the set of core forecasting engine filters associated with each workflow.
   * Refreshing the set of core forecasting engine ignored workflows.
 * Messages containing the primary keys of staging database records holding data extracted from the core forecasting engine
-  are used to trigger reporting and visualisation activities.  
+  are used to trigger reporting and visualisation activities.
+* CRON expression based triggering is used to periodically remove stale timeseries data from the staging database.
 
 ## Contents
 
