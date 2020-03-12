@@ -70,8 +70,6 @@ async function insertSoftDataIntoTemp (context, preparedStatement, softDate) {
       h.import_time < cast(@softDate as datetime2)`
   )
 
-  // console.log(preparedStatement.statement)
-
   const parameters = {
     softDate: softDate,
     completeStatus: FME_COMPLETE_JOB_STATUS
