@@ -142,23 +142,23 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
-      await processMessageAndCheckStagingExceptionIsCreated(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
     it('should create a staging exception for a missing workflow', async () => {
       const missingWorkflow = 'missingWorkflow'
-      await processMessageAndCheckStagingExceptionIsCreated(missingWorkflow, 'Missing PI Server input data for with')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(missingWorkflow, 'Missing PI Server input data for with')
     })
     it('should create a staging exception for a non-forecast without an approval status', async () => {
-      await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
     })
     it('should create a staging exception for a message containing the boolean false', async () => {
-      await processMessageAndCheckStagingExceptionIsCreated('booleanFalseMessage', 'Message must be either a string or a pure object')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('booleanFalseMessage', 'Message must be either a string or a pure object')
     })
     it('should create a staging exception for a message containing the number 1', async () => {
-      await processMessageAndCheckStagingExceptionIsCreated('numericMessage', 'Message must be either a string or a pure object')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('numericMessage', 'Message must be either a string or a pure object')
     })
     it('should create a staging exception for a non-forecast without an end time', async () => {
-      await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutEndTime', 'Unable to extract task run completion date from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutEndTime', 'Unable to extract task run completion date from message')
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
@@ -191,7 +191,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       await processMessage('singleFilterNonForecast', [mockResponse])
-      await processMessageAndCheckDataIsNotImported('singleFilterNonForecast', [mockResponse])
+      await processMessageAndCheckNoDataIsImported('singleFilterNonForecast', 1)
     })
   })
 
@@ -275,20 +275,25 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     }
   }
 
-  async function processMessageAndCheckDataIsNotImported (messageKey, mockResponses) {
-    const query = `
-      select
-        id
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
-    `
-    const numberOfRowsBeforeMessageProcessing = (await request.query(query)).recordset.length
-    await processMessage(messageKey, mockResponses)
-    const numberOfRowsAfterMessageProcessing = (await request.query(query)).recordset.length
-    expect(numberOfRowsAfterMessageProcessing).toBe(numberOfRowsBeforeMessageProcessing)
+  async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
+    await processMessage(messageKey)
+    await checkAmountOfDataImported(expectedNumberOfRecords || 0)
   }
 
-  async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expectedErrorDescription) {
+  async function checkAmountOfDataImported (expectedNumberOfRecords) {
+    const result = await request.query(`
+      select
+        count(t.id) as number
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      where
+        th.id = t.timeseries_header_id
+    `)
+    expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
+  }
+
+  async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
     await processMessage(messageKey)
     const result = await request.query(`
       select
@@ -299,6 +304,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         exception_time desc
     `)
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
+    await checkAmountOfDataImported(0)
   }
 
   async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {

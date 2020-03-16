@@ -8,7 +8,6 @@ module.exports = {
     const request = new sql.Request(pool)
 
     let transaction
-    let transactionRolledBack = false
 
     try {
       sql.on('error', err => {
@@ -34,17 +33,15 @@ module.exports = {
       context.log.error(`Transaction failed: ${errorMessage} ${err}`)
 
       if (transaction._aborted) {
-        transactionRolledBack = true
         context.log.warn('The transaction has been aborted.')
       } else {
-        transactionRolledBack = true
         await transaction.rollback()
         context.log.warn('The transaction has been rolled back.')
       }
       throw err
     } finally {
       try {
-        if (transaction && !transactionRolledBack) {
+        if (transaction && !transaction._aborted && !transaction._rollbackRequested) {
           await transaction.commit()
         }
       } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }

@@ -2,6 +2,7 @@ const moment = require('moment')
 const getTimeSeriesDisplayGroups = require('./timeseries-functions/importTimeSeriesDisplayGroups')
 const getTimeSeriesNonDisplayGroups = require('./timeseries-functions/importTimeSeries')
 const createStagingException = require('../Shared/create-staging-exception')
+const StagingError = require('../Shared/staging-error')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
 const isLatestTaskRunForWorkflow = require('./helpers/is-latest-task-run-for-workflow')
@@ -189,14 +190,6 @@ async function route (context, message, routeData) {
     let workflowDataProperty
     let workflowsFunction
 
-    routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
-      createTimeseriesHeader,
-      context,
-      routeData.transaction,
-      message,
-      routeData
-    )
-
     // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
     // reference data held in the staging database.
     if (routeData.forecast) {
@@ -216,6 +209,15 @@ async function route (context, message, routeData) {
 
     if (routeData[workflowDataProperty].recordset.length > 0) {
       context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
+
+      routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+        createTimeseriesHeader,
+        context,
+        routeData.transaction,
+        message,
+        routeData
+      )
+
       // Retrieve timeseries data from the core engine PI server and load it into the staging database.
       timeseriesData = await timeseriesDataFunction(context, routeData)
       await executePreparedStatementInTransaction(
@@ -264,24 +266,33 @@ async function parseMessage (context, transaction, message) {
 }
 
 async function routeMessage (transaction, context, message) {
-  // If a JSON message is received convert it to a string.
-  const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message, true)
-  if (preprocessedMessage) {
-    const routeData = await parseMessage(context, transaction, preprocessedMessage)
-    if (await executePreparedStatementInTransaction(isTaskRunImported, context, transaction, routeData.taskId)) {
-      context.log.warn(`Ignoring message for task run ${routeData.taskId} - data has been imported already`)
-    } else {
-      // As the forecast and approved indicators are booleans progression must be based on them being defined.
-      if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
-        typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
-        // Do not import out of date forecast data.
-        if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
-          await route(context, preprocessedMessage, routeData)
-        } else {
-          context.log.warn(`Ignoring message for task run ${routeData.taskId} completed on ${routeData.taskCompletionTime}` +
-          ` - ${routeData.latestTaskId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
+  try {
+    // If a JSON message is received convert it to a string.
+    const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message, true)
+    if (preprocessedMessage) {
+      const routeData = await parseMessage(context, transaction, preprocessedMessage)
+      if (await executePreparedStatementInTransaction(isTaskRunImported, context, transaction, routeData.taskId)) {
+        context.log.warn(`Ignoring message for task run ${routeData.taskId} - data has been imported already`)
+      } else {
+        // As the forecast and approved indicators are booleans progression must be based on them being defined.
+        if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
+          typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
+          // Do not import out of date forecast data.
+          if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
+            await route(context, preprocessedMessage, routeData)
+          } else {
+            context.log.warn(`Ignoring message for task run ${routeData.taskId} completed on ${routeData.taskCompletionTime}` +
+              ` - ${routeData.latestTaskId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
+          }
         }
       }
+    }
+  } catch (err) {
+    if (!(err instanceof StagingError)) {
+      // A StagingError is thrown when message replay is not possible witout manual intervention.
+      // In this case a staging exception record has been created and the message should be consumed.
+      // Propagate other errors to facilitate message replay.
+      throw err
     }
   }
 }
