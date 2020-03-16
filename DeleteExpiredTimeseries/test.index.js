@@ -5,7 +5,6 @@ module.exports = describe('Timeseries data deletion tests', () => {
   const deleteFunction = require('./index')
   const moment = require('moment')
   const sql = require('mssql')
-  // const fs = require('fs')
 
   let context
 
@@ -63,23 +62,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await insertRecordIntoTables(importDate, statusCode, testDescription)
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
-      // await checkDescription(testDescription)
     })
-
-    it('should NOT remove a record with an uncomplete job status and with an import date older than the soft limit', async () => {
-      const importDateStatus = 'exceedsSoft'
-      const statusCode = 5
-      const testDescription = 'should NOT remove a record with an uncomplete job status and with an import date older than the soft limit'
-
-      const expectedNumberofRows = 1
-
-      const importDate = await createImportDate(importDateStatus)
-      await insertRecordIntoTables(importDate, statusCode, testDescription)
-      await runTimerFunction()
-      await checkDeletionStatus(expectedNumberofRows)
-      await checkDescription(testDescription)
-    })
-
     it('should remove a record with a complete job status and with an import date older than the soft limit', async () => {
       const importDateStatus = 'exceedsSoft'
       const statusCode = 6
@@ -91,6 +74,44 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await insertRecordIntoTables(importDate, statusCode, testDescription)
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should remove a record with an incomplete job status and with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+      const statusCode = 5
+      const testDescription = 'should remove a record with an incomplete job status and with an import date older than the hard limit'
+
+      const expectedNumberofRows = 0
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should NOT remove a record with an incomplete job status and with an import date older than the soft limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+      const statusCode = 5
+      const testDescription = 'should NOT remove a record with an incomplete job status and with an import date older than the soft limit'
+
+      const expectedNumberofRows = 1
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+      await checkDescription(testDescription)
+    })
+    it('should NOT remove a record with an incomplete job status and with an import date younger than the soft limit', async () => {
+      const importDateStatus = 'activeDate'
+      const statusCode = 5
+      const testDescription = 'should NOT remove a record with an incomplete job status and with an import date younger than the soft limit'
+
+      const expectedNumberofRows = 1
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+      await checkDescription(testDescription)
     })
     it('should NOT remove a record with a complete job status and with an import date younger than the soft limit', async () => {
       const importDateStatus = 'activeDate'
@@ -104,6 +125,17 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
       await checkDescription(testDescription)
+    })
+    it('Should be able to delete timeseries whilst another default level transaction is taking place on one of the tables involved', async () => {
+      const importDateStatus = 'exceedsHard'
+      const statusCode = 1
+      const testDescription = 'Should be able to delete timeseries whilst another default level transaction is taking place on one of the tables involved'
+
+      const expectedNumberofRows = 0
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await checkRunWithDefaultHeaderTableIsolation(expectedNumberofRows)
     })
   })
 
@@ -141,12 +173,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetime2), '${testDescription}')`
     query.replace(/"/g, "'")
 
-    try {
-      await request.query(query)
-    } catch (err) {
-      console.log(err.message)
-      throw err
-    }
+    await request.query(query)
   }
 
   async function checkDeletionStatus (expectedLength) {
@@ -173,5 +200,26 @@ module.exports = describe('Timeseries data deletion tests', () => {
       order by import_time desc
   `)
     expect(result.recordset[0].description).toBe(testDescription)
+  }
+  async function checkRunWithDefaultHeaderTableIsolation (expectedLength) {
+    let transaction
+    const tableName = 'timeseries_header'
+    try {
+      transaction = new sql.Transaction(pool) // using Jest pool
+      await transaction.begin(null) // 'null' is the isolation level used by other transactions on the tables concerned
+      const newRequest = new sql.Request(transaction)
+      await newRequest.query(`
+      select id, start_time from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
+     `)
+      await expect(deleteFunction(context, timer)).resolves.toBe(undefined) // seperate request (outside the transaction), using the same pool
+      await checkDeletionStatus(expectedLength) // another seperate request usung the same pool
+    } finally {
+      if (transaction._aborted) {
+        context.log.warn('The transaction has been aborted.')
+      } else {
+        await transaction.rollback()
+        context.log.warn('The transaction has been rolled back.')
+      }
+    }
   }
 })
