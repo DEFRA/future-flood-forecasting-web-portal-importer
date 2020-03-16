@@ -268,7 +268,7 @@ async function parseMessage (context, transaction, message) {
 async function routeMessage (transaction, context, message) {
   try {
     // If a JSON message is received convert it to a string.
-    const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message, true)
+    const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message)
     if (preprocessedMessage) {
       const routeData = await parseMessage(context, transaction, preprocessedMessage)
       if (await executePreparedStatementInTransaction(isTaskRunImported, context, transaction, routeData.taskId)) {
@@ -289,7 +289,7 @@ async function routeMessage (transaction, context, message) {
     }
   } catch (err) {
     if (!(err instanceof StagingError)) {
-      // A StagingError is thrown when message replay is not possible witout manual intervention.
+      // A StagingError is thrown when message replay is not possible without manual intervention.
       // In this case a staging exception record has been created and the message should be consumed.
       // Propagate other errors to facilitate message replay.
       throw err
