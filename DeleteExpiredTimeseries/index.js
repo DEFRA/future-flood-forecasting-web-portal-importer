@@ -11,8 +11,8 @@ module.exports = async function (context, myTimer) {
   }
   async function removeExpiredTimeseries (transaction, context) {
     // The default limits can be overridden by the two environment variables
-    const hardLimit = process.env['HARD_EXPIRY_LIMIT'] ? parseInt(process.env['HARD_EXPIRY_LIMIT']) : 48
-    const softLimit = process.env['SOFT_EXPIRY_LIMIT'] ? parseInt(process.env['SOFT_EXPIRY_LIMIT']) : 24
+    const hardLimit = process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT']) : 48
+    const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : 24
 
     // Limits are in hours
     // Dates need to be specified as UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.

@@ -12,8 +12,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
 
-  const hardLimit = process.env['HARD_EXPIRY_LIMIT'] ? parseInt(process.env['HARD_EXPIRY_LIMIT']) : 48
-  const softLimit = process.env['SOFT_EXPIRY_LIMIT'] ? parseInt(process.env['SOFT_EXPIRY_LIMIT']) : 24
+  const hardLimit = process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT']) : 48
+  const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : 24
 
   describe('The refresh forecast location data function:', () => {
     beforeAll(() => {

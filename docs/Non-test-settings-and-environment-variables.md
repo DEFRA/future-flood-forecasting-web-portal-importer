@@ -64,10 +64,10 @@ accordingly.
 
 ## Optional Runtime Function App Settings/Environment Variables
 
-| name                         | description                                                                                                                                    |
-|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                  |
-| FEWS_START_TIME_OFFSET_HOURS | Number of hours before task completion time that core forecasting engine data should be retrieved for (defaults to 12)                         |
-| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task completion time that core forecasting engine data should be retrieved for (defaults to 120)                         |
-| SOFT_EXPIRY_LIMIT            | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to 168 hours/7 days) |
-| HARD_EXPIRY_LIMIT            | The number of hours before the current time before which all timeseries data should be removed (defaults to 672 hours/28 days)                 |
+| name                         | description                                                                                                                                            |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                          |
+| FEWS_START_TIME_OFFSET_HOURS | Number of hours before task completion time that core forecasting engine data should be retrieved for (defaults to 12)                                 |
+| FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task completion time that core forecasting engine data should be retrieved for (defaults to 120)                                 |
+| DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to 168 hours/7 days) |
+| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT | The number of hours before the current time before which all timeseries data should be removed (defaults to 672 hours/28 days)                 |
