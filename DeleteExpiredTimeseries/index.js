@@ -53,7 +53,7 @@ async function createTempTable (transaction, context) {
 }
 
 async function insertSoftDataIntoTemp (context, preparedStatement, softDate) {
-  const FME_COMPLETE_JOB_STATUS = parseInt(process.env['FME_COMPLETE_JOB_STATUS'])
+  const FME_COMPLETE_JOB_STATUS = 6
 
   await preparedStatement.input('softDate', sql.DateTime2)
   await preparedStatement.input('completeStatus', sql.Int)

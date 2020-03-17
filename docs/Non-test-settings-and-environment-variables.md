@@ -6,7 +6,7 @@
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)   |
 | AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                       |
-| CRON_EXPRESSION                           | The expression dictating how often stale timeseries data is removed from staging.                       |
+| DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION | The expression dictating how often stale timeseries data is removed from staging.                       |
 
 ## Mandatory Runtime Function App Settings/Environment Variables
 
@@ -27,7 +27,6 @@
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                |
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                    |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                             |
-| FME_COMPLETE_JOB_STATUS                   | The code (integer provided by an ETL process) in the staging database which indicates timeseries data has been successfully processed |
 
 ### Request Timeout Considerations
 
