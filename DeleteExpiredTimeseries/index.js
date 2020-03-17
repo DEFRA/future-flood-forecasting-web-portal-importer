@@ -38,8 +38,12 @@ module.exports = async function (context, myTimer) {
   // Refresh with a READ COMMITTED isolation level (the SQL server default). Allows a transaction to read data previously read (not modified)
   // by another transaction without waiting for the first transaction to complete. The SQL Server Database Engine keeps write
   // locks (acquired on selected data) until the end of the transaction, but read locks are released as soon as the SELECT operation is performed.
-  await doInTransaction(removeExpiredTimeseries, context, 'The expired timeseries deletion has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
-  // context.done() not requried as there is no output binding to be activated.
+  if (process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT']) {
+    await doInTransaction(removeExpiredTimeseries, context, 'The expired timeseries deletion has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
+    // context.done() not requried as there is no output binding to be activated.
+  } else {
+    context.log.warn('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.')
+  }
 }
 
 async function createTempTable (transaction, context) {
