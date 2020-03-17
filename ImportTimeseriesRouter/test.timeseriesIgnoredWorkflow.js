@@ -81,7 +81,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should create a staging exception for an invalid message', async () => {
-      await processMessageAndCheckStagingExceptionIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
     })
   })
 
@@ -95,18 +95,25 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
     await messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
   }
 
-  async function processMessageAndCheckNoDataIsImported (messageKey) {
+  async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
     await processMessage(messageKey)
-    const result = await request.query(`
-      select
-        count(*) as number
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries
-    `)
-    expect(result.recordset[0].number).toBe(0)
+    await checkAmountOfDataImported(expectedNumberOfRecords || 0)
   }
 
-  async function processMessageAndCheckStagingExceptionIsCreated (messageKey, expectedErrorDescription) {
+  async function checkAmountOfDataImported (expectedNumberOfRecords) {
+    const result = await request.query(`
+      select
+        count(t.id) as number
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      where
+        th.id = t.timeseries_header_id
+    `)
+    expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
+  }
+
+  async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
     await processMessage(messageKey)
     const result = await request.query(`
       select
@@ -117,6 +124,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
         exception_time desc
     `)
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
+    await checkAmountOfDataImported(0)
   }
 
   async function lockIgnoredWorkflowTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
