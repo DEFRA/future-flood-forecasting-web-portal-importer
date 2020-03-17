@@ -228,7 +228,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         FFFSLocID: 'Ashford+Chatsworth',
         FFFSLocName: 'Ashford+Chatsworth UG Derwent Derb to Wye confl',
         PlotId: 'Fluvial_Gauge_MFDO',
-        DRNOrder: '123',
+        DRNOrder: 123,
         Order: 8888,
         Datum: 'mALD'
       },
@@ -236,11 +236,11 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Centre: 'Birmingham',
         MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
         Catchemnt: 'Derwent',
-        FFFSLocID: '4043',
+        FFFSLocID: '40443',
         FFFSLocName: 'CHATSWORTH',
         PlotId: 'Fluvial_Gauge_MFDO',
-        DRNOrder: '123',
-        Order: 8888,
+        DRNOrder: 123,
+        Order: 8988,
         Datum: 'mALD'
       }]
 
