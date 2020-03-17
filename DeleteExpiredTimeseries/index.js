@@ -10,15 +10,18 @@ module.exports = async function (context, myTimer) {
     context.log('JavaScript is running late!')
   }
   async function removeExpiredTimeseries (transaction, context) {
-    // The default limits can be overridden by the two environment variables
-    const hardLimit = process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT']) : 48
-    const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : 24
+    const hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
+    // If no soft limit is specified it inherits the hard limit
+    const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
 
     // Limits are in hours
     // Dates need to be specified as UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
     // Any timeseries older than the hard date will be removed. Not using toUTCString() as toISOSTRInG() supports ms.
     const hardDate = moment.utc().subtract(hardLimit, 'hours').toDate().toISOString()
     const softDate = moment.utc().subtract(softLimit, 'hours').toDate().toISOString()
+    // current date     :-------------------------------------->|
+    // soft date        :---------------------|                  - delete all completed records before this date
+    // hard date        :------------|                           - delete all records before this date
 
     await createTempTable(transaction, context)
 
