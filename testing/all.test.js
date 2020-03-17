@@ -40,6 +40,7 @@ describe('Run all unit tests in sequence', () => {
   require('../RefreshNonDisplayGroupData/test.index')
   require('../RefreshForecastLocationData/test.index')
   require('../RefreshIgnoredWorkflowData/test.index')
+  require('../DeleteExpiredTimeseries/test.index')
   require('../ImportTimeseriesRouter/test.timeseriesNonDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesIgnoredWorkflow')

@@ -49,7 +49,7 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
               FILTER_ID: row.FilterID
             })
           } else {
-            let failedRowInfo = {
+            const failedRowInfo = {
               rowData: row,
               errorMessage: `A row is missing data.`,
               errorCode: `NA`
@@ -58,7 +58,7 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
           }
         } catch (err) {
           context.log.warn(`an error has been found in a row with the Workflow ID: ${row.WorkflowID}.\n  Error : ${err}`)
-          let failedRowInfo = {
+          const failedRowInfo = {
             rowData: row,
             errorMessage: err.message,
             errorCode: err.code

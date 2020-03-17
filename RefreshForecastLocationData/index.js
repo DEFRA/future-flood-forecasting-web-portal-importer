@@ -58,7 +58,7 @@ async function refreshForecastLocationData (context, preparedStatement) {
               DATUM: row.Datum
             })
           } else {
-            let failedRowInfo = {
+            const failedRowInfo = {
               rowData: row,
               errorMessage: `A row is missing data.`,
               errorCode: `NA`
@@ -67,7 +67,7 @@ async function refreshForecastLocationData (context, preparedStatement) {
           }
         } catch (err) {
           context.log.warn(`an error has been found in a row with the Location ID: ${row.FFFSLocID}.\n  Error : ${err}`)
-          let failedRowInfo = {
+          const failedRowInfo = {
             rowData: row,
             errorMessage: err.message,
             errorCode: err.code
