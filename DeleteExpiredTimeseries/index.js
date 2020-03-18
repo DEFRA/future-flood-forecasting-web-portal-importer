@@ -55,6 +55,7 @@ async function createTempTable (transaction, context) {
         timeseries_id uniqueidentifier not null,
         timeseries_header_id uniqueidentifier not null,
         job_status int not null
+        index ix_deletion_job_temp (id, timeseries_id, timeseries_header_id, job_status)
       )
     `)
 }
