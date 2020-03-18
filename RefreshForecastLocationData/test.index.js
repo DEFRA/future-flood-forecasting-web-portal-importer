@@ -386,9 +386,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
       insert into 
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER) 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) 
       values 
-      ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'plotid', 123)
+      ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'plotid', 123, 0, 'mALD')
     `)
       await mockFetchResponse(mockResponseData)
       await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
