@@ -210,7 +210,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
     const expectedTaskCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
-    const expectedTaskId = taskRunCompleteMessages[messageKey].input.source
+    const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
     const receivedFewsData = []
     const receivedPrimaryKeys = []
@@ -219,7 +219,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       select
         t.id,
         th.workflow_id,
-        th.task_id,
+        th.task_run_id,
         th.task_completion_time,
         th.start_time,
         th.end_time,
@@ -250,7 +250,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         const endTime = moment(result.recordset[index].end_time)
 
         expect(taskCompletionTime.toISOString()).toBe(expectedTaskCompletionTime.toISOString())
-        expect(result.recordset[index].task_id).toBe(expectedTaskId)
+        expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
         expect(result.recordset[index].workflow_id).toBe(expectedWorkflowId)
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of

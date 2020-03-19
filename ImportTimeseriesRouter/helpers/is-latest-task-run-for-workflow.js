@@ -7,7 +7,7 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
 
   await preparedStatement.prepare(`
     select top(1)
-      task_id as latest_staged_task_id,
+      task_run_id as latest_staged_task_run_id,
       task_completion_time as latest_staged_task_completion_time
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
@@ -25,14 +25,14 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
 
   const result = await preparedStatement.execute(parameters)
 
-  if (result.recordset && result.recordset[0] && result.recordset[0].latest_staged_task_id) {
-    routeData.latestTaskId = result.recordset[0].latest_staged_task_id
+  if (result.recordset && result.recordset[0] && result.recordset[0].latest_staged_task_run_id) {
+    routeData.latestTaskRunId = result.recordset[0].latest_staged_task_run_id
     routeData.latestTaskCompletionTime =
       moment(result.recordset[0].latest_staged_task_completion_time).toISOString()
   } else {
-    routeData.latestTaskId = routeData.taskId
+    routeData.latestTaskRunId = routeData.taskRunId
     routeData.latestTaskCompletionTime = routeData.taskCompletionTime
   }
 
-  return routeData.latestTaskId === routeData.taskId
+  return routeData.latestTaskRunId === routeData.taskRunId
 }

@@ -104,24 +104,24 @@ async function createTimeseriesHeader (context, preparedStatement, message, rout
   await preparedStatement.input('startTime', sql.DateTime2)
   await preparedStatement.input('endTime', sql.DateTime2)
   await preparedStatement.input('taskCompletionTime', sql.DateTime2)
-  await preparedStatement.input('taskId', sql.NVarChar)
+  await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
   await preparedStatement.prepare(`
   insert into
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (start_time, end_time, task_completion_time, task_id, workflow_id)
+    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (start_time, end_time, task_completion_time, task_run_id, workflow_id)
   output
     inserted.id
   values
-    (@startTime, @endTime, @taskCompletionTime, @taskId, @workflowId)
+    (@startTime, @endTime, @taskCompletionTime, @taskRunId, @workflowId)
 `)
 
   const parameters = {
     startTime: routeData.startTime,
     endTime: routeData.endTime,
     taskCompletionTime: routeData.taskCompletionTime,
-    taskId: routeData.taskId,
+    taskRunId: routeData.taskRunId,
     workflowId: routeData.workflowId
   }
 
@@ -258,7 +258,7 @@ async function parseMessage (context, transaction, message) {
   routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
   routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
-  routeData.taskId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
+  routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, message)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, message)
   routeData.transaction = transaction
@@ -271,18 +271,18 @@ async function routeMessage (transaction, context, message) {
     const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message)
     if (preprocessedMessage) {
       const routeData = await parseMessage(context, transaction, preprocessedMessage)
-      if (await executePreparedStatementInTransaction(isTaskRunImported, context, transaction, routeData.taskId)) {
-        context.log.warn(`Ignoring message for task run ${routeData.taskId} - data has been imported already`)
+      if (await executePreparedStatementInTransaction(isTaskRunImported, context, transaction, routeData.taskRunId)) {
+        context.log.warn(`Ignoring message for task run ${routeData.taskRunId} - data has been imported already`)
       } else {
         // As the forecast and approved indicators are booleans progression must be based on them being defined.
-        if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskId &&
+        if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskRunId &&
           typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
           // Do not import out of date forecast data.
           if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
             await route(context, preprocessedMessage, routeData)
           } else {
-            context.log.warn(`Ignoring message for task run ${routeData.taskId} completed on ${routeData.taskCompletionTime}` +
-              ` - ${routeData.latestTaskId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
+            context.log.warn(`Ignoring message for task run ${routeData.taskRunId} completed on ${routeData.taskCompletionTime}` +
+              ` - ${routeData.latestTaskRunId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
           }
         }
       }
