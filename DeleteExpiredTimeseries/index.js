@@ -59,7 +59,7 @@ async function createTempTable (transaction, context) {
       CREATE INDEX ix_deletion_job_temp_id
         ON #deletion_job_temp (id)
       CREATE INDEX ix_deletion_job_temp_timeseries_id
-        ON #deletion_job_temp (id)
+        ON #deletion_job_temp (timeseries_id)
       CREATE INDEX ix_deletion_job_temp_timeseries_header_id
         ON #deletion_job_temp (timeseries_header_id)
       CREATE INDEX ix_deletion_job_temp_job_status
