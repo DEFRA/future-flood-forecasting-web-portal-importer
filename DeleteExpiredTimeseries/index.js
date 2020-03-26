@@ -53,8 +53,7 @@ async function createTempTable (transaction, context) {
       (
         id uniqueidentifier not null default newid(),
         timeseries_id uniqueidentifier not null,
-        timeseries_header_id uniqueidentifier not null,
-        job_status int not null
+        timeseries_header_id uniqueidentifier not null
       )
       CREATE INDEX ix_deletion_job_temp_id
         ON #deletion_job_temp (id)
@@ -62,8 +61,6 @@ async function createTempTable (transaction, context) {
         ON #deletion_job_temp (timeseries_id)
       CREATE INDEX ix_deletion_job_temp_timeseries_header_id
         ON #deletion_job_temp (timeseries_header_id)
-      CREATE INDEX ix_deletion_job_temp_job_status
-        ON #deletion_job_temp (job_status)
     `)
 }
 
@@ -74,8 +71,8 @@ async function insertSoftDataIntoTemp (context, preparedStatement, softDate) {
   await preparedStatement.input('completeStatus', sql.Int)
 
   await preparedStatement.prepare(
-    `insert into #deletion_job_temp (id, timeseries_id, job_status, timeseries_header_id)
-    select r.id, r.timeseries_id, r.job_status, t.timeseries_header_id
+    `insert into #deletion_job_temp (id, timeseries_id, timeseries_header_id)
+    select r.id, r.timeseries_id, t.timeseries_header_id
     from [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].timeseries_job r
       join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries t on t.id = r.timeseries_id
       join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries_header h on t.timeseries_header_id = h.id
@@ -97,8 +94,8 @@ async function insertHardDataIntoTemp (context, preparedStatement, hardDate) {
   await preparedStatement.input('hardDate', sql.DateTime2)
 
   await preparedStatement.prepare(
-    `insert into #deletion_job_temp (id, timeseries_id, job_status, timeseries_header_id)
-    select r.id, r.timeseries_id, r.job_status, t.timeseries_header_id
+    `insert into #deletion_job_temp (id, timeseries_id, timeseries_header_id)
+    select r.id, r.timeseries_id, t.timeseries_header_id
     from [${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}].timeseries_job r
       join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries t on t.id = r.timeseries_id
       join [${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}].timeseries_header h on t.timeseries_header_id = h.id
