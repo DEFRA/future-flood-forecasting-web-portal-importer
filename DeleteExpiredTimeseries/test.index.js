@@ -165,7 +165,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       set @id1 = newid()
     declare @id2 uniqueidentifier
       set @id2 = newid()
-    insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_id, workflow_id, import_time)
+    insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time)
     values (@id1, cast('2017-01-24' as datetime2),cast('2017-01-26' as datetime2),cast('2017-01-25' as datetime2),0,0,cast('${importDate}' as datetime2))
     insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (id, fews_data, fews_parameters,timeseries_header_id)
     values (@id2, 'data','parameters', @id1)
