@@ -14,7 +14,7 @@ module.exports = async function (context, myTimer) {
   if (process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT']) {
     // The read-commited isolation level allows reads, writes and deletes on table data whilst the delete is
     // running (locks released after reading, there are no modified objects in the query so no further locks should take place).
-    // Read commited ensure only commited data is selected to delete. Does not protect against Non-repeatable reads or Phantom reads,
+    // Read commited ensures only commited data is selected to delete. Does not protect against Non-repeatable reads or Phantom reads,
     // however the isolation is not deemed to justify the concurrency cost in this case.
     await doInTransaction(removeExpiredTimeseries, context, 'The expired timeseries deletion has failed with the following error:', sql.ISOLATION_LEVEL.READ_COMMITTED)
   } else {
@@ -78,8 +78,8 @@ async function createTempTable (transaction, context) {
 async function deleteReportingRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete r from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB r
-inner join #deletion_job_temp te
-on te.reporting_id = r.id`
+      inner join #deletion_job_temp te
+      on te.reporting_id = r.id`
   )
 
   await preparedStatement.execute()
@@ -88,8 +88,8 @@ on te.reporting_id = r.id`
 async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete t from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES t
-inner join #deletion_job_temp te
-on te.timeseries_id = t.id`
+      inner join #deletion_job_temp te
+      on te.timeseries_id = t.id`
   )
 
   await preparedStatement.execute()
@@ -98,8 +98,8 @@ on te.timeseries_id = t.id`
 async function deleteHeaderRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete th from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER th
-inner join #deletion_job_temp te
-on te.timeseries_header_id = th.id`
+      inner join #deletion_job_temp te
+      on te.timeseries_header_id = th.id`
   )
 
   await preparedStatement.execute()
