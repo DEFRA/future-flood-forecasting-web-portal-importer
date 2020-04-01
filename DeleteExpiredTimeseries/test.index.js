@@ -7,7 +7,6 @@ module.exports = describe('Timeseries data deletion tests', () => {
   const sql = require('mssql')
 
   let context
-
   const jestConnection = new Connection()
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
@@ -16,39 +15,27 @@ module.exports = describe('Timeseries data deletion tests', () => {
   const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
 
   describe('The refresh forecast location data function:', () => {
-    beforeAll(() => {
-      return pool.connect()
+    beforeAll(async (done) => {
+      await pool.connect()
+      done()
     })
 
-    beforeEach(() => {
+    // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
+    beforeEach(async (done) => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
-      // function implementation for the function context needs creating for each test.
+      // function implementation for the function context needs creating for each test, as jest.fn() mocks are contained.
       context = new Context()
+      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
+      done()
     })
-
-    // Clear down all staging timeseries data tables (Order must be preserved)
-    beforeEach(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
-    })
-    beforeEach(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-    })
-    beforeEach(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-    })
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
-    })
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-    })
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-    })
-
-    afterAll(() => {
-      // Closing the DB connection allows Jest to exit successfully.
-      return pool.close()
+    afterAll(async (done) => {
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
+      await pool.close()
+      done()
     })
 
     it('should remove a record with a complete job status and with an import date older than the hard limit', async () => {
@@ -126,16 +113,37 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkDeletionStatus(expectedNumberofRows)
       await checkDescription(testDescription)
     })
-    it('Should be able to delete timeseries whilst another default level transaction is taking place on one of the tables involved', async () => {
+    it('Should be able to delete timeseries whilst another default level SELECT transaction is taking place on one of the tables involved', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 1
-      const testDescription = 'Should be able to delete timeseries whilst another default level transaction is taking place on one of the tables involved'
+      const testDescription = 'Should be able to delete timeseries whilst another default level SELECT transaction is taking place on one of the tables involved'
 
       const expectedNumberofRows = 0
 
       const importDate = await createImportDate(importDateStatus)
-      await insertRecordIntoTables(importDate, statusCode, testDescription)
-      await checkRunWithDefaultHeaderTableIsolation(expectedNumberofRows)
+      await checkDeleteRejectsWithDefaultHeaderTableIsolationOnSelect(expectedNumberofRows, importDate, statusCode, testDescription)
+    })
+    it('Should NOT be able to delete timeseries whilst another default level INSERT transaction is taking place on one of the tables involved', async () => {
+      const importDateStatus = 'exceedsHard'
+      const statusCode = 1
+      const testDescription = 'Should NOT be able to delete timeseries whilst another default level INSERT transaction is taking place on one of the tables involved'
+
+      const expectedNumberofRows = 0
+
+      const importDate = await createImportDate(importDateStatus)
+      await checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert(expectedNumberofRows, importDate, statusCode, testDescription)
+    })
+    it('Should reject deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is not set', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = null
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
+    })
+    it('Should reject deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is a string', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 'string'
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.'))
+    })
+    it('Should reject deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is 0 hours', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 0
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
     })
   })
 
@@ -166,11 +174,11 @@ module.exports = describe('Timeseries data deletion tests', () => {
     declare @id2 uniqueidentifier
       set @id2 = newid()
     insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time)
-    values (@id1, cast('2017-01-24' as datetime2),cast('2017-01-26' as datetime2),cast('2017-01-25' as datetime2),0,0,cast('${importDate}' as datetime2))
+    values (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset))
     insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (id, fews_data, fews_parameters,timeseries_header_id)
     values (@id2, 'data','parameters', @id1)
     insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
-    values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetime2), '${testDescription}')`
+    values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -201,24 +209,47 @@ module.exports = describe('Timeseries data deletion tests', () => {
   `)
     expect(result.recordset[0].description).toBe(testDescription)
   }
-  async function checkRunWithDefaultHeaderTableIsolation (expectedLength) {
+
+  async function checkDeleteRejectsWithDefaultHeaderTableIsolationOnSelect (expectedLength) {
     let transaction
-    const tableName = 'timeseries_header'
     try {
       transaction = new sql.Transaction(pool) // using Jest pool
-      await transaction.begin(null) // 'null' is the isolation level used by other transactions on the tables concerned
+      await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // the isolation level used by other transactions on the three tables concerned
       const newRequest = new sql.Request(transaction)
-      await newRequest.query(`
-      select id, start_time from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
-     `)
-      await expect(deleteFunction(context, timer)).resolves.toBe(undefined) // seperate request (outside the transaction), using the same pool
-      await checkDeletionStatus(expectedLength) // another seperate request usung the same pool
+
+      let query = `select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`
+      await newRequest.query(query)
+
+      await expect(deleteFunction(context, timer)).resolves.toBe(undefined) // seperate request (outside the newly created transaction, out of the pool of available transactions)
+      await checkDeletionStatus(expectedLength)
     } finally {
       if (transaction._aborted) {
-        context.log.warn('The transaction has been aborted.')
+        context.log.warn('The test transaction has been aborted.')
       } else {
         await transaction.rollback()
-        context.log.warn('The transaction has been rolled back.')
+        context.log.warn('The test transaction has been rolled back.')
+      }
+    }
+  }
+  async function checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert (expectedLength, importDate, statusCode, testDescription) {
+    let transaction
+    try {
+      transaction = new sql.Transaction(pool)
+      await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // the isolation level used by other transactions on the three tables concerned
+      const newRequest = new sql.Request(transaction)
+      let query = `
+      declare @id1 uniqueidentifier set @id1 = newid()
+      insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time)
+        values (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset))`
+      query.replace(/"/g, "'")
+      await newRequest.query(query)
+      await expect(deleteFunction(context, timer)).rejects.toBeTimeoutError('timeseries_header') // seperate request (outside the newly created transaction, out of the pool of available transactions)
+    } finally {
+      if (transaction._aborted) {
+        context.log.warn('The test transaction has been aborted.')
+      } else {
+        await transaction.rollback()
+        context.log.warn('The test transaction has been rolled back.')
       }
     }
   }
