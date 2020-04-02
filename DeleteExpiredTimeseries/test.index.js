@@ -132,7 +132,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
 
       const importDate = await createImportDate(importDateStatus)
       await checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert(expectedNumberofRows, importDate, statusCode, testDescription)
-    })
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('Should reject deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is not set', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = null
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
@@ -168,6 +168,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
   }
 
   async function insertRecordIntoTables (importDate, statusCode, testDescription) {
+    // The importDate is created using the same limits (ENV VARs) that the function uses to calculate old data,
+    // the function will look for anything older than the limit supplied (compared to current time).
+    // As this insert happens first (current time is older in comparison to when the delete function runs),
+    // the inserted data in tests will always be older. Date storage ISO 8601 allows this split seconds difference to be picked up.
     let query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
