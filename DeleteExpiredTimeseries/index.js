@@ -29,7 +29,7 @@ module.exports = async function (context, myTimer) {
     let hardDate
     let softDate
     const hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
-    const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
+    const softLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
     // Dates need to be specified as UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
     // Not using toUTCString() as toISOSTRInG() supports ms.
     if (hardLimit > 0 && hardLimit !== undefined && !isNaN(hardLimit)) {

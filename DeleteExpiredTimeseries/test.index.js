@@ -10,9 +10,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
   const jestConnection = new Connection()
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
-
-  const hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
-  const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
+  let hardLimit
+  let softLimit
 
   describe('The refresh forecast location data function:', () => {
     beforeAll(async (done) => {
@@ -25,6 +24,12 @@ module.exports = describe('Timeseries data deletion tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test, as jest.fn() mocks are contained.
       context = new Context()
+      delete process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
+      delete process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 240
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 200
+      hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
+      softLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
       await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
@@ -86,6 +91,35 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
       await checkDescription(testDescription)
+    })
+    it('should remove a record with an incomplete job status and with an import date older than the soft limit, when soft limit equals hard limit', async () => {
+      const importDateStatus = 'exceedsSoft' // also exceeds hard
+      const statusCode = 5
+      const testDescription = 'should remove a record with an incomplete job status and with an import date older than the soft limit, when soft limit equals hard limit'
+
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
+      softLimit = hardLimit
+
+      const expectedNumberofRows = 0
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should remove a record with a complete job status and with an import date older than the soft limit, when soft limit equals hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+      const statusCode = 6
+      const testDescription = 'should remove a record with a complete job status and with an import date older than the soft limit, when soft limit equals hard limit'
+      const expectedNumberofRows = 0
+
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
+      softLimit = hardLimit
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
     })
     it('should NOT remove a record with an incomplete job status and with an import date younger than the soft limit', async () => {
       const importDateStatus = 'activeDate'
