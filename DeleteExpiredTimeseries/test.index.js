@@ -22,7 +22,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
     beforeEach(async (done) => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
-      // function implementation for the function context needs creating for each test, as jest.fn() mocks are contained.
+      // function implementation for context needs creating for each test, jest.fn() mocks are contained within the Context class.
       context = new Context()
       delete process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
       delete process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT
@@ -92,7 +92,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkDescription(testDescription)
     })
     it('should remove a record with an incomplete job status and with an import date older than the soft limit, when soft limit equals hard limit', async () => {
-      const importDateStatus = 'exceedsSoft' // also exceeds hard
+      const importDateStatus = 'exceedsSoft' // also exceeds hard in this test
       const statusCode = 5
       const testDescription = 'should remove a record with an incomplete job status and with an import date older than the soft limit, when soft limit equals hard limit'
 
@@ -147,24 +147,14 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkDescription(testDescription)
     })
     it('Should be able to delete timeseries whilst another default level SELECT transaction is taking place on one of the tables involved', async () => {
-      const importDateStatus = 'exceedsHard'
-      const statusCode = 1
-      const testDescription = 'Should be able to delete timeseries whilst another default level SELECT transaction is taking place on one of the tables involved'
-
       const expectedNumberofRows = 0
-
-      const importDate = await createImportDate(importDateStatus)
-      await checkDeleteRejectsWithDefaultHeaderTableIsolationOnSelect(expectedNumberofRows, importDate, statusCode, testDescription)
+      await checkDeleteResolvesWithDefaultHeaderTableIsolationOnSelect(expectedNumberofRows)
     })
     it('Should NOT be able to delete timeseries whilst another default level INSERT transaction is taking place on one of the tables involved', async () => {
       const importDateStatus = 'exceedsHard'
-      const statusCode = 1
-      const testDescription = 'Should NOT be able to delete timeseries whilst another default level INSERT transaction is taking place on one of the tables involved'
-
-      const expectedNumberofRows = 0
 
       const importDate = await createImportDate(importDateStatus)
-      await checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert(expectedNumberofRows, importDate, statusCode, testDescription)
+      await checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert(importDate)
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('Should reject deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is not set', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = null
@@ -257,7 +247,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     expect(result.recordset[0].description).toBe(testDescription)
   }
 
-  async function checkDeleteRejectsWithDefaultHeaderTableIsolationOnSelect (expectedLength) {
+  async function checkDeleteResolvesWithDefaultHeaderTableIsolationOnSelect (expectedLength) {
     let transaction
     try {
       transaction = new sql.Transaction(pool) // using Jest pool
@@ -278,7 +268,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       }
     }
   }
-  async function checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert (expectedLength, importDate, statusCode, testDescription) {
+  async function checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert (importDate) {
     let transaction
     try {
       transaction = new sql.Transaction(pool)
