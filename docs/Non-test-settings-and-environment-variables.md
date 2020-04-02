@@ -27,6 +27,7 @@
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                |
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                    |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                             |
+| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                        |
 
 ### Request Timeout Considerations
 
@@ -70,4 +71,3 @@ accordingly.
 | FEWS_START_TIME_OFFSET_HOURS | Number of hours before task completion time that core forecasting engine data should be retrieved for (defaults to 12)                                                     |
 | FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task completion time that core forecasting engine data should be retrieved for (defaults to 120)                                                     |
 | DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT) |
-| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT | The number of hours before the current time before which all timeseries data should be removed                                                                     |

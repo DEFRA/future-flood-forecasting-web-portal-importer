@@ -13,7 +13,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
   let hardLimit
   let softLimit
 
-  describe('The refresh forecast location data function:', () => {
+  describe('The delete expired staging timeseries data function:', () => {
     beforeAll(async (done) => {
       await pool.connect()
       done()
