@@ -23,9 +23,9 @@ module.exports = async function (context, myTimer) {
   }
 
   async function removeExpiredTimeseries (transaction, context) {
-    // current date     :-------------------------------------->|
-    // soft date        :---------------------|                  - delete all completed records before this date
-    // hard date        :------------|                           - delete all records before this date
+    // current date    :-------------------------------------->|
+    // soft date       :---------------------|                  - delete all completed records before this date
+    // hard date       :------------|                           - delete all records before this date
     let hardDate
     let softDate
     const hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
