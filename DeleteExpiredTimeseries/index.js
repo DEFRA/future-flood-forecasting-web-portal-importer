@@ -29,13 +29,18 @@ module.exports = async function (context, myTimer) {
     let hardDate
     let softDate
     const hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
-    const softLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
+    const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
     // Dates need to be specified as UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
     // Not using toUTCString() as toISOSTRInG() supports ms.
     if (hardLimit > 0 && hardLimit !== undefined && !isNaN(hardLimit)) {
       // This check is required to prevent zero subtraction, the downstream effect would be the removal of all data prior to the current date.
       hardDate = moment.utc().subtract(hardLimit, 'hours').toDate().toISOString()
-      softDate = moment.utc().subtract(softLimit, 'hours').toDate().toISOString()
+      if (softLimit <= hardLimit && !isNaN(softLimit)) { // if the soft limit is undefined it defaults to the hard limit.
+        softDate = moment.utc().subtract(softLimit, 'hours').toDate().toISOString()
+      } else {
+        context.log.error(`The soft-limit must be an integer and less than or equal to the hard-limit.`)
+        throw new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.')
+      }
     } else {
       context.log.error(`The hard-limit must be an integer greater than 0.`)
       throw new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.')

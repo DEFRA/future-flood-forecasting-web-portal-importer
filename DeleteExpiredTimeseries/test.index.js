@@ -29,7 +29,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 240
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 200
       hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
-      softLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
+      softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
       await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
@@ -42,7 +42,6 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await pool.close()
       done()
     })
-
     it('should remove a record with a complete job status and with an import date older than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 6
@@ -178,6 +177,16 @@ module.exports = describe('Timeseries data deletion tests', () => {
     it('Should reject deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is 0 hours', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 0
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
+    })
+    it('should reject with a soft limit set higher than the hard limit', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 51
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 50
+
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
+    })
+    it('should reject if the soft-limit has been set as a string', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
     })
   })
 
