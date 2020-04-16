@@ -24,36 +24,25 @@ module.exports = describe('Ignored workflow loader tests', () => {
   const request = new sql.Request(pool)
 
   describe('The refresh ignored workflow data function:', () => {
-    beforeAll(() => {
-      return pool.connect()
+    beforeAll(async () => {
+      await pool.connect()
     })
 
-    beforeEach(() => {
+    beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      return request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW`)
-    })
-
-    beforeEach(() => {
+      dummyData = { WorkflowId: 'dummyData' }
+      await request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
       // Insert dummy row to ensure no null table overwrite occurs
-      dummyData = {
-        WorkflowId: 'dummyData'
-      }
-      return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
+      await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
     })
 
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
-    })
-
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-    })
-
-    afterAll(() => {
+    afterAll(async () => {
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
-      return pool.close()
+      await pool.close()
     })
 
     it('should ignore an empty CSV file', async () => {

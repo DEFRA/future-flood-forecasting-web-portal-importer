@@ -24,43 +24,24 @@ module.exports = describe('Refresh forecast location data tests', () => {
   const request = new sql.Request(pool)
 
   describe('The refresh forecast location data function:', () => {
-    beforeAll(() => {
-      return pool.connect()
+    beforeAll(async () => {
+      await pool.connect()
     })
 
-    beforeEach(() => {
+    beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
+      dummyData = { Centre: 'dummyData', MFDOArea: 'dummyData', Catchemnt: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD' }
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
+      await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
     })
 
-    beforeEach(() => {
-      dummyData = {
-        Centre: 'dummyData',
-        MFDOArea: 'dummyData',
-        Catchemnt: 'dummyData',
-        FFFSLocID: 'dummyData',
-        FFFSLocName: 'dummyData',
-        PlotId: 'dummyData',
-        DRNOrder: 123,
-        Order: 8888,
-        Datum: 'mALD'
-      }
-      return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
-    })
-
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
-    })
-
-    afterAll(() => {
-      return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-    })
-
-    afterAll(() => {
+    afterAll(async () => {
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
-      return pool.close()
+      await pool.close()
     })
 
     it('should ignore an empty CSV file', async () => {

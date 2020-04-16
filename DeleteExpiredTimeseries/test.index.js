@@ -14,13 +14,12 @@ module.exports = describe('Timeseries data deletion tests', () => {
   let softLimit
 
   describe('The delete expired staging timeseries data function:', () => {
-    beforeAll(async (done) => {
+    beforeAll(async () => {
       await pool.connect()
-      done()
     })
 
     // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
-    beforeEach(async (done) => {
+    beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for context needs creating for each test, jest.fn() mocks are contained within the Context class.
       context = new Context()
@@ -33,14 +32,12 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-      done()
     })
-    afterAll(async (done) => {
+    afterAll(async () => {
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
       await pool.close()
-      done()
     })
     it('should remove a record with a complete job status and with an import date older than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
