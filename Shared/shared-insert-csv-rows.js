@@ -86,7 +86,7 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
       await transaction.rollback()
       context.log.warn('Transaction rolled back.')
     }
-    // Regardless of whether a rollback took place, all the failed rows are captured for laoding into exceptions
+    // Regardless of whether a rollback took place, all the failed rows are captured for loading into exceptions.
     context.log.error(`The ${tableName} csv loader failed to load ${failedRows.length} rows.`)
     return failedRows
   } catch (err) {
