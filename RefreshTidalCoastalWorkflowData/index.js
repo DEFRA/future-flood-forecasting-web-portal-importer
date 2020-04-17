@@ -19,7 +19,8 @@ module.exports = async function (context, message) {
     { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' },
     { tableColumnName: 'COASTAL_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'Type' }
   ]
-  // If the csv is likely to have missing data in one row set the override key check to true (providing the database allows null inserts)
+  // The insert-csv-rows helper file will only load data into staging for rows in the csv that have values for every header
+  // If the csv is likely to have missing data for a header, the key check can be overridden (if the table does not allow null inserts for that column the row will end upin exceptions)
   const rowKeyCheckOverride = true
 
   let failedRows

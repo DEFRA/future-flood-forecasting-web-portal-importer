@@ -37,8 +37,8 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
         try {
           // check all the values are present in the csv row, ignore incomplete rows
           let allRowKeysPresent
-          for (let object of csvLoadData) {
-            row[`${object.expectedCSVKey}`] ? allRowKeysPresent = true : allRowKeysPresent = false
+          for (let columnObject of csvLoadData) {
+            row[`${columnObject.expectedCSVKey}`] ? allRowKeysPresent = true : allRowKeysPresent = false
             // allow an override to load csv rows with incoplete data
             if (rowKeyCheckOverride === true) {
               allRowKeysPresent = true
@@ -47,8 +47,12 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
             if (allRowKeysPresent === false) {
               break
             } else {
-              // table column name in the input object is equal to the corresponding prepared statement value
-              preparedStatementExecuteObject[`${object.tableColumnName}`] = row[`${object.expectedCSVKey}`]
+              preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+              // e.g preparedStatementExecuteObject = {
+              // tableColumnName = csv row value for workflowId,
+              // workflow_id = workflowA
+              // Repeated for every column of the row
+              // }
             }
           }
           if (allRowKeysPresent) {
