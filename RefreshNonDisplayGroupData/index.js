@@ -1,6 +1,6 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const createCSVStagingException = require('../Shared/create-csv-staging-exception')
 const { isBoolean } = require('../Shared/utils')
+const createCSVStagingException = require('../Shared/failed-csv-load-handler/create-csv-staging-exception')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -32,10 +32,12 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
 
       const failedRows = []
+      // set the input values up - limit to type
       await preparedStatement.input('WORKFLOW_ID', sql.NVarChar)
       await preparedStatement.input('FILTER_ID', sql.NVarChar)
       await preparedStatement.input('FORECAST', sql.Bit)
 
+      // set up the query. values are input at execution - '@' tells prepared statement to expect input
       await preparedStatement.prepare(`
             INSERT INTO 
              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
