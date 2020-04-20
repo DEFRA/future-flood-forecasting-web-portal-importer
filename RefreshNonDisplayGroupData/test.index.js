@@ -26,35 +26,27 @@ module.exports =
     const request = new sql.Request(pool)
 
     describe('The refresh non_display_group_workflow data function', () => {
-      beforeAll(() => {
-        return pool.connect()
+      beforeAll(async () => {
+        await pool.connect()
       })
 
-      beforeEach(() => {
+      beforeEach(async () => {
         // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
         // function implementation for the function context needs creating for each test.
         context = new Context()
-        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-      })
-
-      beforeEach(() => {
         dummyData = {
           dummyWorkflow: ['dummyFilter']
         }
-        return request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id) values ('dummyWorkflow', 'dummyFilter')`)
+        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
+        await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id) values ('dummyWorkflow', 'dummyFilter')`)
       })
 
-      afterAll(() => {
-        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-      })
-
-      afterAll(() => {
-        return request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-      })
-
-      afterAll(() => {
+      afterAll(async () => {
+        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
+        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         // Closing the DB connection allows Jest to exit successfully.
-        return pool.close()
+        await pool.close()
       })
       it('should ignore an empty CSV file', async () => {
         const mockResponseData = {

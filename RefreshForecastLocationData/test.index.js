@@ -33,6 +33,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       // function implementation for the function context needs creating for each test.
       context = new Context()
       dummyData = { Centre: 'dummyData', MFDOArea: 'dummyData', Catchemnt: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD' }
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
       await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
     })

@@ -33,8 +33,8 @@ module.exports = describe('Ignored workflow loader tests', () => {
       // function implementation for the function context needs creating for each test.
       context = new Context()
       dummyData = { WorkflowId: 'dummyData' }
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       await request.batch(`truncate table ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
-      // Insert dummy row to ensure no null table overwrite occurs
       await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
     })
 
