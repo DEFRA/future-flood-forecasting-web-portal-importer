@@ -74,7 +74,7 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, routeDat
   return nonDisplayGroupWorkflowsResponse
 }
 
-// Get list of ignored workflows
+// Get list of ignored workflows.
 async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
   await preparedStatement.input('workflowId', sql.NVarChar)
 
