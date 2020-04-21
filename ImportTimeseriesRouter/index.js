@@ -15,7 +15,7 @@ const preprocessMessage = require('./helpers/preprocess-message')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
-  // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload
+  // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
   context.log.info('JavaScript import time series function processing work item', message)
   context.log.info(context.bindingData)
   await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', null, message)
