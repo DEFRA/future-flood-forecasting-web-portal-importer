@@ -23,7 +23,7 @@ module.exports = async function (context, message) {
 }
 
 // Get a list of workflows associated with display groups
-async function getFluvialDisplayGroupWorkflows (context, preparedStatement, workflowId) {
+async function getFluvialDisplayGroupWorkflows (context, preparedStatement, routeData) {
   await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve display group data in a full transaction with a table lock held
@@ -41,7 +41,7 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, work
 `)
 
   const parameters = {
-    displayGroupWorkflowId: workflowId
+    displayGroupWorkflowId: routeData.workflowId
   }
 
   const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
@@ -49,7 +49,7 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, work
 }
 
 // Get list of workflows associated with non display groups
-async function getNonDisplayGroupWorkflows (context, preparedStatement, workflowId) {
+async function getNonDisplayGroupWorkflows (context, preparedStatement, routeData) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
   // Run the query to retrieve non display group data in a full transaction with a table lock held
@@ -63,10 +63,11 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, workflow
     with
       (tablock holdlock)
     where
+      forecast = ${routeData.forecast ? 1 : 0} and
       workflow_id = @nonDisplayGroupWorkflowId
   `)
   const parameters = {
-    nonDisplayGroupWorkflowId: workflowId
+    nonDisplayGroupWorkflowId: routeData.workflowId
   }
 
   const nonDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
@@ -219,7 +220,7 @@ async function route (context, message, routeData) {
       const workflowsFunction = dataRetrievalParameters.workflowsFunction
 
       // Retrieve workflow reference data from the staging database.
-      routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData.workflowId)
+      routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData)
 
       if (routeData[workflowDataProperty].recordset.length > 0) {
         context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
