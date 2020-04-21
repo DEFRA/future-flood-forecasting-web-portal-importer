@@ -1,4 +1,4 @@
-WorkflowID,FilterID
+WorkflowID,FilterID,Forecast
 test_non_display_workflow_1
-test_non_display_workflow_2,test_filter_a
+test_non_display_workflow_2,test_filter_a,FALSE
 test_non_display_workflow_3

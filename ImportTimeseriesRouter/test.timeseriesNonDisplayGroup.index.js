@@ -22,9 +22,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
       await request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id, forecast)
         values
-          ('Test_Workflow1', 'Test Filter1'), ('Test_Workflow2', 'Test Filter2a'), ('Test_Workflow2', 'Test Filter2b')
+          ('Test_Workflow1', 'Test Filter1', 0), ('Test_Workflow2', 'Test Filter2a', 0), ('Test_Workflow2', 'Test Filter2b', 0)
       `)
     })
 
@@ -276,9 +276,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const request = new sql.Request(transaction)
       await request.batch(`
       INSERT INTO
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id)
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id,filter_id,forecast)
       values
-      ('dummyWorkflow', 'dummyFilter')
+      ('dummyWorkflow', 'dummyFilter', 0)
     `)
       await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
     } finally {

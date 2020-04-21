@@ -184,50 +184,69 @@ async function route (context, message, routeData) {
     context.log.warn(`Ignoring unapproved forecast message ${JSON.stringify(message)}`)
   } else {
     // Import data for approved task runs of display group workflows and all tasks runs of non-display group workflows.
-    let timeseriesData
-    let timeseriesDataFunction
-    let timeseriesDataFunctionType
-    let workflowDataProperty
-    let workflowsFunction
+    const allDataRetrievalParameters = {
+      fluvialDisplayGroupDataRetrievalParameters: {
+        workflowsFunction: getFluvialDisplayGroupWorkflows,
+        timeseriesDataFunction: getTimeSeriesDisplayGroups,
+        timeseriesDataFunctionType: 'plot',
+        workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse'
+      },
+      nonDisplayGroupDataRetrievalParameters: {
+        workflowsFunction: getNonDisplayGroupWorkflows,
+        timeseriesDataFunction: getTimeSeriesNonDisplayGroups,
+        timeseriesDataFunctionType: 'filter',
+        workflowDataProperty: 'nonDisplayGroupWorkflowsResponse'
+      }
+    }
+
+    let dataRetrievalParametersArray = []
 
     // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
     // reference data held in the staging database.
     if (routeData.forecast) {
-      workflowsFunction = getFluvialDisplayGroupWorkflows
-      timeseriesDataFunction = getTimeSeriesDisplayGroups
-      timeseriesDataFunctionType = 'plot'
-      workflowDataProperty = 'fluvialDisplayGroupWorkflowsResponse'
+      dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
+      // Core engine forecasts can be associated with display and non-display group CSV files.
+      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     } else {
-      workflowsFunction = getNonDisplayGroupWorkflows
-      timeseriesDataFunction = getTimeSeriesNonDisplayGroups
-      timeseriesDataFunctionType = 'filter'
-      workflowDataProperty = 'nonDisplayGroupWorkflowsResponse'
+      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     }
 
-    // Retrieve workflow reference data from the staging database.
-    routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData.workflowId)
+    for (let dataRetrievalParameters of dataRetrievalParametersArray) {
+      let timeseriesData
+      const timeseriesDataFunction = dataRetrievalParameters.timeseriesDataFunction
+      const timeseriesDataFunctionType = dataRetrievalParameters.timeseriesDataFunctionType
+      const workflowDataProperty = dataRetrievalParameters.workflowDataProperty
+      const workflowsFunction = dataRetrievalParameters.workflowsFunction
 
-    if (routeData[workflowDataProperty].recordset.length > 0) {
-      context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
+      // Retrieve workflow reference data from the staging database.
+      routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData.workflowId)
 
-      routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
-        createTimeseriesHeader,
-        context,
-        routeData.transaction,
-        message,
-        routeData
-      )
+      if (routeData[workflowDataProperty].recordset.length > 0) {
+        context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
 
-      // Retrieve timeseries data from the core engine PI server and load it into the staging database.
-      timeseriesData = await timeseriesDataFunction(context, routeData)
-      await executePreparedStatementInTransaction(
-        loadTimeseries,
-        context,
-        routeData.transaction,
-        timeseriesData,
-        routeData
-      )
-    } else {
+        if (!routeData.timeseriesHeaderId) {
+          routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+            createTimeseriesHeader,
+            context,
+            routeData.transaction,
+            message,
+            routeData
+          )
+        }
+
+        // Retrieve timeseries data from the core engine PI server and load it into the staging database.
+        timeseriesData = await timeseriesDataFunction(context, routeData)
+        await executePreparedStatementInTransaction(
+          loadTimeseries,
+          context,
+          routeData.transaction,
+          timeseriesData,
+          routeData
+        )
+      }
+    }
+
+    if (!routeData.timeseriesHeaderId) {
       const errorMessage = `Missing PI Server input data for ${routeData.workflowId}`
 
       await executePreparedStatementInTransaction(

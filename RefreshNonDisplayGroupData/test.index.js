@@ -39,7 +39,7 @@ module.exports =
         }
         await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-        await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id) values ('dummyWorkflow', 'dummyFilter')`)
+        await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id, forecast) values ('dummyWorkflow', 'dummyFilter', 0)`)
       })
 
       afterAll(async () => {
@@ -309,9 +309,9 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.batch(`
           INSERT INTO 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, filter_id) 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, filter_id, forecast) 
           values 
-          ('testWorkflow', 'testFilter')`)
+          ('testWorkflow', 'testFilter', 0)`)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
       } finally {

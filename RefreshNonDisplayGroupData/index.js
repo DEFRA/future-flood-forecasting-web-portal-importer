@@ -1,5 +1,6 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const createCSVStagingException = require('../Shared/create-csv-staging-exception')
+const { isBoolean } = require('../Shared/utils')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -33,21 +34,32 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
       const failedRows = []
       await preparedStatement.input('WORKFLOW_ID', sql.NVarChar)
       await preparedStatement.input('FILTER_ID', sql.NVarChar)
+      await preparedStatement.input('FORECAST', sql.Bit)
 
       await preparedStatement.prepare(`
             INSERT INTO 
              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
-                (WORKFLOW_ID, FILTER_ID)
+                (WORKFLOW_ID, FILTER_ID, FORECAST)
             values
-                (@WORKFLOW_ID, @FILTER_ID)`)
+                (@WORKFLOW_ID, @FILTER_ID, @FORECAST)`)
       for (const row of rows) {
         // Ignore rows in the CSV data that do not have entries for all columns.
         try {
-          if (row.WorkflowID && row.FilterID) {
-            await preparedStatement.execute({
-              WORKFLOW_ID: row.WorkflowID,
-              FILTER_ID: row.FilterID
-            })
+          if (row.WorkflowID && row.FilterID && row.Forecast) {
+            if (typeof (row.Forecast) === 'string' && isBoolean(row.Forecast)) {
+              await preparedStatement.execute({
+                WORKFLOW_ID: row.WorkflowID,
+                FILTER_ID: row.FilterID,
+                FORECAST: JSON.parse(row.Forecast.toLowerCase())
+              })
+            } else {
+              const failedRowInfo = {
+                rowData: row,
+                errorMessage: `Forecast indicator must be a boolean.`,
+                errorCode: `NA`
+              }
+              failedRows.push(failedRowInfo)
+            }
           } else {
             const failedRowInfo = {
               rowData: row,

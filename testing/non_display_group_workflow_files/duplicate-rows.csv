@@ -1,5 +1,5 @@
-WorkflowID,FilterID
-test_non_display_workflow_1,test_filter_1
-test_non_display_workflow_2,test_filter_2
-test_non_display_workflow_2,test_filter_2
-test_non_display_workflow_3,test_filter_3
+WorkflowID,FilterID,Forecast
+test_non_display_workflow_1,test_filter_1,FALSE
+test_non_display_workflow_2,test_filter_2,FALSE
+test_non_display_workflow_2,test_filter_2,FALSE
+test_non_display_workflow_3,test_filter_3,FALSE
