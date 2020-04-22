@@ -24,28 +24,31 @@ module.exports = async function (context, message) {
 
 // Get a list of workflows associated with display groups
 async function getFluvialDisplayGroupWorkflows (context, preparedStatement, routeData) {
-  await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
+  if (routeData.forecast && !routeData.approved) {
+    context.log.warn(`Ignoring unapproved forecast message ${JSON.stringify(routeData.message)}`)
+  } else {
+    await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
+    // Run the query to retrieve display group data in a full transaction with a table lock held
+    // for the duration of the transaction to guard against a display group data refresh during
+    // data retrieval.
+    await preparedStatement.prepare(`
+      select
+        plot_id, location_ids
+      from
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
+      with
+        (tablock holdlock)
+      where
+        workflow_id = @displayGroupWorkflowId
+   `)
 
-  // Run the query to retrieve display group data in a full transaction with a table lock held
-  // for the duration of the transaction to guard against a display group data refresh during
-  // data retrieval.
-  await preparedStatement.prepare(`
-  select
-    plot_id, location_ids
-  from
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
-  with
-    (tablock holdlock)
-  where
-    workflow_id = @displayGroupWorkflowId
-`)
+    const parameters = {
+      displayGroupWorkflowId: routeData.workflowId
+    }
 
-  const parameters = {
-    displayGroupWorkflowId: routeData.workflowId
+    const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
+    return fluvialDisplayGroupWorkflowsResponse
   }
-
-  const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
-  return fluvialDisplayGroupWorkflowsResponse
 }
 
 // Get list of workflows associated with non display groups
@@ -102,7 +105,7 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
   return ignoredWorkflowsResponse
 }
 
-async function createTimeseriesHeader (context, preparedStatement, message, routeData) {
+async function createTimeseriesHeader (context, preparedStatement, routeData) {
   let timeseriesHeaderId
 
   await preparedStatement.input('startTime', sql.DateTime2)
@@ -176,7 +179,7 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
   context.log('Loaded timeseries data')
 }
 
-async function route (context, message, routeData) {
+async function route (context, routeData) {
   const ignoredWorkflowsResponse =
     await executePreparedStatementInTransaction(getIgnoredWorkflows, context, routeData.transaction, routeData.workflowId)
 
@@ -184,8 +187,6 @@ async function route (context, message, routeData) {
 
   if (ignoredWorkflow) {
     context.log(`${routeData.workflowId} is an ignored workflow`)
-  } else if (routeData.forecast && !routeData.approved) {
-    context.log.warn(`Ignoring unapproved forecast message ${JSON.stringify(message)}`)
   } else {
     // Import data for approved task runs of display group workflows and all tasks runs of non-display group workflows.
     const allDataRetrievalParameters = {
@@ -225,7 +226,7 @@ async function route (context, message, routeData) {
       // Retrieve workflow reference data from the staging database.
       routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData)
 
-      if (routeData[workflowDataProperty].recordset.length > 0) {
+      if (routeData[workflowDataProperty] && routeData[workflowDataProperty].recordset.length > 0) {
         context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
 
         if (!routeData.timeseriesHeaderId) {
@@ -233,7 +234,6 @@ async function route (context, message, routeData) {
             createTimeseriesHeader,
             context,
             routeData.transaction,
-            message,
             routeData
           )
         }
@@ -257,7 +257,7 @@ async function route (context, message, routeData) {
         createStagingException,
         context,
         routeData.transaction,
-        message,
+        routeData.message,
         errorMessage
       )
     }
@@ -266,6 +266,8 @@ async function route (context, message, routeData) {
 
 async function parseMessage (context, transaction, message) {
   const routeData = {
+    message: message,
+    transaction: transaction
   }
   // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
   // This time period can be overridden by the two environment variables
@@ -284,7 +286,6 @@ async function parseMessage (context, transaction, message) {
   routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, message)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, message)
-  routeData.transaction = transaction
   return routeData
 }
 
@@ -302,7 +303,7 @@ async function routeMessage (transaction, context, message) {
           typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
           // Do not import out of date forecast data.
           if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
-            await route(context, preprocessedMessage, routeData)
+            await route(context, routeData)
           } else {
             context.log.warn(`Ignoring message for task run ${routeData.taskRunId} completed on ${routeData.taskCompletionTime}` +
               ` - ${routeData.latestTaskRunId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
