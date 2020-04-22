@@ -4,7 +4,10 @@
   * fews-fluvial-display-group-queue
   * fews-coastal-display-group-queue
   * fews-non-display-group-queue  
-  * fews-forecast-location-queue
+  * fews-fluvial-forecast-location-queue
+  * fews-coastal-tidal-forecast-location-queue
+  * fews-coastal-triton-forecast-location-queue
+  * fews-coastal-mvt-forecast-location-queue
   * fews-ignored-workflows-queue
 * Messages placed on the fews-eventcode-queue or fews-eventcode-topic **must** adhere to the format used for
   Azure service bus alerts in the core forecasting engine.

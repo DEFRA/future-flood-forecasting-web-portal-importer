@@ -19,7 +19,11 @@
 * The function app must have connectivity to the following locations (identified in the [environment variables](Non-test-settings-and-environment-variables.md) document):
   * The URL for the core forecasting engine REST API.
   * The URL for retrieving fluvial forecast location data.
+  * The URL for retrieving coastal MVT forecast location data.
+  * The URL for retrieving coastal Tidal forecast location data.
+  * The URL for retrieving coastal Triton forecast location data.
   * The URL for retrieving the set of fluvial locations associated with each core forecasting engine display group.
+  * The URL for retrieving the set of coastal locations associated with each core forecasting engine display group.
   * The URL for retrieving the set of core forecasting engine filters associated with each workflow.
   * The URL for retrieving the set of ignored workflows.
 
@@ -30,13 +34,19 @@
 * Microsoft Azure service bus queue named **fews-staged-timeseries-queue**  
   * Messages are placed on this queue when the **ImportTimeSeriesRouter** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
 * Microsoft Azure service bus queue named **fews-fluvial-forecast-location-queue**  
-  * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
+  * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshFluvialForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
+* Microsoft Azure service bus queue named **fews-coastal-tidal-forecast-location-queue**  
+  * Messages are placed on this queue when the set of coastal forecast locations is updated. Messages are processed by the **RefreshCoastalTidalForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **COASTAL_FORECAST_LOCATION** table.
+* Microsoft Azure service bus queue named **fews-coastal-triton-forecast-location-queue**  
+  * Messages are placed on this queue when the set of coastal forecast locations is updated. Messages are processed by the **RefreshCoastalTritonForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **COASTAL_FORECAST_LOCATION** table.
+* Microsoft Azure service bus queue named **fews-coastal-mvt-forecast-location-queue**  
+  * Messages are placed on this queue when the set of coastal forecast locations is updated. Messages are processed by the **RefreshCoastalMVTForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **COASTAL_FORECAST_LOCATION** table.
 * Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
   * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial forecast data is updated. Messages are processed by the **RefreshDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_DISPLAY_GROUP_WORKFLOW** table.
+* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**  
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal forecast data is updated. Messages are processed by the **RefreshCoastalDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **COASTAL_DISPLAY_GROUP_WORKFLOW** table.
 * Microsoft Azure service bus queue named **fews-non-display-group-queue**  
   * Messages are placed on this queue when the set of core forecasting engine workflows associated with non-forecast data is updated. Messages are processed by the **RefreshNonDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **NON_DISPLAY_GROUP_WORKFLOW** table.
-* Microsoft Azure service bus queue named **fews-coastal-display-group-queue**  
-  * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal forecast data is updated. Messages are processed by the **TBD** function. Message processing retrieves the updated data and uses it to replace the content of the **TBD** table.
 * Microsoft Azure service bus queue named **fews-ignored-workflows-queue**  
   * Messages are placed on this queue when the set of core forecasting engine workflows that should be ignored for staging puposes is updated . Messages are processed by the **RefreshIgnoredWorkflowData** function. Message processing retrieves the updated data and uses it to replace the content of the **IGNORED_WORKFLOW** table.
 
@@ -44,10 +54,13 @@
 
 * Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription  
+* Microsoft Azure service bus topic named **fews-fluvial-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-tidal-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-triton-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-mvt-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
+* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
 
 The purpose of each topic is analagous to that of each corresponding queue.
@@ -66,3 +79,4 @@ accordingly.
 * Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**
 * Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription  

@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-coastal-triton-forecast-location-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const createCSVStagingException = require('../Shared/create-csv-staging-exception')
+const createCSVStagingException = require('../Shared/failed-csv-load-handler/create-csv-staging-exception')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
