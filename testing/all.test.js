@@ -36,11 +36,15 @@ describe('Run all unit tests in sequence', () => {
     }
   })
 
-  require('../RefreshDisplayGroupData/test.index')
+  // require('../RefreshFluvialDisplayGroupData/test.index')
+  // require('../RefreshCoastalDisplayGroupData/test.index')
   require('../RefreshNonDisplayGroupData/test.index')
-  require('../RefreshForecastLocationData/test.index')
+  require('../RefreshFluvialForecastLocationData/test.index')
   require('../RefreshIgnoredWorkflowData/test.index')
   require('../DeleteExpiredTimeseries/test.index')
+  require('../RefreshCoastalTidalForecastLocationData/test.index')
+  require('../RefreshCoastalTritonForecastLocationData/test.index')
+  require('../RefreshCoastalMVTForecastLocationData/test.index')
   require('../ImportTimeseriesRouter/test.timeseriesNonDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesIgnoredWorkflow')
