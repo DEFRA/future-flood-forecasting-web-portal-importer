@@ -2,6 +2,24 @@
   "commonMessageData": {
     "completionTime": "2019-09-13 13:06:00"
   },
+  "singleFilterApprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow3 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO"
+    }
+  },
+  "earlierSingleFilterApprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow3 with ID ukeafffsmc00:000000002 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:05:59 More text",
+      "source": "ukeafffsmc00:000000002",
+      "level": "INFO"
+    }
+  },
   "singleFilterNonForecast": {
     "input": {
       "code": "TASKRUN.Complete",
@@ -47,7 +65,7 @@
       "level": "INFO"
     }
   },
-  "forecastWithoutApprovalStatus": {
+  "nonForecastWithoutApprovalStatus": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
@@ -56,7 +74,7 @@
       "level": "INFO"
     }
   },
-  "forecastWithoutEndTime": {
+  "nonForecastWithoutEndTime": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,

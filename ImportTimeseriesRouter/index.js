@@ -52,9 +52,12 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, rout
 async function getNonDisplayGroupWorkflows (context, preparedStatement, routeData) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
 
-  // Run the query to retrieve non display group data in a full transaction with a table lock held
-  // for the duration of the transaction to guard against a non display group data refresh during
-  // data retrieval.
+  // Ensure the query to retrieve non display group data takes account of core engine forecasts and external forecasts.
+  // If the core engine message is associated with a forecast, search for matching workflows where the forecast
+  // attribute is set. If the core engine message is not associated with a forecast, search for all matching
+  // workflows so that external forecast data is retrieved.
+  // Run the query in a full transaction with a table lock held for the duration of the transaction to guard
+  // against a non display group data refresh during data retrieval.
   await preparedStatement.prepare(`
     select
       filter_id
@@ -63,8 +66,8 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, routeDat
     with
       (tablock holdlock)
     where
-      forecast = ${routeData.forecast ? 1 : 0} and
       workflow_id = @nonDisplayGroupWorkflowId
+      ${routeData.forecast ? ' and forecast = 1' : ''}
   `)
   const parameters = {
     nonDisplayGroupWorkflowId: routeData.workflowId
