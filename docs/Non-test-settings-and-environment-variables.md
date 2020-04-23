@@ -68,7 +68,6 @@ accordingly.
 | AZURE_SERVICE_BUS_FLUVIAL_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                         |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                 |
 
-
 ## Optional Runtime Function App Settings/Environment Variables
 
 | name                         | description                                                                                                                                                                |
