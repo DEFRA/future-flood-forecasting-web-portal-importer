@@ -27,7 +27,14 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           ('Test_Workflow1', 'Test Filter1', 0),
           ('Test_Workflow2', 'Test Filter2a', 0),
           ('Test_Workflow2', 'Test Filter2b', 0),
-          ('Test_Workflow3', 'Test Filter3', 1)
+          ('Test_Workflow3', 'Test Filter3', 1),
+          ('Test_Workflow4', 'Test Filter4', 1)
+      `)
+      await request.batch(`
+        insert into
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
+        values
+          ('Test_Workflow4', 'Test Plot4', 'Test Location4')
       `)
     })
 
@@ -58,7 +65,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
-      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
     it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
       const mockResponse = {
@@ -81,13 +87,34 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }]
       await processMessageAndCheckImportedData('multipleFilterNonForecast', mockResponses)
     })
-    it('should import data for a single filter associated with a forecast', async () => {
+    it('should import data for a single filter associated with an approved forecast', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
         }
       }
       await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
+    })
+    it('should import data for a single filter associated with an unapproved forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('singleFilterUnapprovedForecast', [mockResponse])
+    })
+    it('should import data for plots and filters associated with the same workflow', async () => {
+      const displayMockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      const nonDisplayMockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('singlePlotAndFilterApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
     })
     it('should not import data for an out of date forecast', async () => {
       const mockResponse = {
