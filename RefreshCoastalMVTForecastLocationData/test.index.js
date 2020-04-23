@@ -208,7 +208,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await expect(coastalRefreshFunction(context, message)).rejects.toEqual(expectedError)
     })
     it('should throw an exception when the forecast location table is in use', async () => {
-      // If the forecast location table is being refreshed messages are elgible for replay a certain number of times
+      // If the forecast location table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
 
       const mockResponseData = {
@@ -289,8 +289,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
       }
     }
     // Check exceptions
-    const exceptionCount = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-    expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
+    if (expectedNumberOfExceptionRows) {
+      const exceptionCount = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+      expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
+    }
   }
 
   async function lockCoastalLocationTableAndCheckMessageCannotBeProcessed (mockResponseData) {
