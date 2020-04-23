@@ -2,6 +2,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const taskRunCompleteMessages = require('../testing/messages/task-run-complete/non-display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
+  const { isBoolean } = require('../Shared/utils')
   const messageFunction = require('./index')
   const moment = require('moment')
   const axios = require('axios')
@@ -13,6 +14,21 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const jestConnection = new Connection()
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
+
+  describe('Forecast flag testing ', () => {
+    it('should return true for boolean values', () => {
+      expect(isBoolean(true)).toBe(true)
+      expect(isBoolean(false)).toBe(true)
+    })
+    it('should return true for boolean string values regardless of case', () => {
+      expect(isBoolean('True')).toBe(true)
+      expect(isBoolean('false')).toBe(true)
+    })
+    it('should return false for non-boolean values', () => {
+      expect(isBoolean(0)).toBe(false)
+      expect(isBoolean('string')).toBe(false)
+    })
+  })
 
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
