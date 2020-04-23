@@ -1,6 +1,6 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const loadExceptions = require('../Shared/failed-csv-load-handler/load-csv-exceptions')
-const refreshData = require('../Shared/shared-insert-csv-rows')
+const tempTableInsert = require('../Shared/shared-insert-csv-rows')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
@@ -19,8 +19,10 @@ module.exports = async function (context, message) {
   let failedRows
   async function refresh (transaction, context) {
     await createDisplayGroupTemporaryTable(transaction, context)
-    failedRows = await executePreparedStatementInTransaction(refreshData, context, transaction, csvUrl, tableName, functionSpecificData, partialTableUpdate)
-    await refreshDisplayGroupTable(transaction, context)
+    failedRows = await executePreparedStatementInTransaction(tempTableInsert, context, transaction, csvUrl, tableName, functionSpecificData, partialTableUpdate)
+    if (!transaction._rollbackRequested) {
+      await refreshDisplayGroupTable(transaction, context)
+    }
   }
 
   // Refresh the data in the coastal_display_group_workflow table within a transaction with a serializable isolation

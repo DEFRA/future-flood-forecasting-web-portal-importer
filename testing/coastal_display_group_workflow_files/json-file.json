@@ -1,0 +1,9 @@
+{
+  "workflow1": {
+    "plot1": ["location1", "location2", "location3", "location4"],
+    "plot2": ["location1"]
+  },
+  "workflow2": {
+    "plot1": ["location1", "location2"]
+  }
+}

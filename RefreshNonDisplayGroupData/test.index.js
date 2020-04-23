@@ -218,7 +218,7 @@ module.exports =
         await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       })
       it('should throw an exception when the non_display_group_workflow table is being used', async () => {
-        // If the non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+        // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
         // so check that an exception is thrown to facilitate this process.
 
         const mockResponseData = {

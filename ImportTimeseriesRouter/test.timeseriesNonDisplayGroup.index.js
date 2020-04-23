@@ -178,20 +178,20 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutEndTime', 'Unable to extract task run completion date from message')
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
-      // If the core engine PI server is down messages are elgible for replay a certain number of times so check that
+      // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
       // an exception is thrown to facilitate this process.
       const mockResponse = new Error('connect ECONNREFUSED mockhost')
       await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
     })
     it('should create a staging exception when a core engine PI server resource is unavailable', async () => {
-      // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably elgible for replay a certain number of times so
+      // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably eligible for replay a certain number of times so
       // check that an exception is thrown to facilitate this process. If misconfiguration has occurred, the maximum number
       // of replays will be reached and the message will be transferred to a dead letter queue for manual intervetion.
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
     })
     it('should throw an exception when the non_display_group_workflow table is being refreshed', async () => {
-      // If the non_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+      // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {

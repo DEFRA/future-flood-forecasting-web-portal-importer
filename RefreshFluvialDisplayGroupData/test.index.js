@@ -240,7 +240,7 @@ module.exports =
       })
 
       it('should throw an exception when the fluvial_display_group_workflow table is being used', async () => {
-        // If the fluvial_display_group_workflow table is being refreshed messages are elgible for replay a certain number of times
+        // If the fluvial_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
         // so check that an exception is thrown to facilitate this process.
 
         const mockResponseData = {
