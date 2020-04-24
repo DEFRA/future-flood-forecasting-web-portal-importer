@@ -34,12 +34,12 @@ module.exports = describe('Refresh forecast location data tests', () => {
       context = new Context()
       dummyData = { Centre: 'dummyData', MFDOArea: 'dummyData', Catchemnt: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD' }
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
-      await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location`)
+      await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
     })
 
     afterAll(async () => {
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.forecast_location`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
@@ -323,7 +323,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     const result = await request.query(`
        select count(*) 
        as number
-       from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_FORECAST_LOCATION
+       from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location
        `)
     const expectedNumberOfRows = expectedForecastLocationData.length
 
@@ -347,7 +347,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       as 
         number 
       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_FORECAST_LOCATION
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location
       where 
         CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
         and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' 
@@ -361,7 +361,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
 
   async function lockForecastLocationTableAndCheckMessageCannotBeProcessed (mockResponseData) {
     let transaction
-    const tableName = 'FLUVIAL_FORECAST_LOCATION'
+    const tableName = 'fluvial_forecast_location'
     try {
       transaction = new sql.Transaction(pool)
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
