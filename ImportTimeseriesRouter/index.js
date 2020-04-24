@@ -23,7 +23,7 @@ module.exports = async function (context, message) {
 }
 
 // Get a list of workflows associated with display groups
-async function getFluvialDisplayGroupWorkflows (context, preparedStatement, routeData) {
+async function getDisplayGroupWorkflows (context, preparedStatement, routeData) {
   if (routeData.forecast && !routeData.approved) {
     context.log.warn(`Ignoring unapproved forecast message ${JSON.stringify(routeData.message)}`)
   } else {
@@ -35,7 +35,7 @@ async function getFluvialDisplayGroupWorkflows (context, preparedStatement, rout
       select
         plot_id, location_ids
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${routeData.workflowTableName}
       with
         (tablock holdlock)
       where
@@ -191,10 +191,11 @@ async function route (context, routeData) {
     // Import data for approved task runs of display group workflows and all tasks runs of non-display group workflows.
     const allDataRetrievalParameters = {
       fluvialDisplayGroupDataRetrievalParameters: {
-        workflowsFunction: getFluvialDisplayGroupWorkflows,
+        workflowsFunction: getDisplayGroupWorkflows,
         timeseriesDataFunction: getTimeSeriesDisplayGroups,
         timeseriesDataFunctionType: 'plot',
-        workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse'
+        workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse',
+        workflowTableName: 'fluvial_display_group_workflow'
       },
       nonDisplayGroupDataRetrievalParameters: {
         workflowsFunction: getNonDisplayGroupWorkflows,
@@ -224,6 +225,10 @@ async function route (context, routeData) {
       const workflowsFunction = dataRetrievalParameters.workflowsFunction
 
       // Retrieve workflow reference data from the staging database.
+      if (dataRetrievalParameters.workflowTableName) {
+        routeData.workflowTableName = dataRetrievalParameters.workflowTableName
+      }
+
       routeData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, routeData.transaction, routeData)
 
       if (routeData[workflowDataProperty] && routeData[workflowDataProperty].recordset.length > 0) {
