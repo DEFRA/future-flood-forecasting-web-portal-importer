@@ -65,7 +65,9 @@ module.exports =
         }
 
         const expectedCoastalDisplayGroupData = dummyData
-        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData)
+
+        const expectedNumberOfExceptionRows = 0
+        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should refresh given a valid CSV file (even with extra csv fields)', async () => {
         const mockResponseData = {
@@ -85,7 +87,8 @@ module.exports =
           }
         }
 
-        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should ignore a CSV file with misspelled headers', async () => {
         const mockResponseData = {
@@ -97,7 +100,10 @@ module.exports =
 
         const expectedCoastalDisplayGroupData = dummyData
 
-        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData)
+        const expectedNumberOfExceptionRows = 2
+        const expectedErrorDescription = 'row is missing data'
+        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should not refresh with valid header row but no data rows', async () => {
         const mockResponseData = {
@@ -109,7 +115,8 @@ module.exports =
 
         const expectedCoastalDisplayGroupData = dummyData
 
-        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should reject insert if there is no header row, expect the first row to be treated as the header', async () => {
         const mockResponseData = {
@@ -121,7 +128,10 @@ module.exports =
 
         const expectedCoastalDisplayGroupData = dummyData
 
-        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData)
+        const expectedNumberOfExceptionRows = 3
+        const expectedErrorDescription = 'row is missing data'
+        await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should load rows with missing values in columns into exceptions', async () => {
         const mockResponseData = {
