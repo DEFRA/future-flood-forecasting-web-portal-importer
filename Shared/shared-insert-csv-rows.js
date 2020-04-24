@@ -23,13 +23,12 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
         for (let columnObject of functionSpecificData) {
           // preparedStatement inputs
           columnNames = columnNames + `${columnObject.tableColumnName}, `
-          preparedStatementValues = preparedStatementValues + `@${columnObject.tableColumnName}, `
+          preparedStatementValues = preparedStatementValues + `@${columnObject.tableColumnName}, ` // '@' values are input at execution.
           await preparedStatement.input(columnObject.tableColumnName, sql[columnObject.tableColumnType])
         }
         columnNames = columnNames.slice(0, -2)
         preparedStatementValues = preparedStatementValues.slice(0, -2)
 
-        // '@' tells prepared statement to expect input, values are input at execution.
         await preparedStatement.prepare(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (${columnNames}) values (${preparedStatementValues})`)
 
         for (const row of csvRows) {
@@ -56,7 +55,7 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
               }
               failedcsvRows.push(failedRowInfo)
             }
-          } catch (err) { // catches any errors with override rows that failed the sql insert
+          } catch (err) {
             context.log.warn(`An error has been found in a row.\nError : ${err}`)
             const failedRowInfo = {
               rowData: row,
