@@ -73,7 +73,7 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
         context.log.info(`The ${tableName} table now contains ${result.recordset[0].number} new/updated records`)
         if (result.recordset[0].number === 0) {
           // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
-          context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back non_display_group_workflow refresh.')
+          context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back refresh.')
           await transaction.rollback()
           context.log.warn('Transaction rolled back.')
         }
@@ -82,7 +82,7 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
         context.log.warn(`No records detected - Aborting ${tableName} refresh.`)
       }
 
-      // Regardless of whether a rollback took place, all the failed csvRows are captured for loading into exceptions.
+      // Regardless of whether a rollback took place, all the failed csv rows are captured for loading into exceptions.
       context.log.warn(`The ${tableName} csv loader failed to load ${failedcsvRows.length} csvRows.`)
       return failedcsvRows
     } else {
