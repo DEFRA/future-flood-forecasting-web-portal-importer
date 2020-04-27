@@ -79,7 +79,7 @@ module.exports =
 
         const expectedCoastalDisplayGroupData = {
           BE: {
-            TRITON_outputs_BERWC: ['St1', 'St2'],
+            StringTRITON_outputs_BER: ['St1', 'St2'],
             TRITON_outputs_Other: ['St3']
           },
           Workflow2: {
@@ -143,7 +143,7 @@ module.exports =
 
         const expectedCoastalDisplayGroupData = {
           BE: {
-            TRITON_outputs_BERWC: ['St2'],
+            StringTRITON_outputs_BER: ['St2'],
             TRITON_outputs_Other: ['St3']
           },
           Workflow2: {

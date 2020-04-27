@@ -75,15 +75,15 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const expectedCoastalLocationData = [
         {
           FFFS_LOC_ID: 'CV2',
-          COASTAL_ORDER: 4000.000,
+          COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
           MFDO_AREA: 'filler',
           TA_NAME: 'filler',
           COASTAL_TYPE: 'Triton'
         },
         {
-          FFFS_LOC_ID: 'UKLFRAC',
-          COASTAL_ORDER: 760.000,
+          FFFS_LOC_ID: 'ABVGTO',
+          COASTAL_ORDER: 58,
           CENTRE: 'Birmingham',
           MFDO_AREA: 'filler',
           TA_NAME: 'filler',
@@ -114,7 +114,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const expectedCoastalLocationData = [
         {
           FFFS_LOC_ID: 'CV2',
-          COASTAL_ORDER: 8000.0,
+          COASTAL_ORDER: 70.0,
           CENTRE: 'Birmingham',
           MFDO_AREA: 'MFDOAREA',
           TA_NAME: 'TANAME',
