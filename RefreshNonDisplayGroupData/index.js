@@ -99,7 +99,13 @@ async function refreshNonDisplayGroupData (context, preparedStatement) {
       context.log.warn('No records detected - Aborting non_display_group_workflow refresh')
     }
     const request = new sql.Request(transaction)
-    const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
+    const result = await request.query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
     context.log.info(`The non_display_group_workflow table now contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records

@@ -264,9 +264,12 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
   async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows) {
     const coastalLocationCount = await request.query(`
-       select count(*) 
-       as number
-       from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
+       select 
+        count(*) 
+       as 
+        number
+       from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
        `)
     const expectedNumberOfRows = expectedCoastalLocationData.length
     expect(coastalLocationCount.recordset[0].number).toBe(expectedNumberOfRows)
@@ -289,7 +292,13 @@ module.exports = describe('Refresh coastal location data tests', () => {
       }
     }
     // Check exceptions
-    const exceptionCount = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+    const exceptionCount = await request.query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
     expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
   }
 

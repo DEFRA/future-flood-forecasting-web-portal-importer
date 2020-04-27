@@ -75,7 +75,13 @@ async function refreshIgnoredWorkflowData (context, preparedStatement) {
       // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting ignored_workflow refresh')
     }
-    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
+    const result = await new sql.Request(transaction).query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
     context.log.info(`The ignored workflow table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records

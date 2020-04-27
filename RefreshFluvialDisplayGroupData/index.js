@@ -96,7 +96,13 @@ async function populateDisplayGroupTemporaryTable (context, preparedStatement) {
 
 async function refreshDisplayGroupTable (transaction, context) {
   try {
-    const recordCountResponse = await new sql.Request(transaction).query(`select count(*) as number from #fluvial_display_group_workflow_temp`)
+    const recordCountResponse = await new sql.Request(transaction).query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      #fluvial_display_group_workflow_temp`)
     // Do not refresh the fluvial_display_group_workflow table if the local temporary table is empty.
     if (recordCountResponse.recordset[0].number > 0) {
       await new sql.Request(transaction).query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
@@ -117,7 +123,13 @@ async function refreshDisplayGroupTable (transaction, context) {
       // If the csv is empty then the file is essentially ignored
       context.log.warn('#fluvial_display_group_workflow_temp contains no records - Aborting fluvial_display_group_workflow refresh')
     }
-    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+    const result = await new sql.Request(transaction).query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
     context.log.info(`The fluvial_display_group_workflow table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv (inserted into the temp table) are invalid, the function will overwrite records in the table with no new records

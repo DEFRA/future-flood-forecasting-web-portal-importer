@@ -321,9 +321,12 @@ module.exports = describe('Refresh forecast location data tests', () => {
 
   async function checkExpectedResults (expectedForecastLocationData) {
     const result = await request.query(`
-       select count(*) 
-       as number
-       from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location
+       select 
+        count(*) 
+       as 
+        number
+       from 
+       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location
        `)
     const expectedNumberOfRows = expectedForecastLocationData.length
 
@@ -343,7 +346,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
 
         const databaseResult = await request.query(`
       select 
-       count(*) 
+        count(*) 
       as 
         number 
       from 

@@ -5,7 +5,9 @@ module.exports = async function isTaskRunImported (context, preparedStatement, t
 
   await preparedStatement.prepare(`
     select
-      count(task_run_id) as task_run_id_count
+      count(task_run_id)
+    as 
+      task_run_id_count
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
     where

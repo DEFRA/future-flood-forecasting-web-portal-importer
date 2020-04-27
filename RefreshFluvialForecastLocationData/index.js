@@ -93,7 +93,13 @@ async function refreshForecastLocationData (context, preparedStatement) {
       // If the csv is empty then the file is essentially ignored
       context.log.warn('No records detected - Aborting fluvial_forecast_location refresh')
     }
-    const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_FORECAST_LOCATION`)
+    const result = await new sql.Request(transaction).query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.FLUVIAL_FORECAST_LOCATION`)
     context.log.info(`The fluvial_forecast_location table contains ${result.recordset[0].number} records`)
     if (result.recordset[0].number === 0) {
       // If all the records in the csv were invalid, the function will overwrite records in the table with no new records
