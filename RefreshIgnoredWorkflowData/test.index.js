@@ -223,9 +223,12 @@ module.exports = describe('Ignored workflow loader tests', () => {
 
   async function checkExpectedResults (expectedIgnoredWorkflowData) {
     const result = await request.query(`
-         select count(*) 
-         as number
-         from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
+        select 
+          count(*)
+        as 
+          number
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
          `)
     const expectedNumberOfRows = expectedIgnoredWorkflowData.length
 

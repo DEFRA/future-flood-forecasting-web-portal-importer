@@ -300,7 +300,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   async function checkAmountOfDataImported (expectedNumberOfRecords) {
     const result = await request.query(`
       select
-        count(t.id) as number
+        count(t.id) 
+      as
+        number
       from
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t

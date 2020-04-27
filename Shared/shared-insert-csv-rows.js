@@ -6,7 +6,7 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
   try {
     const transaction = preparedStatement.parent
     const response = await fetch(csvUrl)
-    if (response.headers[`Content-Type`] === 'text/csv') {
+    if (response.status === 200 && response.headers[`Content-Type`] === 'text/csv') {
       const csvRows = await neatCsv(response.body)
       const csvRowCount = csvRows.length
       const failedcsvRows = []
@@ -69,7 +69,13 @@ module.exports = async function (context, preparedStatement, csvUrl, tableName, 
         await preparedStatement.unprepare()
 
         // Check updated table row count
-        const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} ${partialTableUpdate.whereClause}`)
+        const result = await new sql.Request(transaction).query(`
+        select 
+          count(*) 
+        as 
+          number 
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} ${partialTableUpdate.whereClause}`)
         context.log.info(`The ${tableName} table now contains ${result.recordset[0].number} new/updated records`)
         if (result.recordset[0].number === 0) {
           // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.

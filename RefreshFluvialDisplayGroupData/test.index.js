@@ -277,7 +277,13 @@ module.exports =
     }
 
     async function checkExpectedResults (expectedDisplayGroupData) {
-      const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+      const result = await request.query(`
+      select 
+        count(*) 
+      as 
+        number 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
       const workflowIds = Object.keys(expectedDisplayGroupData)
       let expectedNumberOfRows = 0
 
@@ -302,9 +308,9 @@ module.exports =
 
             // actual db data
             const locationQuery = await request.query(`
-          SELECT *
-          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
-          WHERE workflow_id = '${workflowId}' AND plot_id = '${plotId}'
+          select *
+            from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
+            where workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
             const rows = locationQuery.recordset
             const dbLocationsResult = rows[0].LOCATION_IDS

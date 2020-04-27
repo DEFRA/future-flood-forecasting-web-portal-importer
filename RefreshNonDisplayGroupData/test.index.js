@@ -264,7 +264,13 @@ module.exports =
     }
 
     async function checkExpectedResults (expectedNonDisplayGroupData) {
-      const result = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
+      const result = await request.query(`
+      select 
+        count(*) 
+      as 
+        number 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
       const workflowIds = Object.keys(expectedNonDisplayGroupData)
       let expectedNumberOfRows = 0
 

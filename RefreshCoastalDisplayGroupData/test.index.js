@@ -274,7 +274,13 @@ module.exports =
     }
 
     async function checkExpectedResults (expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows) {
-      const tableCountResult = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
+      const tableCountResult = await request.query(`
+      select 
+        count(*) 
+      as 
+        number 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
       // The number of rows (each workflow - plot combination) returned from the database should be equal to the sum of plot ID elements nested within
       // all workflow ID elements of the expected coastal_display_group_workflow data.
       let expectedNumberOfRows = 0
@@ -295,9 +301,9 @@ module.exports =
 
             // actual db data
             const locationQuery = await request.query(`
-          SELECT *
-          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow
-          WHERE workflow_id = '${workflowId}' AND plot_id = '${plotId}'
+          select *
+          from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow
+          where workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
             const dbRows = locationQuery.recordset
             const dbLocationsResult = dbRows[0].FFFS_LOC_IDS
@@ -308,7 +314,13 @@ module.exports =
       }
       // Check exceptions
       if (expectedNumberOfExceptionRows) {
-        const exceptionCount = await request.query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        const exceptionCount = await request.query(`
+        select 
+          count(*)
+        as 
+          number 
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
