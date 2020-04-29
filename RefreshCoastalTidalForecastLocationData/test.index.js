@@ -78,8 +78,6 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearthis TL',
           COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
-          MFDO_AREA: 'filler',
-          TA_NAME: 'filler',
           COASTAL_TYPE: 'Coastal Forecasting'
         },
         {
@@ -87,14 +85,12 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Hembe',
           COASTAL_ORDER: 58,
           CENTRE: 'Birmingham',
-          MFDO_AREA: 'filler',
-          TA_NAME: 'filler',
           COASTAL_TYPE: 'Coastal Forecasting'
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
     })
-    it('should refresh given a valid csv of 2 incomplete rows with 2 exceptions (normal case as the csv stands)', async () => {
+    it('should refresh given a the normal case csv (missing TA_NAME and MFDO_AREA)', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid-standard.csv',
@@ -102,8 +98,15 @@ module.exports = describe('Refresh coastal location data tests', () => {
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalLocationData = [dummyData]
-      const expectedNumberOfExceptionRows = 2
+      const expectedCoastalLocationData = [
+        {
+          FFFS_LOC_ID: 'CV2',
+          FFFS_LOC_NAME: 'Nearthis',
+          COASTAL_ORDER: 56,
+          CENTRE: 'Birmingham',
+          COASTAL_TYPE: 'Coastal Forecasting'
+        }]
+      const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
     })
     it('should ignore a csv file with a valid header but no data rows', async () => {
@@ -131,8 +134,6 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearhere',
           COASTAL_ORDER: 70.0,
           CENTRE: 'Birmingham',
-          MFDO_AREA: 'MFDOAREA',
-          TA_NAME: 'TANAME',
           COASTAL_TYPE: 'Coastal Forecasting'
         }]
       const expectedNumberOfExceptionRows = 1
@@ -301,7 +302,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
       where 
       FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-      CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
+      CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
