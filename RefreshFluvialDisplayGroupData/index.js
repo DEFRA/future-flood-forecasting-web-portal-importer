@@ -1,14 +1,28 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const createCSVStagingException = require('../Shared/failed-csv-load-handler/create-csv-staging-exception')
-const fetch = require('node-fetch')
-const neatCsv = require('neat-csv')
+const loadExceptions = require('../Shared/failed-csv-load-handler/load-csv-exceptions')
+const tempTableInsert = require('../Shared/shared-insert-csv-rows')
 const sql = require('mssql')
 
 module.exports = async function (context, message) {
+  // Location of csv:
+  const csvUrl = process.env['FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL']
+  // Destination table in staging database
+  const tableName = '#fluvial_display_group_workflow_temp'
+  const partialTableUpdate = { flag: false }
+  // Column information and correspoding csv information
+  const functionSpecificData = [
+    { tableColumnName: 'workflow_id', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
+    { tableColumnName: 'plot_id', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
+    { tableColumnName: 'location_id', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' }
+  ]
+
+  let failedRows
   async function refresh (transaction, context) {
     await createDisplayGroupTemporaryTable(transaction, context)
-    await executePreparedStatementInTransaction(populateDisplayGroupTemporaryTable, context, transaction)
-    await refreshDisplayGroupTable(transaction, context)
+    failedRows = await executePreparedStatementInTransaction(tempTableInsert, context, transaction, csvUrl, tableName, functionSpecificData, partialTableUpdate)
+    if (!transaction._rollbackRequested) {
+      await refreshDisplayGroupTable(transaction, context)
+    }
   }
 
   // Refresh the data in the fluvial_display_group_workflow table within a transaction with a serializable isolation
@@ -18,7 +32,14 @@ module.exports = async function (context, message) {
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
   await doInTransaction(refresh, context, 'The FLUVIAL_DISPLAY_GROUP_WORKFLOW refresh has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
-  // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
+
+  // Transaction 2
+  if (failedRows.length > 0) {
+    await doInTransaction(loadExceptions, context, 'The fluvial display group exception load has failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE, 'tidal coastal locations', failedRows)
+  } else {
+    context.log.info(`There were no csv exceptions during load.`)
+  }
+  context.done() // not requried as the async function returns the desired result, there is no output binding to be activated.
 }
 
 async function createDisplayGroupTemporaryTable (transaction, context) {
@@ -32,66 +53,6 @@ async function createDisplayGroupTemporaryTable (transaction, context) {
         location_id nvarchar(64) not null
       )
     `)
-}
-
-async function populateDisplayGroupTemporaryTable (context, preparedStatement) {
-  const failedRows = []
-  const transaction = preparedStatement.parent
-  try {
-    // Use the fetch API to retrieve the CSV data as a stream and then parse it
-    // into rows ready for insertion into the local temporary table.
-    const response = await fetch(`${process.env['FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL']}`)
-    const rows = await neatCsv(response.body)
-    await preparedStatement.input('workflowId', sql.NVarChar)
-    await preparedStatement.input('plotId', sql.NVarChar)
-    await preparedStatement.input('locationId', sql.NVarChar)
-    await preparedStatement.prepare(`insert into #fluvial_display_group_workflow_temp (workflow_id, plot_id, location_id) values (@workflowId, @plotId, @locationId)`)
-
-    for (const row of rows) {
-      try {
-        // Ignore rows in the CSV data that do not have entries for all columns.
-        if (row.WorkflowID && row.PlotID && row.FFFSLocID) {
-          await preparedStatement.execute({
-            workflowId: row.WorkflowID,
-            plotId: row.PlotID,
-            locationId: row.FFFSLocID
-          })
-        } else {
-          const failedRowInfo = {
-            rowData: row,
-            errorMessage: `A row is missing data.`,
-            errorCode: `NA`
-          }
-          failedRows.push(failedRowInfo)
-        }
-      } catch (err) {
-        context.log.warn(`an error has been found in a row with the Workflow ID: ${row.WorkflowID}.\n  Error : ${err}`)
-        const failedRowInfo = {
-          rowData: row,
-          errorMessage: err.message,
-          errorCode: err.code
-        }
-        failedRows.push(failedRowInfo)
-      }
-    }
-    // Future requests will fail until the prepared statement is unprepared.
-    await preparedStatement.unprepare()
-
-    for (let i = 0; i < failedRows.length; i++) {
-      await executePreparedStatementInTransaction(
-        createCSVStagingException, // function
-        context, // context
-        transaction, // transaction
-        `Display group data`, // args - csv file
-        failedRows[i].rowData, // args - row data
-        failedRows[i].errorMessage // args - error description
-      )
-    }
-    context.log.error(`The display group csv loader has ${failedRows.length} failed row inserts.`)
-  } catch (err) {
-    context.log.error(`Populate temp location loookup table failed: ${err}`)
-    throw err
-  }
 }
 
 async function refreshDisplayGroupTable (transaction, context) {
