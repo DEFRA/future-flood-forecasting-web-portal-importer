@@ -19,6 +19,8 @@ steps:
   - script: npm run build
   - script: npx markdownlint $PWD --ignore node_modules
   - script: npm test
+  - script: find ./node_modules -print -exec touch {} \;
+  - script: ls -ltd $(find .)
 
   - task: NuGetCommand@2
     displayName: 'NuGet pack'
