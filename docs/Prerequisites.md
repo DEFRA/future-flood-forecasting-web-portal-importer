@@ -42,7 +42,7 @@
 * Microsoft Azure service bus queue named **fews-coastal-mvt-forecast-location-queue**  
   * Messages are placed on this queue when the set of coastal forecast locations is updated. Messages are processed by the **RefreshCoastalMVTForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **COASTAL_FORECAST_LOCATION** table.
 * Microsoft Azure service bus queue named **fews-fluvial-display-group-queue**
-  * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial forecast data is updated. Messages are processed by the **RefreshDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_DISPLAY_GROUP_WORKFLOW** table.
+  * Messages are placed on this queue when the set of core forecasting engine workflows associated with fluvial forecast data is updated. Messages are processed by the **RefreshFluvialDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_DISPLAY_GROUP_WORKFLOW** table.
 * Microsoft Azure service bus queue named **fews-coastal-display-group-queue**  
   * Messages are placed on this queue when the set of core forecasting engine workflows associated with coastal forecast data is updated. Messages are processed by the **RefreshCoastalDisplayGroupData** function. Message processing retrieves the updated data and uses it to replace the content of the **COASTAL_DISPLAY_GROUP_WORKFLOW** table.
 * Microsoft Azure service bus queue named **fews-non-display-group-queue**  
