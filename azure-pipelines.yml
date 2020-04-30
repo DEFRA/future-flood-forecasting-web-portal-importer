@@ -19,6 +19,7 @@ steps:
   - script: npm run build
   - script: npx markdownlint $PWD --ignore node_modules
   - script: npm test
+  - script: ls -la
 
   - task: NuGetCommand@2
     displayName: 'NuGet pack'
