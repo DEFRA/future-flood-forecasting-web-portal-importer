@@ -9,9 +9,7 @@ module.exports =
     const fs = require('fs')
 
     const JSONFILE = 'application/javascript'
-    const STATUS_TEXT_NOT_FOUND = 'Not found'
     const STATUS_CODE_200 = 200
-    const STATUS_CODE_404 = 404
     const STATUS_TEXT_OK = 'OK'
     const TEXT_CSV = 'text/csv'
     const HTML = 'html'
@@ -122,7 +120,7 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = dummyData
-        const expectedErrorDescription = 'A row is missing data.'
+        const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 3
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
         await checkExceptionIsCorrect(expectedErrorDescription)
@@ -166,7 +164,7 @@ module.exports =
 
         const expectedNonDisplayGroupData = dummyData
 
-        const expectedErrorDescription = 'A row is missing data.'
+        const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 2
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
         await checkExceptionIsCorrect(expectedErrorDescription)
@@ -183,7 +181,7 @@ module.exports =
           test_non_display_workflow_2: ['test_filter_a']
         }
 
-        const expectedErrorDescription = 'A row is missing data.'
+        const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 2
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
         await checkExceptionIsCorrect(expectedErrorDescription)
@@ -196,7 +194,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        const expectedErrorDescription = 'A row is missing data.'
+        const expectedErrorDescription = 'row is missing data.'
         const expectedNonDisplayGroupData = dummyData
         const expectedNumberOfExceptionRows = 3
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
@@ -215,16 +213,21 @@ module.exports =
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
       })
       it('should not refresh if csv endpoint is not found(404)', async () => {
-        const mockResponseData = {
-          statusCode: STATUS_CODE_404,
-          statusText: STATUS_TEXT_NOT_FOUND,
-          contentType: HTML,
-          filename: '404-html.html'
+        const mockResponse = {
+          status: 404,
+          body: fs.createReadStream(`testing/general-files/404.html`),
+          statusText: 'Not found',
+          headers: { 'Content-Type': HTML },
+          url: '.html'
         }
+        await fetch.mockResolvedValue(mockResponse)
 
-        const expectedNonDisplayGroupData = dummyData
+        const expectedData = dummyData
+        const expectedNumberOfExceptionRows = 0
+        const expectedError = new Error(`No csv file detected`)
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+        await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
       })
       it('should throw an exception when the csv server is unavailable', async () => {
         const expectedError = new Error(`connect ECONNREFUSED mockhost`)
@@ -257,10 +260,26 @@ module.exports =
         const expectedNonDisplayGroupData = {
           test_non_display_workflow_1: ['test_filter_1']
         }
-        const expectedErrorDescription = 'A row is missing data.'
+        const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 1
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
         await checkExceptionIsCorrect(expectedErrorDescription)
+      })
+      it('should only load valid rows within a csv correctly. bit instead of boolean row loaded into exceptions', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'bit-not-boolean.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
+
+        const expectedNonDisplayGroupData = {
+          test_non_display_workflow_3: ['test_filter_3'],
+          test_non_display_workflow_2: ['test_filter_2']
+        }
+
+        const expectedNumberOfExceptionRows = 1
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
     })
 
@@ -277,7 +296,8 @@ module.exports =
         body: fs.createReadStream(`testing/non_display_group_workflow_files/${mockResponseData.filename}`),
         statusText: mockResponseData.statusText,
         headers: { 'Content-Type': mockResponseData.contentType },
-        sendAsJson: false
+        sendAsJson: false,
+        url: '.csv'
       }
       fetch.mockResolvedValue(mockResponse)
     }
