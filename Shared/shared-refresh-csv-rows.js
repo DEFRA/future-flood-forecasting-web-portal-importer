@@ -38,7 +38,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
   try {
     const transaction = preparedStatement.parent
     const response = await fetch(refreshData.csvUrl)
-    if (response.headers[`Content-Type`] === 'text/csv') {
+    if (response.status === 200 && response.url.includes('.csv')) {
       const csvRows = await neatCsv(response.body)
       const csvRowCount = csvRows.length
       const failedCsvRows = []

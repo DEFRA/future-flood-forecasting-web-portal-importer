@@ -7,10 +7,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
   const sql = require('mssql')
   const fs = require('fs')
 
-  const JSONFILE = 'application/javascript'
-  const STATUS_TEXT_NOT_FOUND = 'Not found'
   const STATUS_CODE_200 = 200
-  const STATUS_CODE_404 = 404
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
@@ -203,19 +200,6 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
       await checkExceptionIsCorrect(expectedExceptionDescription)
     })
-    it('should not refresh if csv endpoint is not found(404)', async () => {
-      const mockResponseData = {
-        statusCode: STATUS_CODE_404,
-        statusText: STATUS_TEXT_NOT_FOUND,
-        contentType: HTML,
-        filename: '404-html.html'
-      }
-
-      const expectedForecastLocationData = [dummyData]
-      const expectedNumberOfExceptionRows = 0
-      const expectedError = new Error(`No csv file detected`)
-      await refreshCoastalLocationDataAndCheckFail(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, expectedError)
-    })
     it('should throw an exception when the csv server is unavailable', async () => {
       const expectedError = new Error(`connect ECONNREFUSED mockhost`)
       fetch.mockImplementation(() => {
@@ -237,32 +221,45 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await lockCoastalLocationTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('should throw an exception when a non-csv file is supplied', async () => {
-      const mockResponseData = {
-        statusCode: STATUS_CODE_200,
-        filename: 'json-file.json',
+    it('should not refresh when a non-csv file (JSON) is provided', async () => {
+      const mockResponse = {
+        status: STATUS_CODE_200,
+        body: fs.createReadStream(`testing/general-files/json.json`),
         statusText: STATUS_TEXT_OK,
-        contentType: JSONFILE
+        headers: { 'Content-Type': 'application/javascript' },
+        url: '.json'
       }
+      await fetch.mockResolvedValue(mockResponse)
 
-      const expectedForecastLocationData = [dummyData]
+      const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
       const expectedError = new Error(`No csv file detected`)
-      await refreshCoastalLocationDataAndCheckFail(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, expectedError)
+
+      await expect(coastalRefreshFunction(context, message)).rejects.toEqual(expectedError)
+      await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+    })
+    it('should not refresh if csv endpoint is not found(404)', async () => {
+      const mockResponse = {
+        status: 404,
+        body: fs.createReadStream(`testing/general-files/404.html`),
+        statusText: 'Not found',
+        headers: { 'Content-Type': HTML },
+        url: '.html'
+      }
+      await fetch.mockResolvedValue(mockResponse)
+
+      const expectedData = [dummyData]
+      const expectedNumberOfExceptionRows = 0
+      const expectedError = new Error(`No csv file detected`)
+
+      await expect(coastalRefreshFunction(context, message)).rejects.toEqual(expectedError)
+      await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
   })
 
   async function refreshCoastalLocationDataAndCheckExpectedResults (mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows) {
     await mockFetchResponse(mockResponseData)
     await coastalRefreshFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedCoastalLocationData, expectedNumberOfExceptionRows)
-  }
-
-  // The following function is used in scenarios where a csv is successfully processed, but due to errors in the csv the app will then
-  // attempt to overwrite and insert nothing into the database. This is caught and rejected in the function code (hence expecting this error/rejection).
-  async function refreshCoastalLocationDataAndCheckFail (mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows, expectedError) {
-    await mockFetchResponse(mockResponseData)
-    await expect(coastalRefreshFunction(context, message)).rejects.toEqual(expectedError)
     await checkExpectedResults(expectedCoastalLocationData, expectedNumberOfExceptionRows)
   }
 
@@ -273,7 +270,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
       body: fs.createReadStream(`testing/coastal_tidal_forecast_location_files/${mockResponseData.filename}`),
       statusText: mockResponseData.statusText,
       headers: { 'Content-Type': mockResponseData.contentType },
-      sendAsJson: false
+      sendAsJson: false,
+      url: '.csv'
     }
     fetch.mockResolvedValue(mockResponse)
   }
