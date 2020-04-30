@@ -3,7 +3,7 @@ const refresh = require('../Shared/shared-refresh-csv-rows')
 module.exports = async function (context, message) {
   const refreshData = {
     // Location of csv:
-    csvUrl: process.env['COASTAL_TRITON_WORKFLOW_URL'],
+    csvUrl: process.env['COASTAL_TRITON_FORECAST_LOCATION_URL'],
     // Destination table in staging database
     tableName: 'COASTAL_FORECAST_LOCATION',
     partialTableUpdate: { flag: true, whereClause: `where COASTAL_TYPE = 'Triton'` },

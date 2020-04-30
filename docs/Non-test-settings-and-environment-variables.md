@@ -23,8 +23,12 @@
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                               |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                                                          |
 | FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                                                      |
-| FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                                                        |
+| FLUVIAL_FORECAST_LOCATION_URL             | URL used to provide the forecast location data                                                                                        |
+| COASTAL_TRITON_FORECAST_LOCATION_URL      | URL used to provide the coastal triton location data                                                                                  |
+| COASTAL_TIDAL_FORECAST_LOCATION_URL       | URL used to provide the coastal tidal location data                                                                                   |
+| COASTAL_MVT_FORECAST_LOCATION_URL         | URL used to provide the coastal mvt location data                                                                                     |
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                |
+| COASTAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the coastal display groups workflow reference data                                                                |
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                    |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                             |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                        |
