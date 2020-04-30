@@ -79,4 +79,5 @@ accordingly.
 * Microsoft Azure service bus topic named **fews-fluvial-non-display-group-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**
 * Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus queue named **fews-forecast-location-queue**
 * Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription  
