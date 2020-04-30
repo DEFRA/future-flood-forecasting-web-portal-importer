@@ -14,7 +14,7 @@ module.exports = async function (context, message) {
       { tableColumnName: 'plot_id', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
       { tableColumnName: 'location_id', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' }
     ],
-    type: 'coastal display group',
+    type: 'fluvial display group',
     preOperation: createDisplayGroupTemporaryTable,
     postOperation: refreshDisplayGroupTable
   }
