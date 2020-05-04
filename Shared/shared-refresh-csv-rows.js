@@ -69,6 +69,13 @@ async function refreshInternal (context, preparedStatement, refreshData) {
             // check all the expected values are present in the csv row and exclude incomplete csvRows.
             let rowError = false
             for (let columnObject of refreshData.functionSpecificData) {
+              if (refreshData.keyInteregator) {
+                let keyPass = await refreshData.keyInteregator(columnObject.expectedCSVKey, row[`${columnObject.expectedCSVKey}`])
+                if (keyPass === false) {
+                  rowError = true
+                  break
+                }
+              }
               if (row[`${columnObject.expectedCSVKey}`]) {
                 preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
               } else {

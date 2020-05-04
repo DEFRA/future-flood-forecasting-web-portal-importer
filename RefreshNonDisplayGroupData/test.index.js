@@ -9,9 +9,7 @@ module.exports =
     const fs = require('fs')
 
     const JSONFILE = 'application/javascript'
-    const STATUS_TEXT_NOT_FOUND = 'Not found'
     const STATUS_CODE_200 = 200
-    const STATUS_CODE_404 = 404
     const STATUS_TEXT_OK = 'OK'
     const TEXT_CSV = 'text/csv'
     const HTML = 'html'
@@ -57,8 +55,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = dummyData
-
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should load a valid csv correctly - single filter per workflow', async () => {
         const mockResponseData = {
@@ -74,7 +72,8 @@ module.exports =
           test_non_display_workflow_2: ['test_filter_2']
         }
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should load a valid csv correctly - multiple filters per workflow', async () => {
         const mockResponseData = {
@@ -91,7 +90,8 @@ module.exports =
           test_non_display_workflow_4: ['test_filter_4']
         }
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should not load duplicate rows in a csv', async () => {
         const mockResponseData = {
@@ -106,8 +106,10 @@ module.exports =
           test_non_display_workflow_3: ['test_filter_3'],
           test_non_display_workflow_2: ['test_filter_2']
         }
-
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedErrorDescription = 'Violation of UNIQUE KEY constraint'
+        const expectedNumberOfExceptionRows = 1
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should ignore a CSV file with misspelled headers', async () => {
         const mockResponseData = {
@@ -118,8 +120,10 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = dummyData
-
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedErrorDescription = 'row is missing data.'
+        const expectedNumberOfExceptionRows = 3
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should load WorkflowId and FilterId correctly into the db correctly with extra CSV fields present', async () => {
         const mockResponseData = {
@@ -134,7 +138,8 @@ module.exports =
           test_non_display_workflow_2: ['test_filter_2']
         }
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should not refresh with valid header row but no data rows', async () => {
         const mockResponseData = {
@@ -146,7 +151,8 @@ module.exports =
 
         const expectedNonDisplayGroupData = dummyData
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedNumberOfExceptionRows = 0
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
       it('should reject insert if there is no header row, expect the first row to be treated as the header', async () => {
         const mockResponseData = {
@@ -158,7 +164,10 @@ module.exports =
 
         const expectedNonDisplayGroupData = dummyData
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedErrorDescription = 'row is missing data.'
+        const expectedNumberOfExceptionRows = 2
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should ommit rows with missing values', async () => {
         const mockResponseData = {
@@ -172,7 +181,10 @@ module.exports =
           test_non_display_workflow_2: ['test_filter_a']
         }
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedErrorDescription = 'row is missing data.'
+        const expectedNumberOfExceptionRows = 2
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should ommit all rows as there is missing values for the entire column', async () => {
         const mockResponseData = {
@@ -182,9 +194,11 @@ module.exports =
           contentType: TEXT_CSV
         }
 
+        const expectedErrorDescription = 'row is missing data.'
         const expectedNonDisplayGroupData = dummyData
-
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        const expectedNumberOfExceptionRows = 3
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
       })
       it('should not refresh when a non-csv file (JSON) is provided', async () => {
         const mockResponseData = {
@@ -199,16 +213,21 @@ module.exports =
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
       })
       it('should not refresh if csv endpoint is not found(404)', async () => {
-        const mockResponseData = {
-          statusCode: STATUS_CODE_404,
-          statusText: STATUS_TEXT_NOT_FOUND,
-          contentType: HTML,
-          filename: '404-html.html'
+        const mockResponse = {
+          status: 404,
+          body: fs.createReadStream(`testing/general-files/404.html`),
+          statusText: 'Not found',
+          headers: { 'Content-Type': HTML },
+          url: '.html'
         }
+        await fetch.mockResolvedValue(mockResponse)
 
-        const expectedNonDisplayGroupData = dummyData
+        const expectedData = dummyData
+        const expectedNumberOfExceptionRows = 0
+        const expectedError = new Error(`No csv file detected`)
 
-        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+        await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+        await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
       })
       it('should throw an exception when the csv server is unavailable', async () => {
         const expectedError = new Error(`connect ECONNREFUSED mockhost`)
@@ -238,17 +257,36 @@ module.exports =
           statusText: STATUS_TEXT_OK,
           contentType: TEXT_CSV
         }
+        const expectedNonDisplayGroupData = {
+          test_non_display_workflow_1: ['test_filter_1']
+        }
+        const expectedErrorDescription = 'row is missing data.'
+        const expectedNumberOfExceptionRows = 1
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+        await checkExceptionIsCorrect(expectedErrorDescription)
+      })
+      it('should only load valid rows within a csv correctly. bit instead of boolean row loaded into exceptions', async () => {
+        const mockResponseData = {
+          statusCode: STATUS_CODE_200,
+          filename: 'bit-not-boolean.csv',
+          statusText: STATUS_TEXT_OK,
+          contentType: TEXT_CSV
+        }
 
-        const expectedErrorDescription = 'A row is missing data.'
+        const expectedNonDisplayGroupData = {
+          test_non_display_workflow_3: ['test_filter_3'],
+          test_non_display_workflow_2: ['test_filter_2']
+        }
 
-        await refreshNonDisplayGroupDataAndCheckExceptionIsCreated(mockResponseData, expectedErrorDescription)
+        const expectedNumberOfExceptionRows = 1
+        await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
       })
     })
 
-    async function refreshNonDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedNonDisplayGroupData) {
+    async function refreshNonDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows) {
       await mockFetchResponse(mockResponseData)
-      await messageFunction(context, message) // This is a call to the function index
-      await checkExpectedResults(expectedNonDisplayGroupData)
+      await messageFunction(context, message)
+      await checkExpectedResults(expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
     }
 
     async function mockFetchResponse (mockResponseData) {
@@ -258,12 +296,13 @@ module.exports =
         body: fs.createReadStream(`testing/non_display_group_workflow_files/${mockResponseData.filename}`),
         statusText: mockResponseData.statusText,
         headers: { 'Content-Type': mockResponseData.contentType },
-        sendAsJson: false
+        sendAsJson: false,
+        url: '.csv'
       }
       fetch.mockResolvedValue(mockResponse)
     }
 
-    async function checkExpectedResults (expectedNonDisplayGroupData) {
+    async function checkExpectedResults (expectedNonDisplayGroupData, expectedNumberOfExceptionRows) {
       const result = await request.query(`
       select 
         count(*) 
@@ -305,6 +344,17 @@ module.exports =
           expect(dbFilterIdsSorted).toEqual(expectedFilterIdsSorted)
         }
       }
+      // Check exceptions
+      if (expectedNumberOfExceptionRows) {
+        const exceptionCount = await request.query(`
+      select 
+        count(*) 
+      as 
+        number 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
+      }
     }
     async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
       let transaction
@@ -329,10 +379,7 @@ module.exports =
         }
       }
     }
-
-    async function refreshNonDisplayGroupDataAndCheckExceptionIsCreated (mockResponseData, expectedErrorDescription) {
-      await mockFetchResponse(mockResponseData)
-      await messageFunction(context, message) // This is a call to the function index
+    async function checkExceptionIsCorrect (expectedErrorDescription) {
       const result = await request.query(`
       select
         top(1) description
@@ -341,7 +388,7 @@ module.exports =
       order by
         exception_time desc
     `)
-      expect(result.recordset[0].description).toBe(expectedErrorDescription)
+      expect(result.recordset[0].description).toContain(expectedErrorDescription)
     }
   }
   )
