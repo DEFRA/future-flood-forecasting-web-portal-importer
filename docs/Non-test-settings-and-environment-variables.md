@@ -23,8 +23,12 @@
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                               |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                                                          |
 | FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                                                      |
-| FORECAST_LOCATION_URL                     | URL used to provide the forecast location data                                                                                        |
+| FLUVIAL_FORECAST_LOCATION_URL             | URL used to provide the forecast location data                                                                                        |
+| COASTAL_TRITON_FORECAST_LOCATION_URL      | URL used to provide the coastal triton location data                                                                                  |
+| COASTAL_TIDAL_FORECAST_LOCATION_URL       | URL used to provide the coastal tidal location data                                                                                   |
+| COASTAL_MVT_FORECAST_LOCATION_URL         | URL used to provide the coastal mvt location data                                                                                     |
 | FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                |
+| COASTAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the coastal display groups workflow reference data                                                                |
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                    |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                             |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                        |
@@ -41,9 +45,13 @@ default of 15 seconds. Request timeout tuning is achieved through the mssql conn
 |-------------------------------------------------------|------------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                         |
 | AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME | Subscription name associated with fews-staged-timeseries-topic                                 |
-| AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-display-group-topic                                 |
+| AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-display-group-topic                         |
+| AZURE_SERVICE_BUS_COASTAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-display-group-topic                         |
 | AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
-| AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                 |
+| AZURE_SERVICE_BUS_FLUVIAL_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-forecast-location-topic                 |
+| AZURE_SERVICE_BUS_COASTAL_TIDAL_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-tidal-forecast-location-topic     |
+| AZURE_SERVICE_BUS_COASTAL_TRITON_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-triton-forecast-location-topic   |
+| AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-mvt-forecast-location-topic         |
 | AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                                 |
 
 ## Redundant Legacy Runtime Function App Settings/Environment Variables
@@ -62,6 +70,7 @@ accordingly.
 | FEWS_LOCATION_IDS                         | Semi-colon separated list of locations used with scheduled imports                                         |
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                            |
 | AZURE_SERVICE_BUS_FLUVIAL_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                         |
+| AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                 |
 
 ## Optional Runtime Function App Settings/Environment Variables
 

@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "topicName": "fews-coastal-display-group-topic",
+      "subscriptionName": "%AZURE_SERVICE_BUS_COASTAL_DISPLAY_GROUP_SUBSCRIPTION_NAME%",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

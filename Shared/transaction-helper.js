@@ -31,7 +31,6 @@ module.exports = {
       return await fn(transaction, context, ...args)
     } catch (err) {
       context.log.error(`Transaction failed: ${errorMessage} ${err}`)
-
       if (transaction._aborted) {
         context.log.warn('The transaction has been aborted.')
       } else {

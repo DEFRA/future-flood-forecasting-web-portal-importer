@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "topicName": "fews-coastal-mvt-forecast-location-topic",
+      "subscriptionName": "%AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME%",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

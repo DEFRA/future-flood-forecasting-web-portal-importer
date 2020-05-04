@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-fluvial-forecast-location-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

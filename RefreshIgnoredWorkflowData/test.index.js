@@ -166,7 +166,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     })
 
     it('should throw an exception when the ignored workflow table is in use', async () => {
-      // If the ignored workflow table is being refreshed messages are elgible for replay a certain number of times
+      // If the ignored workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
 
       const mockResponseData = {
@@ -223,9 +223,12 @@ module.exports = describe('Ignored workflow loader tests', () => {
 
   async function checkExpectedResults (expectedIgnoredWorkflowData) {
     const result = await request.query(`
-         select count(*) 
-         as number
-         from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
+        select 
+          count(*)
+        as 
+          number
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
          `)
     const expectedNumberOfRows = expectedIgnoredWorkflowData.length
 
