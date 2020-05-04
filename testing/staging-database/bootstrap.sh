@@ -5,7 +5,6 @@ if  ! `nc -z $SQLTESTDB_HOST $SQLTESTDB_PORT`; then
   rm -rf future-flood-forecasting-web-portal-staging 
   git clone https://github.com/DEFRA/future-flood-forecasting-web-portal-staging.git
   cd future-flood-forecasting-web-portal-staging
-  git checkout feature/coastal-support
   ./local-bootstrap.sh
 fi
 
