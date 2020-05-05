@@ -46,9 +46,15 @@ async function refreshInternal (context, preparedStatement, refreshData) {
       // do not refresh the table if the csv is empty.
       if (csvRowCount > 0) {
         if (refreshData.flag) {
-          await new sql.Request(transaction).query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName} ${refreshData.partialTableUpdate.whereClause}`)
+          await new sql.Request(transaction).query(`
+          delete 
+          from
+            ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName} ${refreshData.partialTableUpdate.whereClause}`)
         } else {
-          await new sql.Request(transaction).query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName}`)
+          await new sql.Request(transaction).query(`
+          delete
+          from 
+            ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName}`)
         }
         let columnNames = ''
         let preparedStatementValues = ''
@@ -61,7 +67,11 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         columnNames = columnNames.slice(0, -2)
         preparedStatementValues = preparedStatementValues.slice(0, -2)
 
-        await preparedStatement.prepare(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName} (${columnNames}) values (${preparedStatementValues})`)
+        await preparedStatement.prepare(`
+        insert into 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName} (${columnNames}) 
+        values 
+          (${preparedStatementValues})`)
 
         for (const row of csvRows) {
           let preparedStatementExecuteObject = {}
@@ -108,7 +118,13 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         await preparedStatement.unprepare()
 
         // Check updated table row count
-        const result = await new sql.Request(transaction).query(`select count(*) as number from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName} ${refreshData.partialTableUpdate.whereClause}`)
+        const result = await new sql.Request(transaction).query(`
+        select 
+          count(*) 
+        as 
+          number 
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${refreshData.tableName} ${refreshData.partialTableUpdate.whereClause}`)
         context.log.info(`The ${refreshData.tableName} table now contains ${result.recordset[0].number} new/updated records`)
         if (result.recordset[0].number === 0) {
           // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.

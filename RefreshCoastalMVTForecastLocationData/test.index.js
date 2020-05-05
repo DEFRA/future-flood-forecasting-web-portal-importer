@@ -262,13 +262,12 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
   async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows) {
     const coastalLocationCount = await request.query(`
-      select 
-        count(*) 
-      as 
-        number
-      from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
-     `)
+    select 
+      count(*) 
+    as 
+      number
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location`)
     const expectedNumberOfRows = expectedCoastalLocationData.length
     expect(coastalLocationCount.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Actual data row count: ${coastalLocationCount.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
@@ -276,14 +275,14 @@ module.exports = describe('Refresh coastal location data tests', () => {
     if (expectedNumberOfRows > 0) {
       for (const row of expectedCoastalLocationData) {
         const databaseResult = await request.query(`
-      select 
-       count(*) 
-      as 
-        number 
-      from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
-      where 
-      FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
+        select 
+          count(*) 
+        as 
+         number 
+        from 
+         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location
+        where 
+          FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
       CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)

@@ -24,7 +24,7 @@ module.exports =
 
     describe('The refresh fluvial_display_group_workflow data function:', () => {
       beforeAll(async () => {
-        return pool.connect()
+        await pool.connect()
       })
 
       beforeEach(async () => {
@@ -315,9 +315,12 @@ module.exports =
 
             // actual db data
             const locationQuery = await request.query(`
-          select *
-            from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
-            where workflow_id = '${workflowId}' AND plot_id = '${plotId}'
+            select
+              *
+            from 
+              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
+            where 
+              workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
             const rows = locationQuery.recordset
             const dbLocationsResult = rows[0].LOCATION_IDS
@@ -329,12 +332,12 @@ module.exports =
       // Check exceptions
       if (expectedNumberOfExceptionRows) {
         const exceptionCount = await request.query(`
-              select 
-                count(*)
-              as 
-                number 
-              from 
-                ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        select 
+          count(*)
+        as 
+          number 
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
@@ -348,9 +351,9 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.batch(`
         insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
         values 
-        ('workflow_id', 'plot_id', 'loc_id')
+         ('workflow_id', 'plot_id', 'loc_id')
       `)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)

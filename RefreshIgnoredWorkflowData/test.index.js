@@ -217,13 +217,12 @@ module.exports = describe('Ignored workflow loader tests', () => {
 
   async function checkExpectedResults (expectedIgnoredWorkflowData, expectedNumberOfExceptionRows) {
     const result = await request.query(`
-        select 
-          count(*)
-        as 
-          number
-        from 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
-         `)
+    select 
+      count(*)
+    as 
+      number
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW`)
     const expectedNumberOfRows = expectedIgnoredWorkflowData.length
 
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
@@ -268,9 +267,9 @@ module.exports = describe('Ignored workflow loader tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
         insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (WORKFLOW_ID) 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (WORKFLOW_ID) 
         values 
-        ('ignored_1')
+          ('ignored_1')
       `)
       await mockFetchResponse(mockResponseData)
       await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)

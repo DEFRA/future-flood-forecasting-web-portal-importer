@@ -292,14 +292,14 @@ module.exports = describe('Refresh coastal location data tests', () => {
     if (expectedNumberOfRows > 0) {
       for (const row of expectedCoastalLocationData) {
         const databaseResult = await request.query(`
-      select 
-       count(*)
-      as 
-        number 
-      from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
-      where 
-      FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
+        select 
+         count(*)
+        as 
+         number 
+        from 
+         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
+        where 
+         FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
       CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)
@@ -323,7 +323,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.query(`
-      insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting')
+      insert into 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) 
+      values 
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting')
     `)
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')

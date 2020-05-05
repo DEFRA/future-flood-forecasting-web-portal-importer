@@ -222,15 +222,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function checkAmountOfDataImported (expectedNumberOfRecords) {
     const result = await request.query(`
-      select
-        count(t.id) 
-      as 
-        number
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
-      where
-        th.id = t.timeseries_header_id
+    select
+      count(t.id) 
+    as 
+      number
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+    where
+      th.id = t.timeseries_header_id
     `)
     expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
   }
@@ -238,12 +238,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
     await processMessage(messageKey)
     const result = await request.query(`
-      select
-        top(1) description
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
-      order by
-        exception_time desc
+    select
+      top(1) description
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
+    order by
+      exception_time desc
     `)
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
     await checkAmountOfDataImported(0)
@@ -264,9 +264,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.batch(`
-      INSERT INTO ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids) 
+      insert into 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids) 
       values 
-      ('dummyWorkflow', 'dummyPlot', 'dummyLocation')
+        ('dummyWorkflow', 'dummyPlot', 'dummyLocation')
     `)
       await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
     } finally {

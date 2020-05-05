@@ -329,9 +329,12 @@ module.exports =
 
           // actual db data
           const filterQuery = await request.query(`
-          SELECT *
-          FROM ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
-          WHERE workflow_id = '${workflowId}'
+          select 
+            *
+          from 
+            ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+          where 
+            workflow_id = '${workflowId}'
           `)
           const rows = filterQuery.recordset
           const dbFilterIds = []
@@ -347,12 +350,12 @@ module.exports =
       // Check exceptions
       if (expectedNumberOfExceptionRows) {
         const exceptionCount = await request.query(`
-      select 
-        count(*) 
-      as 
-        number 
-      from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        select 
+          count(*) 
+        as 
+          number 
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
@@ -364,9 +367,9 @@ module.exports =
         await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
         const request = new sql.Request(transaction)
         await request.batch(`
-          INSERT INTO 
+        insert into 
           ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, filter_id, forecast) 
-          values 
+        values 
           ('testWorkflow', 'testFilter', 0)`)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
