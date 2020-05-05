@@ -38,7 +38,7 @@ module.exports =
         }
         await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
-        await request.query(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, fffs_loc_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
+        await request.query(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
       })
 
       afterEach(() => {
@@ -309,7 +309,7 @@ module.exports =
               workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
             const dbRows = locationQuery.recordset
-            const dbLocationsResult = dbRows[0].FFFS_LOC_IDS
+            const dbLocationsResult = dbRows[0].LOCATION_IDS
             const dbLocations = dbLocationsResult.split(';').sort()
             expect(dbLocations).toEqual(expectedLocationsArray)
           }
@@ -337,7 +337,7 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.query(`
         insert into 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, fffs_loc_ids)
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
         values 
           ('workflow_id', 'plot_id', 'loc_id')
       `)
@@ -364,5 +364,4 @@ module.exports =
     `)
       expect(result.recordset[0].description).toContain(expectedErrorDescription)
     }
-  }
-  )
+  })

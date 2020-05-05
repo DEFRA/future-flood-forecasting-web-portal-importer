@@ -1,17 +1,17 @@
 const axios = require('axios')
 
 module.exports = async function getTimeseriesDisplayGroups (context, routeData) {
-  const displayGroupData = await getDisplayGroupData(routeData.fluvialDisplayGroupWorkflowsResponse)
+  const displayGroupData = await getDisplayGroupData(routeData.displayGroupWorkflowsResponse)
   const timeseriesDisplayGroups = await getTimeseriesDisplayGroupsInternal(context, displayGroupData, routeData)
   return timeseriesDisplayGroups
 }
 
-async function getDisplayGroupData (fluvialDisplayGroupWorkflowsResponse) {
+async function getDisplayGroupData (displayGroupWorkflowsResponse) {
   // Get the plot identifiers needed to retrieve timeseries display groups
   // from the REST interface of the core forecasting engine.
   const displayGroupData = {}
 
-  for (const record of fluvialDisplayGroupWorkflowsResponse.recordset) {
+  for (const record of displayGroupWorkflowsResponse.recordset) {
     displayGroupData[record.plot_id] = record.location_ids
   }
 

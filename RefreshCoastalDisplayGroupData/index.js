@@ -44,7 +44,7 @@ async function refreshDisplayGroupTable (transaction, context) {
         await new sql.Request(transaction).query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
         // Concatenate all locations for each combination of workflow ID and plot ID.
         await new sql.Request(transaction).query(`
-        insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, fffs_loc_ids)
+        insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
           select
             workflow_id,
             plot_id,
