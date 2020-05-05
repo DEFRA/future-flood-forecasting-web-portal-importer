@@ -1,5 +1,5 @@
 module.exports = describe('Tests for import timeseries display groups', () => {
-  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/display-group-messages')
+  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/fluvial-display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
   const messageFunction = require('./index')
@@ -14,7 +14,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
 
-  describe('Message processing for display group task run completion', () => {
+  describe('Message processing for fluvial display group task run completion', () => {
     beforeAll(async () => {
       await pool.connect()
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
@@ -24,7 +24,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         insert into
           ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
         values
-          ('Test_Workflow1', 'Test Plot1', 'Test Location1'), ('Test_Workflow2', 'Test Plot2a', 'Test Location2a'), ('Test_Workflow2', 'Test Plot2b', 'Test Location2b')
+          ('Test_Fluvial_Workflow1', 'Test Plot1', 'Test Location1'), ('Test_Fluvial_Workflow2', 'Test Plot2a', 'Test Location2a'), ('Test_Fluvial_Workflow2', 'Test Plot2b', 'Test Location2b')
       `)
     })
     beforeEach(async () => {
