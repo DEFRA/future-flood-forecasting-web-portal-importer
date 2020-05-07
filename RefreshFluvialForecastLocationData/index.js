@@ -18,6 +18,7 @@ module.exports = async function (context, message) {
       { tableColumnName: 'CENTRE', tableColumnType: 'NVarChar', expectedCSVKey: 'Centre' },
       { tableColumnName: 'PLOT_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
       { tableColumnName: 'CATCHMENT', tableColumnType: 'NVarChar', expectedCSVKey: 'Catchment' },
+      { tableColumnName: 'CATCHMENT_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CatchmentOrder' },
       { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' }
     ],
     type: 'fluvial forecast location refresh'
