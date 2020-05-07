@@ -262,13 +262,12 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
   async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows) {
     const coastalLocationCount = await request.query(`
-       select 
-        count(*) 
-       as 
-        number
-       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
-       `)
+    select 
+      count(*) 
+    as 
+      number
+    from 
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION`)
     const expectedNumberOfRows = expectedCoastalLocationData.length
     expect(coastalLocationCount.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Actual data row count: ${coastalLocationCount.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
@@ -276,28 +275,27 @@ module.exports = describe('Refresh coastal location data tests', () => {
     if (expectedNumberOfRows > 0) {
       for (const row of expectedCoastalLocationData) {
         const databaseResult = await request.query(`
-      select 
-       count(*) 
-      as 
-        number 
-      from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
-      where 
-      FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-      CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
-      `)
+        select 
+          count(*) 
+        as 
+          number 
+        from 
+         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
+        where 
+          FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
+      CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'`)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
     // Check exceptions
     if (expectedNumberOfExceptionRows) {
       const exceptionCount = await request.query(`
-    select 
-      count(*) 
-    as 
-      number 
-    from 
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+      select 
+        count(*) 
+      as 
+       number 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
     }
   }
@@ -308,8 +306,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.query(`
-      insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Triton')
-    `)
+      insert into 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) 
+      values 
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Triton')`)
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')
     } finally {
@@ -329,8 +329,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
     order by
-      exception_time desc
-  `)
+      exception_time desc`)
     expect(result.recordset[0].description).toContain(expectedErrorDescription)
   }
 })

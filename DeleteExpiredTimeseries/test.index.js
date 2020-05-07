@@ -251,7 +251,11 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // the isolation level used by other transactions on the three tables concerned
       const newRequest = new sql.Request(transaction)
 
-      let query = `select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`
+      let query = `
+      select 
+        * 
+      from 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`
       await newRequest.query(query)
 
       await expect(deleteFunction(context, timer)).resolves.toBe(undefined) // seperate request (outside the newly created transaction, out of the pool of available transactions)
@@ -273,8 +277,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest = new sql.Request(transaction)
       let query = `
       declare @id1 uniqueidentifier set @id1 = newid()
-      insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time)
-        values (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset))`
+      insert into 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time)
+      values 
+        (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset))`
       query.replace(/"/g, "'")
       await newRequest.query(query)
       await expect(deleteFunction(context, timer)).rejects.toBeTimeoutError('timeseries_header') // seperate request (outside the newly created transaction, out of the pool of available transactions)

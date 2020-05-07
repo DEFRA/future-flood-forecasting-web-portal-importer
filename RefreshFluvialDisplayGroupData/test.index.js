@@ -8,10 +8,7 @@ module.exports =
     const sql = require('mssql')
     const fs = require('fs')
 
-    const JSONFILE = 'application/javascript'
-    const STATUS_TEXT_NOT_FOUND = 'Not found'
     const STATUS_CODE_200 = 200
-    const STATUS_CODE_404 = 404
     const STATUS_TEXT_OK = 'OK'
     const TEXT_CSV = 'text/csv'
     const HTML = 'html'
@@ -27,7 +24,7 @@ module.exports =
 
     describe('The refresh fluvial_display_group_workflow data function:', () => {
       beforeAll(async () => {
-        return pool.connect()
+        await pool.connect()
       })
 
       beforeEach(async () => {
@@ -195,32 +192,6 @@ module.exports =
         await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
       })
 
-      it('should not refresh when a non-csv file (JSON) is provided', async () => {
-        const mockResponseData = {
-          statusCode: STATUS_CODE_200,
-          filename: 'json-file.json',
-          statusText: STATUS_TEXT_OK,
-          contentType: JSONFILE
-        }
-
-        const expectedDisplayGroupData = dummyData
-
-        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
-      })
-
-      it('should not refresh if csv endpoint is not found(404)', async () => {
-        const mockResponseData = {
-          statusCode: STATUS_CODE_404,
-          statusText: STATUS_TEXT_NOT_FOUND,
-          contentType: HTML,
-          filename: '404-html.html'
-        }
-
-        const expectedDisplayGroupData = dummyData
-
-        await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedDisplayGroupData)
-      })
-
       it('should throw an exception when the csv server is unavailable', async () => {
         const expectedError = new Error(`connect ECONNREFUSED mockhost`)
         fetch.mockImplementation(() => {
@@ -256,12 +227,47 @@ module.exports =
 
         await refreshDisplayGroupDataAndCheckExceptionIsCreated(mockResponseData, expectedErrorDescription)
       })
+
+      it('should not refresh when a non-csv file (JSON) is provided', async () => {
+        const mockResponse = {
+          status: STATUS_CODE_200,
+          body: fs.createReadStream(`testing/general-files/json.json`),
+          statusText: STATUS_TEXT_OK,
+          headers: { 'Content-Type': 'application/javascript' },
+          url: '.json'
+        }
+        await fetch.mockResolvedValue(mockResponse)
+
+        const expectedData = dummyData
+        const expectedNumberOfExceptionRows = 0
+        const expectedError = new Error(`No csv file detected`)
+
+        await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+        await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+      })
+      it('should not refresh if csv endpoint is not found(404)', async () => {
+        const mockResponse = {
+          status: 404,
+          body: fs.createReadStream(`testing/general-files/404.html`),
+          statusText: 'Not found',
+          headers: { 'Content-Type': HTML },
+          url: '.html'
+        }
+        await fetch.mockResolvedValue(mockResponse)
+
+        const expectedData = dummyData
+        const expectedNumberOfExceptionRows = 0
+        const expectedError = new Error(`No csv file detected`)
+
+        await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+        await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+      })
     })
 
-    async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedDisplayGroupData) {
+    async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedFluvialDisplayGroupData) {
       await mockFetchResponse(mockResponseData)
-      await messageFunction(context, message) // This is a call to the function index
-      await checkExpectedResults(expectedDisplayGroupData)
+      await messageFunction(context, message)
+      await checkExpectedResults(expectedFluvialDisplayGroupData)
     }
 
     async function mockFetchResponse (mockResponseData) {
@@ -271,12 +277,13 @@ module.exports =
         body: fs.createReadStream(`testing/fluvial_display_group_workflow_files/${mockResponseData.filename}`),
         statusText: mockResponseData.statusText,
         headers: { 'Content-Type': mockResponseData.contentType },
-        sendAsJson: false
+        sendAsJson: false,
+        url: '.csv'
       }
       fetch.mockResolvedValue(mockResponse)
     }
 
-    async function checkExpectedResults (expectedDisplayGroupData) {
+    async function checkExpectedResults (expectedDisplayGroupData, expectedNumberOfExceptionRows) {
       const result = await request.query(`
       select 
         count(*) 
@@ -308,9 +315,12 @@ module.exports =
 
             // actual db data
             const locationQuery = await request.query(`
-          select *
-            from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
-            where workflow_id = '${workflowId}' AND plot_id = '${plotId}'
+            select
+              *
+            from 
+              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
+            where 
+              workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
             const rows = locationQuery.recordset
             const dbLocationsResult = rows[0].LOCATION_IDS
@@ -318,6 +328,17 @@ module.exports =
             expect(dbLocations).toEqual(expectedLocationsArray)
           }
         }
+      }
+      // Check exceptions
+      if (expectedNumberOfExceptionRows) {
+        const exceptionCount = await request.query(`
+        select 
+          count(*)
+        as 
+          number 
+        from 
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
 
@@ -330,9 +351,9 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.batch(`
         insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
         values 
-        ('workflow_id', 'plot_id', 'loc_id')
+         ('workflow_id', 'plot_id', 'loc_id')
       `)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
