@@ -29,10 +29,16 @@ module.exports = describe('Refresh forecast location data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchemnt: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD' }]
+      dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchment: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD', CatchmentOrder: 2 }]
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location`)
-      await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) values ('dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')`)
+      await request.batch(`
+      insert 
+        into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location 
+        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) 
+      values 
+        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD')
+      `)
     })
 
     afterAll(async () => {
@@ -78,13 +84,14 @@ module.exports = describe('Refresh forecast location data tests', () => {
         {
           Centre: 'Birmingham',
           MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
-          Catchemnt: 'Derwent',
+          Catchment: 'Derwent',
           FFFSLocID: '40443',
           FFFSLocName: 'CHATSWORTH',
           PlotId: 'Fluvial_Gauge_MFDO',
           DRNOrder: 123,
           Order: 8988,
-          Datum: 'mALD'
+          Datum: 'mALD',
+          CatchmentOrder: 1
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
@@ -115,13 +122,14 @@ module.exports = describe('Refresh forecast location data tests', () => {
         {
           Centre: 'Birmingham',
           MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
-          Catchemnt: 'Derwent',
+          Catchment: 'Derwent',
           FFFSLocID: '4043',
           FFFSLocName: 'CHATSWORTH',
           PlotId: 'Fluvial_Gauge_MFDO',
           DRNOrder: 123,
           Order: 8888,
-          Datum: 'mALD'
+          Datum: 'mALD',
+          CatchmentOrder: 1
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
@@ -189,24 +197,26 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const expectedForecastLocationData = [{
         Centre: 'Birmingham',
         MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
-        Catchemnt: 'Derwent',
+        Catchment: 'Derwent',
         FFFSLocID: 'Ashford+Chatsworth',
         FFFSLocName: 'Ashford+Chatsworth UG Derwent Derb to Wye confl',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8888,
-        Datum: 'mALD'
+        Datum: 'mALD',
+        CatchmentOrder: 1
       },
       {
         Centre: 'Birmingham',
         MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
-        Catchemnt: 'Derwent',
+        Catchment: 'Derwent',
         FFFSLocID: '40443',
         FFFSLocName: 'CHATSWORTH',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8988,
-        Datum: 'mALD'
+        Datum: 'mALD',
+        CatchmentOrder: 1
       }]
       const expectedNumberOfExceptionRows = 0
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
@@ -319,11 +329,13 @@ module.exports = describe('Refresh forecast location data tests', () => {
       for (const row of expectedForecastLocationData) {
         const Centre = row.Centre
         const MFDOArea = row.MFDOArea
-        const Catchment = row.Catchemnt
+        const Catchment = row.Catchment
         const FFFSLocID = row.FFFSLocID
         const FFFSLocName = row.FFFSLocName
         const PlotId = row.PlotId
         const DRNOrder = row.DRNOrder
+        const displayOrder = row.Order
+        const catchmentOrder = row.CatchmentOrder
 
         const databaseResult = await request.query(`
       select 
@@ -334,9 +346,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_forecast_location
       where 
         CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
-        and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' 
+        and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = '${catchmentOrder}'
         and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
-      and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}'
+      and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}' and DISPLAY_ORDER = '${displayOrder}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
@@ -363,9 +375,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
       insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM) 
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, CATCHMENT_ORDER) 
       values 
-        ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'plotid', 123, 0, 'mALD')
+        ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'plotid', 123, 0, 'mALD', 5)
     `)
       await mockFetchResponse(mockResponseData)
       await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
