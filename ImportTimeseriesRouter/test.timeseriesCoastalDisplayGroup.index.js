@@ -122,8 +122,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
     })
-    it('should throw an exception when the fluvial_display_group_workflow table is being refreshed', async () => {
-      // If the fluvial_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
+    it('should throw an exception when the coastal_display_group_workflow table is being refreshed', async () => {
+      // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
@@ -257,7 +257,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function lockDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
     let transaction
-    const tableName = 'fluvial_display_group_workflow'
+    const tableName = 'coastal_display_group_workflow'
     try {
       // Lock the timeseries table and then try and process the message.
       transaction = new sql.Transaction(pool)
