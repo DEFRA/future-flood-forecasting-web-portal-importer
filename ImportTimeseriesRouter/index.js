@@ -46,8 +46,8 @@ async function getDisplayGroupWorkflows (context, preparedStatement, routeData) 
       displayGroupWorkflowId: routeData.workflowId
     }
 
-    const fluvialDisplayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
-    return fluvialDisplayGroupWorkflowsResponse
+    const displayGroupWorkflowsResponse = await preparedStatement.execute(parameters)
+    return displayGroupWorkflowsResponse
   }
 }
 
@@ -194,8 +194,15 @@ async function route (context, routeData) {
         workflowsFunction: getDisplayGroupWorkflows,
         timeseriesDataFunction: getTimeSeriesDisplayGroups,
         timeseriesDataFunctionType: 'plot',
-        workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse',
+        workflowDataProperty: 'displayGroupWorkflowsResponse',
         workflowTableName: 'fluvial_display_group_workflow'
+      },
+      coastalDisplayGroupDataRetrievalParameters: {
+        workflowsFunction: getDisplayGroupWorkflows,
+        timeseriesDataFunction: getTimeSeriesDisplayGroups,
+        timeseriesDataFunctionType: 'plot',
+        workflowDataProperty: 'displayGroupWorkflowsResponse',
+        workflowTableName: 'coastal_display_group_workflow'
       },
       nonDisplayGroupDataRetrievalParameters: {
         workflowsFunction: getNonDisplayGroupWorkflows,
@@ -211,12 +218,12 @@ async function route (context, routeData) {
     // reference data held in the staging database.
     if (routeData.forecast) {
       dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
+      dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
       // Core engine forecasts can be associated with display and non-display group CSV files.
       dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     } else {
       dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     }
-
     for (let dataRetrievalParameters of dataRetrievalParametersArray) {
       let timeseriesData
       const timeseriesDataFunction = dataRetrievalParameters.timeseriesDataFunction
