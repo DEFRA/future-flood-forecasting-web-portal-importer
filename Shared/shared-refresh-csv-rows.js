@@ -45,7 +45,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
 
       // do not refresh the table if the csv is empty.
       if (csvRowCount > 0) {
-        if (refreshData.flag) {
+        if (refreshData.partialTableUpdate.flag) {
           await new sql.Request(transaction).query(`
           delete 
           from
