@@ -230,7 +230,6 @@ async function route (context, routeData) {
       const timeseriesDataFunctionType = dataRetrievalParameters.timeseriesDataFunctionType
       const workflowDataProperty = dataRetrievalParameters.workflowDataProperty
       const workflowsFunction = dataRetrievalParameters.workflowsFunction
-      const workflowTableName = dataRetrievalParameters.workflowTableName
 
       // Retrieve workflow reference data from the staging database.
       if (dataRetrievalParameters.workflowTableName) {
@@ -242,31 +241,24 @@ async function route (context, routeData) {
       if (routeData[workflowDataProperty] && routeData[workflowDataProperty].recordset.length > 0) {
         context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
 
-        // Do not attempt to load coastal forecast data temporarily to aid debugging.
-        if (workflowTableName !== 'coastal_display_group_workflow') {
-          if (!routeData.timeseriesHeaderId) {
-            routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
-              createTimeseriesHeader,
-              context,
-              routeData.transaction,
-              routeData
-            )
-          }
+        if (!routeData.timeseriesHeaderId) {
+          routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
+            createTimeseriesHeader,
+            context,
+            routeData.transaction,
+            routeData
+          )
         }
 
         // Retrieve timeseries data from the core engine PI server and load it into the staging database.
         timeseriesData = await timeseriesDataFunction(context, routeData)
-
-        // Do not attempt to load coastal forecast data temporarily to aid debugging.
-        if (workflowTableName !== 'coastal_display_group_workflow') {
-          await executePreparedStatementInTransaction(
-            loadTimeseries,
-            context,
-            routeData.transaction,
-            timeseriesData,
-            routeData
-          )
-        }
+        await executePreparedStatementInTransaction(
+          loadTimeseries,
+          context,
+          routeData.transaction,
+          timeseriesData,
+          routeData
+        )
       }
     }
 

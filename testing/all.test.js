@@ -47,6 +47,6 @@ describe('Run all unit tests in sequence', () => {
   require('../RefreshCoastalMVTForecastLocationData/test.index')
   require('../ImportTimeseriesRouter/test.timeseriesNonDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesFluvialDisplayGroup.index')
-  // require('../ImportTimeseriesRouter/test.timeseriesCoastalDisplayGroup.index')
+  require('../ImportTimeseriesRouter/test.timeseriesCoastalDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesIgnoredWorkflow')
 })
