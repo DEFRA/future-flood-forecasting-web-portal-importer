@@ -9,6 +9,7 @@ const isLatestTaskRunForWorkflow = require('./helpers/is-latest-task-run-for-wor
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const isTaskRunImported = require('./helpers/is-task-run-imported')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
+const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const getWorkflowId = require('./helpers/get-workflow-id')
 const preprocessMessage = require('./helpers/preprocess-message')
@@ -179,7 +180,7 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
   context.log('Loaded timeseries data')
 }
 
-async function route (context, routeData) {
+async function route (context, routeData, transaction) {
   const ignoredWorkflowsResponse =
     await executePreparedStatementInTransaction(getIgnoredWorkflows, context, routeData.transaction, routeData.workflowId)
 
@@ -241,6 +242,9 @@ async function route (context, routeData) {
       if (routeData[workflowDataProperty] && routeData[workflowDataProperty].recordset.length > 0) {
         context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
 
+        // Retrieve timeseries data from the core engine PI server and load it into the staging database.
+        timeseriesData = await timeseriesDataFunction(context, routeData, transaction)
+        // Once timeseries has been received, create the header
         if (!routeData.timeseriesHeaderId) {
           routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
             createTimeseriesHeader,
@@ -250,8 +254,6 @@ async function route (context, routeData) {
           )
         }
 
-        // Retrieve timeseries data from the core engine PI server and load it into the staging database.
-        timeseriesData = await timeseriesDataFunction(context, routeData)
         await executePreparedStatementInTransaction(
           loadTimeseries,
           context,
@@ -291,7 +293,8 @@ async function parseMessage (context, transaction, message) {
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
   routeData.taskCompletionTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)} UTC`)).toISOString()
-
+  routeData.messageStartTime =
+    moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, message)} UTC`)).toISOString()
   routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
   routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
@@ -315,7 +318,7 @@ async function routeMessage (transaction, context, message) {
           typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
           // Do not import out of date forecast data.
           if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
-            await route(context, routeData)
+            await route(context, routeData, transaction)
           } else {
             context.log.warn(`Ignoring message for task run ${routeData.taskRunId} completed on ${routeData.taskCompletionTime}` +
               ` - ${routeData.latestTaskRunId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
