@@ -111,7 +111,7 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
 
   await preparedStatement.input('startTime', sql.DateTime2)
   await preparedStatement.input('endTime', sql.DateTime2)
-  await preparedStatement.input('taskCompletionTime', sql.DateTime2)
+  await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
@@ -122,13 +122,13 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
   output
     inserted.id
   values
-    (@startTime, @endTime, @taskCompletionTime, @taskRunId, @workflowId)
+    (@startTime, @endTime, @taskRunCompletionTime, @taskRunId, @workflowId)
 `)
 
   const parameters = {
     startTime: routeData.startTime,
     endTime: routeData.endTime,
-    taskCompletionTime: routeData.taskCompletionTime,
+    taskRunCompletionTime: routeData.taskRunCompletionTime,
     taskRunId: routeData.taskRunId,
     workflowId: routeData.workflowId
   }
@@ -243,7 +243,7 @@ async function route (context, routeData, transaction) {
         context.log.info(`Message has been routed to the ${timeseriesDataFunctionType} function`)
 
         // Retrieve timeseries data from the core engine PI server and load it into the staging database.
-        timeseriesData = await timeseriesDataFunction(context, routeData, transaction)
+        timeseriesData = await timeseriesDataFunction(context, routeData)
         // Once timeseries has been received, create the header
         if (!routeData.timeseriesHeaderId) {
           routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(
@@ -291,12 +291,12 @@ async function parseMessage (context, transaction, message) {
 
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
-  routeData.taskCompletionTime =
+  routeData.taskRunCompletionTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, message)} UTC`)).toISOString()
-  routeData.messageStartTime =
+  routeData.taskRunStartTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, message)} UTC`)).toISOString()
-  routeData.startTime = moment(routeData.taskCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  routeData.endTime = moment(routeData.taskCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  routeData.startTime = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+  routeData.endTime = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, message)
   routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, message)
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, message)
@@ -314,14 +314,14 @@ async function routeMessage (transaction, context, message) {
         context.log.warn(`Ignoring message for task run ${routeData.taskRunId} - data has been imported already`)
       } else {
         // As the forecast and approved indicators are booleans progression must be based on them being defined.
-        if (routeData.taskCompletionTime && routeData.workflowId && routeData.taskRunId &&
+        if (routeData.taskRunCompletionTime && routeData.workflowId && routeData.taskRunId &&
           typeof routeData.forecast !== 'undefined' && typeof routeData.approved !== 'undefined') {
           // Do not import out of date forecast data.
           if (!routeData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, routeData)) {
             await route(context, routeData, transaction)
           } else {
-            context.log.warn(`Ignoring message for task run ${routeData.taskRunId} completed on ${routeData.taskCompletionTime}` +
-              ` - ${routeData.latestTaskRunId} completed on ${routeData.latestTaskCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
+            context.log.warn(`Ignoring message for task run ${routeData.taskRunId} completed on ${routeData.taskRunCompletionTime}` +
+              ` - ${routeData.latestTaskRunId} completed on ${routeData.latesttaskRunCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
           }
         }
       }

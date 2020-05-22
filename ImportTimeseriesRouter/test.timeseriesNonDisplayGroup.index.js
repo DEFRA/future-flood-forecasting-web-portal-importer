@@ -2,7 +2,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const taskRunCompleteMessages = require('../testing/messages/task-run-complete/non-display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
-  const { isBoolean } = require('../Shared/utils')
   const messageFunction = require('./index')
   const moment = require('moment')
   const axios = require('axios')
@@ -14,21 +13,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const jestConnection = new Connection()
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
-
-  describe('Forecast flag testing ', () => {
-    it('should return true for boolean values', () => {
-      expect(isBoolean(true)).toBe(true)
-      expect(isBoolean(false)).toBe(true)
-    })
-    it('should return true for boolean string values regardless of case', () => {
-      expect(isBoolean('True')).toBe(true)
-      expect(isBoolean('false')).toBe(true)
-    })
-    it('should return false for non-boolean values', () => {
-      expect(isBoolean(0)).toBe(false)
-      expect(isBoolean('string')).toBe(false)
-    })
-  })
 
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
@@ -130,7 +114,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           key: 'Timeseries non-display groups data'
         }
       }
-      await processMessageAndCheckImportedData('singlePlotAndFilterApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
+      await processMessage('singlePlotAndFilterApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
+      await checkAmountOfDataImported(2)
     })
     it('should not import data for an out of date forecast', async () => {
       const mockResponse = {
@@ -226,7 +211,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
-    const expectedTaskCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
+    const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].startTime} UTC`))
+    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
     const receivedFewsData = []
@@ -262,20 +248,21 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     for (const index in result.recordset) {
       // Check that data common to all timeseries has been persisted correctly.
       if (index === '0') {
-        const taskCompletionTime = moment(result.recordset[index].task_completion_time)
+        const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
         const startTime = moment(result.recordset[index].start_time)
         const endTime = moment(result.recordset[index].end_time)
 
-        expect(taskCompletionTime.toISOString()).toBe(expectedTaskCompletionTime.toISOString())
+        expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
         expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
         expect(result.recordset[index].workflow_id).toBe(expectedWorkflowId)
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
-        const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-        const expectedStartTime = moment(taskCompletionTime).subtract(startTimeOffsetHours, 'hours')
-        const expectedEndTime = moment(taskCompletionTime).add(endTimeOffsetHours, 'hours')
+        const startTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_TRUNCATION_OFFSET_HOURS']) : 24
+
+        const expectedStartTime = moment(expectedTaskRunStartTime).subtract(startTimeOffsetHours, 'hours')
+        const expectedEndTime = moment(taskRunCompletionTime)
+
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
       }

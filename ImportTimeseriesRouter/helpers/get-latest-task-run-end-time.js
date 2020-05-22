@@ -2,7 +2,7 @@ const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = async function isTaskRunImported (context, preparedStatement, routeData) {
-  await preparedStatement.input('taskCompletionTime', sql.DateTime2)
+  await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
   await preparedStatement.prepare(`
@@ -25,10 +25,10 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
 
   if (result.recordset && result.recordset[0] && result.recordset[0].previous_staged_task_run_id) {
     routeData.previousTaskRunId = result.recordset[0].previous_staged_task_run_id
-    routeData.previousTaskCompletionTime =
+    routeData.previousTaskRunCompletionTime =
       moment(result.recordset[0].previous_staged_task_completion_time).toISOString()
   } else {
-    routeData.previousTaskCompletionTime = null // task run not yet present in db
+    routeData.previousTaskRunCompletionTime = null // task run not yet present in db
   }
 
   return routeData

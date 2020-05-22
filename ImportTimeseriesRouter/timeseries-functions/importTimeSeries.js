@@ -3,9 +3,9 @@ const moment = require('moment')
 const getLatestEndTime = require('../helpers/get-latest-task-run-end-time')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
-module.exports = async function getTimeseries (context, routeData, transaction) {
+module.exports = async function getTimeseries (context, routeData) {
   const nonDisplayGroupData = await getNonDisplayGroupData(routeData.nonDisplayGroupWorkflowsResponse)
-  const timeseries = await getTimeseriesInternal(context, nonDisplayGroupData, routeData, transaction)
+  const timeseries = await getTimeseriesInternal(context, nonDisplayGroupData, routeData)
   return timeseries
 }
 
@@ -21,29 +21,29 @@ async function getNonDisplayGroupData (nonDisplayGroupWorkflowsResponse) {
   return nonDisplayGroupData
 }
 
-async function getTimeseriesInternal (context, nonDisplayGroupData, routeData, transaction) {
+async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
   // The database in which data is loaded requires fractional seconds to be included in dates. By contrast
   // the REST interface of the core forecasting engine requires fractional seconds to be excluded from dates.
 
-  await executePreparedStatementInTransaction(getLatestEndTime, context, transaction, routeData)
+  await executePreparedStatementInTransaction(getLatestEndTime, context, routeData.transaction, routeData)
 
-  let previousTaskCompletionTime
+  let previousTaskRunCompletionTime
   const truncationOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_TRUNCATION_OFFSET_HOURS']) : 24
 
-  if (routeData.previousTaskCompletionTime) {
-    context.log.info(`The previous task run had the id: '${routeData.previousTaskRunId}'. This task run finished at ${routeData.previousTaskCompletionTime}, this will be used as the starting date for the next taskrun search.`)
-    previousTaskCompletionTime = routeData.previousTaskCompletionTime
+  if (routeData.previousTaskRunCompletionTime) {
+    context.log.info(`The previous task run had the id: '${routeData.previousTaskRunId}'. This task run finished at ${routeData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
+    previousTaskRunCompletionTime = routeData.previousTaskRunCompletionTime
   } else {
     context.log.info(`This is the first task run processed for the non-display group workflow: '${routeData.workflowId}'`)
-    previousTaskCompletionTime = routeData.messageStartTime
+    previousTaskRunCompletionTime = routeData.taskRunStartTime
   }
 
   // Overwrite startTime and endTime deltas set for forecast workflows
-  routeData.startTime = moment(previousTaskCompletionTime).subtract(truncationOffsetHours, 'hours').toISOString()
-  routeData.endTime = routeData.taskCompletionTime
+  routeData.startTime = moment(previousTaskRunCompletionTime).subtract(truncationOffsetHours, 'hours').toISOString()
+  routeData.endTime = routeData.taskRunCompletionTime
 
   // createdTime specifies the period in which to search for any new task run creations
-  const fewsCreatedStartTime = `&startCreationTime=${previousTaskCompletionTime.substring(0, 19)}Z`
+  const fewsCreatedStartTime = `&startCreationTime=${previousTaskRunCompletionTime.substring(0, 19)}Z`
   const fewsCreatedEndTime = `&endCreationTime=${routeData.endTime.substring(0, 19)}Z`
 
   const fewsStartTime = `&startTime=${routeData.startTime.substring(0, 19)}Z`
