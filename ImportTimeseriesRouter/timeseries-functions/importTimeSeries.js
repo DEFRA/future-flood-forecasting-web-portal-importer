@@ -28,7 +28,7 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
   await executePreparedStatementInTransaction(getLatestEndTime, context, routeData.transaction, routeData)
 
   let previousTaskRunCompletionTime
-  const truncationOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_TRUNCATION_OFFSET_HOURS']) : 24
+  const truncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
   if (routeData.previousTaskRunCompletionTime) {
     context.log.info(`The previous task run had the id: '${routeData.previousTaskRunId}'. This task run finished at ${routeData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
