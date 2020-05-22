@@ -20,7 +20,7 @@ module.exports = async function (context, message) {
   context.log.info('JavaScript import time series function processing work item', message)
   context.log.info(context.bindingData)
   await doInTransaction(routeMessage, context, 'The message routing function has failed with the following error:', null, message)
-  context.done()
+  // context.done() not required in async functions
 }
 
 // Get a list of workflows associated with display groups

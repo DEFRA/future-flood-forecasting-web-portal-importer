@@ -85,7 +85,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           key: 'Second filter timeseries non-display groups data'
         }
       }]
-      await processMessageAndCheckImportedData('multipleFilterNonForecast', mockResponses)
+      await processMessage('multipleFilterNonForecast', mockResponses)
+      await checkAmountOfDataImported(2)
     })
     it('should import data for a single filter associated with an approved forecast', async () => {
       const mockResponse = {
@@ -125,21 +126,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('earlierSingleFilterApprovedForecast', 1)
-    })
-    it('should allow the default task run start and end times to be overridden using environment variables', async () => {
-      const originalEnvironment = process.env
-      try {
-        process.env['FEWS_START_TIME_OFFSET_HOURS'] = 24
-        process.env['FEWS_END_TIME_OFFSET_HOURS'] = 48
-        const mockResponse = {
-          data: {
-            key: 'Timeseries non-display groups data'
-          }
-        }
-        await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
-      } finally {
-        process.env = originalEnvironment
-      }
     })
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
@@ -195,6 +181,16 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessage('singleFilterNonForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('singleFilterNonForecast', 1)
     })
+    it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessage('singleFilterNonForecast', [mockResponse])
+      const workflowAlreadyRan = true
+      await processMessageAndCheckImportedData('secondSingleFilterNonForecast', [mockResponse], workflowAlreadyRan)
+    })
   })
 
   async function processMessage (messageKey, mockResponses) {
@@ -207,19 +203,19 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     await messageFunction(context, taskRunCompleteMessages[messageKey])
   }
 
-  async function processMessageAndCheckImportedData (messageKey, mockResponses) {
+  async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan) {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
     const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].startTime} UTC`))
-    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
+    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].endTime} UTC`))
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
     const receivedFewsData = []
     const receivedPrimaryKeys = []
 
     const result = await request.query(`
-      select
+      select top(1)
         t.id,
         th.workflow_id,
         th.task_run_id,
@@ -232,6 +228,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
       where
         th.id = t.timeseries_header_id
+      order by
+        th.import_time desc
     `)
 
     expect(result.recordset.length).toBe(mockResponses.length)
@@ -260,8 +258,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
         const startTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
-        const expectedStartTime = moment(expectedTaskRunStartTime).subtract(startTimeOffsetHours, 'hours')
-        const expectedEndTime = moment(taskRunCompletionTime)
+        let expectedStartTime = moment(expectedTaskRunStartTime).subtract(startTimeOffsetHours, 'hours')
+        if (workflowAlreadyRan) {
+          expectedStartTime = moment(expectedTaskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
+        }
+        const expectedEndTime = moment(expectedTaskRunCompletionTime)
 
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
@@ -287,7 +288,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   async function checkAmountOfDataImported (expectedNumberOfRecords) {
     const result = await request.query(`
     select
-      count(t.id) 
+      count(t.id)
     as
       number
     from
