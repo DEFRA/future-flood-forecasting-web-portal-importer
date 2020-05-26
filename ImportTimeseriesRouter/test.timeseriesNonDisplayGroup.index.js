@@ -58,14 +58,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await pool.close()
     })
 
-    it('should import data for a single filter associated with a non-forecast', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
-    })
     it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
       const mockResponse = {
         data: {
@@ -85,7 +77,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           key: 'Second filter timeseries non-display groups data'
         }
       }]
-      await processMessage('multipleFilterNonForecast', mockResponses)
+      await processMessageAndCheckImportedData('multipleFilterNonForecast', mockResponses)
       await checkAmountOfDataImported(2)
     })
     it('should import data for a single filter associated with an approved forecast', async () => {
@@ -181,15 +173,31 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessage('singleFilterNonForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('singleFilterNonForecast', 1)
     })
-    it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
+    it('should import data for a single filter associated with a non-forecast', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
         }
       }
-      await processMessage('singleFilterNonForecast', [mockResponse])
-      const workflowAlreadyRan = true
-      await processMessageAndCheckImportedData('secondSingleFilterNonForecast', [mockResponse], workflowAlreadyRan)
+      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    })
+    it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
+      const mockResponse = [{
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }, {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }]
+      const workflowAlreadyRan = {
+        flag: true,
+        length: 2
+      }
+
+      await processMessage('singleFilterNonForecast', [mockResponse[0]])
+      await processMessageAndCheckImportedData('secondSingleFilterNonForecast', [mockResponse[1]], workflowAlreadyRan)
     })
   })
 
@@ -207,16 +215,17 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
-    const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].startTime} UTC`))
-    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].endTime} UTC`))
+    const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.startTime} UTC`))
+    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.endTime} UTC`))
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
     const receivedFewsData = []
     const receivedPrimaryKeys = []
 
     const result = await request.query(`
-      select top(1)
+      select
         t.id,
+        t.fews_parameters,
         th.workflow_id,
         th.task_run_id,
         th.task_completion_time,
@@ -232,7 +241,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         th.import_time desc
     `)
 
-    expect(result.recordset.length).toBe(mockResponses.length)
+    if (workflowAlreadyRan) {
+      expect(result.recordset.length).toBe(workflowAlreadyRan.length)
+    } else {
+      expect(result.recordset.length).toBe(mockResponses.length)
+    }
 
     // Database interaction is asynchronous so the order in which records are written
     // cannot be guaranteed.
@@ -243,8 +256,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     // sent to a queue/topic for reporting and visualisation purposes, copy the primary
     // keys retrieved from the database to an array and check that the ouput binding for
     // staged timeseries contains each expected primary key.
+
     for (const index in result.recordset) {
       // Check that data common to all timeseries has been persisted correctly.
+      // The most recent record is first in the array
       if (index === '0') {
         const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
         const startTime = moment(result.recordset[index].start_time)
@@ -256,19 +271,33 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        let expectedStartTime = moment(expectedTaskRunStartTime)
+        let expectedStartTime
         if (workflowAlreadyRan) {
-          expectedStartTime = moment(expectedTaskRunCompletionTime)
+          const previousEndTime = moment(result.recordset[1].end_time)
+          expectedStartTime = previousEndTime
+        } else {
+          expectedStartTime = moment(expectedTaskRunStartTime)
         }
         const expectedEndTime = moment(expectedTaskRunCompletionTime)
 
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
+
+        const truncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+        let expectedOffsetStartTime = moment(expectedStartTime).subtract(truncationOffsetHours, 'hours')
+
+        // Check fews parameters have been correctly captured.
+        expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
       }
+
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
       receivedPrimaryKeys.push(result.recordset[index].id)
     }
 
+    // Check that all the expected mocked data is loaded
     for (const mockResponse of mockResponses) {
       expect(receivedFewsData).toContainEqual(mockResponse.data)
     }

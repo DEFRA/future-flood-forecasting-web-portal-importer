@@ -9,7 +9,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow4 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "singleFilterApprovedForecast": {
@@ -18,7 +20,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow3 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "singleFilterUnapprovedForecast": {
@@ -27,7 +31,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow3 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "earlierSingleFilterApprovedForecast": {
@@ -36,7 +42,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow3 with ID ukeafffsmc00:000000002 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:05:59 More text",
       "source": "ukeafffsmc00:000000002",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "singleFilterNonForecast": {
@@ -45,16 +53,20 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "secondSingleFilterNonForecast": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task Test_Workflow1 with ID afffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "description": "Task Test_Workflow1 with ID afffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-10-13 13:05:00 End time: 2019-10-13 13:06:00 More text",
       "source": "afffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-10-13 13:05:00",
+      "endTime": "2019-10-13 13:06:00"
     }
   },
   "earlierSingleFilterNonForecast": {
@@ -63,7 +75,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000002 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:05:59 More text",
       "source": "ukeafffsmc00:000000002",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "multipleFilterNonForecast": {
@@ -72,7 +86,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "unknownWorkflow": {
@@ -81,7 +97,9 @@
       "entryTime": 1568379065,
       "description": "Task Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "missingWorkflow": {
@@ -90,7 +108,9 @@
       "entryTime": 1568379065,
       "description": "Task with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "nonForecastWithoutApprovalStatus": {
@@ -99,7 +119,9 @@
       "entryTime": 1568379065,
       "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "nonForecastWithoutEndTime": {
@@ -108,7 +130,9 @@
       "entryTime": 1568379065,
       "description": "Task  Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 More text",
       "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
     }
   },
   "booleanFalseMessage": false,
