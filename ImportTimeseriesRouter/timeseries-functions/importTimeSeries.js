@@ -27,26 +27,30 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
 
   await executePreparedStatementInTransaction(getLatestEndTime, context, routeData.transaction, routeData)
 
-  let previousTaskRunCompletionTime
+  let createdStartTime
+  let startTimeOffset
+
   const truncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
   if (routeData.previousTaskRunCompletionTime) {
     context.log.info(`The previous task run had the id: '${routeData.previousTaskRunId}'. This task run finished at ${routeData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
-    previousTaskRunCompletionTime = routeData.previousTaskRunCompletionTime
+    createdStartTime = routeData.previousTaskRunCompletionTime
   } else {
     context.log.info(`This is the first task run processed for the non-display group workflow: '${routeData.workflowId}'`)
-    previousTaskRunCompletionTime = routeData.taskRunStartTime
+    createdStartTime = routeData.taskRunStartTime
   }
 
-  // Overwrite startTime and endTime deltas set for forecast workflows
-  routeData.startTime = moment(previousTaskRunCompletionTime).subtract(truncationOffsetHours, 'hours').toISOString()
+  // Overwrite the startTime and endTime values that were intially set for forecast workflows
+  // to equal the 'createdStartTime/createdEndTime' set for observed data.
+  routeData.startTime = moment(createdStartTime).toISOString()
   routeData.endTime = routeData.taskRunCompletionTime
+  startTimeOffset = moment(createdStartTime).subtract(truncationOffsetHours, 'hours').toISOString()
 
   // createdTime specifies the period in which to search for any new task run creations
-  const fewsCreatedStartTime = `&startCreationTime=${previousTaskRunCompletionTime.substring(0, 19)}Z`
+  const fewsCreatedStartTime = `&startCreationTime=${createdStartTime.substring(0, 19)}Z`
   const fewsCreatedEndTime = `&endCreationTime=${routeData.endTime.substring(0, 19)}Z`
 
-  const fewsStartTime = `&startTime=${routeData.startTime.substring(0, 19)}Z`
+  const fewsStartTime = `&startTime=${startTimeOffset.substring(0, 19)}Z`
   const fewsEndTime = `&endTime=${routeData.endTime.substring(0, 19)}Z`
 
   const timeseriesNonDisplayGroupsData = []

@@ -286,7 +286,7 @@ async function parseMessage (context, transaction, message) {
   // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
   // This time period can be overridden by the two environment variables
   // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-  const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
+  const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
   const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
 
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
@@ -321,7 +321,7 @@ async function routeMessage (transaction, context, message) {
             await route(context, routeData, transaction)
           } else {
             context.log.warn(`Ignoring message for task run ${routeData.taskRunId} completed on ${routeData.taskRunCompletionTime}` +
-              ` - ${routeData.latestTaskRunId} completed on ${routeData.latesttaskRunCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
+              ` - ${routeData.latestTaskRunId} completed on ${routeData.latestTaskRunCompletionTime} is the latest task run for workflow ${routeData.workflowId}`)
           }
         }
       }

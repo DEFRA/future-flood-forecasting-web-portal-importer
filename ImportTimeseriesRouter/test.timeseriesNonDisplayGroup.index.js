@@ -256,11 +256,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
-
-        let expectedStartTime = moment(expectedTaskRunStartTime).subtract(startTimeOffsetHours, 'hours')
+        let expectedStartTime = moment(expectedTaskRunStartTime)
         if (workflowAlreadyRan) {
-          expectedStartTime = moment(expectedTaskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
+          expectedStartTime = moment(expectedTaskRunCompletionTime)
         }
         const expectedEndTime = moment(expectedTaskRunCompletionTime)
 

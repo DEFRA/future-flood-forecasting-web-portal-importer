@@ -27,11 +27,11 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
 
   if (result.recordset && result.recordset[0] && result.recordset[0].latest_staged_task_run_id) {
     routeData.latestTaskRunId = result.recordset[0].latest_staged_task_run_id
-    routeData.latesttaskRunCompletionTime =
+    routeData.latestTaskRunCompletionTime =
       moment(result.recordset[0].latest_staged_task_completion_time).toISOString()
   } else {
     routeData.latestTaskRunId = routeData.taskRunId
-    routeData.latesttaskRunCompletionTime = routeData.taskRunCompletionTime
+    routeData.latestTaskRunCompletionTime = routeData.taskRunCompletionTime
   }
 
   return routeData.latestTaskRunId === routeData.taskRunId
