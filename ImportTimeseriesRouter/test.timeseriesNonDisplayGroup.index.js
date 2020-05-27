@@ -13,6 +13,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const jestConnection = new Connection()
   const pool = jestConnection.pool
   const request = new sql.Request(pool)
+  const defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
@@ -57,7 +58,14 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
-
+    it('should import data for a single filter associated with a non-forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    })
     it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
       const mockResponse = {
         data: {
@@ -173,14 +181,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessage('singleFilterNonForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('singleFilterNonForecast', 1)
     })
-    it('should import data for a single filter associated with a non-forecast', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
-    })
     it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
       const mockResponse = [{
         data: {
@@ -197,7 +197,19 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
 
       await processMessage('singleFilterNonForecast', [mockResponse[0]])
-      await processMessageAndCheckImportedData('secondSingleFilterNonForecast', [mockResponse[1]], workflowAlreadyRan)
+      await processMessageAndCheckImportedData('laterSingleFilterNonForecast', [mockResponse[1]], workflowAlreadyRan)
+    })
+    it('should adopt the start-time-offset environment setting for a single filter associated with a non-forecast', async () => {
+      const mockResponse = [{
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }]
+
+      process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 10
+      const expectedOffsetHours = 10
+      const workflowAlreadyRan = false
+      await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, expectedOffsetHours)
     })
   })
 
@@ -211,7 +223,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     await messageFunction(context, taskRunCompleteMessages[messageKey])
   }
 
-  async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan) {
+  async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan, offsetOverride) {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
@@ -283,8 +295,12 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
 
-        const truncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
-        let expectedOffsetStartTime = moment(expectedStartTime).subtract(truncationOffsetHours, 'hours')
+        let expectedOffsetStartTime
+        if (offsetOverride) {
+          expectedOffsetStartTime = moment(expectedStartTime).subtract(offsetOverride, 'hours')
+        } else {
+          expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
+        }
 
         // Check fews parameters have been correctly captured.
         expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
