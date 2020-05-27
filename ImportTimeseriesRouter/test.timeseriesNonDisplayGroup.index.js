@@ -224,6 +224,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   }
 
   async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan, offsetOverride) {
+    // This function interrogates the most recent database row insert and all inserted test data payloads are checked.
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
