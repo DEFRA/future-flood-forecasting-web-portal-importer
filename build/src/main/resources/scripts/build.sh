@@ -13,7 +13,11 @@ rm -f RefreshIgnoredWorkflowData/function.json
 rm -f DeleteExpiredTimeseries/function.json
 mvn clean -f build/pom.xml process-resources
 cp build/target/host.json.template host.json
-cp build/src/main/resources/functions/ImportTimeseriesRouter/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportTimeseriesRouter/
+if [[ "${OUTPUT_BINDING_REQUIRED}" == "true" ]]; then
+cp build/src/main/resources/functions/ImportTimeseriesRouter/OutputBinding/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportTimeseriesRouter/
+else
+cp build/src/main/resources/functions/ImportTimeseriesRouter/NoOutputBinding/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportTimeseriesRouter/
+fi
 cp build/src/main/resources/functions/RefreshFluvialDisplayGroupData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshFluvialDisplayGroupData/
 cp build/src/main/resources/functions/RefreshCoastalDisplayGroupData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshCoastalDisplayGroupData/
 cp build/src/main/resources/functions/RefreshNonDisplayGroupData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshNonDisplayGroupData/
