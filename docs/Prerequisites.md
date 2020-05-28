@@ -61,7 +61,7 @@
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription. This topic is optional and only required when combined with a corresponding active output binding on ImportTimeseriesRouter.  
+* Optional Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription. This topic is optional and only required when combined with a corresponding active output binding on ImportTimeseriesRouter.  
 
 The purpose of each topic is analagous to that of each corresponding queue.
 
