@@ -325,9 +325,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       expect(receivedFewsData).toContainEqual(mockResponse.data)
     }
 
-    for (const stagedTimeseries of context.bindings.stagedTimeseries) {
-      expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
-    }
+    // The following check is for when there is an output binding named 'stagedTimeseries' active.
+    // for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+    //   expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+    // }
   }
 
   async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
