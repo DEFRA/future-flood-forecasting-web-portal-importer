@@ -149,7 +149,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
-    const expectedTaskCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
+    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].completionTime} UTC`))
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(/\s+/)[messageDescriptionIndex]
     const receivedFewsData = []
@@ -185,20 +185,20 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     for (const index in result.recordset) {
       // Check that data common to all timeseries has been persisted correctly.
       if (index === '0') {
-        const taskCompletionTime = moment(result.recordset[index].task_completion_time)
+        const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
         const startTime = moment(result.recordset[index].start_time)
         const endTime = moment(result.recordset[index].end_time)
 
-        expect(taskCompletionTime.toISOString()).toBe(expectedTaskCompletionTime.toISOString())
+        expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
         expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
         expect(result.recordset[index].workflow_id).toBe(expectedWorkflowId)
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
-        // the task completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 12
+        // the task run completion time taking into acccount that the default values can be overridden by environment variables.
+        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
         const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-        const expectedStartTime = moment(taskCompletionTime).subtract(startTimeOffsetHours, 'hours')
-        const expectedEndTime = moment(taskCompletionTime).add(endTimeOffsetHours, 'hours')
+        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
+        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
       }

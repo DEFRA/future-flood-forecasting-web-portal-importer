@@ -2,7 +2,7 @@ const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = async function isTaskRunImported (context, preparedStatement, routeData) {
-  await preparedStatement.input('taskCompletionTime', sql.DateTime2)
+  await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
   await preparedStatement.prepare(`
@@ -13,13 +13,13 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
     where
       workflow_id = @workflowId and
-      task_completion_time >= convert(datetime2, @taskCompletionTime, 126) at time zone 'UTC'
+      task_completion_time >= convert(datetime2, @taskRunCompletionTime, 126) at time zone 'UTC'
     order by
       task_completion_time desc
   `)
 
   const parameters = {
-    taskCompletionTime: routeData.taskCompletionTime,
+    taskRunCompletionTime: routeData.taskRunCompletionTime,
     workflowId: routeData.workflowId
   }
 
@@ -27,11 +27,11 @@ module.exports = async function isTaskRunImported (context, preparedStatement, r
 
   if (result.recordset && result.recordset[0] && result.recordset[0].latest_staged_task_run_id) {
     routeData.latestTaskRunId = result.recordset[0].latest_staged_task_run_id
-    routeData.latestTaskCompletionTime =
+    routeData.latestTaskRunCompletionTime =
       moment(result.recordset[0].latest_staged_task_completion_time).toISOString()
   } else {
     routeData.latestTaskRunId = routeData.taskRunId
-    routeData.latestTaskCompletionTime = routeData.taskCompletionTime
+    routeData.latestTaskRunCompletionTime = routeData.taskRunCompletionTime
   }
 
   return routeData.latestTaskRunId === routeData.taskRunId

@@ -4,7 +4,7 @@ const StagingError = require('./staging-error')
 
 module.exports = async function (context, preparedStatement, payload, description) {
   const transaction = preparedStatement.parent
-  transaction.rollback()
+  await transaction.rollback()
   await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, payload, description)
   throw new StagingError(description)
 }
