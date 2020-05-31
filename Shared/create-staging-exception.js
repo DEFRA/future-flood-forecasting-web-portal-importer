@@ -16,17 +16,19 @@ async function createStagingExceptionInTransaction (transaction, context, routeD
 async function createStagingException (context, preparedStatement, routeData, description) {
   await preparedStatement.input('payload', sql.NVarChar)
   await preparedStatement.input('description', sql.NVarChar)
+  await preparedStatement.input('taskRunId', sql.NVarChar)
 
   await preparedStatement.prepare(`
     insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception (payload, description)
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception (payload, description, task_run_id)
     values
-     (@payload, @description)
+     (@payload, @description, @taskRunId)
   `)
 
   const parameters = {
     payload: JSON.stringify(routeData.message),
-    description: description
+    description: description,
+    taskRunId: routeData.taskRunId
   }
 
   await preparedStatement.execute(parameters)

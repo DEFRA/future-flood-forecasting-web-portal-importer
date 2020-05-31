@@ -114,16 +114,17 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
   await preparedStatement.input('taskRunCompletionTime', sql.DateTimeOffset)
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
+  await preparedStatement.input('message', sql.NVarChar)
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
 
   await preparedStatement.prepare(`
   insert into
     ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
-      (start_time, end_time, task_completion_time, task_run_id, workflow_id)
+      (start_time, end_time, task_completion_time, task_run_id, workflow_id, message)
   output
     inserted.id
   values
-    (@startTime, @endTime, @taskRunCompletionTime, @taskRunId, @workflowId)
+    (@startTime, @endTime, @taskRunCompletionTime, @taskRunId, @workflowId, @message)
 `)
 
   const parameters = {
@@ -131,7 +132,8 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
     endTime: routeData.endTime,
     taskRunCompletionTime: routeData.taskRunCompletionTime,
     taskRunId: routeData.taskRunId,
-    workflowId: routeData.workflowId
+    workflowId: routeData.workflowId,
+    message: routeData.message
   }
 
   const result = await preparedStatement.execute(parameters)
