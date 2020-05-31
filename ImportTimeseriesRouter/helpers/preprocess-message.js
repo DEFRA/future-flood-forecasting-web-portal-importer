@@ -13,11 +13,11 @@ module.exports = async function preprocessMessage (context, preparedStatement, m
         returnValue = Promise.resolve(JSON.stringify(message))
         break
       default:
-        returnValue = createStagingException(context, preparedStatement, message, errorMessage)
+        returnValue = createStagingException(context, preparedStatement, { message: message }, errorMessage)
         break
     }
   } else {
-    returnValue = createStagingException(context, preparedStatement, message, errorMessage)
+    returnValue = createStagingException(context, preparedStatement, { message: message }, errorMessage)
   }
   return returnValue
 }

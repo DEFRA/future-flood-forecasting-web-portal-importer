@@ -1,8 +1,8 @@
 const moment = require('moment')
 const sql = require('mssql')
 
-module.exports = async function isTaskRunImported (context, preparedStatement, routeData) {
-  await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
+module.exports = async function getLatestTaskRunEndTime (context, preparedStatement, routeData) {
+  await preparedStatement.input('taskRunCompletionTime', sql.DateTimeOffset)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
   await preparedStatement.prepare(`
