@@ -2,6 +2,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const taskRunCompleteMessages = require('../testing/messages/task-run-complete/non-display-group-messages')
   const Context = require('../testing/mocks/defaultContext')
   const Connection = require('../Shared/connection-pool')
+  const { objectToStream } = require('../testing/utils')
   const messageFunction = require('./index')
   const moment = require('moment')
   const axios = require('axios')
@@ -215,9 +216,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   async function processMessage (messageKey, mockResponses) {
     if (mockResponses) {
-      let mock = axios.get
+      let mock = axios
       for (const mockResponse of mockResponses) {
-        mock = mock.mockReturnValueOnce(mockResponse)
+        mock = mock.mockReturnValueOnce({ data: await objectToStream(mockResponse.data) })
       }
     }
     await messageFunction(context, taskRunCompleteMessages[messageKey])
@@ -244,7 +245,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         th.task_completion_time,
         th.start_time,
         th.end_time,
-        t.fews_data
+        cast(decompress(t.fews_data) as varchar(max)) as fews_data
       from
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
@@ -359,7 +360,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   }
 
   async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {
-    axios.get.mockRejectedValue(mockErrorResponse)
+    axios.mockRejectedValue(mockErrorResponse)
     await expect(messageFunction(context, taskRunCompleteMessages[messageKey]))
       .rejects.toThrow(mockErrorResponse)
   }

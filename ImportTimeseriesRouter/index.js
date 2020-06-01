@@ -109,9 +109,9 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
 async function createTimeseriesHeader (context, preparedStatement, routeData) {
   let timeseriesHeaderId
 
-  await preparedStatement.input('startTime', sql.DateTimeOffset)
-  await preparedStatement.input('endTime', sql.DateTimeOffset)
-  await preparedStatement.input('taskRunCompletionTime', sql.DateTimeOffset)
+  await preparedStatement.input('startTime', sql.DateTime2)
+  await preparedStatement.input('endTime', sql.DateTime2)
+  await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.input('message', sql.NVarChar)
@@ -148,7 +148,7 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
 
 async function loadTimeseries (context, preparedStatement, timeSeriesData, routeData) {
   context.log('Loading timeseries data')
-  await preparedStatement.input('fewsData', sql.NVarChar)
+  await preparedStatement.input('fewsData', sql.VarBinary)
   await preparedStatement.input('fewsParameters', sql.NVarChar)
   await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
