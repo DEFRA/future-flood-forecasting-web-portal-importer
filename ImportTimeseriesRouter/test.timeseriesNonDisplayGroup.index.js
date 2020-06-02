@@ -245,6 +245,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         th.task_completion_time,
         th.start_time,
         th.end_time,
+        th.message,
         cast(decompress(t.fews_data) as varchar(max)) as fews_data
       from
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
@@ -304,11 +305,14 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
         }
 
-        // Check fews parameters have been correctly captured.
+        // Check fews parameters have been captured correctly.
         expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+
+        // Check the incoming message has been captured correctly.
+        expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
       }
 
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
@@ -347,15 +351,31 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
     await processMessage(messageKey)
+    const expectedTaskRunId = taskRunCompleteMessages[messageKey].input ? taskRunCompleteMessages[messageKey].input.source : null
     const result = await request.query(`
-    select
-      top(1) description
+    select top(1)
+      payload,
+      task_run_id,
+      description
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
     order by
       exception_time desc
     `)
+
+    // Check the problematic message has been captured correctly.
+    expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
+
+    if (expectedTaskRunId) {
+      // If the message is associated with a task run ID check it has been persisted.
+      expect(result.recordset[0].task_run_id).toBe(expectedTaskRunId)
+    } else {
+      // If the message is not associated with a task run ID check a null value has been persisted.
+      expect(result.recordset[0].task_run_id).toBeNull()
+    }
+
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
+
     await checkAmountOfDataImported(0)
   }
 

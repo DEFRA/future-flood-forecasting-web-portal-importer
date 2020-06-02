@@ -164,6 +164,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         th.task_completion_time,
         th.start_time,
         th.end_time,
+        th.message,
         cast(decompress(t.fews_data) as varchar(max)) as fews_data
       from
         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
@@ -202,6 +203,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
+
+        // Check the incoming message has been captured correctly.
+        expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
       }
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
       receivedPrimaryKeys.push(result.recordset[index].id)
@@ -238,14 +242,29 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
     await processMessage(messageKey)
+    const expectedTaskRunId = taskRunCompleteMessages[messageKey].input ? taskRunCompleteMessages[messageKey].input.source : null
     const result = await request.query(`
-    select
-      top(1) description
+    select top(1)
+      payload,
+      task_run_id,
+      description
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
     order by
       exception_time desc
     `)
+
+    // Check the problematic message has been captured correctly.
+    expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
+
+    if (expectedTaskRunId) {
+      // If the message is associated with a task run ID check it has been persisted.
+      expect(result.recordset[0].task_run_id).toBe(expectedTaskRunId)
+    } else {
+      // If the message is not associated with a task run ID check a null value has been persisted.
+      expect(result.recordset[0].task_run_id).toBeNull()
+    }
+
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
     await checkAmountOfDataImported(0)
   }
