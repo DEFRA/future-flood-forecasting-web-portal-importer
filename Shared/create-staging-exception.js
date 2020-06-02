@@ -26,7 +26,7 @@ async function createStagingException (context, preparedStatement, routeData, de
   `)
 
   const parameters = {
-    payload: JSON.stringify(routeData.message),
+    payload: routeData.message,
     description: description,
     taskRunId: routeData.taskRunId
   }
