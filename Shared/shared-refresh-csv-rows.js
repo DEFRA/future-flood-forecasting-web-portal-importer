@@ -87,7 +87,11 @@ async function refreshInternal (context, preparedStatement, refreshData) {
                 }
               }
               if (row[`${columnObject.expectedCSVKey}`]) {
-                preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+                if (columnObject.preprocessor) {
+                  preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = columnObject.preprocessor(row[`${columnObject.expectedCSVKey}`])
+                } else {
+                  preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+                }
               } else {
                 rowError = true
                 break

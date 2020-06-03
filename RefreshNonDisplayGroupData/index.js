@@ -12,7 +12,7 @@ module.exports = async function (context, message) {
     functionSpecificData: [
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
       { tableColumnName: 'FILTER_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FilterID' },
-      { tableColumnName: 'FORECAST', tableColumnType: 'Bit', expectedCSVKey: 'Forecast' }
+      { tableColumnName: 'FORECAST', tableColumnType: 'Bit', expectedCSVKey: 'Forecast', preprocessor: parseBooleanString }
     ],
     type: 'non display group refresh',
     keyInteregator
@@ -29,4 +29,8 @@ async function keyInteregator (rowKey, rowValue) {
   } else {
     return false
   }
+}
+
+function parseBooleanString (booleanString) {
+  return JSON.parse(booleanString.toLowerCase())
 }
