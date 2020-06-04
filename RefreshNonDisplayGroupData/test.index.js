@@ -33,11 +33,16 @@ module.exports =
         // function implementation for the function context needs creating for each test.
         context = new Context()
         dummyData = {
-          dummyWorkflow: [{ filterId: 'dummyFilter', forecast: 0 }]
+          dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, forecast: 0 }]
         }
         await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
         await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-        await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow (workflow_id, filter_id, forecast) values ('dummyWorkflow', 'dummyFilter', 0)`)
+        await request.batch(`
+          insert into
+            ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+              (workflow_id, filter_id, approved, forecast)
+          values
+            ('dummyWorkflow', 'dummyFilter', 0, 0)`)
       })
 
       afterAll(async () => {
@@ -67,9 +72,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', forecast: 0 }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', forecast: 1 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 0 }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 1 }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -84,10 +89,10 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', forecast: 0 }, { filterId: 'test_filter_1a', forecast: 1 }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', forecast: 1 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', forecast: 0 }],
-          test_non_display_workflow_4: [{ filterId: 'test_filter_4', forecast: 0 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }, { filterId: 'test_filter_1a', approved: 0, forecast: 1 }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 1 }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 0 }],
+          test_non_display_workflow_4: [{ filterId: 'test_filter_4', approved: 0, forecast: 0 }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -102,9 +107,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', forecast: 0 }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', forecast: 1 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 0 }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 1 }]
         }
         const expectedErrorDescription = 'Violation of UNIQUE KEY constraint'
         const expectedNumberOfExceptionRows = 1
@@ -134,8 +139,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', forecast: 0 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 0 }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -178,7 +183,7 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_2: [{ filterId: 'test_filter_a', forecast: 0 }]
+          test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, forecast: 0 }]
         }
 
         const expectedErrorDescription = 'row is missing data.'
@@ -258,7 +263,7 @@ module.exports =
           contentType: TEXT_CSV
         }
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', forecast: 0 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }]
         }
         const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 1
@@ -274,8 +279,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', forecast: 1 }]
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 0 }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 1 }]
         }
 
         const expectedNumberOfExceptionRows = 1
@@ -331,6 +336,7 @@ module.exports =
           const filterQuery = await request.query(`
           select 
             filter_id,
+            cast(approved as int) as approved,
             cast(forecast as int) as forecast
           from 
             ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
@@ -342,7 +348,7 @@ module.exports =
           const rows = filterQuery.recordset
           const dbData = []
           rows.forEach(row =>
-            dbData.push({ filterId: row.filter_id, forecast: row.forecast })
+            dbData.push({ filterId: row.filter_id, approved: row.approved, forecast: row.forecast })
           )
           const expectedDataSorted = expectedData.sort()
           // get an array of filter ids for a given workflow id from the database
@@ -370,9 +376,10 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, filter_id, forecast)
+          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
+            (workflow_id, filter_id, approved, forecast)
         values
-          ('testWorkflow', 'testFilter', 0)`)
+          ('testWorkflow', 'testFilter', 0, 0)`)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
       } finally {

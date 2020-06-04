@@ -12,6 +12,7 @@ module.exports = async function (context, message) {
     functionSpecificData: [
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
       { tableColumnName: 'FILTER_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FilterID' },
+      { tableColumnName: 'APPROVED', tableColumnType: 'Bit', expectedCSVKey: 'Approved', preprocessor: parseBooleanString },
       { tableColumnName: 'FORECAST', tableColumnType: 'Bit', expectedCSVKey: 'Forecast', preprocessor: parseBooleanString }
     ],
     type: 'non display group refresh',
@@ -22,7 +23,7 @@ module.exports = async function (context, message) {
 }
 
 async function keyInteregator (rowKey, rowValue) {
-  if (rowKey !== 'Forecast') {
+  if (rowKey !== 'Approved' && rowKey !== 'Forecast') {
     return true
   } else if (typeof (rowValue) === 'string' && isBoolean(rowValue)) {
     return true
