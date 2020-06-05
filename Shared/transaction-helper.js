@@ -30,12 +30,20 @@ module.exports = {
       // through the transaction, context and arguments from the caller.
       return await fn(transaction, context, ...args)
     } catch (err) {
-      context.log.error(`Transaction failed: ${errorMessage} ${err}`)
-      if (transaction._aborted) {
-        context.log.warn('The transaction has been aborted.')
-      } else {
-        await transaction.rollback()
-        context.log.warn('The transaction has been rolled back.')
+      try {
+        context.log.error(`Transaction failed: ${errorMessage} ${err}`)
+        if (transaction) {
+          if (transaction._aborted) {
+            context.log.warn('The transaction has been aborted.')
+          } else {
+            await transaction.rollback()
+            context.log.warn('The transaction has been rolled back.')
+          }
+        } else {
+          context.log.error(`No transaction to commit or rollback`)
+        }
+      } catch (err) {
+        context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
       }
       throw err
     } finally {
@@ -58,12 +66,15 @@ module.exports = {
       // Call the function that prepares and executes the prepared statement passing
       // through the arguments from the caller.
       return await fn(context, preparedStatement, ...args)
+    } catch (err) {
+      context.log.error(`PreparedStatement Transaction-helper error: '${err.message}'.`)
+      throw err
     } finally {
       try {
         if (preparedStatement && preparedStatement.prepared) {
           await preparedStatement.unprepare()
         }
-      } catch (err) { context.log.error(err) }
+      } catch (err) { context.log.error(`PreparedStatement Transaction-helper error: '${err.message}'.`) }
     }
   }
 }

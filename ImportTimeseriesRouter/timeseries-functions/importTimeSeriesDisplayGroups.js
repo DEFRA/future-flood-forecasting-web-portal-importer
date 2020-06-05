@@ -1,4 +1,5 @@
 const axios = require('axios')
+const { gzip } = require('../../Shared/utils')
 
 module.exports = async function getTimeseriesDisplayGroups (context, routeData) {
   const displayGroupData = await getDisplayGroupData(routeData.displayGroupWorkflowsResponse)
@@ -33,15 +34,23 @@ async function getTimeseriesDisplayGroupsInternal (context, displayGroupData, ro
 
     // Get the timeseries display groups for the configured plot, locations and date range.
     const fewsPiEndpoint =
-      encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
+     encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
+       &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
 
+    const axiosConfig = {
+      method: 'get',
+      url: fewsPiEndpoint,
+      responseType: 'stream'
+    }
     context.log(`Retrieving timeseries display groups for plot ID ${plotId}`)
-    const fewsResponse = await axios.get(fewsPiEndpoint)
+
+    const fewsResponse = await axios(axiosConfig)
+
     context.log(`Preparing retrieved timeseries display groups for plot ID ${plotId}`)
+
     timeseriesDisplayGroupsData.push({
       fewsParameters: fewsParameters,
-      fewsData: JSON.stringify(fewsResponse.data)
+      fewsData: await gzip(fewsResponse.data)
     })
   }
   return timeseriesDisplayGroupsData

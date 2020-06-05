@@ -15,7 +15,7 @@ module.exports = async function (context, refreshData) {
 
   // Transaction 2
   if (refreshData.failedRows.length > 0) {
-    await doInTransaction(loadExceptions, context, `The ${refreshData.type} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, 'tidal coastal locations', refreshData.failedRows)
+    await doInTransaction(loadExceptions, context, `The ${refreshData.type} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.type, refreshData.failedRows)
   } else {
     context.log.info(`There were no csv exceptions during load.`)
   }
@@ -87,7 +87,11 @@ async function refreshInternal (context, preparedStatement, refreshData) {
                 }
               }
               if (row[`${columnObject.expectedCSVKey}`]) {
-                preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+                if (columnObject.preprocessor) {
+                  preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = columnObject.preprocessor(row[`${columnObject.expectedCSVKey}`])
+                } else {
+                  preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+                }
               } else {
                 rowError = true
                 break
