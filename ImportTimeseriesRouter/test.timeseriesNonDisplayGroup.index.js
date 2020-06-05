@@ -213,6 +213,17 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, expectedOffsetHours)
     })
+    it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+
+      process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
+      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
+      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    })
   })
 
   async function processMessage (messageKey, mockResponses) {
@@ -326,8 +337,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     }
 
     // The following check is for when there is an output binding named 'stagedTimeseries' active.
-    // for (const stagedTimeseries of context.bindings.stagedTimeseries) {
-    //   expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+    // if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
+    //   for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+    //     expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+    //   }
     // }
   }
 

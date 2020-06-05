@@ -134,6 +134,16 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await lockDisplayGroupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    it('should import data for a single plot associated with an approved forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
+      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
+      await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+    })
   })
 
   async function processMessage (messageKey, mockResponses) {
@@ -217,9 +227,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     }
 
     // The following check is for when there is an output binding named 'stagedTimeseries' active.
-    // for (const stagedTimeseries of context.bindings.stagedTimeseries) {
-    //   expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
-    // }
+    if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
+      for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+        expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+      }
+    }
   }
 
   async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
