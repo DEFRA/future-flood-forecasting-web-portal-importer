@@ -337,11 +337,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     }
 
     // The following check is for when there is an output binding named 'stagedTimeseries' active.
-    // if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
-    //   for (const stagedTimeseries of context.bindings.stagedTimeseries) {
-    //     expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
-    //   }
-    // }
+    if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
+      for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+        expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+      }
+    }
   }
 
   async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {

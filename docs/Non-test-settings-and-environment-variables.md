@@ -2,11 +2,15 @@
 
 ## Mandatory Build Time Environment Variables
 
+| name                                      | description                                                                                           |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics) |
+| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                     |
+| DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION | The expression dictating how often stale timeseries data is removed from staging.                     |
+
+## Optional Build Time Environment Variables
+
 | name                                      | description                                                                                                                    |
-|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics)                          |
-| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                                              |
-| DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION | The expression dictating how often stale timeseries data is removed from staging.                                              |
 | IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED | When set to true, this provides an output binding connecting to an azure service bus queue named 'fews-staged-timeseries-queue'|
 
 ## Mandatory Runtime Function App Settings/Environment Variables
