@@ -11,6 +11,7 @@
 ## Optional Build Time Environment Variables
 
 | name                                      | description                                                                                                                    |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED | When set to true, this provides an output binding connecting to an azure service bus queue named 'fews-staged-timeseries-queue'|
 
 ## Mandatory Runtime Function App Settings/Environment Variables
