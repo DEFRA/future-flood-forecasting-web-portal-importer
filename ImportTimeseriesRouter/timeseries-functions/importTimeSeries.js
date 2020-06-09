@@ -1,6 +1,7 @@
 const axios = require('axios')
 const moment = require('moment')
 const { gzip } = require('../../Shared/utils')
+const getOffsetValues = require('../helpers/get-ndg-offset-values')
 const getLatestEndTime = require('../helpers/get-latest-task-run-end-time')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
@@ -48,27 +49,42 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     createdStartTime = routeData.taskRunStartTime
   }
 
-  // Overwrite the startTime and endTime values that were intially set for forecast workflows
-  // to equal the 'createdStartTime/createdEndTime' set for observed data.
-  routeData.startTime = moment(createdStartTime).toISOString()
-  routeData.endTime = routeData.taskRunCompletionTime
-
-  // startCreationTime and endCreationTime specifiy the period in which to search for any new timeseries created
-  // in the core engine.
-  const fewsCreatedStartTime = `&startCreationTime=${createdStartTime.substring(0, 19)}Z`
-  const fewsCreatedEndTime = `&endCreationTime=${routeData.endTime.substring(0, 19)}Z`
-
-  // startTime and endTime specify the period to which timeseries are associated. This period is used to exclude older,
-  // amalgamated timeseries created since the previous task run of the workflow.
-  const truncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
-  const startTimeOffset = moment(createdStartTime).subtract(truncationOffsetHours, 'hours').toISOString()
-  const fewsStartTime = `&startTime=${startTimeOffset.substring(0, 19)}Z`
-  const fewsEndTime = `&endTime=${routeData.endTime.substring(0, 19)}Z`
-
   const timeseriesNonDisplayGroupsData = []
 
   for (const value of nonDisplayGroupData) {
     const filterId = `&filterId=${value}`
+
+    const offsetOverrideBoolean = await executePreparedStatementInTransaction(getOffsetValues, context, routeData.transaction, routeData, value)
+
+    // Overwrite the startTime and endTime values that were intially set for forecast workflows
+    // to equal the 'createdStartTime/createdEndTime' set for observed data.
+    routeData.startTime = moment(createdStartTime).toISOString()
+    routeData.endTime = routeData.taskRunCompletionTime
+
+    // startCreationTime and endCreationTime specifiy the period in which to search for any new timeseries created
+    // in the core engine.
+    const fewsCreatedStartTime = `&startCreationTime=${routeData.startTime.substring(0, 19)}Z`
+    const fewsCreatedEndTime = `&endCreationTime=${routeData.endTime.substring(0, 19)}Z`
+
+    // startTime and endTime specify the period to which timeseries are associated. This period is used to exclude older,
+    // amalgamated timeseries created since the previous task run of the workflow.
+    let truncationOffsetHoursBackward
+    let truncationOffsetHoursForward
+
+    if (offsetOverrideBoolean === true) {
+      truncationOffsetHoursBackward = routeData.ndgOversetOverrideBackward
+      truncationOffsetHoursForward = routeData.ndgOversetOverrideForward
+    } else {
+      truncationOffsetHoursBackward = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+      truncationOffsetHoursForward = 0
+    }
+
+    const startTimeOffset = moment(routeData.startTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+    const endTimeOffset = moment(routeData.endTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+
+    const fewsStartTime = `&startTime=${startTimeOffset.substring(0, 19)}Z`
+    const fewsEndTime = `&endTime=${endTimeOffset.substring(0, 19)}Z`
+
     const fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}${fewsCreatedStartTime}${fewsCreatedEndTime}`
 
     // Get the timeseries display groups for the configured plot, locations and date range.

@@ -86,7 +86,8 @@ async function refreshInternal (context, preparedStatement, refreshData) {
                   break
                 }
               }
-              if (row[`${columnObject.expectedCSVKey}`]) {
+              // If the row-key contains data OR there is an override set to continue with row-key null value.
+              if (row[`${columnObject.expectedCSVKey}`] || columnObject.nullValueOverride === true) {
                 if (columnObject.preprocessor) {
                   preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = columnObject.preprocessor(row[`${columnObject.expectedCSVKey}`])
                 } else {

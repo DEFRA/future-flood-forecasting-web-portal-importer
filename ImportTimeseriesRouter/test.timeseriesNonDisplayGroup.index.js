@@ -24,14 +24,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await request.batch(`delete from fff_staging.ignored_workflow`)
       await request.batch(`
         insert into
-          fff_staging.non_display_group_workflow
-             (workflow_id, filter_id, approved, forecast)
+        fff_staging.non_display_group_workflow
+             (workflow_id, filter_id, approved, forecast, start_time_offset_hours, end_time_offset_hours)
         values
-          ('Test_Workflow1', 'Test Filter1', 0, 0),
-          ('Test_Workflow2', 'Test Filter2a', 0, 0),
-          ('Test_Workflow2', 'Test Filter2b', 0, 0),
-          ('Test_Workflow3', 'Test Filter3', 0, 1),
-          ('Test_Workflow4', 'Test Filter4', 0, 1)
+          ('Test_Workflow1', 'Test Filter1', 0, 0, 0, 0),
+          ('Test_Workflow2', 'Test Filter2a', 0, 0, 0, 0),
+          ('Test_Workflow2', 'Test Filter2b', 0, 0, 0, 0),
+          ('Test_Workflow3', 'Test Filter3', 0, 1, 0, 0),
+          ('Test_Workflow4', 'Test Filter4', 0, 1, 0, 0),
+          ('Test_workflowCustomTimes', 'Test FilterCustomTimes', 1, 1, '10', '20')
       `)
       await request.batch(`
         insert into
@@ -68,150 +69,173 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
-    it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
-    })
-    it('should import data for multiple filters associated with a non-forecast', async () => {
-      const mockResponses = [{
-        data: {
-          key: 'First filter timeseries non-display groups data'
-        }
-      },
-      {
-        data: {
-          key: 'Second filter timeseries non-display groups data'
-        }
-      }]
-      await processMessageAndCheckImportedData('multipleFilterNonForecast', mockResponses)
-      await checkAmountOfDataImported(2)
-    })
-    it('should import data for a single filter associated with an approved forecast', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
-    })
-    it('should import data for a single filter associated with an unapproved forecast', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterUnapprovedForecast', [mockResponse])
-    })
-    it('should import data for plots and filters associated with the same workflow', async () => {
-      const displayMockResponse = {
-        data: {
-          key: 'Timeseries display groups data'
-        }
-      }
-      const nonDisplayMockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessage('singlePlotAndFilterApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
-      await checkAmountOfDataImported(2)
-    })
-    it('should not import data for an out of date forecast', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
-      await processMessageAndCheckNoDataIsImported('earlierSingleFilterApprovedForecast', 1)
-    })
-    it('should create a staging exception for an unknown workflow', async () => {
-      const unknownWorkflow = 'unknownWorkflow'
-      const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
-    })
-    it('should create a staging exception for a missing workflow', async () => {
-      const missingWorkflow = 'missingWorkflow'
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(missingWorkflow, 'Missing PI Server input data for with')
-    })
-    it('should create a staging exception for a non-forecast without an approval status', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
-    })
-    it('should create a staging exception for a message containing the boolean false', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('booleanFalseMessage', 'Message must be either a string or a pure object')
-    })
-    it('should create a staging exception for a message containing the number 1', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('numericMessage', 'Message must be either a string or a pure object')
-    })
-    it('should create a staging exception for a non-forecast without an end time', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutEndTime', 'Unable to extract task run completion date from message')
-    })
-    it('should throw an exception when the core engine PI server is unavailable', async () => {
-      // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
-      // an exception is thrown to facilitate this process.
-      const mockResponse = new Error('connect ECONNREFUSED mockhost')
-      await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
-    })
-    it('should create a staging exception when a core engine PI server resource is unavailable', async () => {
-      // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably eligible for replay a certain number of times so
-      // check that an exception is thrown to facilitate this process. If misconfiguration has occurred, the maximum number
-      // of replays will be reached and the message will be transferred to a dead letter queue for manual intervetion.
-      const mockResponse = new Error('Request failed with status code 404')
-      await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
-    })
-    it('should throw an exception when the non_display_group_workflow table is being refreshed', async () => {
-      // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
-      // so check that an exception is thrown to facilitate this process.
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterNonForecast', mockResponse)
-      // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('should not import data for duplicate task runs', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessage('singleFilterNonForecast', [mockResponse])
-      await processMessageAndCheckNoDataIsImported('singleFilterNonForecast', 1)
-    })
-    it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
-      const mockResponse = [{
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }, {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }]
-      const workflowAlreadyRan = {
-        flag: true,
-        length: 2
-      }
+    // it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+    //   await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    // })
+    // it('should import data for multiple filters associated with a non-forecast', async () => {
+    //   const mockResponses = [{
+    //     data: {
+    //       key: 'First filter timeseries non-display groups data'
+    //     }
+    //   },
+    //   {
+    //     data: {
+    //       key: 'Second filter timeseries non-display groups data'
+    //     }
+    //   }]
+    //   await processMessageAndCheckImportedData('multipleFilterNonForecast', mockResponses)
+    //   await checkAmountOfDataImported(2)
+    // })
+    // it('should import data for a single filter associated with an approved forecast', async () => {
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+    //   await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
+    // })
+    // it('should import data for a single filter associated with an unapproved forecast', async () => {
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+    //   await processMessageAndCheckImportedData('singleFilterUnapprovedForecast', [mockResponse])
+    // })
+    // it('should import data for plots and filters associated with the same workflow', async () => {
+    //   const displayMockResponse = {
+    //     data: {
+    //       key: 'Timeseries display groups data'
+    //     }
+    //   }
+    //   const nonDisplayMockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+    //   await processMessage('singlePlotAndFilterApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
+    //   await checkAmountOfDataImported(2)
+    // })
+    // it('should not import data for an out of date forecast', async () => {
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries display groups data'
+    //     }
+    //   }
+    //   await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
+    //   await processMessageAndCheckNoDataIsImported('earlierSingleFilterApprovedForecast', 1)
+    // })
+    // it('should create a staging exception for an unknown workflow', async () => {
+    //   const unknownWorkflow = 'unknownWorkflow'
+    //   const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
+    //   await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
+    // })
+    // it('should create a staging exception for a missing workflow', async () => {
+    //   const missingWorkflow = 'missingWorkflow'
+    //   await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(missingWorkflow, 'Missing PI Server input data for with')
+    // })
+    // it('should create a staging exception for a non-forecast without an approval status', async () => {
+    //   await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+    // })
+    // it('should create a staging exception for a message containing the boolean false', async () => {
+    //   await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('booleanFalseMessage', 'Message must be either a string or a pure object')
+    // })
+    // it('should create a staging exception for a message containing the number 1', async () => {
+    //   await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('numericMessage', 'Message must be either a string or a pure object')
+    // })
+    // it('should create a staging exception for a non-forecast without an end time', async () => {
+    //   await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutEndTime', 'Unable to extract task run completion date from message')
+    // })
+    // it('should throw an exception when the core engine PI server is unavailable', async () => {
+    //   // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
+    //   // an exception is thrown to facilitate this process.
+    //   const mockResponse = new Error('connect ECONNREFUSED mockhost')
+    //   await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
+    // })
+    // it('should create a staging exception when a core engine PI server resource is unavailable', async () => {
+    //   // If a core engine PI server resource is unvailable (HTTP response code 404), messages are probably eligible for replay a certain number of times so
+    //   // check that an exception is thrown to facilitate this process. If misconfiguration has occurred, the maximum number
+    //   // of replays will be reached and the message will be transferred to a dead letter queue for manual intervetion.
+    //   const mockResponse = new Error('Request failed with status code 404')
+    //   await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
+    // })
+    // it('should throw an exception when the non_display_group_workflow table is being refreshed', async () => {
+    //   // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
+    //   // so check that an exception is thrown to facilitate this process.
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+    //   await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed('singleFilterNonForecast', mockResponse)
+    //   // Set the test timeout higher than the database request timeout.
+    // }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    // it('should not import data for duplicate task runs', async () => {
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+    //   await processMessage('singleFilterNonForecast', [mockResponse])
+    //   await processMessageAndCheckNoDataIsImported('singleFilterNonForecast', 1)
+    // })
+    // it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
+    //   const mockResponse = [{
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }, {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }]
+    //   const workflowAlreadyRan = {
+    //     flag: true,
+    //     length: 2
+    //   }
 
-      await processMessage('singleFilterNonForecast', [mockResponse[0]])
-      await processMessageAndCheckImportedData('laterSingleFilterNonForecast', [mockResponse[1]], workflowAlreadyRan)
-    })
-    it('should adopt the start-time-offset environment setting for a single filter associated with a non-forecast', async () => {
-      const mockResponse = [{
+    //   await processMessage('singleFilterNonForecast', [mockResponse[0]])
+    //   await processMessageAndCheckImportedData('laterSingleFilterNonForecast', [mockResponse[1]], workflowAlreadyRan)
+    // })
+    // it('should adopt the start-time-offset environment setting for a single filter associated with a non-forecast', async () => {
+    //   const mockResponse = [{
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }]
+
+    //   process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 10
+    //   const expectedOffsetHours = 10
+    //   const workflowAlreadyRan = false
+    //   await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, expectedOffsetHours)
+    // })
+    // it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding', async () => {
+    //   const mockResponse = {
+    //     data: {
+    //       key: 'Timeseries non-display groups data'
+    //     }
+    //   }
+
+    //   process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
+    //   context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
+    //   await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    // })
+    it('should import data for a single filter associated with a custom offset forecast', async () => {
+      const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
         }
-      }]
-
-      process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 10
-      const expectedOffsetHours = 10
-      const workflowAlreadyRan = false
-      await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, expectedOffsetHours)
+      }
+      const offsetOverride = {
+        forward: 20,
+        backward: 10
+      }
+      await processMessageAndCheckImportedData('singleFilterApprovedForecastCustomOffset', [mockResponse], false, offsetOverride)
     })
     it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding', async () => {
       const mockResponse = {
@@ -233,6 +257,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         mock = mock.mockReturnValueOnce({ data: await objectToStream(mockResponse.data) })
       }
     }
+
     await messageFunction(context, taskRunCompleteMessages[messageKey])
   }
 
@@ -307,21 +332,25 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
         const expectedEndTime = moment(expectedTaskRunCompletionTime)
 
+        // start time in this case is the created start time (not the offset start time)
         expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
         expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
 
         let expectedOffsetStartTime
+        let expectedOffsetEndTime
         if (offsetOverride) {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(offsetOverride, 'hours')
+          expectedOffsetStartTime = moment(expectedStartTime).subtract(offsetOverride.backward, 'hours')
+          expectedOffsetEndTime = moment(expectedEndTime).add(offsetOverride.forward, 'hours')
         } else {
           expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
+          expectedOffsetEndTime = expectedEndTime
         }
 
         // Check fews parameters have been captured correctly.
         expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
-        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
-        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
 
         // Check the incoming message has been captured correctly.
         expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
