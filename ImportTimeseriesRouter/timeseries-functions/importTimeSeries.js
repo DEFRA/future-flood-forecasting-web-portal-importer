@@ -54,7 +54,8 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
   for (const value of nonDisplayGroupData) {
     const filterId = `&filterId=${value}`
 
-    const offsetOverrideBoolean = await executePreparedStatementInTransaction(getOffsetValues, context, routeData.transaction, routeData, value)
+    // get the offsets from ndg reference data for the filter-workflow combination
+    await executePreparedStatementInTransaction(getOffsetValues, context, routeData.transaction, routeData, value)
 
     // Overwrite the startTime and endTime values that were intially set for forecast workflows
     // to equal the 'createdStartTime/createdEndTime' set for observed data.
@@ -71,11 +72,15 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     let truncationOffsetHoursBackward
     let truncationOffsetHoursForward
 
-    if (offsetOverrideBoolean === true) {
+    if (routeData.startTimeOverrideRequired === true) {
       truncationOffsetHoursBackward = routeData.ndgOversetOverrideBackward
-      truncationOffsetHoursForward = routeData.ndgOversetOverrideForward
     } else {
       truncationOffsetHoursBackward = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+    }
+
+    if (routeData.endTimeOverrideRequired === true) {
+      truncationOffsetHoursForward = routeData.ndgOversetOverrideForward
+    } else {
       truncationOffsetHoursForward = 0
     }
 
@@ -89,8 +94,6 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
 
     // Get the timeseries display groups for the configured plot, locations and date range.
     const fewsPiEndpoint = encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=true&showProducts=false&omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&documentVersion=1.26&documentFormat=PI_JSON&forecastCount=1${fewsParameters}`)
-
-    context.log(`Retrieving timeseries display groups for filter ID ${filterId}`)
 
     const axiosConfig = {
       method: 'get',

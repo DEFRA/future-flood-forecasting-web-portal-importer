@@ -19,21 +19,23 @@ module.exports = async function getLatestTaskRunEndTime (context, preparedStatem
   }
 
   const result = await preparedStatement.execute(parameters)
-  let overriderequired
 
   if (result.recordset.length > 1) {
     context.log.error(`Error: more than one filter-workflow combination found.`)
     throw new Error(`Error: more than one filter-workflow combination found.`)
   } else {
-    // when zero?
     if (result.recordset && result.recordset[0].start_time_offset_hours && result.recordset[0].end_time_offset_hours) {
-      routeData.ndgOversetOverrideBackward = result.recordset[0].start_time_offset_hours
-      routeData.ndgOversetOverrideForward = result.recordset[0].end_time_offset_hours
-      overriderequired = true
-    } else {
-      overriderequired = false
+      let startOffset = result.recordset[0].start_time_offset_hours
+      let endOffset = result.recordset[0].end_time_offset_hours
+      if (startOffset > 0) {
+        routeData.ndgOversetOverrideBackward = startOffset
+        routeData.startTimeOverrideRequired = true
+      }
+      if (endOffset > 0) {
+        routeData.ndgOversetOverrideBackward = endOffset
+        routeData.endTimeOverrideRequired = true
+      }
     }
   }
-
-  return overriderequired
+  return routeData
 }
