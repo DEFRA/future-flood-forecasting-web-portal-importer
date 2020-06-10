@@ -2,8 +2,6 @@ if (process.env['TEST_TIMEOUT']) {
   jest.setTimeout(parseInt(process.env['TEST_TIMEOUT']))
 }
 
-jest.setTimeout(20000)
-
 describe('Run all unit tests in sequence', () => {
   const OLD_ENV = process.env
 
@@ -37,16 +35,16 @@ describe('Run all unit tests in sequence', () => {
     }
   })
 
-  // require('../DeleteExpiredTimeseries/test.index')
-  // require('../RefreshFluvialDisplayGroupData/test.index')
-  // require('../RefreshCoastalDisplayGroupData/test.index')
-  // require('../RefreshNonDisplayGroupData/test.index')
-  // require('../RefreshIgnoredWorkflowData/test.index')
-  // require('../RefreshFluvialForecastLocationData/test.index')
-  // require('../RefreshCoastalTidalForecastLocationData/test.index')
-  // require('../RefreshCoastalTritonForecastLocationData/test.index')
-  // require('../RefreshCoastalMVTForecastLocationData/test.index')
-  // require('../ImportTimeseriesRouter/test.forecastFlags.index')
+  require('../DeleteExpiredTimeseries/test.index')
+  require('../RefreshFluvialDisplayGroupData/test.index')
+  require('../RefreshCoastalDisplayGroupData/test.index')
+  require('../RefreshNonDisplayGroupData/test.index')
+  require('../RefreshIgnoredWorkflowData/test.index')
+  require('../RefreshFluvialForecastLocationData/test.index')
+  require('../RefreshCoastalTidalForecastLocationData/test.index')
+  require('../RefreshCoastalTritonForecastLocationData/test.index')
+  require('../RefreshCoastalMVTForecastLocationData/test.index')
+  require('../ImportTimeseriesRouter/test.forecastFlags.index')
   require('../ImportTimeseriesRouter/test.timeseriesNonDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesFluvialDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesCoastalDisplayGroup.index')

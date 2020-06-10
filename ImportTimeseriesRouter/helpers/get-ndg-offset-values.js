@@ -32,7 +32,7 @@ module.exports = async function getLatestTaskRunEndTime (context, preparedStatem
         routeData.startTimeOverrideRequired = true
       }
       if (endOffset > 0) {
-        routeData.ndgOversetOverrideBackward = endOffset
+        routeData.ndgOversetOverrideForward = endOffset
         routeData.endTimeOverrideRequired = true
       }
     }
