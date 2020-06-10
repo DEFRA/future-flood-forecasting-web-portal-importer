@@ -49,7 +49,7 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
   }
 
   // Overwrite the startTime and endTime values to equal the 'createdStartTime/createdEndTime' set for observed data.
-  // This overrwrite will persist for the rest of the taskrun
+  // This overrwrite will persist for the remainder of the taskrun
   routeData.startTime = moment(createdStartTime).toISOString()
   routeData.endTime = routeData.taskRunCompletionTime
 
