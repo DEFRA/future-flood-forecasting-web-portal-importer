@@ -196,8 +196,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }]
       const workflowAlreadyRan = {
-        flag: true,
-        length: 2
+        flag: true, // true when a workflow has already ran and is present within the database
+        expectedResultLength: 2
       }
 
       await processMessage('singleFilterNonForecast', [mockResponse[0]])
@@ -213,7 +213,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 10
       const expectedOffsetHours = 10
       const workflowAlreadyRan = {
-        flag: false
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, expectedOffsetHours)
     })
@@ -248,10 +247,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       `)
 
       const workflowAlreadyRan = {
-        flag: false,
-        spanFlag: true,
-        length: 1,
-        plotTaskRunIdCheck: `and t.fews_parameters like '%filterId=%'`
+        spanFlag: true, // true when a workflow spans multiple timeseries types (fluvial dg/coastal dg/non dg)
+        expectedResultLength: 1,
+        plotIdTargetedQuery: `and t.fews_parameters like '%filterId=%'`
       }
       await processMessageAndCheckImportedData('singleFilterAndPlotApprovedForecast', mockResponse, workflowAlreadyRan)
     })
@@ -280,7 +278,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const receivedPrimaryKeys = []
     let excludePlotString = ''
     if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
-      excludePlotString = workflowAlreadyRan.plotTaskRunIdCheck
+      excludePlotString = workflowAlreadyRan.plotIdTargetedQuery
     }
     const result = await request.query(`
     select
@@ -303,7 +301,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     `)
 
     if (workflowAlreadyRan && (workflowAlreadyRan.flag || workflowAlreadyRan.spanFlag)) {
-      expect(result.recordset.length).toBe(workflowAlreadyRan.length)
+      expect(result.recordset.length).toBe(workflowAlreadyRan.expectedResultLength)
     } else {
       expect(result.recordset.length).toBe(mockResponses.length)
     }
@@ -370,12 +368,12 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       expect(receivedFewsData).toContainEqual(mockResponse.data)
     }
 
-    // The following check is for when there is an output binding named 'stagedTimeseries' active.
+    // The following check is for when there is an output binding named 'stagedTimeseries' active
     if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
+      // context.bindings resets for each type when timeseries loads span multiple types (dg and ndg)
+      // we lose partial data (ids for ndg's as they run first) so this check is not possible
       if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
         context.log('skipping timeseries id test as this workflow spans across multiple timeseries types')
-        // when a taskrun spans across multiple timeseries load type the context.binding that records timeseries id of
-        // each staged timeseries resets between load types
       } else {
         for (const stagedTimeseries of context.bindings.stagedTimeseries) {
           expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)

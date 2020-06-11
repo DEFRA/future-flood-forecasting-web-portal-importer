@@ -167,13 +167,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         ('Span_Workflow', 'SpanFilter', 1, 1)
       `)
 
-      // has the filter has been run for this workflow within the same task run
       const workflowAlreadyRan = {
-        spanFlag: true,
-        length: 1,
-        plotTaskRunIdCheck: `and t.fews_parameters like '%plotId=%'`,
-        expectedStartTimeOffset: process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24,
-        expectedEndTimeOffset: 0
+        spanFlag: true, // this workflow spans multiple timeseries type (fluvial dg/coastal dg/non dg)
+        expectedTargetedQueryLength: 1,
+        plotIdTargetedQuery: `and t.fews_parameters like '%plotId=%'`
       }
       await processMessageAndCheckImportedData('singlePlotAndFilterApprovedForecast', mockResponse, workflowAlreadyRan)
     })
@@ -201,7 +198,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
     let excludeFilterString = ''
     if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
-      excludeFilterString = workflowAlreadyRan.plotTaskRunIdCheck
+      excludeFilterString = workflowAlreadyRan.plotIdTargetedQuery
     }
 
     const result = await request.query(`
@@ -213,6 +210,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       th.start_time,
       th.end_time,
       th.message,
+      t.fews_parameters,
       cast(decompress(t.fews_data) as varchar(max)) as fews_data
     from
       ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
@@ -222,7 +220,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     `)
 
     if (workflowAlreadyRan && workflowAlreadyRan.spanFlag) {
-      expect(result.recordset.length).toBe(workflowAlreadyRan.length)
+      expect(result.recordset.length).toBe(workflowAlreadyRan.expectedTargetedQueryLength)
     } else {
       expect(result.recordset.length).toBe(mockResponses.length)
     }
@@ -240,8 +238,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Check that data common to all timeseries has been persisted correctly.
       if (index === '0') {
         const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
-        const startTime = moment(result.recordset[index].start_time)
-        const endTime = moment(result.recordset[index].end_time)
+        const headerStartTime = moment(result.recordset[index].start_time)
+        const headerEndTime = moment(result.recordset[index].end_time)
 
         expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
         expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
@@ -249,26 +247,29 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        let startTimeOffsetHours
-        let endTimeOffsetHours
-        let expectedStartTime
-        let expectedEndTime
+        const defaultDisplayGroupStartTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
+        const defaultDisplayGroupEndTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+
+        // The display group offsets (start-time and end-time) are inserted into the timeseries-header table (start_time and end_time columns)
+        let expectedStartTime = moment(taskRunCompletionTime).subtract(defaultDisplayGroupStartTimeOffsetHours, 'hours')
+        let expectedEndTime = moment(taskRunCompletionTime).add(defaultDisplayGroupEndTimeOffsetHours, 'hours')
+
         if (workflowAlreadyRan && workflowAlreadyRan.spanFlag) {
-          const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.startTime} UTC`))
-
-          startTimeOffsetHours = workflowAlreadyRan.expectedStartTimeOffsetHours
-          endTimeOffsetHours = workflowAlreadyRan.expectedEndTimeOffsetHours
-          expectedStartTime = moment(expectedTaskRunStartTime).subtract(startTimeOffsetHours, 'hours')
-          expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
+          // If the workflow spans multiple timeseries types the header start-time and end-time are inherited from the none-display-group creation times
+          // the creation times are based on taskRun start times and end time on an initial task run.
+          const expectedNDGCreationStartTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.startTime} UTC`))
+          const expectedNDGCreationEndTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.endTime} UTC`))
+          expect(headerStartTime.toISOString()).toBe(expectedNDGCreationStartTime.toISOString())
+          expect(headerEndTime.toISOString()).toBe(expectedNDGCreationEndTime.toISOString())
+          // In this case, the display group query should still use the display group offset values for the timeseries query
+          expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
         } else {
-          startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
-          endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-          expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
-          expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
+          expect(headerStartTime.toISOString()).toBe(expectedStartTime.toISOString())
+          expect(headerEndTime.toISOString()).toBe(expectedEndTime.toISOString())
+          expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
         }
-        expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
-        expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
-
         // Check the incoming message has been captured correctly.
         expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
       }

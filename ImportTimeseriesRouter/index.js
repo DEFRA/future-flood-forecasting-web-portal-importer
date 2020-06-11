@@ -128,8 +128,8 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
 `)
 
   const parameters = {
-    startTime: routeData.startTime,
-    endTime: routeData.endTime,
+    startTime: routeData.headerStartTime,
+    endTime: routeData.headerEndTime,
     taskRunCompletionTime: routeData.taskRunCompletionTime,
     taskRunId: routeData.taskRunId,
     workflowId: routeData.workflowId,
@@ -226,9 +226,9 @@ async function route (context, routeData, transaction) {
     if (routeData.forecast) {
       // Core engine forecasts can be associated with display and non-display group (NDG) CSV files. NDG must be processed first
       // as timing parameters are set in the NDG function.
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
+      await dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
+      await dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
+      await dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
     } else {
       dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     }
@@ -306,8 +306,11 @@ async function parseMessage (context, transaction, message) {
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
   routeData.taskRunStartTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, routeData)} UTC`)).toISOString()
-  routeData.startTime = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  routeData.endTime = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  routeData.startTimeDG = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+  routeData.endTimeDG = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  // routeData.startTimeNDG/endTimeNDG is calculated at load time due to more advanced logic
+  routeData.headerStartTime = routeData.startTimeDG
+  routeData.headerEndTime = routeData.endTimeDG
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, routeData)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, routeData)
   return routeData

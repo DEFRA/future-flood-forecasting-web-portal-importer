@@ -48,22 +48,23 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     createdStartTime = routeData.taskRunStartTime
   }
 
-  // Overwrite the startTime and endTime values to equal the 'createdStartTime/createdEndTime' set for observed data.
-  // This overrwrite will persist for the remainder of the taskrun
-  routeData.startTime = moment(createdStartTime).toISOString()
-  routeData.endTime = routeData.taskRunCompletionTime
+  routeData.creationStartTimeNDG = createdStartTime
+  routeData.creationEndTimeNDG = routeData.taskRunCompletionTime
+
+  routeData.headerStartTime = routeData.creationStartTimeNDG
+  routeData.headerEndTime = routeData.taskRunCompletionTime
 
   // startCreationTime and endCreationTime specifiy the period in which to search for any new timeseries created
   // in the core engine.
-  const fewsCreatedStartTime = `&startCreationTime=${createdStartTime.substring(0, 19)}Z`
-  const fewsCreatedEndTime = `&endCreationTime=${routeData.endTime.substring(0, 19)}Z`
+  const fewsCreatedStartTime = `&startCreationTime=${routeData.creationStartTimeNDG.substring(0, 19)}Z`
+  const fewsCreatedEndTime = `&endCreationTime=${routeData.creationEndTimeNDG.substring(0, 19)}Z`
 
   // startTime and endTime specify the period to which timeseries are associated. This period is used to exclude older,
   // amalgamated timeseries created since the previous task run of the workflow.
   const truncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
   const startTimeOffset = moment(createdStartTime).subtract(truncationOffsetHours, 'hours').toISOString()
   const fewsStartTime = `&startTime=${startTimeOffset.substring(0, 19)}Z`
-  const fewsEndTime = `&endTime=${routeData.endTime.substring(0, 19)}Z`
+  const fewsEndTime = `&endTime=${routeData.taskRunCompletionTime.substring(0, 19)}Z`
 
   const timeseriesNonDisplayGroupsData = []
 
@@ -73,8 +74,6 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
 
     // Get the timeseries display groups for the configured plot, locations and date range.
     const fewsPiEndpoint = encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=true&showProducts=false&omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&documentVersion=1.26&documentFormat=PI_JSON&forecastCount=1${fewsParameters}`)
-
-    context.log(`Retrieving timeseries display groups for filter ID ${filterId}`)
 
     const axiosConfig = {
       method: 'get',
