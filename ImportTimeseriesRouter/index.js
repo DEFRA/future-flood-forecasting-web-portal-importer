@@ -162,7 +162,8 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
     (@fewsData, @fewsParameters, @timeseriesHeaderId)
 `)
 
-  context.bindings.stagedTimeseries = []
+  const bindingDefinitions = await JSON.stringify(context.bindingDefinitions)
+  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding detected.`)
 
   for (const index in timeSeriesData) {
     const parameters = {
@@ -173,11 +174,13 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
 
     const result = await preparedStatement.execute(parameters)
 
-    // Prepare to send a message containing the primary key of the inserted record.
-    if (result.recordset && result.recordset[0] && result.recordset[0].id) {
-      context.bindings.stagedTimeseries.push({
-        id: result.recordset[0].id
-      })
+    if (bindingDefinitions.includes(`"direction":"out"`)) {
+      // Prepare to send a message containing the primary key of the inserted record.
+      if (result.recordset && result.recordset[0] && result.recordset[0].id) {
+        context.bindings.stagedTimeseries.push({
+          id: result.recordset[0].id
+        })
+      }
     }
   }
   context.log('Loaded timeseries data')
