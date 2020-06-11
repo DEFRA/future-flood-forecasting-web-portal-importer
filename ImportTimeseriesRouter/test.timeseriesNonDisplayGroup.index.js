@@ -31,7 +31,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           ('Test_Workflow2', 'Test Filter2a', 0, 0),
           ('Test_Workflow2', 'Test Filter2b', 0, 0),
           ('Test_Workflow3', 'Test Filter3', 0, 1),
-          ('Test_Workflow4', 'Test Filter4', 0, 1)
+          ('Test_Workflow4', 'Test Filter4', 0, 1),
+          ('Dual_Workflow', 'TFilter', 1, 1)
       `)
       await request.batch(`
         insert into
@@ -53,6 +54,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     afterAll(async () => {
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
       await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
@@ -210,7 +212,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 10
       const expectedOffsetHours = 10
-      const workflowAlreadyRan = false
+      const workflowAlreadyRan = {
+        flag: false
+      }
       await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, expectedOffsetHours)
     })
     it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding', async () => {
@@ -223,134 +227,168 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+      it('should load a single filter associated with a workflow that is also associated with display group data', async () => {
+        const mockResponse = [{
+          data: {
+            key: 'Timeseries data'
+          }
+        },
+        {
+          data: {
+            key: 'Timeseries data'
+          }
+        }]
+
+        await request.batch(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
+      values
+        ('Dual_Workflow', 'Test Coastal Plot 1', 'Test Coastal Location 1')
+      `)
+
+        const workflowAlreadyRan = {
+          flag: false,
+          spanFlag: true,
+          length: 1,
+          plotTaskRunIdCheck: `and t.fews_parameters like '%filterId=%'`
+        }
+        await processMessageAndCheckImportedData('singleFilterAndPlotApprovedForecast', mockResponse, workflowAlreadyRan)
+      })
     })
-  })
 
-  async function processMessage (messageKey, mockResponses) {
-    if (mockResponses) {
-      let mock = axios
-      for (const mockResponse of mockResponses) {
-        mock = mock.mockReturnValueOnce({ data: await objectToStream(mockResponse.data) })
+    async function processMessage (messageKey, mockResponses) {
+      if (mockResponses) {
+        let mock = axios
+        for (const mockResponse of mockResponses) {
+          mock = mock.mockReturnValueOnce({ data: await objectToStream(mockResponse.data) })
+        }
       }
+      await messageFunction(context, taskRunCompleteMessages[messageKey])
     }
-    await messageFunction(context, taskRunCompleteMessages[messageKey])
-  }
 
-  async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan, offsetOverride) {
-    // This function interrogates the most recent database row insert and all inserted test data payloads are checked.
-    await processMessage(messageKey, mockResponses)
-    const messageDescription = taskRunCompleteMessages[messageKey].input.description
-    const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
-    const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.startTime} UTC`))
-    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.endTime} UTC`))
-    const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
-    const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
-    const receivedFewsData = []
-    const receivedPrimaryKeys = []
-
-    const result = await request.query(`
-      select
-        t.id,
-        t.fews_parameters,
-        th.workflow_id,
-        th.task_run_id,
-        th.task_completion_time,
-        th.start_time,
-        th.end_time,
-        th.message,
-        cast(decompress(t.fews_data) as varchar(max)) as fews_data
-      from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
-      where
-        th.id = t.timeseries_header_id
-      order by
-        th.import_time desc
+    async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan, offsetOverride) {
+      // This function interrogates the most recent database row insert and all inserted test data payloads are checked.
+      await processMessage(messageKey, mockResponses)
+      const messageDescription = taskRunCompleteMessages[messageKey].input.description
+      const messageDescriptionIndex = messageDescription.startsWith('Task run') ? 2 : 1
+      const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.startTime} UTC`))
+      const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages[messageKey].input.endTime} UTC`))
+      const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
+      const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(' ')[messageDescriptionIndex]
+      const receivedFewsData = []
+      const receivedPrimaryKeys = []
+      let excludePlotString = ''
+      if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
+        excludePlotString = workflowAlreadyRan.plotTaskRunIdCheck
+      }
+      const result = await request.query(`
+    select
+      t.id,
+      t.fews_parameters,
+      th.workflow_id,
+      th.task_run_id,
+      th.task_completion_time,
+      th.start_time,
+      th.end_time,
+      th.message,
+      cast(decompress(t.fews_data) as varchar(max)) as fews_data
+    from
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+    where
+      th.id = t.timeseries_header_id ${excludePlotString}
+    order by
+      th.import_time desc
     `)
 
-    if (workflowAlreadyRan) {
-      expect(result.recordset.length).toBe(workflowAlreadyRan.length)
-    } else {
-      expect(result.recordset.length).toBe(mockResponses.length)
-    }
-
-    // Database interaction is asynchronous so the order in which records are written
-    // cannot be guaranteed.
-    // To check if records have been persisted correctly, copy the timeseries data
-    // retrieved from the database to an array and then check that the array contains
-    // each expected mock timeseries.
-    // To check if messages containing the primary keys of the timeseries records will be
-    // sent to a queue/topic for reporting and visualisation purposes, copy the primary
-    // keys retrieved from the database to an array and check that the ouput binding for
-    // staged timeseries contains each expected primary key.
-
-    for (const index in result.recordset) {
-      // Check that data common to all timeseries has been persisted correctly.
-      // The most recent record is first in the array
-      if (index === '0') {
-        const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
-        const startTime = moment(result.recordset[index].start_time)
-        const endTime = moment(result.recordset[index].end_time)
-
-        expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
-        expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
-        expect(result.recordset[index].workflow_id).toBe(expectedWorkflowId)
-
-        // Check that the persisted values for the forecast start time and end time are based within expected range of
-        // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        let expectedStartTime
-        if (workflowAlreadyRan) {
-          const previousEndTime = moment(result.recordset[1].end_time)
-          expectedStartTime = previousEndTime
-        } else {
-          expectedStartTime = moment(expectedTaskRunStartTime)
-        }
-        const expectedEndTime = moment(expectedTaskRunCompletionTime)
-
-        expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
-        expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
-
-        let expectedOffsetStartTime
-        if (offsetOverride) {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(offsetOverride, 'hours')
-        } else {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
-        }
-
-        // Check fews parameters have been captured correctly.
-        expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
-        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
-        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
-        expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
-
-        // Check the incoming message has been captured correctly.
-        expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
+      if (workflowAlreadyRan && (workflowAlreadyRan.flag || workflowAlreadyRan.spanFlag)) {
+        expect(result.recordset.length).toBe(workflowAlreadyRan.length)
+      } else {
+        expect(result.recordset.length).toBe(mockResponses.length)
       }
 
-      receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
-      receivedPrimaryKeys.push(result.recordset[index].id)
-    }
+      // Database interaction is asynchronous so the order in which records are written
+      // cannot be guaranteed.
+      // To check if records have been persisted correctly, copy the timeseries data
+      // retrieved from the database to an array and then check that the array contains
+      // each expected mock timeseries.
+      // To check if messages containing the primary keys of the timeseries records will be
+      // sent to a queue/topic for reporting and visualisation purposes, copy the primary
+      // keys retrieved from the database to an array and check that the ouput binding for
+      // staged timeseries contains each expected primary key.
 
-    // Check that all the expected mocked data is loaded
-    for (const mockResponse of mockResponses) {
-      expect(receivedFewsData).toContainEqual(mockResponse.data)
-    }
+      for (const index in result.recordset) {
+        // Check that data common to all timeseries has been persisted correctly.
+        // The most recent record is first in the array
+        if (index === '0') {
+          const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
+          const startTime = moment(result.recordset[index].start_time)
+          const endTime = moment(result.recordset[index].end_time)
 
-    // The following check is for when there is an output binding named 'stagedTimeseries' active.
-    if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
-      for (const stagedTimeseries of context.bindings.stagedTimeseries) {
-        expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+          expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
+          expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
+          expect(result.recordset[index].workflow_id).toBe(expectedWorkflowId)
+
+          // Check that the persisted values for the forecast start time and end time are based within expected range of
+          // the task run completion time taking into acccount that the default values can be overridden by environment variables.
+          let expectedStartTime
+          if (workflowAlreadyRan && workflowAlreadyRan.flag) {
+            const previousEndTime = moment(result.recordset[1].end_time)
+            expectedStartTime = previousEndTime
+          } else {
+            expectedStartTime = moment(expectedTaskRunStartTime)
+          }
+          const expectedEndTime = moment(expectedTaskRunCompletionTime)
+
+          expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
+          expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
+
+          let expectedOffsetStartTime
+          if (offsetOverride) {
+            expectedOffsetStartTime = moment(expectedStartTime).subtract(offsetOverride, 'hours')
+          } else {
+            expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
+          }
+
+          // Check fews parameters have been captured correctly.
+          expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+
+          // Check the incoming message has been captured correctly.
+          expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
+        }
+
+        receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
+        receivedPrimaryKeys.push(result.recordset[index].id)
       }
-    }
-  }
 
-  async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
-    await processMessage(messageKey)
-    await checkAmountOfDataImported(expectedNumberOfRecords || 0)
-  }
+      // Check that all the expected mocked data is loaded
+      for (const mockResponse of mockResponses) {
+        expect(receivedFewsData).toContainEqual(mockResponse.data)
+      }
 
-  async function checkAmountOfDataImported (expectedNumberOfRecords) {
-    const result = await request.query(`
+      // The following check is for when there is an output binding named 'stagedTimeseries' active.
+      if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
+        if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
+          context.log('skipping timeseries id test as this workflow spans across multiple timeseries types')
+          // when a taskrun spans across multiple timeseries load type the context.binding that records timeseries id of
+          // each staged timeseries resets between load types
+        } else {
+          for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+            expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+          }
+        }
+      }
+
+      async function processMessageAndCheckNoDataIsImported (messageKey, expectedNumberOfRecords) {
+        await processMessage(messageKey)
+        await checkAmountOfDataImported(expectedNumberOfRecords || 0)
+      }
+
+      async function checkAmountOfDataImported (expectedNumberOfRecords) {
+        const result = await request.query(`
     select
       count(t.id)
     as
@@ -361,13 +399,13 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     where
       th.id = t.timeseries_header_id
     `)
-    expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
-  }
+        expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
+      }
 
-  async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
-    await processMessage(messageKey)
-    const expectedTaskRunId = taskRunCompleteMessages[messageKey].input ? taskRunCompleteMessages[messageKey].input.source : null
-    const result = await request.query(`
+      async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
+        await processMessage(messageKey)
+        const expectedTaskRunId = taskRunCompleteMessages[messageKey].input ? taskRunCompleteMessages[messageKey].input.source : null
+        const result = await request.query(`
     select top(1)
       payload,
       task_run_id,
@@ -378,50 +416,49 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       exception_time desc
     `)
 
-    // Check the problematic message has been captured correctly.
-    expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
+        // Check the problematic message has been captured correctly.
+        expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
 
-    if (expectedTaskRunId) {
-      // If the message is associated with a task run ID check it has been persisted.
-      expect(result.recordset[0].task_run_id).toBe(expectedTaskRunId)
-    } else {
-      // If the message is not associated with a task run ID check a null value has been persisted.
-      expect(result.recordset[0].task_run_id).toBeNull()
-    }
+        if (expectedTaskRunId) {
+          // If the message is associated with a task run ID check it has been persisted.
+          expect(result.recordset[0].task_run_id).toBe(expectedTaskRunId)
+        } else {
+          // If the message is not associated with a task run ID check a null value has been persisted.
+          expect(result.recordset[0].task_run_id).toBeNull()
+        }
 
-    expect(result.recordset[0].description).toBe(expectedErrorDescription)
+        expect(result.recordset[0].description).toBe(expectedErrorDescription)
 
-    await checkAmountOfDataImported(0)
-  }
-
-  async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {
-    axios.mockRejectedValue(mockErrorResponse)
-    await expect(messageFunction(context, taskRunCompleteMessages[messageKey]))
-      .rejects.toThrow(mockErrorResponse)
-  }
-  async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
-    let transaction
-    const tableName = 'non_display_group_workflow'
-    try {
-      // Lock the timeseries table and then try and process the message.
-      transaction = new sql.Transaction(pool)
-      await transaction.begin()
-      const request = new sql.Request(transaction)
-      await request.batch(`
-      insert into
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
-          (workflow_id, filter_id, approved, forecast)
-        values
-          ('testWorkflow', 'testFilter', 0, 0)
-      `)
-      await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
-    } finally {
-      if (transaction._aborted) {
-        context.log.warn('The transaction has been aborted.')
-      } else {
-        await transaction.rollback()
-        context.log.warn('The transaction has been rolled back.')
+        await checkAmountOfDataImported(0)
       }
-    }
-  }
-})
+
+      async function processMessageAndCheckExceptionIsThrown (messageKey, mockErrorResponse) {
+        axios.mockRejectedValue(mockErrorResponse)
+        await expect(messageFunction(context, taskRunCompleteMessages[messageKey]))
+          .rejects.toThrow(mockErrorResponse)
+      }
+      async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (messageKey, mockResponse) {
+        let transaction
+        const tableName = 'non_display_group_workflow'
+        try {
+          // Lock the timeseries table and then try and process the message.
+          transaction = new sql.Transaction(pool)
+          await transaction.begin()
+          const request = new sql.Request(transaction)
+          await request.batch(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, filter_id, approved, forecast)
+      values
+        ('testWorkflow', 'testFilter', 0, 0)
+      `)
+          await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
+        } finally {
+          if (transaction._aborted) {
+            context.log.warn('The transaction has been aborted.')
+          } else {
+            await transaction.rollback()
+            context.log.warn('The transaction has been rolled back.')
+          }
+        }
+      }
+    })

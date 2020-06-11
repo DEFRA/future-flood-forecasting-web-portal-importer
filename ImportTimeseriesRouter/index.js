@@ -224,10 +224,11 @@ async function route (context, routeData, transaction) {
     // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
     // reference data held in the staging database.
     if (routeData.forecast) {
+      // Core engine forecasts can be associated with display and non-display group (NDG) CSV files. NDG must be processed first
+      // as timing parameters are set in the NDG function.
+      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
       dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
       dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
-      // Core engine forecasts can be associated with display and non-display group CSV files.
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     } else {
       dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
     }
@@ -250,6 +251,7 @@ async function route (context, routeData, transaction) {
 
         // Retrieve timeseries data from the core engine PI server and load it into the staging database.
         timeseriesData = await timeseriesDataFunction(context, routeData)
+
         // Once timeseries has been received, create the header
         if (!routeData.timeseriesHeaderId) {
           routeData.timeseriesHeaderId = await executePreparedStatementInTransaction(

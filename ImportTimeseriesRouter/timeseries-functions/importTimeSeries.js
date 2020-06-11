@@ -48,8 +48,8 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     createdStartTime = routeData.taskRunStartTime
   }
 
-  // Overwrite the startTime and endTime values that were intially set for forecast workflows
-  // to equal the 'createdStartTime/createdEndTime' set for observed data.
+  // Overwrite the startTime and endTime values to equal the 'createdStartTime/createdEndTime' set for observed data.
+  // This overrwrite will persist for the rest of the taskrun
   routeData.startTime = moment(createdStartTime).toISOString()
   routeData.endTime = routeData.taskRunCompletionTime
 
