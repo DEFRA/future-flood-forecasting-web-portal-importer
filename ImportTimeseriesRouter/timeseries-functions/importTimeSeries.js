@@ -48,16 +48,16 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     createdStartTime = routeData.taskRunStartTime
   }
 
-  routeData.creationStartTimeNDG = createdStartTime
-  routeData.creationEndTimeNDG = routeData.taskRunCompletionTime
+  routeData.creationStartTimeNonDisplayGroup = createdStartTime
+  routeData.creationEndTimeNonDisplayGroup = routeData.taskRunCompletionTime
 
-  routeData.headerStartTime = routeData.creationStartTimeNDG
+  routeData.headerStartTime = routeData.creationStartTimeNonDisplayGroup
   routeData.headerEndTime = routeData.taskRunCompletionTime
 
   // startCreationTime and endCreationTime specifiy the period in which to search for any new timeseries created
   // in the core engine.
-  const fewsCreatedStartTime = `&startCreationTime=${routeData.creationStartTimeNDG.substring(0, 19)}Z`
-  const fewsCreatedEndTime = `&endCreationTime=${routeData.creationEndTimeNDG.substring(0, 19)}Z`
+  const fewsCreatedStartTime = `&startCreationTime=${routeData.creationStartTimeNonDisplayGroup.substring(0, 19)}Z`
+  const fewsCreatedEndTime = `&endCreationTime=${routeData.creationEndTimeNonDisplayGroup.substring(0, 19)}Z`
 
   // startTime and endTime specify the period to which timeseries are associated. This period is used to exclude older,
   // amalgamated timeseries created since the previous task run of the workflow.

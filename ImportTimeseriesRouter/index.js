@@ -306,11 +306,11 @@ async function parseMessage (context, transaction, message) {
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
   routeData.taskRunStartTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, routeData)} UTC`)).toISOString()
-  routeData.startTimeDG = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  routeData.endTimeDG = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
-  // routeData.startTimeNDG/endTimeNDG is calculated at load time due to more advanced logic
-  routeData.headerStartTime = routeData.startTimeDG
-  routeData.headerEndTime = routeData.endTimeDG
+  routeData.startTimeDisplayGroup = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+  routeData.endTimeDisplayGroup = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  // Non display group times are calculated at load time
+  routeData.headerStartTime = routeData.startTimeDisplayGroup
+  routeData.headerEndTime = routeData.endTimeDisplayGroup
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, routeData)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, routeData)
   return routeData
