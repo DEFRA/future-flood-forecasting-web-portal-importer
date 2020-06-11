@@ -146,6 +146,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+    })
     it('should load a single plot associated with a workflow that is also associated with non display group data, whilst inheriting the correct offset timing from the ndg timeseries load', async () => {
       const mockResponse = [{
         data: {
