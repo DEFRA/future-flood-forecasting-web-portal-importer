@@ -38,7 +38,6 @@
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                           |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                                    |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                               |
-| TIMESERIES_DELETE_BATCH_SIZE              | The number of timeseries_header rows (and linked foreign key rows) to be deleted when running the DeleteExpiredTimeseries function           |
 
 ### Request Timeout Considerations
 
@@ -88,3 +87,4 @@ accordingly.
 | FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task run completion time that core forecasting engine data should be retrieved for (defaults to 120)                                                                                                     |
 | DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)                                                     |
 | FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS | The number of hours before the previous task run end time (current task run start time if its the first task run for a given workflow) that core engine non-display-group data should be retrieved for (defaults to 24) |
+| TIMESERIES_DELETE_BATCH_SIZE | The number of timeseries_header rows (including linked foreign key rows) to be deleted on a single run of the DeleteExpiredTimeseries function                                                                                 |
