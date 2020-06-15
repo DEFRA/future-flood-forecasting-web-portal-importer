@@ -38,7 +38,7 @@
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                           |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                                    |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                               |
-| FFFS_WEB_PORTAL_DELETE_HEADER_ROW_BATCH_SIZE | The number of timeseries_header rows (and corresponding foreign key rows) to be deleted when running the DeleteExpiredTimeseries function |                            |
+| TIMESERIES_DELETE_BATCH_SIZE              | The number of timeseries_header rows (and linked foreign key rows) to be deleted when running the DeleteExpiredTimeseries function           |
 
 ### Request Timeout Considerations
 

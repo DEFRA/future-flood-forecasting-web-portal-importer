@@ -3,7 +3,7 @@ const sql = require('mssql')
 module.exports = async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate) {
   context.log.info(`Loading ${isSoftDate ? 'Soft' : 'Hard'} data into temp table`)
   const FME_COMPLETE_JOB_STATUS = 6
-  const deleteHeaderRowBatchSize = process.env['FFFS_WEB_PORTAL_DELETE_HEADER_ROW_BATCH_SIZE']
+  const deleteHeaderRowBatchSize = process.env['TIMESERIES_DELETE_BATCH_SIZE']
 
   await preparedStatement.input('date', sql.DateTimeOffset)
   await preparedStatement.input('completeStatus', sql.Int)
