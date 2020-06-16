@@ -5,7 +5,6 @@ module.exports = {
   doInTransaction: async function (fn, context, errorMessage, isolationLevel, ...args) {
     const connection = new Connection()
     const pool = connection.pool
-    const request = new sql.Request(pool)
 
     let transaction
 
@@ -16,7 +15,7 @@ module.exports = {
       })
       // Begin the connection to the DB and ensure the connection pool is ready
       await pool.connect()
-      await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)
+
       // The transaction is created immediately for use
       transaction = new sql.Transaction(pool)
 
@@ -25,6 +24,20 @@ module.exports = {
       } else {
         await transaction.begin()
       }
+
+      // Set the lock timeout period
+      let lockTimeoutValue
+      process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
+      let preparedStatement = new sql.PreparedStatement(transaction)
+      await preparedStatement.input('lockValue', sql.Int)
+      await preparedStatement.prepare('set lock_timeout @lockValue')
+      const parameters = {
+        lockValue: lockTimeoutValue
+      }
+      await preparedStatement.execute(parameters)
+      // release the connection after the query has been executed
+      // can't execute other requests in the transaction until unprepare is called
+      await preparedStatement.unprepare()
 
       // Call the function to be executed in the transaction passing
       // through the transaction, context and arguments from the caller.
