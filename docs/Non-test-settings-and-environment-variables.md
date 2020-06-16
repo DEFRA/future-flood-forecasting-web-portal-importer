@@ -16,28 +16,28 @@
 
 ## Mandatory Runtime Function App Settings/Environment Variables
 
-| name                                      | description                                                                                                                           |
-|-------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                                                 |
-| AzureWebJobsServiceBus                    | Service bus connection string used by the function app                                                                                |
-| AzureWebJobsStorage                       | Storage account connection string used by the function app                                                                            |
-| AZURE_STORAGE_CONNECTION_STRING           | Storage account connection string used by the function app                                                                            |
-| FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API                                       |
-| FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                                                            |
-| FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                                                            |
-| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)                                   |
-| WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                               |
-| FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                                                          |
-| FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                                                      |
-| FLUVIAL_FORECAST_LOCATION_URL             | URL used to provide the forecast location data                                                                                        |
-| COASTAL_TRITON_FORECAST_LOCATION_URL      | URL used to provide the coastal triton location data                                                                                  |
-| COASTAL_TIDAL_FORECAST_LOCATION_URL       | URL used to provide the coastal tidal location data                                                                                   |
-| COASTAL_MVT_FORECAST_LOCATION_URL         | URL used to provide the coastal mvt location data                                                                                     |
-| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                |
-| COASTAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the coastal display groups workflow reference data                                                                |
-| NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                    |
-| IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                             |
-| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                        |
+| name                                      | description                                                                                                                                  |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------- |
+| APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                                                        |
+| AzureWebJobsServiceBus                    | Service bus connection string used by the function app                                                                                       |
+| AzureWebJobsStorage                       | Storage account connection string used by the function app                                                                                   |
+| AZURE_STORAGE_CONNECTION_STRING           | Storage account connection string used by the function app                                                                                   |
+| FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API                                              |
+| FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                                                                   |
+| FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                                                                   |
+| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)                                          |
+| WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                                      |
+| FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                                                                 |
+| FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                                                             |
+| FLUVIAL_FORECAST_LOCATION_URL             | URL used to provide the forecast location data                                                                                               |
+| COASTAL_TRITON_FORECAST_LOCATION_URL      | URL used to provide the coastal triton location data                                                                                         |
+| COASTAL_TIDAL_FORECAST_LOCATION_URL       | URL used to provide the coastal tidal location data                                                                                          |
+| COASTAL_MVT_FORECAST_LOCATION_URL         | URL used to provide the coastal mvt location data                                                                                            |
+| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                       |
+| COASTAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the coastal display groups workflow reference data                                                                       |
+| NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                           |
+| IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                                    |
+| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                               |
 
 ### Request Timeout Considerations
 
@@ -87,3 +87,4 @@ accordingly.
 | FEWS_END_TIME_OFFSET_HOURS   | Number of hours after task run completion time that core forecasting engine data should be retrieved for (defaults to 120)                                                                                                     |
 | DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)                                                     |
 | FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS | The number of hours before the previous task run end time (current task run start time if its the first task run for a given workflow) that core engine non-display-group data should be retrieved for (defaults to 24) |
+| TIMESERIES_DELETE_BATCH_SIZE | The number of timeseries_header rows (including linked foreign key rows) to be deleted on a single run of the DeleteExpiredTimeseries function (defaults to 1000)                                                               |
