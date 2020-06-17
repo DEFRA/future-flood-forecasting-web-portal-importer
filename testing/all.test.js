@@ -17,7 +17,7 @@ describe('Run all unit tests in sequence', () => {
   // A custom Jest matcher to test table timeouts
   expect.extend({
     toBeTimeoutError (error, tableName) {
-      const pass = error.message === ('Lock request time out period exceeded.') || error.message === 'Timeout: Request failed to complete in 15000ms'
+      const pass = error.message === ('Lock request time out period exceeded.')
       // Note: this custom matcher returns a message for both cases (success and failure),
       // because it allows you to use .not. The test will fail with the corresponding
       // message depending on whether you want it to pass the validation (for example:

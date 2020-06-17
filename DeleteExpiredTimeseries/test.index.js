@@ -320,10 +320,14 @@ module.exports = describe('Timeseries data deletion tests', () => {
       transaction2 = new sql.Transaction(pool)
       await transaction2.begin()
       const newRequest2 = new sql.Request(transaction2)
+      // Copy the lock timeout period
+      let lockTimeoutValue
+      process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
       let query2 =
-        `select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        `SET LOCK_TIMEOUT ${lockTimeoutValue}
+        select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
         where JOB_STATUS = 6`
-      await expect(newRequest2.query(query2)).rejects.toBeTimeoutError('TIMESERIES_JOB') // seperate request (outside the newly created transaction, out of the pool of available transactions)
+      await expect(newRequest2.batch(query2)).rejects.toBeTimeoutError('TIMESERIES_JOB') // seperate request (outside the newly created transaction, out of the pool of available transactions)
     } finally {
       if (!transaction1._aborted) {
         await transaction1.rollback()
