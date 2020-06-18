@@ -265,7 +265,7 @@ async function route (context, routeData, transaction) {
       }
     }
 
-    if (!routeData.timeseriesHeaderId) {
+    if (!routeData.timeseriesHeaderId && !routeData.stagingExceptionCreated) {
       const errorMessage = `Missing PI Server input data for ${routeData.workflowId}`
 
       await executePreparedStatementInTransaction(
@@ -273,7 +273,8 @@ async function route (context, routeData, transaction) {
         context,
         routeData.transaction,
         routeData,
-        errorMessage
+        errorMessage,
+        true
       )
     }
   }
@@ -282,7 +283,9 @@ async function route (context, routeData, transaction) {
 async function parseMessage (context, transaction, message) {
   const routeData = {
     message: message,
-    transaction: transaction
+    transaction: transaction,
+    stagingExceptionCreated: false,
+    failedKeys: []
   }
   // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
   // This time period can be overridden by the two environment variables

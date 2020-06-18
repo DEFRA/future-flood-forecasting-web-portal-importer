@@ -2,11 +2,15 @@ const sql = require('mssql')
 const { doInTransaction, executePreparedStatementInTransaction } = require('./transaction-helper')
 const StagingError = require('./staging-error')
 
-module.exports = async function (context, preparedStatement, routeData, description) {
+module.exports = async function (context, preparedStatement, payload, description, rollbackTransaction) {
   const transaction = preparedStatement.parent
-  await transaction.rollback()
-  await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, routeData, description)
-  throw new StagingError(description)
+  if (rollbackTransaction) {
+    await transaction.rollback()
+    await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, payload, description)
+    throw new StagingError(description)
+  } else {
+    await createStagingException(context, preparedStatement, payload, description)
+  }
 }
 
 async function createStagingExceptionInTransaction (transaction, context, routeData, description) {
