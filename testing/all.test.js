@@ -50,4 +50,5 @@ describe('Run all unit tests in sequence', () => {
   require('../ImportTimeseriesRouter/test.timeseriesFluvialDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesCoastalDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesIgnoredWorkflow')
+  require('../Shared/test.connection-analysis.index')
 })
