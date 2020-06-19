@@ -1,6 +1,6 @@
 {
   "name": "future-flood-forecasting-web-portal-importer",
-  "version": "0.3.0-SNAPSHOT",
+  "version": "0.3.0",
   "description": "A Node.js Microsoft Azure function that imports flood forecasting data.",
   "scripts": {
     "build": "build/src/main/resources/scripts/build.sh",
