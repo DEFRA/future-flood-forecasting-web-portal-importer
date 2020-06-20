@@ -34,8 +34,8 @@ async function getTimeseriesDisplayGroupsInternal (context, displayGroupData, ro
 
     // Get the timeseries display groups for the configured plot, locations and date range.
     const fewsPiEndpoint =
-       encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-         &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
+     encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
+       &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${fewsParameters}`)
 
     const axiosConfig = {
       method: 'get',
