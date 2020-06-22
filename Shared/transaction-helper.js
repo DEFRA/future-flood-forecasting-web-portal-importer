@@ -20,6 +20,8 @@ module.exports = {
       // Set the lock timeout period for the connection
       // await request.batch(`set lock_timeout ${process.env['SQLDB_LOCK_TIMEOUT'] || 6500};`)
       let lockValue = parseInt(process.env['SQLDB_LOCK_TIMEOUT'])
+      // Parameterisation is not currently availale so the input is sanitised
+      // A batched request is utilised to ensure the timeout is executed on requests within the pool
       await request.batch(`set lock_timeout ${(Number.isInteger(lockValue) && Number(lockValue) > 2000) ? lockValue : 6500}`)
 
       // The transaction is created immediately for use

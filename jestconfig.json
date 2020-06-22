@@ -21,5 +21,6 @@
     }
   },
   "resetMocks": true,
-  "restoreMocks": true
+  "restoreMocks": true,
+  "resetModules":true
 }
