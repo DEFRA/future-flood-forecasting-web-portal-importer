@@ -183,7 +183,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)
-      await checkFMESelectejectsWithDeleteInProcess()
+      await checkSelectRejectsWithDeleteInProgress()
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
   })
 
@@ -303,7 +303,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       }
     }
   }
-  async function checkFMESelectejectsWithDeleteInProcess () {
+  async function checkSelectRejectsWithDeleteInProgress () {
     let transaction1
     let transaction2
     try {
