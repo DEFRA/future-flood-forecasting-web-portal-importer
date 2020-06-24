@@ -6,7 +6,6 @@ describe('Run all unit tests in sequence', () => {
   const OLD_ENV = process.env
 
   beforeEach(() => {
-    jest.resetModules() // Resets the module registry - the cache of all required modules.
     process.env = { ...OLD_ENV }
   })
 
@@ -17,7 +16,7 @@ describe('Run all unit tests in sequence', () => {
   // A custom Jest matcher to test table timeouts
   expect.extend({
     toBeTimeoutError (error, tableName) {
-      const pass = error.message === 'Lock request time out period exceeded.'
+      const pass = error.message === ('Lock request time out period exceeded.')
       // Note: this custom matcher returns a message for both cases (success and failure),
       // because it allows you to use .not. The test will fail with the corresponding
       // message depending on whether you want it to pass the validation (for example:
@@ -50,4 +49,5 @@ describe('Run all unit tests in sequence', () => {
   require('../ImportTimeseriesRouter/test.timeseriesFluvialDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesCoastalDisplayGroup.index')
   require('../ImportTimeseriesRouter/test.timeseriesIgnoredWorkflow')
+  require('../Shared/test.connection-analysis.index')
 })

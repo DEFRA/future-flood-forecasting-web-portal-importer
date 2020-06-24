@@ -16,6 +16,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
   describe('The delete expired staging timeseries data function:', () => {
     beforeAll(async () => {
       await pool.connect()
+      await request.batch(`set lock_timeout 5000;`)
     })
 
     // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
@@ -175,6 +176,15 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
     })
+    it('A seperate transaction Should NOT be able to select rows from the reporting table whilst the delete transaction is taking place on those rows', async () => {
+      const importDateStatus = 'exceedsHard'
+      const statusCode = 6
+      const testDescription = 'should remove a record with a complete job status and with an import date older than the hard limit'
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await checkSelectRejectsWithDeleteInProgress()
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
   })
 
   async function createImportDate (importDateStatus) {
@@ -283,7 +293,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
         (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
       query.replace(/"/g, "'")
       await newRequest.query(query)
-      await expect(deleteFunction(context, timer)).rejects.toBeTimeoutError('timeseries_header') // seperate request (outside the newly created transaction, out of the pool of available transactions)
+      await expect(deleteFunction(context, timer)).rejects.toBeTimeoutError('timeseries_header')
     } finally {
       if (transaction._aborted) {
         context.log.warn('The test transaction has been aborted.')
@@ -291,6 +301,41 @@ module.exports = describe('Timeseries data deletion tests', () => {
         await transaction.rollback()
         context.log.warn('The test transaction has been rolled back.')
       }
+    }
+  }
+  async function checkSelectRejectsWithDeleteInProgress () {
+    let transaction1
+    let transaction2
+    try {
+      transaction1 = new sql.Transaction(pool)
+      await transaction1.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // current delete level
+      const newRequest = new sql.Request(transaction1)
+      let query =
+        `delete
+        from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        where JOB_STATUS = 6
+      `
+      await newRequest.query(query)
+
+      transaction2 = new sql.Transaction(pool)
+      await transaction2.begin()
+      const newRequest2 = new sql.Request(transaction2)
+      // Copy the lock timeout period
+      let lockTimeoutValue
+      process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
+      let query2 =
+        `SET LOCK_TIMEOUT ${lockTimeoutValue}
+        select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        where JOB_STATUS = 6`
+      await expect(newRequest2.batch(query2)).rejects.toBeTimeoutError('TIMESERIES_JOB') // seperate request (outside the newly created transaction, out of the pool of available transactions)
+    } finally {
+      if (!transaction1._aborted) {
+        await transaction1.rollback()
+      }
+      if (!transaction2._aborted) {
+        await transaction2.rollback()
+      }
+      context.log.warn('The test transactiona have been rolled back.')
     }
   }
 })
