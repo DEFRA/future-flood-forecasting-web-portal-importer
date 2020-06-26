@@ -277,7 +277,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     SELECT name
     , is_read_committed_snapshot_on
     FROM sys.databases
-    WHERE name = 'fewsDB'
+    WHERE name = ${process.env['TEST_DATABASE_NAME']}
   `)
     if (result.recordset[0] && result.recordset[0].is_read_committed_snapshot_on) {
       expect(result.recordset[0].is_read_committed_snapshot_on).toBe(true)
