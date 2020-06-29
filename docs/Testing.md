@@ -42,7 +42,6 @@ directory of this project.
 | SQLTESTDB_HOST                            | Database host used for unit tests                                                                       |
 | SQLTESTDB_PORT                            | Database port used for unit tests                                                                       |
 | SQLTESTDB_REQUEST_TIMEOUT                 | The database request timeout for unit tests (in milliseconds) - defaults to 15000ms                     |
-| TEST_DATABASE_NAME                        | Unit test database name                                                                                 |
 | TEST_TIMEOUT                              | Optional unit test timeout override (in milliseconds) - defaults to 5000ms                              |
 
 ### Unit Test Coverage
