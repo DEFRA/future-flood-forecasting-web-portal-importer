@@ -176,14 +176,32 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
     })
-    it('A seperate transaction Should NOT be able to select rows from the reporting table whilst the delete transaction is taking place on those rows', async () => {
+    it('A seperate transaction WITH isolation lock hint should NOT be able to select rows from the reporting table whilst the delete transaction is taking place on those rows', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 6
-      const testDescription = 'should remove a record with a complete job status and with an import date older than the hard limit'
+      const testDescription = 'A seperate transaction (with lock hint) should NOT be able to select rows from the reporting table whilst the delete transaction is taking place on those rows'
+
+      const importDate = await createImportDate(importDateStatus)
+      const isolationHintSet = true
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await checkSelectRejectsWithDeleteInProgress(isolationHintSet)
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
+    it('Check for snapshot isolation (Azure DB default). Check select rejects with no snapshot and no table hint with delete in progress (will use default ReadCommited isolation), else check select is successful when delete is in progress with snapshot isolation ON', async () => {
+      const importDateStatus = 'exceedsHard'
+      const statusCode = 6
+      const testDescription = { rowsAffected: [1] }
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)
-      await checkSelectRejectsWithDeleteInProgress()
+
+      const snapshotBoolean = await checkSnapshotIsolationOn()
+      if (!snapshotBoolean) {
+        // no snapshot isolation with no isolation lock hint and default READ COMMITED isolation (SQL server default)
+        let isolationHintSet = false
+        await checkSelectRejectsWithDeleteInProgress(isolationHintSet)
+      } else {
+        await checkDefaultSelectSucceedsWithDeleteInProgress(testDescription)
+      }
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
   })
 
@@ -254,6 +272,21 @@ module.exports = describe('Timeseries data deletion tests', () => {
     expect(result.recordset[0].description).toBe(testDescription)
   }
 
+  async function checkSnapshotIsolationOn () {
+    const result = await request.query(`
+    SELECT name
+    , is_read_committed_snapshot_on
+    FROM sys.databases
+    WHERE name = (SELECT DB_NAME())
+  `)
+    if (result.recordset[0] && result.recordset[0].is_read_committed_snapshot_on) {
+      expect(result.recordset[0].is_read_committed_snapshot_on).toBe(true)
+      return true
+    } else {
+      return false
+    }
+  }
+
   async function checkDeleteResolvesWithDefaultHeaderTableIsolationOnSelect (expectedLength) {
     let transaction
     try {
@@ -303,7 +336,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       }
     }
   }
-  async function checkSelectRejectsWithDeleteInProgress () {
+  async function checkDefaultSelectSucceedsWithDeleteInProgress (testDescription) {
     let transaction1
     let transaction2
     try {
@@ -324,15 +357,50 @@ module.exports = describe('Timeseries data deletion tests', () => {
       let lockTimeoutValue
       process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
       let query2 =
-        `SET LOCK_TIMEOUT ${lockTimeoutValue}
-        select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        `set lock_timeout ${lockTimeoutValue}
+         select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
         where JOB_STATUS = 6`
-      await expect(newRequest2.batch(query2)).rejects.toBeTimeoutError('TIMESERIES_JOB') // seperate request (outside the newly created transaction, out of the pool of available transactions)
+      await expect(newRequest2.query(query2)).resolves.toMatchObject(testDescription)
     } finally {
-      if (!transaction1._aborted) {
+      if (transaction1 && !transaction1._aborted) {
         await transaction1.rollback()
       }
-      if (!transaction2._aborted) {
+      if (transaction2 && !transaction2._aborted) {
+        await transaction2.rollback()
+      }
+      context.log.warn('The test transactiona have been rolled back.')
+    }
+  }
+  async function checkSelectRejectsWithDeleteInProgress (isolationHintSet) {
+    let transaction1
+    let transaction2
+    try {
+      transaction1 = new sql.Transaction(pool)
+      await transaction1.begin()
+      const newRequest = new sql.Request(transaction1)
+      let query =
+        `delete
+        from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        where JOB_STATUS = 6
+      `
+      await newRequest.query(query)
+
+      transaction2 = new sql.Transaction(pool)
+      await transaction2.begin()
+      const newRequest2 = new sql.Request(transaction2)
+      // Copy the lock timeout period
+      let lockTimeoutValue
+      process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
+      let query2 =
+        `set lock_timeout ${lockTimeoutValue}
+         select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB ${isolationHintSet ? 'with (readcommittedlock)' : ''}
+        where JOB_STATUS = 6`
+      await expect(newRequest2.query(query2)).rejects.toBeTimeoutError('TIMESERIES_JOB') // seperate request (outside the newly created transaction, out of the pool of available transactions)
+    } finally {
+      if (transaction1 && !transaction1._aborted) {
+        await transaction1.rollback()
+      }
+      if (transaction2 && !transaction2._aborted) {
         await transaction2.rollback()
       }
       context.log.warn('The test transactiona have been rolled back.')
