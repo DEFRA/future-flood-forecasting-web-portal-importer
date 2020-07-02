@@ -114,8 +114,8 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     context.log(`Retrieving timeseries display groups for filter ID ${filterId}`)
 
     let fewsResponse
-    // fews parameters must be speified otherwise the data returnd would be too large
-    if (fewsParameters && fewsParameters.length > 0) {
+    // fews parameters must be specified otherwise the data return is likely to be very large
+    if (fewsParameters && (fewsParameters.includes('time') || fewsParameters.includes('Time'))) {
       fewsResponse = await axios(axiosConfig)
     }
 
