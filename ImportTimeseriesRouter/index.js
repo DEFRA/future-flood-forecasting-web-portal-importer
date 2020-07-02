@@ -71,7 +71,6 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, routeDat
       (tablock holdlock)
     where
       workflow_id = @nonDisplayGroupWorkflowId
-      ${routeData.forecast ? ' and forecast = 1' : ''}
   `)
   const parameters = {
     nonDisplayGroupWorkflowId: routeData.workflowId
@@ -109,8 +108,6 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
 async function createTimeseriesHeader (context, preparedStatement, routeData) {
   let timeseriesHeaderId
 
-  await preparedStatement.input('startTime', sql.DateTime2)
-  await preparedStatement.input('endTime', sql.DateTime2)
   await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
@@ -120,16 +117,14 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
   await preparedStatement.prepare(`
   insert into
     fff_staging.timeseries_header
-      (start_time, end_time, task_completion_time, task_run_id, workflow_id, message)
+      (task_completion_time, task_run_id, workflow_id, message)
   output
     inserted.id
   values
-    (@startTime, @endTime, @taskRunCompletionTime, @taskRunId, @workflowId, @message)
+    (@taskRunCompletionTime, @taskRunId, @workflowId, @message)
 `)
 
   const parameters = {
-    startTime: routeData.startTime,
-    endTime: routeData.endTime,
     taskRunCompletionTime: routeData.taskRunCompletionTime,
     taskRunId: routeData.taskRunId,
     workflowId: routeData.workflowId,
@@ -163,7 +158,7 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
 `)
 
   const bindingDefinitions = await JSON.stringify(context.bindingDefinitions)
-  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding detected.`)
+  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding attached.`)
 
   for (const index in timeSeriesData) {
     const parameters = {

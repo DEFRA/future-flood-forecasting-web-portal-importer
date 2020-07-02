@@ -169,11 +169,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     const result = await request.query(`
     select
       t.id,
+      t.fews_parameters,
       th.workflow_id,
       th.task_run_id,
       th.task_completion_time,
-      th.start_time,
-      th.end_time,
       th.message,
       cast(decompress(t.fews_data) as varchar(max)) as fews_data
     from
@@ -198,8 +197,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Check that data common to all timeseries has been persisted correctly.
       if (index === '0') {
         const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
-        const startTime = moment(result.recordset[index].start_time)
-        const endTime = moment(result.recordset[index].end_time)
 
         expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
         expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
@@ -211,8 +208,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
         const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
         const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
-        expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
-        expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
+        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
 
         // Check the incoming message has been captured correctly.
         expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])

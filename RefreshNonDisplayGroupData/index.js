@@ -13,9 +13,10 @@ module.exports = async function (context, message) {
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
       { tableColumnName: 'FILTER_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FilterID' },
       { tableColumnName: 'APPROVED', tableColumnType: 'Bit', expectedCSVKey: 'Approved', preprocessor: parseBooleanString },
-      { tableColumnName: 'FORECAST', tableColumnType: 'Bit', expectedCSVKey: 'Forecast', preprocessor: parseBooleanString },
       { tableColumnName: 'START_TIME_OFFSET_HOURS', tableColumnType: 'Int', expectedCSVKey: 'StartTimeOffsetHours', nullValueOverride: true },
-      { tableColumnName: 'END_TIME_OFFSET_HOURS', tableColumnType: 'Int', expectedCSVKey: 'EndTimeOffsetHours', nullValueOverride: true }
+      { tableColumnName: 'END_TIME_OFFSET_HOURS', tableColumnType: 'Int', expectedCSVKey: 'EndTimeOffsetHours', nullValueOverride: true },
+      { tableColumnName: 'TIMESERIES_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'TimeSeriesType' }
+
     ],
     type: 'non display group refresh',
     keyInteregator

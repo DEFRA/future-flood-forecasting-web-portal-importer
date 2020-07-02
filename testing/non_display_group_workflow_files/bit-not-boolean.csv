@@ -1,4 +1,4 @@
-WorkflowID,FilterID,Forecast,Approved,StartTimeOffsetHours,EndTimeOffsetHours
-test_non_display_workflow_1,test_filter_1,0,0,,
-test_non_display_workflow_2,test_filter_2,TRUE,FALSE,,
-test_non_display_workflow_3,test_filter_3,FALSE,FALSE,,
+WorkflowID,FilterID,Approved,StartTimeOffsetHours,EndTimeOffsetHours,TimeSeriesType
+test_non_display_workflow_1,test_filter_1,0,,,external_historical
+test_non_display_workflow_2,test_filter_2,TRUE,,,external_historical
+test_non_display_workflow_3,test_filter_3,FALSE,,,external_historical

@@ -5,7 +5,8 @@ module.exports = async function getLatestTaskRunEndTime (context, preparedStatem
   await preparedStatement.input('filterId', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    select start_time_offset_hours, end_time_offset_hours
+    select
+      approved, timeseries_type, start_time_offset_hours, end_time_offset_hours
     from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
     where 
       workflow_id = @workflowId
@@ -24,9 +25,11 @@ module.exports = async function getLatestTaskRunEndTime (context, preparedStatem
     context.log.error(`Error: more than one filter-workflow combination found.`)
     throw new Error(`Error: more than one filter-workflow combination found.`)
   } else {
-    if (result.recordset && result.recordset[0].start_time_offset_hours && result.recordset[0].end_time_offset_hours) {
+    if (result.recordset[0]) {
       let startOffset = result.recordset[0].start_time_offset_hours
       let endOffset = result.recordset[0].end_time_offset_hours
+      routeData.approvalRequired = result.recordset[0].approved
+      routeData.timeseriesType = result.recordset[0].timeseries_type
       if (startOffset > 0) {
         routeData.ndgOversetOverrideBackward = startOffset
         routeData.startTimeOverrideRequired = true

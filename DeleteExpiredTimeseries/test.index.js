@@ -235,8 +235,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       set @id1 = newid()
     declare @id2 uniqueidentifier
       set @id2 = newid()
-    insert into fff_staging.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time, message)
-    values (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
+    insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+    values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
     insert into fff_staging.timeseries (id, fews_data, fews_parameters,timeseries_header_id)
     values (@id2, compress('data'),'parameters', @id1)
     insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
@@ -321,9 +321,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
       let query = `
       declare @id1 uniqueidentifier set @id1 = newid()
       insert into 
-        fff_staging.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time, message)
+        fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
       values 
-        (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
+        (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
       query.replace(/"/g, "'")
       await newRequest.query(query)
       await expect(deleteFunction(context, timer)).rejects.toBeTimeoutError('timeseries_header')
