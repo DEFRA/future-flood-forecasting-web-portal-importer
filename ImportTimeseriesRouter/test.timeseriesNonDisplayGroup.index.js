@@ -377,10 +377,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
         const expectedEndTime = moment(expectedTaskRunCompletionTime)
 
-        // start time in this case is the created start time (not the offset start time)
-        // expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
-        // expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
-
         let expectedOffsetStartTime
         let expectedOffsetEndTime
         if (overrideValues && (overrideValues.backward || overrideValues.forward)) {
