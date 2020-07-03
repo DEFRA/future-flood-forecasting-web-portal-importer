@@ -1,7 +1,6 @@
 const axios = require('axios')
 const moment = require('moment')
 const { gzip } = require('../../Shared/utils')
-const getOverrideValues = require('../helpers/get-ndg-override-values')
 const getLatestEndTime = require('../helpers/get-latest-task-run-end-time')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
@@ -17,7 +16,13 @@ async function getNonDisplayGroupData (nonDisplayGroupWorkflowsResponse) {
   const nonDisplayGroupData = []
 
   for (const record of nonDisplayGroupWorkflowsResponse.recordset) {
-    nonDisplayGroupData.push(record.filter_id)
+    nonDisplayGroupData.push({
+      filterId: record.filter_id,
+      approvalRequired: record.approved,
+      startTimeOffset: record.start_time_offset_hours,
+      endTimeOffset: record.end_time_offset_hours,
+      timeseriesType: record.timeseries_type
+    })
   }
 
   return nonDisplayGroupData
@@ -54,53 +59,48 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
 
   // for each filter within the taskrun
   const timeseriesNonDisplayGroupsData = []
-  for (const filterValue of nonDisplayGroupData) {
-    const filterId = `&filterId=${filterValue}`
+  for (const filter of nonDisplayGroupData) {
+    const filterId = `&filterId=${filter.filterId}`
 
     // get the override values from non-display group reference data from staging for the filter-workflow combination
     let truncationOffsetHoursBackward
     let truncationOffsetHoursForward
-    await executePreparedStatementInTransaction(getOverrideValues, context, routeData.transaction, routeData, filterValue)
     // is approval status required?
-    if (routeData.approvalRequired === true) {
+    if (filter.approvalRequired && filter.approvalRequired === true) {
       if (routeData.approved === true) {
-        context.log.info(`The filter: ${filterId} requires approval and has been approved.`)
+        context.log.info(`The filter: ${filter.filterId} requires approval and has been approved.`)
       } else {
-        context.log.error(`The filter: ${filterId} requires approval and has NOT been approved.`)
-        break // exit the loop for this filter has not been approved
+        context.log.error(`The filter: ${filter.filterId} requires approval and has NOT been approved.`)
+        continue // exit the current iteration for this loop as this filter has not been approved
       }
     }
-    if (routeData.startTimeOverrideRequired === true) {
-      truncationOffsetHoursBackward = routeData.ndgOversetOverrideBackward
+
+    if (filter.startTimeOffset && filter.startTimeOffset !== 0) {
+      truncationOffsetHoursBackward = filter.startTimeOffset
     } else {
       truncationOffsetHoursBackward = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
     }
-    if (routeData.endTimeOverrideRequired === true) {
-      truncationOffsetHoursForward = routeData.ndgOversetOverrideForward
+    if (filter.endTimeOffset && filter.endTimeOffset !== 0) {
+      truncationOffsetHoursForward = filter.endTimeOffset
     } else {
       truncationOffsetHoursForward = 0
     }
 
-    // the start time and end time parameters are used to exclude older,
-    // amalgamated timeseries created since the previous task run of the workflow.
-    const startTimeOffset = moment(routeData.createdStartTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-    const endTimeOffset = moment(routeData.createdEndTime).add(truncationOffsetHoursForward, 'hours').toISOString()
-
-    // creation time search period for a task that produced/imported timeseries
+    // the creation times search within a period for a task that produced/imported timeseries
     const fewsCreatedStartTime = `&startCreationTime=${routeData.createdStartTime.substring(0, 19)}Z`
     const fewsCreatedEndTime = `&endCreationTime=${routeData.createdEndTime.substring(0, 19)}Z`
-    // data truncation period
-    const fewsStartTime = `&startTime=${startTimeOffset.substring(0, 19)}Z`
-    const fewsEndTime = `&endTime=${endTimeOffset.substring(0, 19)}Z`
+    // the start time and end time parameters are used to truncate older, amalgamated timeseries created since the previous task run of the workflow
+    const fewsStartTime = `&startTime=${moment(routeData.createdStartTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString().substring(0, 19)}Z`
+    const fewsEndTime = `&endTime=${moment(routeData.createdEndTime).add(truncationOffsetHoursForward, 'hours').toISOString().substring(0, 19)}Z`
 
     let fewsParameters
-    if (routeData.timeseriesType === 'external_historical' || routeData.timeseriesType === 'external_forecasting') {
+    if (filter.timeseriesType && (filter.timeseriesType === 'external_historical' || filter.timeseriesType === 'external_forecasting')) {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}${fewsCreatedStartTime}${fewsCreatedEndTime}`
-    } else if (routeData.timeseriesType === 'simulated_forecasting') {
+    } else if (filter.timeseriesType && filter.timeseriesType === 'simulated_forecasting') {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}`
     } else {
-      context.log.error(`Timeseries type for the filter: ${filterId} requires approval and has NOT been approved.`)
-      break // exit the loop for this filter as there are no search parameters the filter-workflow combination is abandoned
+      context.log.error(`There is no recognizable timeseries type specified for the filter: ${filterId}. Filter query cancelled.`)
+      continue // exit the current iteration for this filter as there are no search parameters the filter-workflow combination is abandoned
     }
 
     // Get the timeseries display groups for the configured plot, locations and date range.

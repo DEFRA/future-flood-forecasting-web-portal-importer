@@ -136,7 +136,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(missingWorkflow, 'Missing PI Server input data for with')
     })
     it('should create a staging exception for a non-forecast without an approval status', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
     it('should create a staging exception for a message containing the boolean false', async () => {
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('booleanFalseMessage', 'Message must be either a string or a pure object')

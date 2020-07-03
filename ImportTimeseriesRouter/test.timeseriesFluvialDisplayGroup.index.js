@@ -108,7 +108,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
     it('should create a staging exception for an invalid message', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are eligible for replay a certain number of times so check that

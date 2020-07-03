@@ -64,7 +64,7 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, routeDat
   // against a non display group data refresh during data retrieval.
   await preparedStatement.prepare(`
     select
-      filter_id
+      filter_id, approved, timeseries_type, start_time_offset_hours, end_time_offset_hours
     from
       fff_staging.non_display_group_workflow
     with

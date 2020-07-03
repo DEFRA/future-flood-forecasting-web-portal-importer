@@ -62,7 +62,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should create a staging exception for an invalid message', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
   })
 
