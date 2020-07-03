@@ -76,12 +76,12 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     }
 
     if (filter.startTimeOffset && filter.startTimeOffset !== 0) {
-      truncationOffsetHoursBackward = filter.startTimeOffset
+      truncationOffsetHoursBackward = Math.abs(filter.startTimeOffset)
     } else {
       truncationOffsetHoursBackward = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
     }
     if (filter.endTimeOffset && filter.endTimeOffset !== 0) {
-      truncationOffsetHoursForward = filter.endTimeOffset
+      truncationOffsetHoursForward = Math.abs(filter.endTimeOffset)
     } else {
       truncationOffsetHoursForward = 0
     }

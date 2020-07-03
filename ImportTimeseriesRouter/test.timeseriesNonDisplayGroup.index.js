@@ -207,7 +207,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 10
       const overrideValues = {
-        backward: 10
+        backward: -10
       }
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, overrideValues)
@@ -231,7 +231,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       const overrideValues = {
         forward: 20,
-        backward: 10
+        backward: -10
       }
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterApprovedForecastCustomOffset', [mockResponse], workflowAlreadyRan, overrideValues)
@@ -380,8 +380,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         let expectedOffsetStartTime
         let expectedOffsetEndTime
         if (overrideValues && (overrideValues.backward || overrideValues.forward)) {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(overrideValues.backward, 'hours')
-          expectedOffsetEndTime = moment(expectedEndTime).add(overrideValues.forward, 'hours')
+          expectedOffsetStartTime = moment(expectedStartTime).subtract(Math.abs(overrideValues.backward), 'hours')
+          expectedOffsetEndTime = moment(expectedEndTime).add(Math.abs(overrideValues.forward), 'hours')
         } else {
           expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
           expectedOffsetEndTime = expectedEndTime
