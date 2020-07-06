@@ -36,9 +36,9 @@ module.exports =
           }
         }
         context = new Context()
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
-        await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
+        await request.batch(`delete from fff_staging.csv_staging_exception`)
+        await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
+        await request.batch(`insert into fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
       })
 
       afterEach(async () => {
@@ -46,8 +46,8 @@ module.exports =
       })
 
       afterAll(async () => {
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
+        await request.batch(`delete from fff_staging.csv_staging_exception`)
         // Closing the DB connection allows Jest to exit successfully.
         await pool.close()
       })
@@ -290,7 +290,7 @@ module.exports =
       as 
         number 
       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
+        fff_staging.fluvial_display_group_workflow`)
       const workflowIds = Object.keys(expectedDisplayGroupData)
       let expectedNumberOfRows = 0
 
@@ -318,7 +318,7 @@ module.exports =
             select
               *
             from 
-              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow
+              fff_staging.fluvial_display_group_workflow
             where 
               workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
@@ -337,7 +337,7 @@ module.exports =
         as 
           number 
         from 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+          fff_staging.csv_staging_exception`)
         expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
@@ -351,7 +351,7 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.batch(`
         insert into 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
+          fff_staging.${tableName} (workflow_id, plot_id, location_ids)
         values 
          ('workflow_id', 'plot_id', 'loc_id')
       `)
@@ -374,7 +374,7 @@ module.exports =
       select
         top(1) description
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+        fff_staging.csv_staging_exception
       order by
         exception_time desc
     `)

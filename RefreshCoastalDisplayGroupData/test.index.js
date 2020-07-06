@@ -36,9 +36,9 @@ module.exports =
             dummyPlot: ['dummyLocation']
           }
         }
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-        await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
-        await request.query(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
+        await request.batch(`delete from fff_staging.csv_staging_exception`)
+        await request.query(`delete from fff_staging.coastal_display_group_workflow`)
+        await request.query(`insert into fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
       })
 
       afterEach(() => {
@@ -48,8 +48,8 @@ module.exports =
       })
 
       afterAll(async () => {
-        await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
-        await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        await request.query(`delete from fff_staging.coastal_display_group_workflow`)
+        await request.query(`delete from fff_staging.csv_staging_exception`)
         // Closing the DB connection allows Jest to exit successfully.
         await pool.close()
       })
@@ -280,7 +280,7 @@ module.exports =
       as 
         number 
       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
+        fff_staging.coastal_display_group_workflow`)
       // The number of rows (each workflow - plot combination) returned from the database should be equal to the sum of plot ID elements nested within
       // all workflow ID elements of the expected coastal_display_group_workflow data.
       let expectedNumberOfRows = 0
@@ -304,7 +304,7 @@ module.exports =
             select 
               *
             from 
-              ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow
+              fff_staging.coastal_display_group_workflow
             where 
               workflow_id = '${workflowId}' AND plot_id = '${plotId}'
           `)
@@ -323,7 +323,7 @@ module.exports =
         as 
           number 
         from 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+          fff_staging.csv_staging_exception`)
         expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
@@ -337,7 +337,7 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.query(`
         insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids)
+        fff_staging.${tableName} (workflow_id, plot_id, location_ids)
         values 
           ('workflow_id', 'plot_id', 'loc_id')
       `)
@@ -358,7 +358,7 @@ module.exports =
       select
         top(1) description
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+        fff_staging.csv_staging_exception
       order by
         exception_time desc
     `)

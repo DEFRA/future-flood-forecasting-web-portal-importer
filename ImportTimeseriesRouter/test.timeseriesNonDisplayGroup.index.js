@@ -19,12 +19,12 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
       await pool.connect()
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
+      await request.batch(`delete from fff_staging.non_display_group_workflow`)
+      await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
+      await request.batch(`delete from fff_staging.ignored_workflow`)
       await request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+          fff_staging.non_display_group_workflow
              (workflow_id, filter_id, approved, forecast)
         values
           ('Test_Workflow1', 'Test Filter1', 0, 0),
@@ -35,7 +35,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       `)
       await request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
+          fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
         values
           ('Test_Workflow4', 'Test Plot4', 'Test Location4')
       `)
@@ -45,18 +45,18 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_header`)
+      await request.batch(`delete from fff_staging.staging_exception`)
     })
 
     afterAll(async () => {
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.fluvial_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception`)
+      await request.batch(`delete from fff_staging.ignored_workflow`)
+      await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
+      await request.batch(`delete from fff_staging.non_display_group_workflow`)
+      await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_header`)
+      await request.batch(`delete from fff_staging.staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -260,8 +260,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         th.message,
         cast(decompress(t.fews_data) as varchar(max)) as fews_data
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+        fff_staging.timeseries_header th,
+        fff_staging.timeseries t
       where
         th.id = t.timeseries_header_id
       order by
@@ -356,8 +356,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     as
       number
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      fff_staging.timeseries_header th,
+      fff_staging.timeseries t
     where
       th.id = t.timeseries_header_id
     `)
@@ -373,7 +373,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       task_run_id,
       description
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
+      fff_staging.staging_exception
     order by
       exception_time desc
     `)
@@ -409,7 +409,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const request = new sql.Request(transaction)
       await request.batch(`
       insert into
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
+        fff_staging.${tableName}
           (workflow_id, filter_id, approved, forecast)
         values
           ('testWorkflow', 'testFilter', 0, 0)

@@ -8,7 +8,7 @@ module.exports = async function (context, preparedStatement, sourceFile, rowData
 
     await preparedStatement.prepare(`
       insert into
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception (csv_source_file, row_data, description)
+        fff_staging.csv_staging_exception (csv_source_file, row_data, description)
       values
        (@sourceFile, @rowData, @description)
     `)

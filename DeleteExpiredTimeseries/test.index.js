@@ -30,14 +30,14 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 200
       hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
       softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
-      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
+      await request.query(`delete from fff_reporting.timeseries_job`)
+      await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_header`)
     })
     afterAll(async () => {
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
+      await request.batch(`delete from fff_reporting.timeseries_job`)
+      await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_header`)
       await pool.close()
     })
     it('should remove a record with a complete job status and with an import date older than the hard limit', async () => {
@@ -235,11 +235,11 @@ module.exports = describe('Timeseries data deletion tests', () => {
       set @id1 = newid()
     declare @id2 uniqueidentifier
       set @id2 = newid()
-    insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time, message)
+    insert into fff_staging.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time, message)
     values (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
-    insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (id, fews_data, fews_parameters,timeseries_header_id)
+    insert into fff_staging.timeseries (id, fews_data, fews_parameters,timeseries_header_id)
     values (@id2, compress('data'),'parameters', @id1)
-    insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
+    insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
     values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
     query.replace(/"/g, "'")
 
@@ -249,10 +249,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
   async function checkDeletionStatus (expectedLength) {
     const result = await request.query(`
     select r.description, h.import_time
-      from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header h 
-      inner join ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      from fff_staging.timeseries_header h
+      inner join fff_staging.timeseries t
         on t.timeseries_header_id = h.id
-      inner join ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job r
+      inner join fff_reporting.timeseries_job r
         on r.timeseries_id = t.id
       order by import_time desc
   `)
@@ -262,10 +262,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
   async function checkDescription (testDescription) {
     const result = await request.query(`
     select r.description
-      from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header h 
-      inner join ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      from fff_staging.timeseries_header h
+      inner join fff_staging.timeseries t
         on t.timeseries_header_id = h.id
-      inner join ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.timeseries_job r
+      inner join fff_reporting.timeseries_job r
         on r.timeseries_id = t.id
       order by import_time desc
   `)
@@ -298,7 +298,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       select 
         * 
       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`
+        fff_staging.timeseries_header`
       await newRequest.query(query)
 
       await expect(deleteFunction(context, timer)).resolves.toBe(undefined) // seperate request (outside the newly created transaction, out of the pool of available transactions)
@@ -321,7 +321,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       let query = `
       declare @id1 uniqueidentifier set @id1 = newid()
       insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time, message)
+        fff_staging.timeseries_header (id, start_time, end_time, task_completion_time, task_run_id, workflow_id, import_time, message)
       values 
         (@id1, cast('2017-01-24' as datetimeoffset),cast('2017-01-26' as datetimeoffset),cast('2017-01-25' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
       query.replace(/"/g, "'")
@@ -345,7 +345,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest = new sql.Request(transaction1)
       let query =
         `delete
-        from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        from fff_reporting.TIMESERIES_JOB
         where JOB_STATUS = 6
       `
       await newRequest.query(query)
@@ -358,7 +358,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
       let query2 =
         `set lock_timeout ${lockTimeoutValue}
-         select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+         select * from fff_reporting.TIMESERIES_JOB
         where JOB_STATUS = 6`
       await expect(newRequest2.query(query2)).resolves.toMatchObject(testDescription)
     } finally {
@@ -380,7 +380,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest = new sql.Request(transaction1)
       let query =
         `delete
-        from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB
+        from fff_reporting.TIMESERIES_JOB
         where JOB_STATUS = 6
       `
       await newRequest.query(query)
@@ -393,7 +393,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
       let query2 =
         `set lock_timeout ${lockTimeoutValue}
-         select * from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB ${isolationHintSet ? 'with (readcommittedlock)' : ''}
+         select * from fff_reporting.TIMESERIES_JOB ${isolationHintSet ? 'with (readcommittedlock)' : ''}
         where JOB_STATUS = 6`
       await expect(newRequest2.query(query2)).rejects.toBeTimeoutError('TIMESERIES_JOB') // seperate request (outside the newly created transaction, out of the pool of available transactions)
     } finally {

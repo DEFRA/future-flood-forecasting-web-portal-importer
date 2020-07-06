@@ -41,10 +41,10 @@ async function refreshDisplayGroupTable (transaction, context) {
       const recordCountResponse = await new sql.Request(transaction).query(`select count(*) as number from #coastal_display_group_workflow_temp`)
       // Do not refresh the coastal_display_group_workflow table if the local temporary table is empty.
       if (recordCountResponse.recordset[0].number > 0) {
-        await new sql.Request(transaction).query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
+        await new sql.Request(transaction).query(`delete from fff_staging.coastal_display_group_workflow`)
         // Concatenate all locations for each combination of workflow ID and plot ID.
         await new sql.Request(transaction).query(`
-        insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
+        insert into fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
           select
             workflow_id,
             plot_id,
@@ -65,7 +65,7 @@ async function refreshDisplayGroupTable (transaction, context) {
         as
           number
         from
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow
+          fff_staging.coastal_display_group_workflow
       `)
       context.log.info(`The coastal_display_group_workflow table contains ${result.recordset[0].number} records`)
       if (result.recordset[0].number === 0) {

@@ -38,14 +38,14 @@ module.exports = describe('Refresh coastal location data tests', () => {
         TA_NAME: 'dummy',
         COASTAL_TYPE: 'Coastal Forecasting'
       }
-      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location`)
-      await request.query(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
+      await request.query(`delete from fff_staging.csv_staging_exception`)
+      await request.query(`delete from fff_staging.coastal_forecast_location`)
+      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
     })
 
     afterAll(async () => {
-      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location`)
-      await request.query(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+      await request.query(`delete from fff_staging.coastal_forecast_location`)
+      await request.query(`delete from fff_staging.csv_staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -283,7 +283,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     as 
      number
     from 
-     ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
+     fff_staging.COASTAL_FORECAST_LOCATION
     `)
     const expectedNumberOfRows = expectedCoastalLocationData.length
     expect(coastalLocationCount.recordset[0].number).toBe(expectedNumberOfRows)
@@ -297,7 +297,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
         as 
          number 
         from 
-         ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.COASTAL_FORECAST_LOCATION
+         fff_staging.COASTAL_FORECAST_LOCATION
         where 
          FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
       CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
@@ -312,7 +312,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     as 
       number 
     from 
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+      fff_staging.csv_staging_exception`)
     expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
   }
 
@@ -324,7 +324,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const request = new sql.Request(transaction)
       await request.query(`
       insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) 
+        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)
       values 
         ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting')
     `)
@@ -345,7 +345,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     select
       top(1) description
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+      fff_staging.csv_staging_exception
     order by
       exception_time desc
   `)
