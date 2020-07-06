@@ -9,7 +9,7 @@ module.exports = async function isTaskRunImported (context, preparedStatement, t
     as 
       task_run_id_count
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
+      fff_staging.timeseries_header
     where
       task_run_id = @taskRunId
   `)

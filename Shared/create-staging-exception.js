@@ -20,7 +20,7 @@ async function createStagingException (context, preparedStatement, routeData, de
 
   await preparedStatement.prepare(`
     insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception (payload, description, task_run_id)
+      fff_staging.staging_exception (payload, description, task_run_id)
     values
      (@payload, @description, @taskRunId)
   `)

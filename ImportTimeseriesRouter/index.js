@@ -36,7 +36,7 @@ async function getDisplayGroupWorkflows (context, preparedStatement, routeData) 
       select
         plot_id, location_ids
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${routeData.workflowTableName}
+        fff_staging.${routeData.workflowTableName}
       with
         (tablock holdlock)
       where
@@ -66,7 +66,7 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, routeDat
     select
       filter_id
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+      fff_staging.non_display_group_workflow
     with
       (tablock holdlock)
     where
@@ -92,7 +92,7 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
   select
     workflow_id
   from
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow
+    fff_staging.ignored_workflow
   with
     (tablock holdlock)
   where
@@ -119,7 +119,7 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
 
   await preparedStatement.prepare(`
   insert into
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
+    fff_staging.timeseries_header
       (start_time, end_time, task_completion_time, task_run_id, workflow_id, message)
   output
     inserted.id
@@ -155,7 +155,7 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
 
   await preparedStatement.prepare(`
   insert into
-    ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries (fews_data, fews_parameters, timeseries_header_id)
+    fff_staging.timeseries (fews_data, fews_parameters, timeseries_header_id)
   output
     inserted.id
   values

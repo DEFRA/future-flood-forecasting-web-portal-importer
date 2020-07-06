@@ -82,7 +82,7 @@ async function createTempTable (transaction, context) {
 
 async function deleteReportingRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete r from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA']}.TIMESERIES_JOB r
+    `delete r from fff_reporting.TIMESERIES_JOB r
       inner join #deletion_job_temp te
       on te.reporting_id = r.id`
   )
@@ -92,7 +92,7 @@ async function deleteReportingRows (context, preparedStatement) {
 
 async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete t from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES t
+    `delete t from fff_staging.TIMESERIES t
       inner join #deletion_job_temp te
       on te.timeseries_id = t.id`
   )
@@ -102,7 +102,7 @@ async function deleteTimeseriesRows (context, preparedStatement) {
 
 async function deleteHeaderRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete th from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.TIMESERIES_HEADER th
+    `delete th from fff_staging.TIMESERIES_HEADER th
       inner join #deletion_job_temp te
       on te.timeseries_header_id = th.id`
   )

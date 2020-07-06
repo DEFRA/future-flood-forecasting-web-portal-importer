@@ -30,14 +30,14 @@ module.exports = describe('Ignored workflow loader tests', () => {
       // function implementation for the function context needs creating for each test.
       context = new Context()
       dummyData = [{ WorkflowId: 'dummyData' }]
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
-      await request.batch(`insert into ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
+      await request.batch(`delete from fff_staging.csv_staging_exception`)
+      await request.batch(`delete from fff_staging.ignored_workflow`)
+      await request.batch(`insert into fff_staging.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
     })
 
     afterAll(async () => {
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+      await request.batch(`delete from fff_staging.ignored_workflow`)
+      await request.batch(`delete from fff_staging.csv_staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -222,7 +222,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     as 
       number
     from 
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW`)
+      fff_staging.IGNORED_WORKFLOW`)
     const expectedNumberOfRows = expectedIgnoredWorkflowData.length
 
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
@@ -238,7 +238,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
         as 
           number 
         from 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.IGNORED_WORKFLOW
+          fff_staging.IGNORED_WORKFLOW
         where 
           WORKFLOW_ID = '${WorkflowId}'
         `)
@@ -253,7 +253,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       as 
         number 
       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        fff_staging.csv_staging_exception`)
       expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
     }
   }
@@ -267,7 +267,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
         insert into 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (WORKFLOW_ID) 
+          fff_staging.${tableName} (WORKFLOW_ID) 
         values 
           ('ignored_1')
       `)
@@ -290,7 +290,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     select
       top(1) description
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+      fff_staging.csv_staging_exception
     order by
       exception_time desc
   `)

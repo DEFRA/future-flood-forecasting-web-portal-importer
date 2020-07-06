@@ -18,12 +18,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   describe('Message processing for coastal display group task run completion', () => {
     beforeAll(async () => {
       await pool.connect()
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
+      await request.batch(`delete from fff_staging.coastal_display_group_workflow`)
+      await request.batch(`delete from fff_staging.non_display_group_workflow`)
+      await request.batch(`delete from fff_staging.ignored_workflow`)
       await request.batch(`
       insert into
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
+        fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
       values
         ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'), ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'), ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b')
       `)
@@ -32,17 +32,17 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_header`)
+      await request.batch(`delete from fff_staging.staging_exception`)
     })
     afterAll(async () => {
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.ignored_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception`)
+      await request.batch(`delete from fff_staging.ignored_workflow`)
+      await request.batch(`delete from fff_staging.coastal_display_group_workflow`)
+      await request.batch(`delete from fff_staging.non_display_group_workflow`)
+      await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_header`)
+      await request.batch(`delete from fff_staging.staging_exception`)
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -177,8 +177,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       th.message,
       cast(decompress(t.fews_data) as varchar(max)) as fews_data
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+      fff_staging.timeseries_header th,
+      fff_staging.timeseries t
     where
       th.id = t.timeseries_header_id
     `)
@@ -246,8 +246,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     as 
       number
     from
-     ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header th,
-     ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries t
+     fff_staging.timeseries_header th,
+     fff_staging.timeseries t
     where
       th.id = t.timeseries_header_id
     `)
@@ -263,7 +263,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       task_run_id,
       description
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.staging_exception
+      fff_staging.staging_exception
     order by
       exception_time desc
     `)
@@ -299,7 +299,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
       insert into 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName} (workflow_id, plot_id, location_ids) 
+        fff_staging.${tableName} (workflow_id, plot_id, location_ids)
       values 
         ('dummyWorkflow', 'dummyPlot', 'dummyLocation')
     `)

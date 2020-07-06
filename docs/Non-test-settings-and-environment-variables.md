@@ -27,8 +27,6 @@
 | FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                                                                   |
 | SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)                                          |
 | WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                                      |
-| FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                                                                 |
-| FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                                                             |
 | FLUVIAL_FORECAST_LOCATION_URL             | URL used to provide the forecast location data                                                                                               |
 | COASTAL_TRITON_FORECAST_LOCATION_URL      | URL used to provide the coastal triton location data                                                                                         |
 | COASTAL_TIDAL_FORECAST_LOCATION_URL       | URL used to provide the coastal tidal location data                                                                                          |
@@ -77,6 +75,8 @@ accordingly.
 | FEWS_PLOT_ID                              | The core forecasting engine plot ID used with scheduled imports                                            |
 | AZURE_SERVICE_BUS_FLUVIAL_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic                         |
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                 |
+| FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                               |
+| FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                           |
 
 ## Optional Runtime Function App Settings/Environment Variables
 

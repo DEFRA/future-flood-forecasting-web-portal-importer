@@ -10,7 +10,7 @@ module.exports = async function getLatestTaskRunEndTime (context, preparedStatem
       task_run_id as previous_staged_task_run_id,
       task_completion_time as previous_staged_task_completion_time
     from
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.timeseries_header
+      fff_staging.timeseries_header
     where
       workflow_id = @workflowId 
     order by

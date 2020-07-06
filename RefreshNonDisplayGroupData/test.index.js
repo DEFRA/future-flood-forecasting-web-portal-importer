@@ -35,19 +35,19 @@ module.exports =
         dummyData = {
           dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, forecast: 0 }]
         }
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
+        await request.batch(`delete from fff_staging.csv_staging_exception`)
+        await request.batch(`delete from fff_staging.non_display_group_workflow`)
         await request.batch(`
           insert into
-            ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+            fff_staging.non_display_group_workflow
               (workflow_id, filter_id, approved, forecast)
           values
             ('dummyWorkflow', 'dummyFilter', 0, 0)`)
       })
 
       afterAll(async () => {
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
-        await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+        await request.batch(`delete from fff_staging.non_display_group_workflow`)
+        await request.batch(`delete from fff_staging.csv_staging_exception`)
         // Closing the DB connection allows Jest to exit successfully.
         await pool.close()
       })
@@ -314,7 +314,7 @@ module.exports =
       as 
         number 
       from 
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow`)
+        fff_staging.non_display_group_workflow`)
       const workflowIds = Object.keys(expectedNonDisplayGroupData)
       let expectedNumberOfRows = 0
 
@@ -339,7 +339,7 @@ module.exports =
             cast(approved as int) as approved,
             cast(forecast as int) as forecast
           from 
-            ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+            fff_staging.non_display_group_workflow
           where 
             workflow_id = '${workflowId}'
           order by
@@ -363,7 +363,7 @@ module.exports =
         as 
           number 
         from 
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception`)
+          fff_staging.csv_staging_exception`)
         expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
       }
     }
@@ -376,7 +376,7 @@ module.exports =
         const request = new sql.Request(transaction)
         await request.batch(`
         insert into
-          ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.${tableName}
+          fff_staging.${tableName}
             (workflow_id, filter_id, approved, forecast)
         values
           ('testWorkflow', 'testFilter', 0, 0)`)
@@ -396,7 +396,7 @@ module.exports =
       select
         top(1) description
       from
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.csv_staging_exception
+        fff_staging.csv_staging_exception
       order by
         exception_time desc
     `)
