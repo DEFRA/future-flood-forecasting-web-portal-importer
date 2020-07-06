@@ -32,6 +32,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           ('Test_Workflow2', 'Test Filter2b', 0, 0, 0, 'external_historical'),
           ('Test_Workflow3', 'Test Filter3', 0, 0, 0, 'external_historical'),
           ('Test_Workflow4', 'Test Filter4', 0, 0, 0, 'external_historical'),
+          ('Span_Workflow', 'Span Filter', 1, 0, 0, 'external_historical'),
           ('Test_workflowCustomTimes', 'Test FilterCustomTimes', 1, '10', '20', 'external_historical'),
           ('workflow_simulated_forecasting', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
           ('workflow_external_forecasting', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),
@@ -42,7 +43,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         insert into
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
         values
-          ('Test_Workflow4', 'Test Plot4', 'Test Location4')
+          ('Test_Workflow4', 'Test Plot4', 'Test Location4'),
+          ('Span_Workflow', 'Span Plot', 'Span Location' )
       `)
     })
 
@@ -57,6 +59,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
     afterAll(async () => {
       await request.batch(`delete from fff_staging.ignored_workflow`)
+      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
       await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
       await request.batch(`delete from fff_staging.non_display_group_workflow`)
       await request.batch(`delete from fff_staging.timeseries`)
@@ -114,7 +117,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           key: 'Timeseries non-display groups data'
         }
       }
-      await processMessage('singlePlotAndFilterApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
+      await processMessage('filterAndPlotApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
       await checkAmountOfDataImported(2)
     })
     it('should not import data for an out of date forecast', async () => {
@@ -139,7 +142,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
     it('should create a staging exception for a message containing the boolean false', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('booleanFalseMessage', 'Message must be either a string or a pure object')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('booleanFalseMessage', 'Message must be either a string or a pure object', true)
     })
     it('should create a staging exception for a message containing the number 1', async () => {
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('numericMessage', 'Message must be either a string or a pure object')
@@ -191,8 +194,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }]
       const workflowAlreadyRan = {
-        flag: true,
-        length: 2
+        flag: true, // true when a workflow has already ran and is present within the database
+        expectedResultLength: 2
       }
 
       await processMessage('singleFilterNonForecast', [mockResponse[0]])
@@ -209,7 +212,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const overrideValues = {
         backward: -10
       }
-      const workflowAlreadyRan = false
+      let workflowAlreadyRan = {
+        flag: false
+      }
       await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, overrideValues)
     })
     it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding (set to active)', async () => {
@@ -246,6 +251,32 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
+    })
+    it('should load a single filter associated with a workflow that is also associated with display group data', async () => {
+      const mockResponse = [{
+        data: {
+          key: 'Timeseries data'
+        }
+      },
+      {
+        data: {
+          key: 'Timeseries data'
+        }
+      }]
+
+      await request.batch(`
+      insert into
+        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
+      values
+        ('Dual_Workflow', 'Test Coastal Plot 1', 'Test Coastal Location 1')
+      `)
+
+      const workflowAlreadyRan = {
+        spanFlag: true, // true when a workflow spans multiple timeseries types (fluvial dg/coastal dg/non dg)
+        expectedResultLength: 1,
+        plotIdTargetedQuery: `and t.fews_parameters like '%filterId=%'`
+      }
+      await processMessageAndCheckImportedData('filterAndPlotApprovedForecast', mockResponse, workflowAlreadyRan)
     })
     it('should import data for a single filter associated with a simulated-forecast data and ensure the query parameters contain only start/end times (no start/end creation times)', async () => {
       const mockResponse = {
@@ -322,6 +353,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const receivedFewsData = []
     const receivedPrimaryKeys = []
 
+    let excludePlotString = ''
+    if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
+      excludePlotString = workflowAlreadyRan.plotIdTargetedQuery
+    }
+
     const result = await request.query(`
       select
         t.id,
@@ -335,13 +371,13 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         fff_staging.timeseries_header th,
         fff_staging.timeseries t
       where
-        th.id = t.timeseries_header_id
+        th.id = t.timeseries_header_id ${excludePlotString}
       order by
         th.import_time desc
     `)
 
-    if (workflowAlreadyRan) {
-      expect(result.recordset.length).toBe(workflowAlreadyRan.length)
+    if (workflowAlreadyRan && (workflowAlreadyRan.flag || workflowAlreadyRan.spanFlag)) {
+      expect(result.recordset.length).toBe(workflowAlreadyRan.expectedResultLength)
     } else {
       expect(result.recordset.length).toBe(mockResponses.length)
     }
@@ -369,7 +405,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
         let expectedStartTime
-        if (workflowAlreadyRan) {
+        if (workflowAlreadyRan && workflowAlreadyRan.flag) {
           const previousTaskRunEndTime = moment(result.recordset[1].task_completion_time)
           expectedStartTime = previousTaskRunEndTime
         } else {
@@ -413,10 +449,16 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       expect(receivedFewsData).toContainEqual(mockResponse.data)
     }
 
-    // The following check is for when there is an output binding named 'stagedTimeseries' active.
+    // The following check is for when there is an output binding named 'stagedTimeseries' active
     if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
-      for (const stagedTimeseries of context.bindings.stagedTimeseries) {
-        expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+      // context.bindings resets for each type when timeseries loads span multiple types (dg and ndg)
+      // we lose partial data (ids for ndg's as they run first) so this check is not possible
+      if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
+        context.log('skipping timeseries id test as this workflow spans across multiple timeseries types')
+      } else {
+        for (const stagedTimeseries of context.bindings.stagedTimeseries) {
+          expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
+        }
       }
     }
   }
@@ -441,7 +483,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
   }
 
-  async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription) {
+  async function processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported (messageKey, expectedErrorDescription, override) {
     await processMessage(messageKey)
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input ? taskRunCompleteMessages[messageKey].input.source : null
     const result = await request.query(`
@@ -456,7 +498,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     `)
 
     // Check the problematic message has been captured correctly.
-    expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
+    if (override) {
+      expect(result.recordset[0].payload).toContain(taskRunCompleteMessages[messageKey])
+    } else {
+      expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
+    }
 
     if (expectedTaskRunId) {
       // If the message is associated with a task run ID check it has been persisted.

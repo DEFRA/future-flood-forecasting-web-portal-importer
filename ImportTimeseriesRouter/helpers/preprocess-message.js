@@ -17,7 +17,7 @@ module.exports = async function preprocessMessage (context, preparedStatement, m
         break
     }
   } else {
-    returnValue = createStagingException(context, preparedStatement, { message: message }, errorMessage)
+    returnValue = createStagingException(context, preparedStatement, { message: `message: ${message}` }, errorMessage)
   }
   return returnValue
 }

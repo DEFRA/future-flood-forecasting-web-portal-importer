@@ -3,17 +3,6 @@
     "startTime": "2019-09-13 13:05:00",
     "endTime": "2019-09-13 13:06:00"
   },
-  "singlePlotAndFilterApprovedForecast": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task Test_Workflow4 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO",
-      "startTime": "2019-09-13 13:05:00",
-      "endTime": "2019-09-13 13:06:00"
-    }
-  },
   "singleFilterApprovedForecast": {
     "input": {
       "code": "TASKRUN.Complete",
@@ -196,6 +185,17 @@
       "entryTime": 1568379065,
       "description": "Task workflow_external_forecasting with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
+    }
+  },
+  "filterAndPlotApprovedForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Span_Workflow with ID ukeafffsmDual_Workflow completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmDual_Workflow",
       "level": "INFO",
       "startTime": "2019-09-13 13:05:00",
       "endTime": "2019-09-13 13:06:00"

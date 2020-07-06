@@ -7,6 +7,7 @@ describe('Run all unit tests in sequence', () => {
 
   beforeEach(() => {
     process.env = { ...OLD_ENV }
+    jest.resetAllMocks()
   })
 
   afterEach(() => {

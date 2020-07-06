@@ -22,8 +22,8 @@ async function getDisplayGroupData (displayGroupWorkflowsResponse) {
 async function getTimeseriesDisplayGroupsInternal (context, displayGroupData, routeData) {
   // The database in which data is loaded requires fractional seconds to be included in dates. By contrast
   // the REST interface of the core forecasting engine requires fractional seconds to be excluded from dates.
-  const fewsStartTime = `&startTime=${routeData.startTime.substring(0, 19)}Z`
-  const fewsEndTime = `&endTime=${routeData.endTime.substring(0, 19)}Z`
+  const fewsStartTime = `&startTime=${routeData.startTimeDisplayGroup.substring(0, 19)}Z`
+  const fewsEndTime = `&endTime=${routeData.endTimeDisplayGroup.substring(0, 19)}Z`
 
   const timeseriesDisplayGroupsData = []
 

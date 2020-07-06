@@ -295,12 +295,13 @@ async function parseMessage (context, transaction, message) {
 
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
-  routeData.taskRunCompletionTime =
-    moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
   routeData.taskRunStartTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, routeData)} UTC`)).toISOString()
-  routeData.startTime = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  routeData.endTime = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  routeData.taskRunCompletionTime =
+    moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
+  routeData.startTimeDisplayGroup = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+  routeData.endTimeDisplayGroup = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  // Non display group times are calculated at load time
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, routeData)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, routeData)
   return routeData

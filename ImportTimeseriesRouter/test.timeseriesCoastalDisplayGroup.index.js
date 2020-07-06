@@ -25,7 +25,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       insert into
         fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
       values
-        ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'), ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'), ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b')
+        ('Test_Coastal_Workflow', 'Test Coastal Plot', 'Test Coastal Location'), 
+        ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'), 
+        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'), 
+        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b'),
+        ('Span_Workflow', 'Test_Plot', 'Test_Location')
       `)
     })
     beforeEach(async () => {
@@ -76,7 +80,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+      await processMessageAndCheckImportedData('latersinglePlotApprovedForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast', 1)
     })
     it('should import data for a forecast approved manually', async () => {
@@ -144,6 +148,33 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
     })
+    it('should load a single plot associated with a workflow that is also associated with non display group data', async () => {
+      const mockResponse = [{
+        data: {
+          key: 'Timeseries data'
+        }
+      },
+      {
+        data: {
+          key: 'Timeseries data'
+        }
+      }]
+
+      await request.batch(`
+      insert into
+      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+        (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+    values
+      ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+      `)
+
+      const workflowAlreadyRan = {
+        spanFlag: true, // this workflow spans multiple timeseries type (fluvial dg/coastal dg/non dg)
+        expectedTargetedQueryLength: 1,
+        plotIdTargetedQuery: `and t.fews_parameters like '%plotId=%'`
+      }
+      await processMessageAndCheckImportedData('singlePlotAndFilterApprovedForecast', mockResponse, workflowAlreadyRan)
+    })
   })
 
   async function processMessage (messageKey, mockResponses) {
@@ -156,7 +187,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
   }
 
-  async function processMessageAndCheckImportedData (messageKey, mockResponses) {
+  async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan) {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
@@ -165,6 +196,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(/\s+/)[messageDescriptionIndex]
     const receivedFewsData = []
     const receivedPrimaryKeys = []
+
+    let excludeFilterString = ''
+    if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
+      excludeFilterString = workflowAlreadyRan.plotIdTargetedQuery
+    }
 
     const result = await request.query(`
     select
@@ -179,10 +215,14 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       fff_staging.timeseries_header th,
       fff_staging.timeseries t
     where
-      th.id = t.timeseries_header_id
+      th.id = t.timeseries_header_id ${excludeFilterString}
     `)
 
-    expect(result.recordset.length).toBe(mockResponses.length)
+    if (workflowAlreadyRan && workflowAlreadyRan.spanFlag) {
+      expect(result.recordset.length).toBe(workflowAlreadyRan.expectedTargetedQueryLength)
+    } else {
+      expect(result.recordset.length).toBe(mockResponses.length)
+    }
 
     // Database interaction is asynchronous so the order in which records are written
     // cannot be guaranteed.
@@ -206,10 +246,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
         const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
         const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
-        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
-        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
-        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString().substring(0, 19)
+        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString().substring(0, 19)
+        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime}Z`)
 
         // Check the incoming message has been captured correctly.
         expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
