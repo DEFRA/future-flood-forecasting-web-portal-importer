@@ -47,7 +47,7 @@
       "level": "INFO"
     }
   },
-  "forecastApprovedManually": {
+  "forecastManuallyApproved": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,

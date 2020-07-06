@@ -68,7 +68,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
-    it('should import data for a single filter associated with a non-forecast', async () => {
+    it('should import data for a single filter associated with a non-forecast task-run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
@@ -76,15 +76,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
-    it('should import data for a single filter associated with a non-forecast regardless of message processing order', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
-    })
-    it('should import data for multiple filters associated with a non-forecast', async () => {
+    it('should import data for multiple filters associated with a non-forecast task-run', async () => {
       const mockResponses = [{
         data: {
           key: 'First filter timeseries non-display groups data'
@@ -120,25 +112,21 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessage('filterAndPlotApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
       await checkAmountOfDataImported(2)
     })
-    it('should not import data for an out of date forecast', async () => {
+    it('should not import data for a task-run that is out-of-date compared with data in staging ', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('singleFilterApprovedForecast', [mockResponse])
-      await processMessageAndCheckNoDataIsImported('earlierSingleFilterApprovedForecast', 1)
+      await processMessageAndCheckImportedData('singleFilterTaskRun', [mockResponse])
+      await processMessageAndCheckNoDataIsImported('earlierSingleFilterTaskRun', 1)
     })
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(' ')[1]
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
-    it('should create a staging exception for a missing workflow', async () => {
-      const missingWorkflow = 'missingWorkflow'
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(missingWorkflow, 'Missing PI Server input data for with')
-    })
-    it('should create a staging exception for a non-forecast without an approval status', async () => {
+    it('should create a staging exception for a non-forecast without an approval status in the message', async () => {
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('nonForecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
     it('should create a staging exception for a message containing the boolean false', async () => {
@@ -163,7 +151,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singleFilterNonForecast', mockResponse)
     })
-    it('should throw an exception when the non_display_group_workflow table is being refreshed', async () => {
+    it('should throw an exception when the non_display_group_workflow table locks due to refresh', async () => {
       // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
@@ -217,7 +205,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', mockResponse, workflowAlreadyRan, overrideValues)
     })
-    it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding (set to active)', async () => {
+    it('should import data for a single filter associated with a non-forecast and with output binding set to true, check timeseries id has been captured in output binding', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
@@ -228,7 +216,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
-    it('should import data for a single filter associated with a custom offset forecast', async () => {
+    it('should import data for a single filter associated with custom time period offsets', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
@@ -240,17 +228,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterApprovedForecastCustomOffset', [mockResponse], workflowAlreadyRan, overrideValues)
-    })
-    it('should import data for a single filter associated with a non-forecast and check timeseries id has been captured in output binding', async () => {
-      const mockResponse = {
-        data: {
-          key: 'Timeseries non-display groups data'
-        }
-      }
-
-      process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
-      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
-      await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
     it('should load a single filter associated with a workflow that is also associated with display group data', async () => {
       const mockResponse = [{

@@ -47,10 +47,10 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
       await pool.close()
     })
 
-    it('should ignore an ignored workflow', async () => {
+    it('should reject an ignored workflow', async () => {
       await processMessageAndCheckNoDataIsImported('ignoredForecast')
     })
-    it('should throw an exception when the ignored_workflow table is being refreshed', async () => {
+    it('should throw an exception when the ignored_workflow table locks due to refresh', async () => {
       // If the ignored_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {

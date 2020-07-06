@@ -3,7 +3,7 @@
     "startTime": "2019-09-13 13:05:00",
     "endTime": "2019-09-13 13:06:00"
   },
-  "singleFilterApprovedForecast": {
+  "singleFilterTaskRun": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
@@ -14,7 +14,7 @@
       "endTime": "2019-09-13 13:06:00"
     }
   },
-  "earlierSingleFilterApprovedForecast": {
+  "earlierSingleFilterTaskRun": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,

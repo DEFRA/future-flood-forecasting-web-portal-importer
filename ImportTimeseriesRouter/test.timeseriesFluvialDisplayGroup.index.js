@@ -46,7 +46,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
-    it('should import data for a single plot associated with an approved forecast', async () => {
+    it('should import data for a single plot associated with an approved forecast task-run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -54,7 +54,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
     })
-    it('should import data for multiple plots associated with an approved forecast', async () => {
+    it('should import data for multiple plots associated with an approved forecast task-run', async () => {
       const mockResponses = [{
         data: {
           key: 'First plot timeseries display groups data'
@@ -67,10 +67,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }]
       await processMessageAndCheckImportedData('multiplePlotApprovedForecast', mockResponses)
     })
-    it('should not import data for an unapproved forecast', async () => {
+    it('should not import data for an unapproved forecast task-run', async () => {
       await processMessageAndCheckNoDataIsImported('unapprovedForecast')
     })
-    it('should not import data for an out of date forecast', async () => {
+    it('should not import data for an out-of-date forecast approved task-run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -79,15 +79,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast', 1)
     })
-    it('should import data for a forecast approved manually', async () => {
+    it('should import data for a forecast manually approved task run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
+      await processMessageAndCheckImportedData('forecastManuallyApproved', [mockResponse])
     })
-    it('should allow the default forecast start and end times to be overridden using environment variables', async () => {
+    it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env
       try {
         process.env['FEWS_START_TIME_OFFSET_HOURS'] = 24
@@ -102,7 +102,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         process.env = originalEnvironment
       }
     })
-    it('should create a staging exception for an unknown workflow', async () => {
+    it('should create a staging exception for an unknown forecast approved workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(/\s+/)[1]
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
@@ -123,7 +123,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
     })
-    it('should throw an exception when the fluvial_display_group_workflow table is being refreshed', async () => {
+    it('should throw an exception when the fluvial_display_group_workflow table locks due to refresh', async () => {
       // If the fluvial_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
@@ -134,7 +134,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await lockDisplayGroupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('should import data for a single plot associated with an approved forecast', async () => {
+    it('should import data for a single plot associated with an approved forecast with an output binding set to active', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
