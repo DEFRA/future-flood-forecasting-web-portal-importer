@@ -59,7 +59,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
     afterAll(async () => {
       await request.batch(`delete from fff_staging.ignored_workflow`)
-      await request.batch(`delete from ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow`)
+      await request.batch(`delete from fff_staging.coastal_display_group_workflow`)
       await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
       await request.batch(`delete from fff_staging.non_display_group_workflow`)
       await request.batch(`delete from fff_staging.timeseries`)
@@ -243,7 +243,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       await request.batch(`
       insert into
-        ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
+        fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
       values
         ('Dual_Workflow', 'Test Coastal Plot 1', 'Test Coastal Location 1')
       `)

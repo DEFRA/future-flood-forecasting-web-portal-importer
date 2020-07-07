@@ -162,7 +162,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
       await request.batch(`
       insert into
-      ${process.env['FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA']}.non_display_group_workflow
+        fff_staging.non_display_group_workflow
         (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
     values
       ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
