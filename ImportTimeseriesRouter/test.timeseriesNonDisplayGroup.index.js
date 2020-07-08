@@ -8,6 +8,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const axios = require('axios')
   const sql = require('mssql')
 
+  const SIMULATED_FORECASTING = 'simulated_forecasting'
+  const EXTERNAL_FORECASTING = 'external_forecasting'
+  const EXTERNAL_HISTORICAL = 'external_historical'
+
   let context
   jest.mock('axios')
 
@@ -36,8 +40,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           ('Test_workflowCustomTimes', 'Test FilterCustomTimes', 1, '10', '20', 'external_historical'),
           ('workflow_simulated_forecasting', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
           ('workflow_external_forecasting', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),
-          ('workflow_external_historical', 'Test Filter EH', 0, 0, 0, 'external_historical'),
-          ('workflow_unknown_timeseries_type', 'Test Filter EH', 0, 0, 0, 'unknown_timeseries_type')
+          ('workflow_external_historical', 'Test Filter EH', 0, 0, 0, 'external_historical')
       `)
       await request.batch(`
         insert into
@@ -262,7 +265,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       const overrideValues = {
-        timeseriesType: 'simulated_forecasting'
+        timeseriesType: SIMULATED_FORECASTING
       }
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterApprovedSimulatedForecast', [mockResponse], workflowAlreadyRan, overrideValues)
@@ -274,7 +277,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       const overrideValues = {
-        timeseriesType: 'external_historical'
+        timeseriesType: EXTERNAL_HISTORICAL
       }
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterApprovedExternalHistorical', [mockResponse], workflowAlreadyRan, overrideValues)
@@ -286,7 +289,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       const overrideValues = {
-        timeseriesType: 'external_forecasting'
+        timeseriesType: EXTERNAL_FORECASTING
       }
       const workflowAlreadyRan = false
       await processMessageAndCheckImportedData('singleFilterApprovedExternalForecasting', [mockResponse], workflowAlreadyRan, overrideValues)
@@ -402,7 +405,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
         // Check fews parameters have been captured correctly.
 
-        if (overrideValues && overrideValues.timeseriesType === 'simulated_forecasting') {
+        if (overrideValues && overrideValues.timeseriesType === SIMULATED_FORECASTING) {
           expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).not.toContain('Creation')
@@ -512,7 +515,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         fff_staging.${tableName}
         (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('testWorkflow', 'testFilter', 0, 0, 0, '')
+          ('testWorkflow', 'testFilter', 0, 0, 0, 'external_historical')
       `)
       await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(tableName)
     } finally {

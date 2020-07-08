@@ -19,6 +19,8 @@ module.exports =
     let context
     let dummyData
 
+    const EXTERNAL_HISTORICAL = 'external_historical'
+
     const jestConnection = new Connection()
     const pool = jestConnection.pool
     const request = new sql.Request(pool)
@@ -33,7 +35,7 @@ module.exports =
         // function implementation for the function context needs creating for each test.
         context = new Context()
         dummyData = {
-          dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: 'external_historical' }]
+          dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
         await request.batch(`delete from fff_staging.csv_staging_exception`)
         await request.batch(`delete from fff_staging.non_display_group_workflow`)
@@ -72,9 +74,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 10, endTimeOffset: 20, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 10, endTimeOffset: 20, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -89,9 +91,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }, { filterId: 'test_filter_1a', approved: 1, startTimeOffset: 6, endTimeOffset: 9, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }, { filterId: 'test_filter_1a', approved: 1, startTimeOffset: 6, endTimeOffset: 9, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -106,9 +108,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
         const expectedErrorDescription = 'Violation of UNIQUE KEY constraint'
         const expectedNumberOfExceptionRows = 1
@@ -138,8 +140,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -182,7 +184,7 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedErrorDescription = 'row is missing data.'
@@ -261,7 +263,7 @@ module.exports =
           contentType: TEXT_CSV
         }
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
         const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 1
@@ -277,8 +279,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: 'external_historical' }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: 'external_historical' }]
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 1

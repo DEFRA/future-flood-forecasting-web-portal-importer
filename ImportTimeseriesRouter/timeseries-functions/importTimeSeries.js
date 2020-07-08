@@ -4,6 +4,10 @@ const { gzip } = require('../../Shared/utils')
 const getLatestEndTime = require('../helpers/get-latest-task-run-end-time')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
+const EXTERNAL_HISTORICAL = 'external_historical'
+const EXTERNAL_FORECAST = 'external_forecasting'
+const SIMULATED_FORECASTING = 'simulated_forecasting'
+
 module.exports = async function getTimeseries (context, routeData) {
   const nonDisplayGroupData = await getNonDisplayGroupData(routeData.nonDisplayGroupWorkflowsResponse)
   const timeseries = await getTimeseriesInternal(context, nonDisplayGroupData, routeData)
@@ -94,9 +98,9 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     const fewsEndTime = `&endTime=${moment(routeData.createdEndTime).add(truncationOffsetHoursForward, 'hours').toISOString().substring(0, 19)}Z`
 
     let fewsParameters
-    if (filter.timeseriesType && (filter.timeseriesType === 'external_historical' || filter.timeseriesType === 'external_forecasting')) {
+    if (filter.timeseriesType && (filter.timeseriesType === EXTERNAL_HISTORICAL || filter.timeseriesType === EXTERNAL_FORECAST)) {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}${fewsCreatedStartTime}${fewsCreatedEndTime}`
-    } else if (filter.timeseriesType && filter.timeseriesType === 'simulated_forecasting') {
+    } else if (filter.timeseriesType && filter.timeseriesType === SIMULATED_FORECASTING) {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}`
     } else {
       context.log.error(`There is no recognizable timeseries type specified for the filter: ${filterId}. Filter query cancelled.`)
