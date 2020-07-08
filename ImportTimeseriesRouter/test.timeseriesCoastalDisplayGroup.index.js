@@ -80,7 +80,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('latersinglePlotApprovedForecast', [mockResponse])
+      await processMessageAndCheckImportedData('laterSinglePlotApprovedForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast', 1)
     })
     it('should import data for a forecast manually approved task run', async () => {
@@ -89,7 +89,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('forecastManuallyApproved', [mockResponse])
+      await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
     })
     it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env

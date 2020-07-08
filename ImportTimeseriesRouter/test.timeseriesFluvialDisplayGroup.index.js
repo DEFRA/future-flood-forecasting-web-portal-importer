@@ -46,7 +46,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
-    it('should import data for a single plot associated with an approved forecast task-run', async () => {
+    it('should import data for a single plot associated with an approved forecasttask run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -54,7 +54,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
     })
-    it('should import data for multiple plots associated with an approved forecast task-run', async () => {
+    it('should import data for multiple plots associated with an approved forecasttask run', async () => {
       const mockResponses = [{
         data: {
           key: 'First plot timeseries display groups data'
@@ -67,10 +67,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }]
       await processMessageAndCheckImportedData('multiplePlotApprovedForecast', mockResponses)
     })
-    it('should not import data for an unapproved forecast task-run', async () => {
+    it('should not import data for an unapproved forecasttask run', async () => {
       await processMessageAndCheckNoDataIsImported('unapprovedForecast')
     })
-    it('should not import data for an out-of-date forecast approved task-run', async () => {
+    it('should not import data for an out-of-date forecast approvedtask run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -85,7 +85,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('forecastManuallyApproved', [mockResponse])
+      await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
     })
     it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env

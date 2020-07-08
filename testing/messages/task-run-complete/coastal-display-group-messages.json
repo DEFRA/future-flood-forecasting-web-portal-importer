@@ -11,7 +11,7 @@
       "level": "INFO"
     }
   },
-  "latersinglePlotApprovedForecast": {
+  "laterSinglePlotApprovedForecast": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
@@ -47,7 +47,7 @@
       "level": "INFO"
     }
   },
-  "forecastManuallyApproved": {
+  "forecastApprovedManually": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
