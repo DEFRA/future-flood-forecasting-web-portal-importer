@@ -71,7 +71,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
-    it('should import data for a single filter associated with a non-forecasttask run', async () => {
+    it('should import data for a single filter associated with a non-forecast task run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
@@ -79,7 +79,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await processMessageAndCheckImportedData('singleFilterNonForecast', [mockResponse])
     })
-    it('should import data for multiple filters associated with a non-forecasttask run', async () => {
+    it('should import data for multiple filters associated with a non-forecast task run', async () => {
       const mockResponses = [{
         data: {
           key: 'First filter timeseries non-display groups data'
@@ -115,7 +115,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processMessage('filterAndPlotApprovedForecast', [displayMockResponse, nonDisplayMockResponse])
       await checkAmountOfDataImported(2)
     })
-    it('should not import data for atask run that is out-of-date compared with data in staging ', async () => {
+    it('should not import data for a task run that is out-of-date compared with data in staging ', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'

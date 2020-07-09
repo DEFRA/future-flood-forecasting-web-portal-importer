@@ -61,7 +61,7 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
   routeData.createdStartTime = moment(createdStartTime).toISOString()
   routeData.createdEndTime = routeData.taskRunCompletionTime
 
-  // for each filter within the taskrun
+  // for each filter within the task run
   const timeseriesNonDisplayGroupsData = []
   for (const filter of nonDisplayGroupData) {
     const filterId = `&filterId=${filter.filterId}`

@@ -70,7 +70,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should not import data for an unapproved forecast task run', async () => {
       await processMessageAndCheckNoDataIsImported('unapprovedForecast')
     })
-    it('should not import data for an out-of-date forecast approvedtask run', async () => {
+    it('should not import data for an out-of-date forecast approved task run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
