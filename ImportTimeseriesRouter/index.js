@@ -287,8 +287,8 @@ async function parseMessage (context, transaction, message) {
   // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
   // This time period can be overridden by the two environment variables
   // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-  const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
-  const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+  const startTimeDisplayGroupOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
+  const endTimeDisplayGroupOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
 
   routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, routeData)
   routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, routeData)
@@ -299,8 +299,8 @@ async function parseMessage (context, transaction, message) {
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, routeData)} UTC`)).toISOString()
   routeData.taskRunCompletionTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
-  routeData.startTimeDisplayGroup = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  routeData.endTimeDisplayGroup = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  routeData.startTimeDisplayGroup = moment(routeData.taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours').toISOString()
+  routeData.endTimeDisplayGroup = moment(routeData.taskRunCompletionTime).add(endTimeDisplayGroupOffsetHours, 'hours').toISOString()
   // Non display group times are calculated at load time
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, routeData)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, routeData)

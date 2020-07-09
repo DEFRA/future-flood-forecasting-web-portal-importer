@@ -204,10 +204,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
-        const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
-        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
+        const startTimeDisplayGroupOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
+        const endTimeDisplayGroupOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours')
+        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeDisplayGroupOffsetHours, 'hours')
         expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
 
