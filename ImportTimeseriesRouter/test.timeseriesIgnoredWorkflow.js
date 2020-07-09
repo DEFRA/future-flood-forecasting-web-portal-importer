@@ -47,10 +47,10 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
       await pool.close()
     })
 
-    it('should ignore an ignored workflow', async () => {
+    it('should reject an ignored workflow', async () => {
       await processMessageAndCheckNoDataIsImported('ignoredForecast')
     })
-    it('should throw an exception when the ignored_workflow table is being refreshed', async () => {
+    it('should throw an exception when the ignored_workflow table locks due to refresh', async () => {
       // If the ignored_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
@@ -62,7 +62,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should create a staging exception for an invalid message', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
   })
 

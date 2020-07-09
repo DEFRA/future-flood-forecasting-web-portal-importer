@@ -5,7 +5,7 @@ module.exports = async function getIndicator (context, preparedStatement, routeD
 
   if (!indicator) {
     const indicatorRegex = new RegExp(`(?:${indicatorName}\\:?\\s*(True|False))`, 'i')
-    const indicatorText = 'task run approval status'
+    const indicatorText = `task run ${indicatorName} status`
     const indicatorString = await extract(context, routeData, indicatorRegex, 2, 1, indicatorText, preparedStatement)
 
     if (typeof indicatorString === 'undefined') {

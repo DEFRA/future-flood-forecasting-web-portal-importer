@@ -64,14 +64,13 @@ async function getNonDisplayGroupWorkflows (context, preparedStatement, routeDat
   // against a non display group data refresh during data retrieval.
   await preparedStatement.prepare(`
     select
-      filter_id
+      filter_id, approved, timeseries_type, start_time_offset_hours, end_time_offset_hours
     from
       fff_staging.non_display_group_workflow
     with
       (tablock holdlock)
     where
       workflow_id = @nonDisplayGroupWorkflowId
-      ${routeData.forecast ? ' and forecast = 1' : ''}
   `)
   const parameters = {
     nonDisplayGroupWorkflowId: routeData.workflowId
@@ -109,8 +108,6 @@ async function getIgnoredWorkflows (context, preparedStatement, workflowId) {
 async function createTimeseriesHeader (context, preparedStatement, routeData) {
   let timeseriesHeaderId
 
-  await preparedStatement.input('startTime', sql.DateTime2)
-  await preparedStatement.input('endTime', sql.DateTime2)
   await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
@@ -120,16 +117,14 @@ async function createTimeseriesHeader (context, preparedStatement, routeData) {
   await preparedStatement.prepare(`
   insert into
     fff_staging.timeseries_header
-      (start_time, end_time, task_completion_time, task_run_id, workflow_id, message)
+      (task_completion_time, task_run_id, workflow_id, message)
   output
     inserted.id
   values
-    (@startTime, @endTime, @taskRunCompletionTime, @taskRunId, @workflowId, @message)
+    (@taskRunCompletionTime, @taskRunId, @workflowId, @message)
 `)
 
   const parameters = {
-    startTime: routeData.startTime,
-    endTime: routeData.endTime,
     taskRunCompletionTime: routeData.taskRunCompletionTime,
     taskRunId: routeData.taskRunId,
     workflowId: routeData.workflowId,
@@ -163,7 +158,7 @@ async function loadTimeseries (context, preparedStatement, timeSeriesData, route
 `)
 
   const bindingDefinitions = await JSON.stringify(context.bindingDefinitions)
-  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding detected.`)
+  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding attached.`)
 
   for (const index in timeSeriesData) {
     const parameters = {
@@ -292,20 +287,21 @@ async function parseMessage (context, transaction, message) {
   // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
   // This time period can be overridden by the two environment variables
   // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-  const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
-  const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+  const startTimeDisplayGroupOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
+  const endTimeDisplayGroupOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
 
   routeData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, routeData)
   routeData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, routeData)
 
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
-  routeData.taskRunCompletionTime =
-    moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
   routeData.taskRunStartTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, routeData)} UTC`)).toISOString()
-  routeData.startTime = moment(routeData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  routeData.endTime = moment(routeData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  routeData.taskRunCompletionTime =
+    moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, routeData)} UTC`)).toISOString()
+  routeData.startTimeDisplayGroup = moment(routeData.taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours').toISOString()
+  routeData.endTimeDisplayGroup = moment(routeData.taskRunCompletionTime).add(endTimeDisplayGroupOffsetHours, 'hours').toISOString()
+  // Non display group times are calculated at load time
   routeData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, routeData)
   routeData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, routeData)
   return routeData

@@ -4,6 +4,7 @@ const sql = require('mssql')
 module.exports = async function getLatestTaskRunEndTime (context, preparedStatement, routeData) {
   await preparedStatement.input('taskRunCompletionTime', sql.DateTimeOffset)
   await preparedStatement.input('workflowId', sql.NVarChar)
+  await preparedStatement.input('taskRunId', sql.NVarChar)
 
   await preparedStatement.prepare(`
     select top(1)
@@ -12,13 +13,16 @@ module.exports = async function getLatestTaskRunEndTime (context, preparedStatem
     from
       fff_staging.timeseries_header
     where
-      workflow_id = @workflowId 
+      workflow_id = @workflowId
+    and 
+      task_run_id <> @taskRunId
     order by
       task_completion_time desc
   `)
 
   const parameters = {
-    workflowId: routeData.workflowId
+    workflowId: routeData.workflowId,
+    taskRunId: routeData.taskRunId
   }
 
   const result = await preparedStatement.execute(parameters)

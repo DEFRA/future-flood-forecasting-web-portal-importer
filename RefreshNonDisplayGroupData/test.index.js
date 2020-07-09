@@ -19,6 +19,8 @@ module.exports =
     let context
     let dummyData
 
+    const EXTERNAL_HISTORICAL = 'external_historical'
+
     const jestConnection = new Connection()
     const pool = jestConnection.pool
     const request = new sql.Request(pool)
@@ -33,16 +35,16 @@ module.exports =
         // function implementation for the function context needs creating for each test.
         context = new Context()
         dummyData = {
-          dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, forecast: 0 }]
+          dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
         await request.batch(`delete from fff_staging.csv_staging_exception`)
         await request.batch(`delete from fff_staging.non_display_group_workflow`)
         await request.batch(`
           insert into
             fff_staging.non_display_group_workflow
-              (workflow_id, filter_id, approved, forecast)
+              (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
           values
-            ('dummyWorkflow', 'dummyFilter', 0, 0)`)
+            ('dummyWorkflow', 'dummyFilter', 0, 1, 2, 'external_historical')`)
       })
 
       afterAll(async () => {
@@ -72,9 +74,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 1 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 10, endTimeOffset: 20, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -89,10 +91,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }, { filterId: 'test_filter_1a', approved: 0, forecast: 1 }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 1 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 0 }],
-          test_non_display_workflow_4: [{ filterId: 'test_filter_4', approved: 0, forecast: 0 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }, { filterId: 'test_filter_1a', approved: 1, startTimeOffset: 6, endTimeOffset: 9, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -107,9 +108,9 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }],
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 1 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
         const expectedErrorDescription = 'Violation of UNIQUE KEY constraint'
         const expectedNumberOfExceptionRows = 1
@@ -130,7 +131,7 @@ module.exports =
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
         await checkExceptionIsCorrect(expectedErrorDescription)
       })
-      it('should load WorkflowId and FilterId correctly into the db correctly with extra CSV fields present', async () => {
+      it('should load WorkflowId and filterId correctly into the db correctly, even with extra CSV fields present', async () => {
         const mockResponseData = {
           statusCode: STATUS_CODE_200,
           filename: 'extra-headers.csv',
@@ -139,8 +140,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 0 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 0
@@ -183,11 +184,11 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, forecast: 0 }]
+          test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedErrorDescription = 'row is missing data.'
-        const expectedNumberOfExceptionRows = 2
+        const expectedNumberOfExceptionRows = 1
         await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
         await checkExceptionIsCorrect(expectedErrorDescription)
       })
@@ -251,7 +252,6 @@ module.exports =
           statusText: STATUS_TEXT_OK,
           contentType: TEXT_CSV
         }
-
         await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
         // Set the test timeout higher than the database request timeout.
       }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
@@ -263,7 +263,7 @@ module.exports =
           contentType: TEXT_CSV
         }
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, forecast: 0 }]
+          test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
         const expectedErrorDescription = 'row is missing data.'
         const expectedNumberOfExceptionRows = 1
@@ -279,8 +279,8 @@ module.exports =
         }
 
         const expectedNonDisplayGroupData = {
-          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, forecast: 0 }],
-          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, forecast: 1 }]
+          test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }],
+          test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
         }
 
         const expectedNumberOfExceptionRows = 1
@@ -337,7 +337,9 @@ module.exports =
           select 
             filter_id,
             cast(approved as int) as approved,
-            cast(forecast as int) as forecast
+            start_time_offset_hours as startTimeOffset,
+            end_time_offset_hours as endTimeOffset,
+            timeseries_type as timeSeriesType
           from 
             fff_staging.non_display_group_workflow
           where 
@@ -348,7 +350,7 @@ module.exports =
           const rows = filterQuery.recordset
           const dbData = []
           rows.forEach(row =>
-            dbData.push({ filterId: row.filter_id, approved: row.approved, forecast: row.forecast })
+            dbData.push({ filterId: row.filter_id, approved: row.approved, startTimeOffset: row.startTimeOffset, endTimeOffset: row.endTimeOffset, timeSeriesType: row.timeSeriesType })
           )
           const expectedDataSorted = expectedData.sort()
           // get an array of filter ids for a given workflow id from the database
@@ -377,9 +379,9 @@ module.exports =
         await request.batch(`
         insert into
           fff_staging.${tableName}
-            (workflow_id, filter_id, approved, forecast)
+            (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('testWorkflow', 'testFilter', 0, 0)`)
+          ('testWorkflow', 'testFilter',0,0,0,'external_historical')`)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
       } finally {

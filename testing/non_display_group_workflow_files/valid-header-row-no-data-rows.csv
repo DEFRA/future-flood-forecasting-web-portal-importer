@@ -1,1 +1,1 @@
-WorkflowID,FilterID,Forecast,Approved,StartTimeOffsetHours,EndTimeOffsetHours
+WorkflowID,FilterID,Approved,StartTimeOffsetHours,EndTimeOffsetHours,TimeSeriesType

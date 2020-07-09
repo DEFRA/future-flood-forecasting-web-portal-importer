@@ -25,7 +25,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       insert into
         fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
       values
-        ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'), ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'), ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b')
+        ('Test_Coastal_Workflow', 'Test Coastal Plot', 'Test Coastal Location'), 
+        ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'), 
+        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'), 
+        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b'),
+        ('Span_Workflow', 'Test_Plot', 'Test_Location')
       `)
     })
     beforeEach(async () => {
@@ -46,7 +50,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
-    it('should import data for a single plot associated with an approved forecast', async () => {
+    it('should import data for a single plot associated with an approved forecast task run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -54,7 +58,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
     })
-    it('should import data for multiple plots associated with an approved forecast', async () => {
+    it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const mockResponses = [{
         data: {
           key: 'First plot timeseries display groups data'
@@ -67,19 +71,19 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }]
       await processMessageAndCheckImportedData('multiplePlotApprovedForecast', mockResponses)
     })
-    it('should not import data for an unapproved forecast', async () => {
+    it('should not import data for an unapproved forecast task run', async () => {
       await processMessageAndCheckNoDataIsImported('unapprovedForecast')
     })
-    it('should not import data for an out of date forecast', async () => {
+    it('should not import data for an approved out-of-date forecast task run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
         }
       }
-      await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+      await processMessageAndCheckImportedData('laterSinglePlotApprovedForecast', [mockResponse])
       await processMessageAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast', 1)
     })
-    it('should import data for a forecast approved manually', async () => {
+    it('should import data for a forecast manually approved task run', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -87,7 +91,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }
       await processMessageAndCheckImportedData('forecastApprovedManually', [mockResponse])
     })
-    it('should allow the default forecast start and end times to be overridden using environment variables', async () => {
+    it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env
       try {
         process.env['FEWS_START_TIME_OFFSET_HOURS'] = 24
@@ -102,13 +106,13 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         process.env = originalEnvironment
       }
     })
-    it('should create a staging exception for an unknown workflow', async () => {
+    it('should create a staging exception for a forecast approved unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(/\s+/)[1]
       await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
-    it('should create a staging exception for an invalid message', async () => {
-      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run approval status from message')
+    it('should create a staging exception for a message missing task run approval information', async () => {
+      await processMessageCheckStagingExceptionIsCreatedAndNoDataIsImported('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
@@ -123,7 +127,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const mockResponse = new Error('Request failed with status code 404')
       await processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
     })
-    it('should throw an exception when the coastal_display_group_workflow table is being refreshed', async () => {
+    it('should throw an exception when the coastal_display_group_workflow table locks due to refresh', async () => {
       // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
@@ -134,7 +138,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await lockDisplayGroupTableAndCheckMessageCannotBeProcessed('singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('should import data for a single plot associated with an approved forecast', async () => {
+    it('should import data for a single plot associated with an approved forecast with an output binding set to active', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -143,6 +147,32 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
       await processMessageAndCheckImportedData('singlePlotApprovedForecast', [mockResponse])
+    })
+    it('should load a single plot associated with a workflow that is also associated with non display group data', async () => {
+      const mockResponse = [{
+        data: {
+          key: 'Timeseries data'
+        }
+      },
+      {
+        data: {
+          key: 'Timeseries data'
+        }
+      }]
+
+      await request.batch(`
+        insert into
+          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+        values
+          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+      `)
+
+      const workflowAlreadyRan = {
+        spanFlag: true, // this workflow spans multiple timeseries type (fluvial dg/coastal dg/non dg)
+        expectedTargetedQueryLength: 1,
+        plotIdTargetedQuery: `and t.fews_parameters like '%plotId=%'`
+      }
+      await processMessageAndCheckImportedData('singlePlotAndFilterApprovedForecast', mockResponse, workflowAlreadyRan)
     })
   })
 
@@ -156,7 +186,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await messageFunction(context, JSON.stringify(taskRunCompleteMessages[messageKey]))
   }
 
-  async function processMessageAndCheckImportedData (messageKey, mockResponses) {
+  async function processMessageAndCheckImportedData (messageKey, mockResponses, workflowAlreadyRan) {
     await processMessage(messageKey, mockResponses)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
@@ -166,24 +196,32 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     const receivedFewsData = []
     const receivedPrimaryKeys = []
 
+    let excludeFilterString = ''
+    if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
+      excludeFilterString = workflowAlreadyRan.plotIdTargetedQuery
+    }
+
     const result = await request.query(`
     select
       t.id,
+      t.fews_parameters,
       th.workflow_id,
       th.task_run_id,
       th.task_completion_time,
-      th.start_time,
-      th.end_time,
       th.message,
       cast(decompress(t.fews_data) as varchar(max)) as fews_data
     from
       fff_staging.timeseries_header th,
       fff_staging.timeseries t
     where
-      th.id = t.timeseries_header_id
+      th.id = t.timeseries_header_id ${excludeFilterString}
     `)
 
-    expect(result.recordset.length).toBe(mockResponses.length)
+    if (workflowAlreadyRan && workflowAlreadyRan.spanFlag) {
+      expect(result.recordset.length).toBe(workflowAlreadyRan.expectedTargetedQueryLength)
+    } else {
+      expect(result.recordset.length).toBe(mockResponses.length)
+    }
 
     // Database interaction is asynchronous so the order in which records are written
     // cannot be guaranteed.
@@ -198,8 +236,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Check that data common to all timeseries has been persisted correctly.
       if (index === '0') {
         const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
-        const startTime = moment(result.recordset[index].start_time)
-        const endTime = moment(result.recordset[index].end_time)
 
         expect(taskRunCompletionTime.toISOString()).toBe(expectedTaskRunCompletionTime.toISOString())
         expect(result.recordset[index].task_run_id).toBe(expectedTaskRunId)
@@ -207,12 +243,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
+        const startTimeDisplayGroupOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
         const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours')
-        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours')
-        expect(startTime.toISOString()).toBe(expectedStartTime.toISOString())
-        expect(endTime.toISOString()).toBe(expectedEndTime.toISOString())
+        const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours').toISOString().substring(0, 19)
+        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString().substring(0, 19)
+        expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime}Z`)
+        expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime}Z`)
 
         // Check the incoming message has been captured correctly.
         expect(JSON.parse(result.recordset[index].message)).toEqual(taskRunCompleteMessages[messageKey])
