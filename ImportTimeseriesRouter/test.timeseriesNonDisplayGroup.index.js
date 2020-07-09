@@ -254,7 +254,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const workflowAlreadyRan = {
         spanFlag: true, // true when a workflow spans multiple timeseries types (fluvial dg/coastal dg/non dg)
         expectedResultLength: 1,
-        plotIdTargetedQuery: `and t.fews_parameters like '%filterId=%'`
+        filterIdTargetedQuery: `and t.fews_parameters like '%filterId=%'`
       }
       await processMessageAndCheckImportedData('filterAndPlotApprovedForecast', mockResponse, workflowAlreadyRan)
     })
@@ -335,7 +335,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
     let excludePlotString = ''
     if (workflowAlreadyRan && workflowAlreadyRan.spanFlag === true) {
-      excludePlotString = workflowAlreadyRan.plotIdTargetedQuery
+      excludePlotString = workflowAlreadyRan.filterIdTargetedQuery
     }
 
     const result = await request.query(`
