@@ -5,7 +5,7 @@ const getLatestEndTime = require('../helpers/get-latest-task-run-end-time')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
 const EXTERNAL_HISTORICAL = 'external_historical'
-const EXTERNAL_FORECAST = 'external_forecasting'
+const EXTERNAL_FORECASTING = 'external_forecasting'
 const SIMULATED_FORECASTING = 'simulated_forecasting'
 
 module.exports = async function getTimeseries (context, routeData) {
@@ -98,7 +98,7 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
     const fewsEndTime = `&endTime=${moment(routeData.createdEndTime).add(truncationOffsetHoursForward, 'hours').toISOString().substring(0, 19)}Z`
 
     let fewsParameters
-    if (filter.timeseriesType && (filter.timeseriesType === EXTERNAL_HISTORICAL || filter.timeseriesType === EXTERNAL_FORECAST)) {
+    if (filter.timeseriesType && (filter.timeseriesType === EXTERNAL_HISTORICAL || filter.timeseriesType === EXTERNAL_FORECASTING)) {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}${fewsCreatedStartTime}${fewsCreatedEndTime}`
     } else if (filter.timeseriesType && filter.timeseriesType === SIMULATED_FORECASTING) {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}`

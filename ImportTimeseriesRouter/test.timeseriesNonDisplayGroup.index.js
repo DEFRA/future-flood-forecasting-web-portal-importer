@@ -513,7 +513,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await request.batch(`
       insert into
         fff_staging.${tableName}
-        (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+          (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
           ('testWorkflow', 'testFilter', 0, 0, 0, 'external_historical')
       `)

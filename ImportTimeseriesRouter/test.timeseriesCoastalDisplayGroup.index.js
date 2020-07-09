@@ -161,11 +161,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }]
 
       await request.batch(`
-      insert into
-        fff_staging.non_display_group_workflow
-        (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-    values
-      ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+        insert into
+          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+        values
+          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
       `)
 
       const workflowAlreadyRan = {
