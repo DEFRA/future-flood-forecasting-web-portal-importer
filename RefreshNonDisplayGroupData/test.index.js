@@ -379,9 +379,9 @@ module.exports =
         await request.batch(`
         insert into
           fff_staging.${tableName}
-            (workflow_id, filter_id, approved)
+            (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('testWorkflow', 'testFilter', 0)`)
+          ('testWorkflow', 'testFilter',0,0,0,'external_historical')`)
         await mockFetchResponse(mockResponseData)
         await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
       } finally {
