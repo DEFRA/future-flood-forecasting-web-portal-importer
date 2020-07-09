@@ -104,7 +104,9 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
       fewsParameters = `${filterId}${fewsStartTime}${fewsEndTime}`
     } else {
       context.log.error(`There is no recognizable timeseries type specified for the filter: ${filterId}. Filter query cancelled.`)
-      continue // exit the current iteration for this filter as there are no search parameters the filter-workflow combination is abandoned
+      // fews parameters must be specified otherwise the data return is likely to be very large
+      // exit the current iteration for this filter as there would be no time parameters set
+      continue
     }
 
     // Get the timeseries display groups for the configured plot, locations and date range.
@@ -115,13 +117,10 @@ async function getTimeseriesInternal (context, nonDisplayGroupData, routeData) {
       url: fewsPiEndpoint,
       responseType: 'stream'
     }
-    context.log(`Retrieving timeseries display groups for filter ID ${filterId}`)
+    context.log(`Retrieving timeseries display groups for filter ID: ${filterId}`)
 
     let fewsResponse
-    // fews parameters must be specified otherwise the data return is likely to be very large
-    if (fewsParameters && (fewsParameters.includes('time') || fewsParameters.includes('Time'))) {
-      fewsResponse = await axios(axiosConfig)
-    }
+    fewsResponse = await axios(axiosConfig)
 
     timeseriesNonDisplayGroupsData.push({
       fewsParameters: fewsParameters,
