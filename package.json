@@ -1,6 +1,6 @@
 {
   "name": "future-flood-forecasting-web-portal-importer",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A Node.js Microsoft Azure function that imports flood forecasting data.",
   "scripts": {
     "build": "build/src/main/resources/scripts/build.sh",
@@ -13,7 +13,7 @@
     "@azure/service-bus": "^1.1.0",
     "axios": "^0.19.0",
     "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#02459a",
-    "moment": "^2.24.0",
+    "moment": "^2.27.0",
     "mssql": "^6.0.0",
     "neat-csv": "^5.1.0",
     "node-fetch": "^2.6.0",
