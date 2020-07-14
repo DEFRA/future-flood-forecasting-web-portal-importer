@@ -267,7 +267,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
         insert into 
-          fff_staging.${tableName} (WORKFLOW_ID) 
+          fff_staging.${tableName} (WORKFLOW_ID)
         values 
           ('ignored_1')
       `)

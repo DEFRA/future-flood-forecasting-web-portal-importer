@@ -42,6 +42,8 @@ module.exports = {
         if (transaction) {
           if (transaction._aborted) {
             context.log.warn('The transaction has been aborted.')
+          } else if (transaction._rollbackRequested) {
+            context.log.warn('Transaction rollback has been requested.')
           } else {
             await transaction.rollback()
             context.log.warn('The transaction has been rolled back.')

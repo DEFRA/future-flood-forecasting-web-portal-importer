@@ -28,5 +28,12 @@ module.exports = {
 
     await pipe(stream, gzip, byteArrayTransform)
     return Buffer.concat(buffers, buffersLength)
+  },
+  getEnvironmentVariableAsInteger: function (environmentVariableName) {
+    let environmentVariableAsInteger
+    if (Number.isInteger(process.env[environmentVariableName])) {
+      environmentVariableAsInteger = Number(environmentVariableName)
+    }
+    return environmentVariableAsInteger
   }
 }

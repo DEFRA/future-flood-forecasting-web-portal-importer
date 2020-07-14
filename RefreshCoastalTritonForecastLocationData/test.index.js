@@ -283,7 +283,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
          fff_staging.COASTAL_FORECAST_LOCATION
         where 
           FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-      CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'`)
+          CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'`)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
@@ -307,7 +307,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const request = new sql.Request(transaction)
       await request.query(`
       insert into 
-        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) 
+        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)
       values 
         ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Triton')`)
       await mockFetchResponse(mockResponseData)
