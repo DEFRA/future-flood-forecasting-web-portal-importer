@@ -1,8 +1,8 @@
 module.exports = describe('Refresh coastal location data tests', () => {
-  const Context = require('../testing/mocks/defaultContext')
-  const message = require('../testing/mocks/defaultMessage')
-  const Connection = require('../Shared/connection-pool')
-  const coastalRefreshFunction = require('./index')
+  const Context = require('../mocks/defaultContext')
+  const message = require('../mocks/defaultMessage')
+  const ConnectionPool = require('../../../Shared/connection-pool')
+  const coastalRefreshFunction = require('../../../RefreshCoastalTidalForecastLocationData/index')
   const fetch = require('node-fetch')
   const sql = require('mssql')
   const fs = require('fs')
@@ -16,11 +16,11 @@ module.exports = describe('Refresh coastal location data tests', () => {
   let context
   let dummyData
 
-  const jestConnection = new Connection()
-  const pool = jestConnection.pool
+  const jestConnectionPool = new ConnectionPool()
+  const pool = jestConnectionPool.pool
   const request = new sql.Request(pool)
 
-  describe('The refresh coastal Multivariate Thresholds forecast location data function:', () => {
+  describe('The refresh coastal tidal forecast location data function:', () => {
     beforeAll(async () => {
       await pool.connect()
     })
@@ -36,11 +36,11 @@ module.exports = describe('Refresh coastal location data tests', () => {
         CENTRE: 'dummy',
         MFDO_AREA: 'dummy',
         TA_NAME: 'dummy',
-        COASTAL_TYPE: 'Multivariate Thresholds'
+        COASTAL_TYPE: 'Coastal Forecasting'
       }
       await request.query(`delete from fff_staging.csv_staging_exception`)
       await request.query(`delete from fff_staging.coastal_forecast_location`)
-      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
+      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
     })
 
     afterAll(async () => {
@@ -72,19 +72,36 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const expectedCoastalLocationData = [
         {
           FFFS_LOC_ID: 'CV2',
+          FFFS_LOC_NAME: 'Nearthis TL',
           COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
-          MFDO_AREA: 'filler',
-          TA_NAME: 'filler',
-          COASTAL_TYPE: 'Multivariate Thresholds'
+          COASTAL_TYPE: 'Coastal Forecasting'
         },
         {
           FFFS_LOC_ID: 'ABVGTO',
+          FFFS_LOC_NAME: 'Hembe',
           COASTAL_ORDER: 58,
           CENTRE: 'Birmingham',
-          MFDO_AREA: 'filler',
-          TA_NAME: 'filler',
-          COASTAL_TYPE: 'Multivariate Thresholds'
+          COASTAL_TYPE: 'Coastal Forecasting'
+        }]
+      const expectedNumberOfExceptionRows = 0
+      await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
+    })
+    it('should refresh given a the normal case csv (missing TA_NAME and MFDO_AREA)', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'valid-standard.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedCoastalLocationData = [
+        {
+          FFFS_LOC_ID: 'CV2',
+          FFFS_LOC_NAME: 'Nearthis',
+          COASTAL_ORDER: 56,
+          CENTRE: 'Birmingham',
+          COASTAL_TYPE: 'Coastal Forecasting'
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -111,11 +128,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const expectedCoastalLocationData = [
         {
           FFFS_LOC_ID: 'CV2',
+          FFFS_LOC_NAME: 'Nearhere',
           COASTAL_ORDER: 70.0,
           CENTRE: 'Birmingham',
-          MFDO_AREA: 'MFDOAREA',
-          TA_NAME: 'TANAME',
-          COASTAL_TYPE: 'Multivariate Thresholds'
+          COASTAL_TYPE: 'Coastal Forecasting'
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -165,8 +181,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
       }
 
       const expectedCoastalLocationData = [dummyData]
-      const expectedNumberOfExceptionRows = 2
-      const expectedExceptionDescription = 'row is missing data'
+      const expectedNumberOfExceptionRows = 3
+      const expectedExceptionDescription = 'row is missing data.'
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
       await checkExceptionIsCorrect(expectedExceptionDescription)
     })
@@ -180,7 +196,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
       const expectedCoastalLocationData = [dummyData]
       const expectedNumberOfExceptionRows = 2
-      const expectedExceptionDescription = 'row is missing data'
+      const expectedExceptionDescription = 'row is missing data.'
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
       await checkExceptionIsCorrect(expectedExceptionDescription)
     })
@@ -208,7 +224,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     it('should not refresh when a non-csv file (JSON) is provided', async () => {
       const mockResponse = {
         status: STATUS_CODE_200,
-        body: fs.createReadStream(`testing/general-files/json.json`),
+        body: fs.createReadStream(`testing/function-tests/general-files/json.json`),
         statusText: STATUS_TEXT_OK,
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
@@ -225,7 +241,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponse = {
         status: 404,
-        body: fs.createReadStream(`testing/general-files/404.html`),
+        body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
@@ -251,7 +267,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     let mockResponse = {}
     mockResponse = {
       status: mockResponseData.statusCode,
-      body: fs.createReadStream(`testing/coastal_mvt_forecast_location_files/${mockResponseData.filename}`),
+      body: fs.createReadStream(`testing/function-tests/RefreshCoastalTidalForecastLocationData/coastal_tidal_forecast_location_files/${mockResponseData.filename}`),
       statusText: mockResponseData.statusText,
       headers: { 'Content-Type': mockResponseData.contentType },
       sendAsJson: false,
@@ -263,11 +279,12 @@ module.exports = describe('Refresh coastal location data tests', () => {
   async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows) {
     const coastalLocationCount = await request.query(`
     select 
-      count(*) 
+     count(*) 
     as 
-      number
+     number
     from 
-      fff_staging.coastal_forecast_location`)
+     fff_staging.COASTAL_FORECAST_LOCATION
+    `)
     const expectedNumberOfRows = expectedCoastalLocationData.length
     expect(coastalLocationCount.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Actual data row count: ${coastalLocationCount.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
@@ -276,29 +293,27 @@ module.exports = describe('Refresh coastal location data tests', () => {
       for (const row of expectedCoastalLocationData) {
         const databaseResult = await request.query(`
         select 
-          count(*) 
+         count(*)
         as 
          number 
         from 
-         fff_staging.coastal_forecast_location
+         fff_staging.COASTAL_FORECAST_LOCATION
         where 
-          FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-      CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
+         FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
+      CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
     // Check exceptions
-    if (expectedNumberOfExceptionRows) {
-      const exceptionCount = await request.query(`
-      select 
-        count(*) 
-      as 
-        number 
-      from 
-        fff_staging.csv_staging_exception`)
-      expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
-    }
+    const exceptionCount = await request.query(`
+    select 
+      count(*) 
+    as 
+      number 
+    from 
+      fff_staging.csv_staging_exception`)
+    expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
   }
 
   async function lockCoastalLocationTableAndCheckMessageCannotBeProcessed (mockResponseData) {
@@ -308,7 +323,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.query(`
-      insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Multivariate Thresholds')
+      insert into 
+        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)
+      values 
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting')
     `)
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')

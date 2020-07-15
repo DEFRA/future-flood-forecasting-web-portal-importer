@@ -1,8 +1,8 @@
 module.exports = describe('Ignored workflow loader tests', () => {
-  const Context = require('../testing/mocks/defaultContext')
-  const message = require('../testing/mocks/defaultMessage')
-  const Connection = require('../Shared/connection-pool')
-  const messageFunction = require('./index')
+  const Context = require('../mocks/defaultContext')
+  const message = require('../mocks/defaultMessage')
+  const ConnectionPool = require('../../../Shared/connection-pool')
+  const messageFunction = require('../../../RefreshIgnoredWorkflowData/index')
   const fetch = require('node-fetch')
   const sql = require('mssql')
   const fs = require('fs')
@@ -16,8 +16,8 @@ module.exports = describe('Ignored workflow loader tests', () => {
   let context
   let dummyData
 
-  const jestConnection = new Connection()
-  const pool = jestConnection.pool
+  const jestConnectionPool = new ConnectionPool()
+  const pool = jestConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh ignored workflow data function:', () => {
@@ -163,7 +163,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     it('should not refresh when a non-csv file (JSON) is provided', async () => {
       const mockResponse = {
         status: STATUS_CODE_200,
-        body: fs.createReadStream(`testing/general-files/json.json`),
+        body: fs.createReadStream(`testing/function-tests/general-files/json.json`),
         statusText: STATUS_TEXT_OK,
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
@@ -180,7 +180,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponse = {
         status: 404,
-        body: fs.createReadStream(`testing/general-files/404.html`),
+        body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
@@ -206,7 +206,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     let mockResponse = {}
     mockResponse = {
       status: mockResponseData.statusCode,
-      body: fs.createReadStream(`testing/ignored_workflow_files/${mockResponseData.filename}`),
+      body: fs.createReadStream(`testing/function-tests/RefreshIgnoredWorkflowData/ignored_workflow_files/${mockResponseData.filename}`),
       statusText: mockResponseData.statusText,
       headers: { 'Content-Type': mockResponseData.contentType },
       sendAsJson: false,

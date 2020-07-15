@@ -1,6 +1,6 @@
 const moment = require('moment')
 const sql = require('mssql')
-const messageFunction = require('../../ProcessFewsEventCode/index')
+const messageFunction = require('../../../ProcessFewsEventCode/index')
 
 const COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
   insert into 

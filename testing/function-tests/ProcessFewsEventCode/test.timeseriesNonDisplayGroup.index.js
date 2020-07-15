@@ -1,9 +1,9 @@
 module.exports = describe('Tests for import timeseries non-display groups', () => {
-  const taskRunCompleteMessages = require('../testing/messages/task-run-complete/non-display-group-messages')
-  const Context = require('../testing/mocks/defaultContext')
-  const ConnectionPool = require('../Shared/connection-pool')
-  const CommonTimeseriesTestUtils = require('../testing/shared/common-timeseries-test-utils')
-  const ProcessFewsEventCodeTestUtils = require('../testing/shared/process-fews-event-code-test-utils')
+  const taskRunCompleteMessages = require('./messages/task-run-complete/non-display-group-messages')
+  const Context = require('../mocks/defaultContext')
+  const ConnectionPool = require('../../../Shared/connection-pool')
+  const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+  const ProcessFewsEventCodeTestUtils = require('../shared/process-fews-event-code-test-utils')
   const sql = require('mssql')
 
   let context

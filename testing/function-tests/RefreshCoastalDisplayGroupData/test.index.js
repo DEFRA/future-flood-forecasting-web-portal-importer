@@ -1,9 +1,9 @@
 module.exports =
   describe('Insert coastal_display_group_workflow data tests', () => {
-    const message = require('../testing/mocks/defaultMessage')
-    const Context = require('../testing/mocks/defaultContext')
-    const Connection = require('../Shared/connection-pool')
-    const messageFunction = require('./index')
+    const message = require('../mocks/defaultMessage')
+    const Context = require('../mocks/defaultContext')
+    const ConnectionPool = require('../../../Shared/connection-pool')
+    const messageFunction = require('../../../RefreshCoastalDisplayGroupData/index')
     const fetch = require('node-fetch')
     const sql = require('mssql')
     const fs = require('fs')
@@ -18,8 +18,8 @@ module.exports =
     let context
     let dummyData
 
-    const jestConnection = new Connection()
-    const pool = jestConnection.pool
+    const jestConnectionPool = new ConnectionPool()
+    const pool = jestConnectionPool.pool
     const request = new sql.Request(pool)
 
     describe('The refresh coastal_display_group_workflow data function:', () => {
@@ -42,7 +42,7 @@ module.exports =
       })
 
       afterEach(() => {
-        // As the jestConnection pool is only closed at the end of the test suite the global temporary table used by each function
+        // As the jestConnectionPool pool is only closed at the end of the test suite the global temporary table used by each function
         // invocation needs to be dropped manually between each test case.
         return request.query(`drop table if exists #coastal_display_group_workflow_temp`)
       })
@@ -221,7 +221,7 @@ module.exports =
       it('should not refresh when a non-csv file (JSON) is provided', async () => {
         const mockResponse = {
           status: STATUS_CODE_200,
-          body: fs.createReadStream(`testing/general-files/json.json`),
+          body: fs.createReadStream(`testing/function-tests/general-files/json.json`),
           statusText: STATUS_TEXT_OK,
           headers: { 'Content-Type': 'application/javascript' },
           url: '.json'
@@ -238,7 +238,7 @@ module.exports =
       it('should not refresh if csv endpoint is not found(404)', async () => {
         const mockResponse = {
           status: 404,
-          body: fs.createReadStream(`testing/general-files/404.html`),
+          body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
           statusText: 'Not found',
           headers: { 'Content-Type': HTML },
           url: '.html'
@@ -264,7 +264,7 @@ module.exports =
       let mockResponse = {}
       mockResponse = {
         status: mockResponseData.statusCode,
-        body: fs.createReadStream(`testing/coastal_display_group_workflow_files/${mockResponseData.filename}`),
+        body: fs.createReadStream(`testing/function-tests/RefreshCoastalDisplayGroupData/coastal_display_group_workflow_files/${mockResponseData.filename}`),
         statusText: mockResponseData.statusText,
         headers: { 'Content-Type': mockResponseData.contentType },
         sendAsJson: false,

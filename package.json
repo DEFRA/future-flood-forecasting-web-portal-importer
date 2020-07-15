@@ -13,6 +13,7 @@
     "@azure/service-bus": "^1.1.0",
     "axios": "^0.19.0",
     "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#02459a",
+    "jsdom": "^16.2.2",
     "moment": "^2.27.0",
     "mssql": "^6.0.0",
     "neat-csv": "^5.1.0",

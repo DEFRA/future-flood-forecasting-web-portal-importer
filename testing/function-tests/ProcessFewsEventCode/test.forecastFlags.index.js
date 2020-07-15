@@ -1,5 +1,5 @@
 module.exports = describe('Test forecast flags', () => {
-  const { isBoolean } = require('../Shared/utils')
+  const { isBoolean } = require('../../../Shared/utils')
 
   describe('Forecast flag testing ', () => {
     it('should return true for boolean values', () => {

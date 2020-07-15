@@ -1,6 +1,6 @@
 module.exports = describe('Test shared connection', () => {
-  const { doInTransaction } = require('./transaction-helper')
-  const Context = require('../testing/mocks/defaultContext')
+  const { doInTransaction } = require('../../../Shared/transaction-helper')
+  const Context = require('../mocks/defaultContext')
   const sql = require('mssql')
 
   let context
