@@ -31,12 +31,6 @@
       "plotId": "Test Coastal Plot 2b"
     }
   ],
-  "forecastApprovedManually": [
-    {
-      "taskRunId": "ukeafffsmc00:000000004",
-      "plotId": "Test Coastal Plot 1"
-    }
-  ],
   "singlePlotAndFilterApprovedForecast": [
     {
       "taskRunId": "ukeafffsmc00:000000001",
