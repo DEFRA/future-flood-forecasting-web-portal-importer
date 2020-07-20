@@ -2,7 +2,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   const taskRunCompleteMessages = require('./messages/task-run-complete/coastal-display-group-messages')
   const Context = require('../mocks/defaultContext')
   const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+  const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
   const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
   const sql = require('mssql')
 
@@ -11,7 +11,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
-  const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
+  const commonCoastalTimeseriesTestUtils = new CommonCoastalTimeseriesTestUtils(pool, taskRunCompleteMessages)
   const request = new sql.Request(pool)
 
   const expectedData = {
@@ -50,17 +50,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   describe('Message processing for coastal display group task run completion', () => {
     beforeAll(async () => {
-      await commonTimeseriesTestUtils.beforeAll(pool)
-      await request.batch(`
-      insert into
-        fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
-      values
-        ('Test_Coastal_Workflow', 'Test Coastal Plot', 'Test Coastal Location'),
-        ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'),
-        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'),
-        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b'),
-        ('Span_Workflow', 'Test_Plot', 'Test_Location')
-      `)
+      await commonCoastalTimeseriesTestUtils.beforeAll(pool)
     })
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -68,10 +58,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonCoastalTimeseriesTestUtils.beforeEach(pool)
     })
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonCoastalTimeseriesTestUtils.afterAll(pool)
     })
     it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'
@@ -101,12 +91,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
-    it('should throw an exception when the coastal display group workflow table locks due to refresh', async () => {
-      // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
-      // so check that an exception is thrown to facilitate this process.
-      await processFewsEventCodeTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast')
-      // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should create a timeseries header and create messages for a workflow task run associated with a single plot and a single filter', async () => {
       await request.batch(`
         insert into
@@ -117,5 +101,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const messageKey = 'singlePlotAndFilterApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
+    it('should throw an exception when the coastal display group workflow table locks due to refresh', async () => {
+      // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
+      // so check that an exception is thrown to facilitate this process.
+      await processFewsEventCodeTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast')
+      // Set the test timeout higher than the database request timeout.
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
 })

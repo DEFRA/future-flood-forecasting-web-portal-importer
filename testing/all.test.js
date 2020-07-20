@@ -36,7 +36,7 @@ describe('Run all unit tests in sequence', () => {
     }
   })
 
-  require('./function-tests//DeleteExpiredTimeseries/test.index')
+  require('./function-tests/DeleteExpiredTimeseries/test.index')
   require('./function-tests/RefreshFluvialDisplayGroupData/test.index')
   require('./function-tests/RefreshCoastalDisplayGroupData/test.index')
   require('./function-tests/RefreshNonDisplayGroupData/test.index')
@@ -50,5 +50,9 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ProcessFewsEventCode/test.timeseriesFluvialDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesCoastalDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesIgnoredWorkflow')
+  // require('./function-tests/ImportFromFews/test.timeseriesNonDisplayGroup.index')
+  // require('./function-tests/ImportFromFews/test.timeseriesFluvialDisplayGroup.index')
+  require('./function-tests/ImportFromFews/test.timeseriesCoastalDisplayGroup.index')
+  // require('./function-tests/importFromFews/test.timeseriesIgnoredWorkflow')
   require('./function-tests/shared/test.connection-analysis.index')
 })

@@ -1,55 +1,10 @@
 const moment = require('moment')
 const sql = require('mssql')
 const messageFunction = require('../../../ProcessFewsEventCode/index')
-
-const COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
-  insert into 
-    fff_staging.coastal_display_group_workflow
-      (workflow_id, plot_id, location_ids) 
-    values 
-      ('dummyWorkflow', 'dummyPlot', 'dummyLocation')
-`
-const FLUVIAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
-  insert into 
-    fff_staging.fluvial_display_group_workflow
-      (workflow_id, plot_id, location_ids) 
-    values 
-      ('dummyWorkflow', 'dummyPlot', 'dummyLocation')
-`
-const NON_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
-  insert into
-    fff_staging.non_display_group_workflow
-      (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-    values
-      ('testWorkflow', 'testFilter', 0, 0, 0, 'external_historical')
- `
-const IGNORED_WORKFLOW_LOCK_TIMEOUT_QUERY = `
-  insert into
-    fff_staging.ignored_workflow
-      (workflow_id)
-  values 
-    ('dummyWorkflow')
-`
-const lockTimeoutData = {
-  'coastalDisplayGroupWorkflow': {
-    query: COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY,
-    tableName: 'coastal_display_group_workflow'
-  },
-  'fluvialDisplayGroupWorkflow': {
-    query: FLUVIAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY,
-    tableName: 'coastal_display_group_workflow'
-  },
-  'nonDisplayGroupWorkflow': {
-    query: NON_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY,
-    tableName: 'coastal_display_group_workflow'
-  },
-  'ignoredWorkflow': {
-    query: IGNORED_WORKFLOW_LOCK_TIMEOUT_QUERY,
-    tableName: 'coastal_display_group_workflow'
-  }
-}
+const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 
 module.exports = function (context, pool, taskRunCompleteMessages) {
+  const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessage = async function (messageKey) {
     await messageFunction(context, taskRunCompleteMessages[messageKey])
   }
@@ -166,21 +121,13 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
   }
 
   this.lockDisplayGroupTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
-    let transaction
-    try {
-      // Lock the timeseries table and then try and process the message.
-      transaction = new sql.Transaction(pool)
-      await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
-      const request = new sql.Request(transaction)
-      await request.batch(lockTimeoutData[workflow].query)
-      await expect(processMessage(messageKey, [mockResponse])).rejects.toBeTimeoutError(lockTimeoutData[workflow].tableName)
-    } finally {
-      if (transaction._aborted) {
-        context.log.warn('The transaction has been aborted.')
-      } else {
-        await transaction.rollback()
-        context.log.warn('The transaction has been rolled back.')
-      }
+    const config = {
+      context: context,
+      message: taskRunCompleteMessages[messageKey],
+      mockResponse: mockResponse,
+      processMessageFunction: messageFunction,
+      workflow: workflow
     }
+    await commonTimeseriesTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed(config)
   }
 }

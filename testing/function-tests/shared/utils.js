@@ -2,7 +2,7 @@ const { Readable } = require('stream')
 
 module.exports = {
   objectToStream: async function (object) {
-    const stream = await bufferToStream(Buffer.from(JSON.stringify(object)))
+    const stream = await bufferToStream(Buffer.from(typeof object === 'string' ? object : JSON.stringify(object)))
     return stream
   }
 }

@@ -4,7 +4,6 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
   const ConnectionPool = require('../../../Shared/connection-pool')
   const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
   const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-  const sql = require('mssql')
 
   let context
   let processFewsEventCodeTestUtils
@@ -12,17 +11,10 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-  const request = new sql.Request(pool)
 
   describe('Message processing for ignored workflows', () => {
     beforeAll(async () => {
       await commonTimeseriesTestUtils.beforeAll(pool)
-      await request.batch(`
-        insert into
-          fff_staging.ignored_workflow (workflow_id)
-        values
-          ('Test_Ignored_Workflow_1'), ('Test_Ignored_Workflow_2')
-      `)
     })
 
     beforeEach(async () => {

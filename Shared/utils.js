@@ -32,7 +32,7 @@ module.exports = {
   getEnvironmentVariableAsInteger: function (environmentVariableName) {
     let environmentVariableAsInteger
     if (Number.isInteger(process.env[environmentVariableName])) {
-      environmentVariableAsInteger = Number(environmentVariableName)
+      environmentVariableAsInteger = Number(process.env[environmentVariableName])
     }
     return environmentVariableAsInteger
   }
