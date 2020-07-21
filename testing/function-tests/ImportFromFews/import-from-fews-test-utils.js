@@ -46,7 +46,7 @@ module.exports = function (context, pool, importFromFewsMessages) {
 
   this.processMessagesAndCheckImportedData = async function (messageKey, mockResponses, checkImportedDataFunction, workflowAlreadyRan) {
     await processMessages(messageKey, mockResponses)
-    await checkImportedDataFunction(mockResponses, workflowAlreadyRan)
+    await checkImportedDataFunction(context, pool, mockResponses, workflowAlreadyRan)
   }
 
   this.processMessagesAndCheckNoDataIsImported = async function (messageKey, expectedNumberOfRecords) {
