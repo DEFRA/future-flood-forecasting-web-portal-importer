@@ -2,7 +2,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const taskRunCompleteMessages = require('./messages/task-run-complete/non-display-group-messages')
   const Context = require('../mocks/defaultContext')
   const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+  const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
   const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
   const sql = require('mssql')
 
@@ -11,7 +11,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
-  const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
+  const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool)
   const request = new sql.Request(pool)
 
   const expectedData = {
@@ -50,23 +50,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
-      await commonTimeseriesTestUtils.beforeAll(pool)
-      await request.batch(`
-        insert into
-          fff_staging.non_display_group_workflow
-             (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-        values
-          ('Test_Workflow1', 'Test Filter1', 0, 0, 0, 'external_historical'),
-          ('Test_Workflow2', 'Test Filter2a', 0, 0, 0, 'external_historical'),
-          ('Test_Workflow2', 'Test Filter2b', 0, 0, 0, 'external_historical'),
-          ('Test_Workflow3', 'Test Filter3', 0, 0, 0, 'external_historical'),
-          ('Test_Workflow4', 'Test Filter4', 0, 0, 0, 'external_historical'),
-          ('Span_Workflow', 'Span Filter', 1, 0, 0, 'external_historical'),
-          ('Test_workflowCustomTimes', 'Test FilterCustomTimes', 1, '10', '20', 'external_historical'),
-          ('workflow_simulated_forecasting', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
-          ('workflow_external_forecasting', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),
-          ('workflow_external_historical', 'Test Filter EH', 0, 0, 0, 'external_historical')
-      `)
+      await commonNonDisplayGroupTimeseriesTestUtils.beforeAll(pool)
       await request.batch(`
         insert into
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
@@ -82,11 +66,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.beforeEach(pool)
     })
 
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.afterAll(pool)
     })
 
     it('should create a timeseries header and create a message for a single filter associated with a non-forecast task run', async () => {
@@ -137,7 +121,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should throw an exception when the non-display group workflow table locks due to refresh', async () => {
       // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
-      await processFewsEventCodeTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterApprovedForecast')
+      await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterApprovedForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should load a single filter associated with a workflow that is also associated with display group data', async () => {

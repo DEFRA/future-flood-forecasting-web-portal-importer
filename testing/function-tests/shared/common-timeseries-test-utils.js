@@ -85,7 +85,7 @@ module.exports = function (pool) {
     // Closing the DB connection allows Jest to exit successfully.
     await pool.close()
   }
-  this.lockDisplayGroupTableAndCheckMessageCannotBeProcessed = async function (config) {
+  this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (config) {
     let transaction
     try {
       // Lock the timeseries table and then try and process the message.

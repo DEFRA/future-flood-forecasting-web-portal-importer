@@ -211,7 +211,7 @@ module.exports =
           contentType: TEXT_CSV
         }
 
-        await lockDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
+        await lockWorkflowTableAndCheckMessageCannotBeProcessed(mockResponseData)
         // Set the test timeout higher than the database request timeout.
       }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
 
@@ -342,7 +342,7 @@ module.exports =
       }
     }
 
-    async function lockDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
+    async function lockWorkflowTableAndCheckMessageCannotBeProcessed (mockResponseData) {
       let transaction
       const tableName = 'fluvial_display_group_workflow'
       try {

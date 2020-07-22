@@ -26,7 +26,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []
-      importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages)
+      importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
       await commonCoastalTimeseriesTestUtils.beforeEach(pool)
       await insertTimeseriesHeaders(pool)
     })
@@ -39,7 +39,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData('singlePlotApprovedForecast', [mockResponse], checkImportedData)
+      const config = {
+        messageKey: 'singlePlotApprovedForecast',
+        mockResponses: [mockResponse]
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const mockResponses = [{
@@ -52,7 +56,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Second plot timeseries display groups data'
         }
       }]
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData('multiplePlotApprovedForecast', mockResponses, checkImportedData)
+      const config = {
+        messageKey: 'multiplePlotApprovedForecast',
+        mockResponses: mockResponses
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should not import data for an ignored forecast task run', async () => {
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('ignoredWorkflowPlot')
@@ -66,8 +74,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData('laterSinglePlotApprovedForecast', [mockResponse], checkImportedData)
-      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast', 1)
+      const config = {
+        messageKey: 'laterSinglePlotApprovedForecast',
+        mockResponses: [mockResponse]
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast')
     })
     it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env
@@ -79,7 +91,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
             key: 'Timeseries display groups data'
           }
         }
-        await importFromFewsTestUtils.processMessagesAndCheckImportedData('singlePlotApprovedForecast', [mockResponse], checkImportedData)
+        const config = {
+          messageKey: 'singlePlotApprovedForecast',
+          mockResponses: [mockResponse]
+        }
+        await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
       } finally {
         process.env = originalEnvironment
       }
@@ -145,16 +161,16 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData('singlePlotApprovedForecast', [mockResponse], checkImportedData)
+
+      const config = {
+        messageKey: 'singlePlotApprovedForecast',
+        mockResponses: [mockResponse]
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should load a single plot associated with a workflow that is also associated with non display group data', async () => {
       const request = new sql.Request(pool)
       const mockResponse = [{
-        data: {
-          key: 'Timeseries data'
-        }
-      },
-      {
         data: {
           key: 'Timeseries data'
         }
@@ -167,12 +183,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
       `)
 
-      const workflowAlreadyRan = {
-        spanFlag: true, // this workflow spans multiple timeseries type (fluvial dg/coastal dg/non dg)
-        expectedTargetedQueryLength: 1,
-        plotIdTargetedQuery: `and t.fews_parameters like '%plotId=%'`
+      const config = {
+        messageKey: 'singlePlotAndFilterApprovedForecast',
+        mockResponses: mockResponse
       }
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData('singlePlotAndFilterApprovedForecast', mockResponse, checkImportedData, workflowAlreadyRan)
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should throw an exception when the coastal_display_group_workflow table locks due to refresh', async () => {
       // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
@@ -182,7 +197,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           key: 'Timeseries display groups data'
         }
       }
-      await importFromFewsTestUtils.lockDisplayGroupTableAndCheckMessagesCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
+      await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })

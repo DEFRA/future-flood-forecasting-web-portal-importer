@@ -10,6 +10,7 @@ const doTimeseriesExistForTaskRunPlotOrFilter = require('./helpers/do-timeseries
 const doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter = require('./helpers/do-timeseries-staging-exceptions-exist-for-task-run-plot-or-filter')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
 const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
+const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-server-error-message')
 const TimeseriesStagingError = require('./helpers/timeseries-staging-error')
 
@@ -70,11 +71,15 @@ async function processMessage (transaction, context, message) {
 
 async function importFromFews (context, taskRunData) {
   try {
-    await taskRunData['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
-
-    if (taskRunData.fewsPiUrl) {
-      await retrieveFewsData(context, taskRunData)
-      await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
+    if (!taskRunData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData)) {
+      await taskRunData['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
+      if (taskRunData.fewsPiUrl) {
+        await retrieveFewsData(context, taskRunData)
+        await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
+      }
+    } else {
+      context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
+        ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
     }
   } catch (err) {
     let errorData

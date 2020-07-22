@@ -91,7 +91,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should throw an exception when the fluvial display group workflow table locks due to refresh', async () => {
       // If the fluvial_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
-      await processFewsEventCodeTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast')
+      await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })

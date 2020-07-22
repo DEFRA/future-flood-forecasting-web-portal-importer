@@ -36,7 +36,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
     it('should throw an exception when the ignored workflow table locks due to refresh', async () => {
       // If the ignored table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
-      await processFewsEventCodeTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed('ignoredWorkflow', 'ignoredForecast')
+      await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('ignoredWorkflow', 'ignoredForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should create a staging exception for an invalid message', async () => {

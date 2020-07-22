@@ -120,7 +120,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
   }
 
-  this.lockDisplayGroupTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
+  this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
     const config = {
       context: context,
       message: taskRunCompleteMessages[messageKey],
@@ -128,6 +128,6 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       processMessageFunction: messageFunction,
       workflow: workflow
     }
-    await commonTimeseriesTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed(config)
+    await commonTimeseriesTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed(config)
   }
 }

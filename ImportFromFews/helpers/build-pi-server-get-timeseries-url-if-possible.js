@@ -71,8 +71,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
     truncationOffsetHoursForward = 0
   }
 
-  taskRunData.startTime = moment(taskRunData.creationStartTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-  taskRunData.endTime = moment(taskRunData.creationEndTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+  taskRunData.startTime = moment(taskRunData.startCreationTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+  taskRunData.endTime = moment(taskRunData.endCreationTime).add(truncationOffsetHoursForward, 'hours').toISOString()
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {

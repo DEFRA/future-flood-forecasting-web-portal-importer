@@ -1,7 +1,6 @@
 const moment = require('moment')
 const sql = require('mssql')
 const { getEnvironmentVariableAsInteger } = require('../../Shared/utils')
-const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const createTimeseriesStagingException = require('./create-timeseries-staging-exception')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
@@ -9,12 +8,7 @@ const TimeseriesStagingError = require('./timeseries-staging-error')
 
 module.exports = async function (context, taskRunData) {
   if (taskRunData.approved) {
-    if (await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData)) {
-      await buildPiServerUrlIfPossible(context, taskRunData)
-    } else {
-      context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
-        ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
-    }
+    await buildPiServerUrlIfPossible(context, taskRunData)
   } else {
     context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - forecast is not approved`)
   }

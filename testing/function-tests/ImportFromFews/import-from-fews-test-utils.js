@@ -4,7 +4,7 @@ const sql = require('mssql')
 const messageFunction = require('../../../ImportFromFews/index')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 
-module.exports = function (context, pool, importFromFewsMessages) {
+module.exports = function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessages = async function (messageKey, mockResponses) {
     if (mockResponses) {
@@ -28,8 +28,9 @@ module.exports = function (context, pool, importFromFewsMessages) {
     }
   }
 
-  const checkAmountOfDataImported = async function (expectedNumberOfRecords) {
+  const checkAmountOfDataImported = async function (taskRunId, expectedNumberOfRecords) {
     const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.VarChar, taskRunId)
     const result = await request.query(`
     select
       count(t.id) 
@@ -39,19 +40,25 @@ module.exports = function (context, pool, importFromFewsMessages) {
      fff_staging.timeseries_header th,
      fff_staging.timeseries t
     where
+      th.task_run_id = @taskRunId and
       th.id = t.timeseries_header_id
     `)
     expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
   }
 
-  this.processMessagesAndCheckImportedData = async function (messageKey, mockResponses, checkImportedDataFunction, workflowAlreadyRan) {
-    await processMessages(messageKey, mockResponses)
-    await checkImportedDataFunction(context, pool, mockResponses, workflowAlreadyRan)
+  this.processMessagesAndCheckImportedData = async function (config) {
+    await processMessages(config.messageKey, config.mockResponses)
+    await checkImportedDataFunction(config, context, pool)
+    if (config.expectedNumberOfImportedRecords > 0 || (config.mockResponses && config.mockResponses.length)) {
+      const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
+      await checkAmountOfDataImported(taskRunId, config.expectedNumberOfImportedRecords || config.mockResponses.length)
+    }
   }
 
   this.processMessagesAndCheckNoDataIsImported = async function (messageKey, expectedNumberOfRecords) {
     await processMessages(messageKey)
-    await checkAmountOfDataImported(expectedNumberOfRecords || 0)
+    const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
+    await checkAmountOfDataImported(taskRunId, expectedNumberOfRecords || 0)
   }
 
   this.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, expectedErrorDescription) {
@@ -81,7 +88,8 @@ module.exports = function (context, pool, importFromFewsMessages) {
     }
 
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
-    await checkAmountOfDataImported(0)
+    const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
+    await checkAmountOfDataImported(taskRunId, 0)
   }
 
   this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, mockResponses, expectedErrorDetails) {
@@ -107,7 +115,8 @@ module.exports = function (context, pool, importFromFewsMessages) {
     expect(result.recordset[0].csv_type).toEqual(expectedErrorDetails.csvType)
     expect(result.recordset[0].description).toEqual(expectedErrorDetails.description)
 
-    await checkAmountOfDataImported(0)
+    const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
+    await checkAmountOfDataImported(taskRunId, 0)
   }
 
   this.processMessagesAndCheckExceptionIsThrown = async function (messageKey, mockErrorResponse) {
@@ -117,7 +126,7 @@ module.exports = function (context, pool, importFromFewsMessages) {
     }
   }
 
-  this.lockDisplayGroupTableAndCheckMessagesCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
+  this.lockWorkflowTableAndCheckMessagesCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
     const config = {
       context: context,
       message: importFromFewsMessages[messageKey][0],
@@ -125,6 +134,6 @@ module.exports = function (context, pool, importFromFewsMessages) {
       processMessageFunction: messageFunction,
       workflow: workflow
     }
-    await commonTimeseriesTestUtils.lockDisplayGroupTableAndCheckMessageCannotBeProcessed(config)
+    await commonTimeseriesTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed(config)
   }
 }
