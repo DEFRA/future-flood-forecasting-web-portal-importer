@@ -131,7 +131,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         sourceType: 'P',
         csvError: true,
         csvType: 'U',
-        description: `Unable to find locations for plot ${importFromFewsMessages[messageKey][0].plotId} of task run undefined in any display group CSV`
+        description: `Unable to find locations for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ukeafffsmc00:000000001 in any display group CSV`
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
     })

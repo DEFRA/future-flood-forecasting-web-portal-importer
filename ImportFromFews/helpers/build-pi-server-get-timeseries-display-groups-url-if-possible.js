@@ -98,7 +98,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
     taskRunData.locationIds = result.recordset[0].location_ids
   } else {
     const errorDescription = result.recordset.length === 0
-      ? `Unable to find locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId$} in any display group CSV`
+      ? `Unable to find locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} in any display group CSV`
       : `Found locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId$} in coastal and fluvial display group CSVs`
 
     const errorData = {
