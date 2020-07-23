@@ -2,52 +2,42 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   const taskRunCompleteMessages = require('./messages/task-run-complete/fluvial-display-group-messages')
   const Context = require('../mocks/defaultContext')
   const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+  const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-timeseries-test-utils')
   const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-  const sql = require('mssql')
 
   let context
   let processFewsEventCodeTestUtils
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
-  const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-  const request = new sql.Request(pool)
+  const commonFluvialTimeseriesTestUtils = new CommonFluvialTimeseriesTestUtils(pool, taskRunCompleteMessages)
 
   const expectedData = {
     singlePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Plot1' ]
+      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
     },
     earlierSinglePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Plot1' ]
+      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
     },
     multiplePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Plot2a', 'Test Plot2a' ]
+      outgoingPlotIds: [ 'Test Fluvial Plot2a', 'Test Fluvial Plot2a' ]
     },
     forecastApprovedManually: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Plot1' ]
+      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
     }
   }
 
   describe('Message processing for fluvial display group task run completion', () => {
     beforeAll(async () => {
-      await commonTimeseriesTestUtils.beforeAll(pool)
-      await request.batch(`
-        insert into
-          fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
-        values
-          ('Test_Fluvial_Workflow1', 'Test Plot1', 'Test Location1'),
-          ('Test_Fluvial_Workflow2', 'Test Plot2a', 'Test Location2a'),
-          ('Test_Fluvial_Workflow2', 'Test Plot2b', 'Test Location2b')
-      `)
+      await commonFluvialTimeseriesTestUtils.beforeAll(pool)
     })
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -55,10 +45,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonFluvialTimeseriesTestUtils.beforeEach(pool)
     })
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonFluvialTimeseriesTestUtils.afterAll(pool)
     })
     it('should import data for a single plot associated with an approved forecast task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'

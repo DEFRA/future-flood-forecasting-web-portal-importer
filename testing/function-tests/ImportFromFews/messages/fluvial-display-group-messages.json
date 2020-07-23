@@ -2,68 +2,37 @@
   "commonMessageData": {
     "startTime": "2019-09-13 13:05:00",
     "completionTime": "2019-09-13 13:06:00"
-  },  
-  "singlePlotApprovedForecast": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Test_Fluvial_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
-    }
   },
-  "earlierSinglePlotApprovedForecast": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Test_Fluvial_Workflow1 with ID ukeafffsmc00:000000002 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:05:59 More text",
-      "source": "ukeafffsmc00:000000002",
-      "level": "INFO"
+  "singlePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "plotId": "Test Fluvial Plot1"
     }
-  },
-  "multiplePlotApprovedForecast": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Test_Fluvial_Workflow2 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+  ],
+  "earlierSinglePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000003",
+      "plotId": "Test Fluvial Plot1"
     }
-  },
-  "unapprovedForecast": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Test_Fluvial_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+  ],
+  "multiplePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "plotId": "Test Fluvial Plot2a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "plotId": "Test Fluvial Plot2b"
     }
-  },
-  "forecastApprovedManually": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task run Test_Fluvial_Workflow1 (T0=2019-09-13 13:05, Dispatch=2019-09-13 13:06, Id=ukeafffsmc00:000000001) is made current manually",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
+  ],
+  "singlePlotAndFilterApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000004",
+      "plotId": "SpanPlot2"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000004",
+      "filterId": "SpanFilter2"
     }
-  },
-  "unknownWorkflow": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
-    }
-  },
-  "forecastWithoutApprovalStatus": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Test_Fluvial_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
-    }
-  }
+  ]
 }
