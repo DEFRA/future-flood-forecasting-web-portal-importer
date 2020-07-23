@@ -341,10 +341,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should not import data for an approved:false message associated with a timeseries type requiring approval', async () => {
-      const config = {
-        messageKey: 'unapprovedSimulatedForecast'
-      }
-      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(config)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('unapprovedSimulatedForecast')
     })
   })
 
