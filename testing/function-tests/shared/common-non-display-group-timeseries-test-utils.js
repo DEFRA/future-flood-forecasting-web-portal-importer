@@ -17,7 +17,7 @@ module.exports = function (pool, messages) {
           ('Test_Workflow2', 'Test Filter2b', 0, 0, 0, 'external_historical'),
           ('Test_Workflow3', 'Test Filter3', 1, 0, 0, 'external_historical'),
           ('Test_Workflow4', 'Test Filter4', 1, 0, 0, 'external_historical'),
-          ('Span_Workflow', 'Span Filter', 1, 0, 0, 'external_historical'),
+          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical'),
           ('Test_workflowCustomTimes', 'Test FilterCustomTimes', 1, '10', '20', 'external_historical'),
           ('workflow_simulated_forecasting', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
           ('workflow_external_forecasting', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),

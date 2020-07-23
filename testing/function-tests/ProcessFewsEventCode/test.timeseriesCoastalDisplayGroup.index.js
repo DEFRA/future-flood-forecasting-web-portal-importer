@@ -43,7 +43,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     singlePlotAndFilterApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test_Plot' ],
+      outgoingPlotIds: [ 'SpanPlot' ],
       outgoingFilterIds: [ 'SpanFilter' ]
     }
   }

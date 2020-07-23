@@ -19,7 +19,14 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   describe('Message processing for coastal display group task run completion', () => {
     beforeAll(async () => {
+      const request = new sql.Request(pool)
       await commonCoastalTimeseriesTestUtils.beforeAll(pool)
+      await request.batch(`
+        insert into
+          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+        values
+          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+      `)
     })
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -169,23 +176,22 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should load a single plot associated with a workflow that is also associated with non display group data', async () => {
-      const request = new sql.Request(pool)
-      const mockResponse = [{
-        data: {
-          key: 'Timeseries data'
+      const mockResponses = [
+        {
+          data: {
+            key: 'Timeseries data'
+          }
+        },
+        {
+          data: {
+            key: 'Timeseries data'
+          }
         }
-      }]
-
-      await request.batch(`
-        insert into
-          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-        values
-          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
-      `)
+      ]
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
-        mockResponses: mockResponse
+        mockResponses: mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -221,7 +227,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
          (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000003', 'Test_Coastal_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004', 'Test_Coastal_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Test_Ignored_Workflow_1', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Ignored_Workflow_1', 1, 0, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Ignored_Workflow_1', 1, 0, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Span_Workflow', 1, 1, '{"input": "Test message"}')
     `)
   }
 })

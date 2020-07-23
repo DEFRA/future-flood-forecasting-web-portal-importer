@@ -43,7 +43,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     filterAndPlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Coastal Plot 1' ],
+      outgoingPlotIds: [ 'SpanPlot' ],
       outgoingFilterIds: [ 'SpanFilter' ]
     }
   }
@@ -56,7 +56,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
         values
           ('Test_Workflow4', 'Test Plot4', 'Test Location4'),
-          ('Span_Workflow', 'Span Plot', 'Span Location' )
+          ('Span_Workflow', 'SpanPlot', 'Span Location' )
       `)
     })
 

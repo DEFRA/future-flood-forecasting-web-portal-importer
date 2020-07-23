@@ -30,8 +30,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         insert into
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
         values
-          -- ('Test_Workflow4', 'Test Plot4', 'Test Location4'),
-          ('Span_Workflow', 'Span Plot', 'Span Location' )
+          ('Span_Workflow', 'SpanPlot', 'Span Location' )
       `)
     })
     beforeEach(async () => {
@@ -256,7 +255,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should load a single filter associated with a workflow that is also associated with display group data', async () => {
-      const request = new sql.Request(pool)
       const mockResponses = [{
         data: {
           key: 'Timeseries data'
@@ -267,13 +265,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           key: 'Timeseries data'
         }
       }]
-
-      await request.batch(`
-      insert into
-        fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
-      values
-        ('Dual_Workflow', 'Test Coastal Plot 1', 'Test Coastal Location 1')
-      `)
 
       const config = {
         messageKey: 'filterAndPlotApprovedForecast',
