@@ -19,10 +19,12 @@ module.exports = function (pool, messages) {
           ('Test_Workflow4', 'Test Filter4', 1, 0, 0, 'external_historical'),
           ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical'),
           ('Test_workflowCustomTimes', 'Test FilterCustomTimes', 1, '10', '20', 'external_historical'),
-          ('workflow_simulated_forecasting', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
-          ('workflow_external_forecasting', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),
-          ('workflow_external_historical', 'Test Filter EH', 0, 0, 0, 'external_historical'),
-          ('workflow_unknown_timeseries_type', 'Test Filter Unknown Timeseries Type', 0, 0, 0, 'Not specified')
+          ('Simulated_Forecasting_Workflow1', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
+          ('Simulated_Forecasting_Workflow2', 'Test Filter SF', 1, 0, 0, 'simulated_forecasting'),
+          ('External_Forecasting_Workflow1', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),
+          ('External_Forecasting_Workflow2', 'Test Filter EF', 0, 0, 0, 'external_forecasting'),
+          ('External_Historical_Workflow', 'Test Filter EH', 0, 0, 0, 'external_historical'),
+          ('Unknown_Timeseries_Type_Workflow', 'Test Filter Unknown Timeseries Type', 0, 0, 0, 'Not specified')
       `)
   }
   this.beforeEach = async function () {

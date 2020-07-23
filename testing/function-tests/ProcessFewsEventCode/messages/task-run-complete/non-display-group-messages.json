@@ -150,7 +150,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task workflow_external_historical with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "description": "Task External_Historical_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO",
       "startTime": "2019-09-13 13:05:00",
@@ -161,7 +161,7 @@
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
-      "description": "Task workflow_unknown_timeseries_type with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "description": "Task Unknown_Timeseries_Type_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000001",
       "level": "INFO",
       "startTime": "2019-09-13 13:05:00",

@@ -289,7 +289,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
-    it('should import data for a single filter associated with a external-historical data and ensure the query parameters contain start/end times and start/end creation times', async () => {
+    it('should import data for a single filter associated with external historical data and ensure the query parameters contain start/end times and start/end creation times', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
@@ -306,7 +306,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
-    it('should import data for a single filter associated with a external-forecasting data and ensure the query parameters contain start/end times and start/end creation times', async () => {
+    it('should import data for a single filter associated with external forecasting data and ensure the query parameters contain start/end times and start/end creation times', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries non-display groups data'
@@ -371,13 +371,12 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Ignored_Workflow_1', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Test_Workflow5', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000008', 'Test_workflowCustomTimes', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'workflow_simulated_forecasting', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000010', 'workflow_external_forecasting', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000011', 'workflow_external_historical', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000012', 'workflow_simulated_forecasting', 1, 0, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'Simulated_Forecasting_Workflow1', 1, 1, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000010', 'External_Forecasting_Workflow1', 1, 1, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000011', 'External_Historical_Workflow', 1, 1, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000012', 'Simulated_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'workflow_external_forecasting', 1, 0, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'workflow_simulated_forecasting', 1, 0, '{"input": "Test message"}')
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}')
     `)
   }
 
