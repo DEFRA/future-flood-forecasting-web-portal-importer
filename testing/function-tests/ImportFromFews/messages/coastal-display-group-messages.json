@@ -76,5 +76,37 @@
       "taskRunId": "ukeafffsmc00:000000001",
       "plotId": "Unknown"
     }
+  ],
+  "workflowPlotDefinedInMultipleDisplayGroupCsvFiles": [
+    {
+      "taskRunId": "ukeafffsmc00:000000008",
+      "plotId": "Test Coastal Plot 4"
+    }
+  ],
+  "partialTaskRunLoadPartOne": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Span Plot 9a"
+    }
+  ],
+  "partialTaskRunLoadPartTwo": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Span Plot 9b"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Span Plot 9c"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "filterId": "Test Span Filter 9a"
+    }
+  ],
+  "partialTaskRunLoadPartThree": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "filterId": "Test Span Filter 9b"
+    }
   ]
 }

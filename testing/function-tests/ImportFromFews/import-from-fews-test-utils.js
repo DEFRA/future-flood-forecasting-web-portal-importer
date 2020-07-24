@@ -92,7 +92,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     await checkAmountOfDataImported(taskRunId, 0)
   }
 
-  this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, mockResponses, expectedErrorDetails) {
+  this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, mockResponses, expectedErrorDetails, expectedNumberOfRecords) {
     await processMessages(messageKey, mockResponses)
     const request = new sql.Request(pool)
     const result = await request.query(`
@@ -116,7 +116,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     expect(result.recordset[0].description).toEqual(expectedErrorDetails.description)
 
     const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
-    await checkAmountOfDataImported(taskRunId, 0)
+    await checkAmountOfDataImported(taskRunId, expectedNumberOfRecords || 0)
   }
 
   this.processMessagesAndCheckExceptionIsThrown = async function (messageKey, mockErrorResponse) {

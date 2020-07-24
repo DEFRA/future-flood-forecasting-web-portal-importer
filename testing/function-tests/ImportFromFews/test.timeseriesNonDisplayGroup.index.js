@@ -121,7 +121,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
       await importFromFewsTestUtils.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported(messageKey, `Unable to retrieve TIMESERIES_HEADER record for task run ${taskRunId}`)
     })
-    it('should create a timeseries staging exception when a message contains an unknown plot or filter ID', async () => {
+    it('should create a timeseries staging exception when a message contains an unknown filter ID', async () => {
       const messageKey = 'unknownFilterId'
       const expectedErrorDetails = {
         sourceId: importFromFewsMessages[messageKey][0].filterId,

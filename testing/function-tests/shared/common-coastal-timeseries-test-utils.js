@@ -15,7 +15,11 @@ module.exports = function (pool, messages) {
         ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'),
         ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b'),
         ('Test_Coastal_Workflow3', 'Test Coastal Plot 3', 'Test Coastal Location 3'),
-        ('Span_Workflow', 'SpanPlot', 'Test_Location')
+        ('Test_Coastal_Workflow4', 'Test Coastal Plot 4', 'Test Coastal Location 4'),
+        ('Span_Workflow', 'SpanPlot', 'Test_Location'),
+        ('Partial_Load_Span_Workflow', 'Test Span Plot 9a', 'Test_Location 9a'),
+        ('Partial_Load_Span_Workflow', 'Test Span Plot 9b', 'Test_Location 9b'),
+        ('Partial_Load_Span_Workflow', 'Test Span Plot 9c', 'Test_Location 9b')
     `)
   }
   this.beforeEach = async function () {
