@@ -41,12 +41,6 @@
       "filterId": "SpanFilter"
     }
   ],
-  "ignoredWorkflowPlot": [
-    {
-      "taskRunId": "ukeafffsmc00:000000005",
-      "plotId": "Ignored Workflow Plot"
-    }
-  ],
   "unapprovedWorkflowPlot": [
     {
       "taskRunId": "ukeafffsmc00:000000006",

@@ -69,9 +69,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
-    it('should not import data for an ignored forecast task run', async () => {
-      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('ignoredWorkflowPlot')
-    })
     it('should not import data for an unapproved forecast task run', async () => {
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('unapprovedWorkflowPlot')
     })
@@ -227,7 +224,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
          (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000003', 'Test_Coastal_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004', 'Test_Coastal_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Test_Ignored_Workflow_1', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Ignored_Workflow_1', 1, 0, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Coastal_Workflow3', 1, 0, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Span_Workflow', 1, 1, '{"input": "Test message"}')
     `)
   }

@@ -53,6 +53,6 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ImportFromFews/test.timeseriesNonDisplayGroup.index')
   require('./function-tests/ImportFromFews/test.timeseriesFluvialDisplayGroup.index')
   require('./function-tests/ImportFromFews/test.timeseriesCoastalDisplayGroup.index')
-  // require('./function-tests/importFromFews/test.timeseriesIgnoredWorkflow')
+  require('./function-tests/ImportFromFews/test.timeseriesIgnoredWorkflow.index')
   require('./function-tests/shared/test.connection-analysis.index')
 })
