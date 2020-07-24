@@ -134,5 +134,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'filterAndPlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
+    it('should ignore a duplicate task run', async () => {
+      const messageKey = 'singleFilterNonForecast'
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1, 1)
+    })
   })
 })
