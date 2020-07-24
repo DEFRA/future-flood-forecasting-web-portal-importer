@@ -56,6 +56,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
   // refresh during data retrieval.
   await preparedStatement.prepare(`
     select
+      csv_type,
       dgw.location_ids
     from
       (
@@ -67,6 +68,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
         with
           (tablock holdlock)  
         where
+          workflow_id = @workflowId and
           plot_id = @plotId   
         union
         select
@@ -77,6 +79,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
         with
           (tablock holdlock)  
         where
+          workflow_id = @workflowId and
           plot_id = @plotId  
       ) dgw,
       fff_staging.timeseries_header th
@@ -99,7 +102,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
   } else {
     const errorDescription = result.recordset.length === 0
       ? `Unable to find locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} in any display group CSV`
-      : `Found locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId$} in coastal and fluvial display group CSVs`
+      : `Found locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} in coastal and fluvial display group CSVs`
 
     const errorData = {
       sourceId: taskRunData.sourceId,
