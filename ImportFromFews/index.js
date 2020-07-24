@@ -100,6 +100,7 @@ async function importFromFews (context, taskRunData) {
           csvError: csvError,
           csvType: csvType,
           fewsParameters: taskRunData.fewsParameters || null,
+          payload: taskRunData.message,
           timeseriesHeaderId: taskRunData.timeseriesHeaderId,
           description: errorDescription
         }

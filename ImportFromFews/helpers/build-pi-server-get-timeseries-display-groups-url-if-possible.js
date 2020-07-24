@@ -113,6 +113,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
       csvType: 'U',
       fewsParameters: null,
       timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+      payload: taskRunData.message,
       description: errorDescription
     }
     throw new TimeseriesStagingError(errorData, errorDescription)

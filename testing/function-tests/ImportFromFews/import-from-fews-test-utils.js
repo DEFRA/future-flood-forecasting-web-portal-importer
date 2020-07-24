@@ -101,6 +101,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       source_type,
       csv_error,
       csv_type,
+      payload,
       description
     from
       fff_staging.timeseries_staging_exception
@@ -114,6 +115,9 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     expect(result.recordset[0].csv_error).toEqual(expectedErrorDetails.csvError)
     expect(result.recordset[0].csv_type).toEqual(expectedErrorDetails.csvType)
     expect(result.recordset[0].description).toEqual(expectedErrorDetails.description)
+
+    // Check the problematic message has been captured correctly.
+    expect(JSON.parse(result.recordset[0].payload)).toEqual(importFromFewsMessages[messageKey][0])
 
     const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
     await checkAmountOfDataImported(taskRunId, expectedNumberOfRecords || 0)

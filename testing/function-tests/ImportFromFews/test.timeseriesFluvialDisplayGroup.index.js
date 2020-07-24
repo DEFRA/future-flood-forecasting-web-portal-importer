@@ -87,7 +87,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // an exception is thrown to facilitate this process.
       const mockResponse = new Error('connect ECONNREFUSED mockhost')
       await importFromFewsTestUtils.processMessagesAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 300000) + 5000)
+    })
     it('should create a timeseries staging exception when a core engine PI server resource is unavailable', async () => {
       const mockResponse = new Error('Request failed with status code 404')
       mockResponse.response = {

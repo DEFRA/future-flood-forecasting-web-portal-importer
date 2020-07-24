@@ -105,6 +105,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
       csvError: true,
       csvType: 'N',
       fewsParameters: null,
+      errorData: taskRunData.message,
       timeseriesHeaderId: taskRunData.timeseriesHeaderId,
       description: errorDescription
     }
@@ -154,6 +155,7 @@ async function getWorkflowFilterData (context, preparedStatement, taskRunData) {
       csvError: true,
       csvType: 'N',
       fewsParameters: null,
+      payload: taskRunData.message,
       timeseriesHeaderId: taskRunData.timeseriesHeaderId,
       description: errorDescription
     }
