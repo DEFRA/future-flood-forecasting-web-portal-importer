@@ -67,16 +67,16 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         context.bindings.importFromFews.filter(message => message.filterId)
           .map(message => message.filterId)
 
-      for (const outgoingPlotMessage of context.bindings.importFromFews) {
-        expect(outgoingPlotMessage.taskRunId).toBe(expectedTaskRunId)
+      for (const outgoingMessage of context.bindings.importFromFews) {
+        expect(outgoingMessage.taskRunId).toBe(expectedTaskRunId)
       }
 
-      for (const expectedOutgoingPlotId of outgoingPlotIds) {
-        expect(outgoingPlotIds).toContainEqual(expectedOutgoingPlotId)
+      for (const outgoingPlotId of outgoingPlotIds) {
+        expect(expectedData.outgoingPlotIds).toContainEqual(outgoingPlotId)
       }
 
-      for (const expectedOutgoingFilterId of outgoingFilterIds) {
-        expect(outgoingFilterIds).toContainEqual(expectedOutgoingFilterId)
+      for (const outgoingFilterId of outgoingFilterIds) {
+        expect(expectedData.outgoingFilterIds).toContainEqual(outgoingFilterId)
       }
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')
