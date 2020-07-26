@@ -2,22 +2,22 @@ const sql = require('mssql')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
 const StagingError = require('./staging-error')
 
-module.exports = async function (context, preparedStatement, stagingExceptionData, description) {
+module.exports = async function (context, preparedStatement, stagingExceptionData) {
   const transaction = preparedStatement.parent
   await transaction.rollback()
-  await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, stagingExceptionData, description)
+  await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, stagingExceptionData)
   if (stagingExceptionData.throwStagingErrorFollowingStagingExceptionCreation) {
-    throw new StagingError(description)
+    throw new StagingError(stagingExceptionData.errorMessage)
   } else {
-    context.log.error(description)
+    context.log.error(stagingExceptionData.errorMessage)
   }
 }
 
-async function createStagingExceptionInTransaction (transaction, context, stagingExceptionData, description) {
-  await executePreparedStatementInTransaction(createStagingException, context, transaction, stagingExceptionData, description)
+async function createStagingExceptionInTransaction (transaction, context, stagingExceptionData) {
+  await executePreparedStatementInTransaction(createStagingException, context, transaction, stagingExceptionData)
 }
 
-async function createStagingException (context, preparedStatement, stagingExceptionData, description) {
+async function createStagingException (context, preparedStatement, stagingExceptionData) {
   await preparedStatement.input('payload', sql.NVarChar)
   await preparedStatement.input('description', sql.NVarChar)
   await preparedStatement.input('taskRunId', sql.NVarChar)
@@ -31,7 +31,7 @@ async function createStagingException (context, preparedStatement, stagingExcept
 
   const parameters = {
     payload: typeof (stagingExceptionData.message) === 'string' ? stagingExceptionData.message : JSON.stringify(stagingExceptionData.message),
-    description: description,
+    description: stagingExceptionData.errorMessage,
     taskRunId: stagingExceptionData.taskRunId || null
   }
 

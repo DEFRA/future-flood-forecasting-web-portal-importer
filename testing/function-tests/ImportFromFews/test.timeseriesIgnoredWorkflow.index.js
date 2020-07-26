@@ -13,10 +13,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
-  const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool, importFromFewsMessages)
+  let commonTimeseriesTestUtils
 
   describe('Message processing for ignored workflow timeseries import ', () => {
     beforeAll(async () => {
+      await pool.connect()
+      commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool, importFromFewsMessages)
       await commonTimeseriesTestUtils.beforeAll(pool)
       await insertTimeseriesHeaders(pool)
     })

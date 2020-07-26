@@ -13,7 +13,7 @@ module.exports = async function (context, preparedStatement, message) {
         returnValue = Promise.resolve(JSON.stringify(message))
         break
       default:
-        returnValue = createStagingException(context, preparedStatement, { message: message }, errorMessage)
+        returnValue = createStagingException(context, preparedStatement, { message: message, errorMessage: errorMessage })
         break
     }
   } else {
@@ -22,7 +22,7 @@ module.exports = async function (context, preparedStatement, message) {
     } else if (typeof message === 'string' && message.length === 0) {
       context.log.warn('Ignoring message with empty content')
     } else {
-      returnValue = createStagingException(context, preparedStatement, { message: message }, errorMessage)
+      returnValue = createStagingException(context, preparedStatement, { message: message, errorMessage: errorMessage })
     }
   }
   return returnValue

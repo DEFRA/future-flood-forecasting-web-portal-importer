@@ -18,6 +18,40 @@ module.exports = async function (context, message) {
   await doInTransaction(processMessage, context, 'The FEWS data import function has failed with the following error:', null, message)
 }
 
+async function isMessageIgnored (context, taskRunData) {
+  let ignoreMessage = false
+  if (await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData.workflowId)) {
+    context.log(`${taskRunData.workflowId} is an ignored workflow`)
+  } else {
+    const timeseriesExistForTaskRunPlotOrFilter =
+      await executePreparedStatementInTransaction(doTimeseriesExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
+
+    const timeseriesStagingExceptionsExistForTaskRunPlotOrFilter =
+      await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
+
+    if (timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
+      context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Replay of failures is not supported yet`)
+      ignoreMessage = true
+    } else if (timeseriesExistForTaskRunPlotOrFilter) {
+      context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Timeseries have been imported`)
+      ignoreMessage = true
+    }
+  }
+  return ignoreMessage
+}
+
+async function processMessageIfPossible (taskRunData, context, message) {
+  await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
+  if (taskRunData.timeseriesHeaderId) {
+    if (!(await isMessageIgnored(context, taskRunData))) {
+      await importFromFews(context, taskRunData)
+    }
+  } else {
+    taskRunData.errorMessage = `Unable to retrieve TIMESERIES_HEADER record for task run ${message.taskRunId}`
+    await executePreparedStatementInTransaction(createStagingException, context, taskRunData.transaction, taskRunData)
+  }
+}
+
 async function processMessage (transaction, context, message) {
   const taskRunData = Object.assign({}, message)
   taskRunData.message = message
@@ -38,34 +72,38 @@ async function processMessage (transaction, context, message) {
       taskRunData.buildPiServerUrlIfPossibleFunction = buildPiServerGetTimeseriesUrlIfPossible
       taskRunData.csvType = 'N'
     }
-
-    await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
-
-    if (taskRunData.timeseriesHeaderId) {
-      if (await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData.workflowId)) {
-        context.log(`${taskRunData.workflowId} is an ignored workflow`)
-      } else {
-        const timeseriesExistForTaskRunPlotOrFilter =
-          await executePreparedStatementInTransaction(doTimeseriesExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
-
-        const timeseriesStagingExceptionsExistForTaskRunPlotOrFilter =
-          await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
-
-        if (timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
-          context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Replay of failures is not supported yet`)
-        } else if (timeseriesExistForTaskRunPlotOrFilter) {
-          context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Timeseries have been imported`)
-        } else {
-          await importFromFews(context, taskRunData)
-        }
-      }
-    } else {
-      const errorMessage = `Unable to retrieve TIMESERIES_HEADER record for task run ${message.taskRunId}`
-      await executePreparedStatementInTransaction(createStagingException, context, transaction, taskRunData, errorMessage)
-    }
+    await processMessageIfPossible(taskRunData, context, message)
   } else {
-    const errorMessage = 'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
-    await executePreparedStatementInTransaction(createStagingException, context, transaction, taskRunData, errorMessage)
+    taskRunData.errorMessage = 'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
+    await executePreparedStatementInTransaction(createStagingException, context, transaction, taskRunData)
+  }
+}
+
+async function processImportError (context, taskRunData, err) {
+  let errorData
+  if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
+    context.log.error(`Failed to connect to ${process.env['FEWS_PI_API']}`)
+    throw err
+  } else {
+    if (err instanceof TimeseriesStagingError) {
+      errorData = err.context
+    } else {
+      const csvError = (err.response && err.response.status === 400) || false
+      const csvType = csvError ? taskRunData.csvType : null
+      const piServerErrorMessage = await getPiServerErrorMessage(context, err)
+      const errorDescription = `An error occured while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
+      errorData = {
+        sourceId: taskRunData.sourceId,
+        sourceType: taskRunData.sourceType,
+        csvError: csvError,
+        csvType: csvType,
+        fewsParameters: taskRunData.fewsParameters || null,
+        payload: taskRunData.message,
+        timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+        description: errorDescription
+      }
+    }
+    await executePreparedStatementInTransaction(createTimeseriesStagingException, context, taskRunData.transaction, errorData)
   }
 }
 
@@ -82,36 +120,7 @@ async function importFromFews (context, taskRunData) {
         ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
     }
   } catch (err) {
-    let errorData
-    if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
-      context.log.error(`Failed to connect to ${process.env['FEWS_PI_API']}`)
-      throw err
-    } else {
-      if (err instanceof TimeseriesStagingError) {
-        errorData = err.context
-      } else {
-        const csvError = (err.response && err.response.status === 400) || false
-        const csvType = csvError ? taskRunData.csvType : null
-        const piServerErrorMessage = await getPiServerErrorMessage(context, err)
-        const errorDescription = `An error occured while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
-        errorData = {
-          sourceId: taskRunData.sourceId,
-          sourceType: taskRunData.sourceType,
-          csvError: csvError,
-          csvType: csvType,
-          fewsParameters: taskRunData.fewsParameters || null,
-          payload: taskRunData.message,
-          timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-          description: errorDescription
-        }
-      }
-      await executePreparedStatementInTransaction(
-        createTimeseriesStagingException,
-        context,
-        taskRunData.transaction,
-        errorData
-      )
-    }
+    await processImportError(context, taskRunData, err)
   }
 }
 
@@ -130,24 +139,32 @@ async function retrieveFewsData (context, taskRunData) {
   context.log(`Compressed data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 }
 
+async function createStagedTimeseriesMessageIfNeeded (context, timeseriesId) {
+  const bindingDefinitions = JSON.stringify(context.bindingDefinitions)
+  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding attached.`)
+
+  if (bindingDefinitions.includes(`"direction":"out"`)) {
+    // Prepare to send a message containing the primary key of the inserted record.
+    context.bindings.stagedTimeseries.push({
+      id: timeseriesId
+    })
+  }
+}
+
 async function loadFewsData (context, preparedStatement, taskRunData) {
   context.log(`Loading data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   await preparedStatement.input('fewsData', sql.VarBinary)
   await preparedStatement.input('fewsParameters', sql.NVarChar)
   await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
   await preparedStatement.output('insertedId', sql.UniqueIdentifier)
-
   await preparedStatement.prepare(`
-  insert into
-    fff_staging.timeseries (fews_data, fews_parameters, timeseries_header_id)
-  output
-    inserted.id
-  values
-    (@fewsData, @fewsParameters, @timeseriesHeaderId)
-`)
-
-  const bindingDefinitions = JSON.stringify(context.bindingDefinitions)
-  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding attached.`)
+    insert into
+      fff_staging.timeseries (fews_data, fews_parameters, timeseries_header_id)
+    output
+      inserted.id
+    values
+      (@fewsData, @fewsParameters, @timeseriesHeaderId)
+  `)
 
   const parameters = {
     fewsData: taskRunData.fewsData,
@@ -156,15 +173,8 @@ async function loadFewsData (context, preparedStatement, taskRunData) {
   }
 
   const result = await preparedStatement.execute(parameters)
-
-  if (bindingDefinitions.includes(`"direction":"out"`)) {
-    // Prepare to send a message containing the primary key of the inserted record.
-    if (result.recordset && result.recordset[0] && result.recordset[0].id) {
-      context.bindings.stagedTimeseries.push({
-        id: result.recordset[0].id
-      })
-    }
+  if (result.recordset && result.recordset[0] && result.recordset[0].id) {
+    createStagedTimeseriesMessageIfNeeded(context, result.recordset && result.recordset[0] && result.recordset[0].id)
   }
-
   context.log(`Loaded data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 }

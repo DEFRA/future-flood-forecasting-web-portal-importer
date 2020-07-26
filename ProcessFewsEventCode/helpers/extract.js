@@ -10,6 +10,7 @@ module.exports = async function (context, taskRunData, regex, expectedNumberOfMa
     // If regular expression matching did not complete successfully, the message is not in an expected
     // format and cannot be replayed. In this case intervention is needed so create a staging
     // exception.
-    return createStagingException(context, preparedStatement, taskRunData, `Unable to extract ${errorMessageSubject} from message`)
+    taskRunData.errorMessage = `Unable to extract ${errorMessageSubject} from message`
+    return createStagingException(context, preparedStatement, taskRunData)
   }
 }

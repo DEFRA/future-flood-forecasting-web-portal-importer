@@ -1,5 +1,6 @@
 const moment = require('moment')
 const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
+const createTimeseriesHeader = require('./helpers/create-timeseries-header')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const doStagingExceptionsExistForTaskRun = require('./helpers/do-staging-exceptions-exist-for-task-run')
@@ -15,6 +16,33 @@ const getTaskRunId = require('./helpers/get-task-run-id')
 const getWorkflowId = require('./helpers/get-workflow-id')
 const preprocessMessage = require('./helpers/preprocess-message')
 const sql = require('mssql')
+
+const allDataRetrievalParameters = {
+  fluvialDisplayGroupDataRetrievalParameters: {
+    workflowsFunction: getPlotsForWorkflow,
+    timeseriesDataFunctionType: 'plot',
+    timeseriesDataIdentifier: 'plot_id',
+    timeseriesDataMessageKey: 'plotId',
+    workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse',
+    workflowTableName: 'fluvial_display_group_workflow'
+  },
+  coastalDisplayGroupDataRetrievalParameters: {
+    workflowsFunction: getPlotsForWorkflow,
+    timeseriesDataFunctionType: 'plot',
+    timeseriesDataIdentifier: 'plot_id',
+    timeseriesDataMessageKey: 'plotId',
+    workflowDataProperty: 'coastalDisplayGroupWorkflowsResponse',
+    workflowTableName: 'coastal_display_group_workflow'
+  },
+  nonDisplayGroupDataRetrievalParameters: {
+    workflowsFunction: getFiltersForWorkflow,
+    timeseriesDataFunctionType: 'filter',
+    timeseriesDataIdentifier: 'filter_id',
+    timeseriesDataMessageKey: 'filterId',
+    workflowDataProperty: 'nonDisplayGroupWorkflowsResponse',
+    workflowTableName: 'non_display_group_workflow'
+  }
+}
 
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
@@ -76,36 +104,48 @@ async function getFiltersForWorkflow (context, preparedStatement, taskRunData) {
   return response
 }
 
-async function createTimeseriesHeader (context, preparedStatement, taskRunData) {
-  await preparedStatement.input('taskRunStartTime', sql.DateTime2)
-  await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
-  await preparedStatement.input('taskRunId', sql.NVarChar)
-  await preparedStatement.input('workflowId', sql.NVarChar)
-  await preparedStatement.input('forecast', sql.Bit)
-  await preparedStatement.input('approved', sql.Bit)
-  await preparedStatement.input('message', sql.NVarChar)
+async function buildDataRetrievalParameters (context, taskRunData) {
+  let dataRetrievalParametersArray = []
 
-  await preparedStatement.prepare(`
-  insert into
-    fff_staging.timeseries_header
-      (task_start_time, task_completion_time, task_run_id, workflow_id, forecast, approved, message)
-  output
-    inserted.id
-  values
-    (@taskRunStartTime, @taskRunCompletionTime, @taskRunId, @workflowId, @forecast, @approved, @message)
-`)
-
-  const parameters = {
-    taskRunStartTime: taskRunData.taskRunStartTime,
-    taskRunCompletionTime: taskRunData.taskRunCompletionTime,
-    taskRunId: taskRunData.taskRunId,
-    workflowId: taskRunData.workflowId,
-    forecast: taskRunData.forecast,
-    approved: taskRunData.approved,
-    message: taskRunData.message
+  // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
+  // reference data held in the staging database.
+  if (taskRunData.forecast) {
+    dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
+    dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
+    // Core engine forecasts can be associated with display and non-display group CSV files.
+    dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
+  } else {
+    dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
   }
+  taskRunData.dataRetrievalParametersArray = dataRetrievalParametersArray
+}
 
-  await preparedStatement.execute(parameters)
+async function buildWorkflowMessages (context, taskRunData) {
+  // Process data for each CSV file associated with the workflow.
+  await buildDataRetrievalParameters(context, taskRunData)
+  for (let dataRetrievalParameters of taskRunData.dataRetrievalParametersArray) {
+    const timeseriesDataFunctionType = dataRetrievalParameters.timeseriesDataFunctionType
+    const timeseriesDataIdentifier = dataRetrievalParameters.timeseriesDataIdentifier
+    const timeseriesDataMessageKey = dataRetrievalParameters.timeseriesDataMessageKey
+    const workflowDataProperty = dataRetrievalParameters.workflowDataProperty
+    const workflowsFunction = dataRetrievalParameters.workflowsFunction
+
+    // Retrieve workflow reference data for the current CSV file from the staging database.
+    taskRunData.workflowTableName = dataRetrievalParameters.workflowTableName
+    taskRunData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, taskRunData.transaction, taskRunData)
+
+    if (taskRunData[workflowDataProperty] && taskRunData[workflowDataProperty].recordset) {
+      // Create a message for each plot/filter associated with the current CSV file.
+      for (const record of taskRunData[workflowDataProperty].recordset) {
+        context.log(`Creating message for ${timeseriesDataFunctionType} ID ${record[timeseriesDataIdentifier]}`)
+        const message = {
+          taskRunId: taskRunData.taskRunId
+        }
+        message[timeseriesDataMessageKey] = record[timeseriesDataIdentifier]
+        taskRunData.outgoingMessages.push(message)
+      }
+    }
+  }
 }
 
 async function processTaskRunData (context, taskRunData, transaction) {
@@ -115,89 +155,17 @@ async function processTaskRunData (context, taskRunData, transaction) {
   if (ignoredWorkflow) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
   } else {
-    const allDataRetrievalParameters = {
-      fluvialDisplayGroupDataRetrievalParameters: {
-        workflowsFunction: getPlotsForWorkflow,
-        timeseriesDataFunctionType: 'plot',
-        timeseriesDataIdentifier: 'plot_id',
-        timeseriesDataMessageKey: 'plotId',
-        workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse',
-        workflowTableName: 'fluvial_display_group_workflow'
-      },
-      coastalDisplayGroupDataRetrievalParameters: {
-        workflowsFunction: getPlotsForWorkflow,
-        timeseriesDataFunctionType: 'plot',
-        timeseriesDataIdentifier: 'plot_id',
-        timeseriesDataMessageKey: 'plotId',
-        workflowDataProperty: 'coastalDisplayGroupWorkflowsResponse',
-        workflowTableName: 'coastal_display_group_workflow'
-      },
-      nonDisplayGroupDataRetrievalParameters: {
-        workflowsFunction: getFiltersForWorkflow,
-        timeseriesDataFunctionType: 'filter',
-        timeseriesDataIdentifier: 'filter_id',
-        timeseriesDataMessageKey: 'filterId',
-        workflowDataProperty: 'nonDisplayGroupWorkflowsResponse',
-        workflowTableName: 'non_display_group_workflow'
-      }
-    }
-
-    let dataRetrievalParametersArray = []
-
-    // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
-    // reference data held in the staging database.
-    if (taskRunData.forecast) {
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
-      // Core engine forecasts can be associated with display and non-display group CSV files.
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
-    } else {
-      dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
-    }
-    // Process data for each CSV file associated with the workflow.
-    for (let dataRetrievalParameters of dataRetrievalParametersArray) {
-      const timeseriesDataFunctionType = dataRetrievalParameters.timeseriesDataFunctionType
-      const timeseriesDataIdentifier = dataRetrievalParameters.timeseriesDataIdentifier
-      const timeseriesDataMessageKey = dataRetrievalParameters.timeseriesDataMessageKey
-      const workflowDataProperty = dataRetrievalParameters.workflowDataProperty
-      const workflowsFunction = dataRetrievalParameters.workflowsFunction
-
-      // Retrieve workflow reference data for the current CSV file from the staging database.
-      taskRunData.workflowTableName = dataRetrievalParameters.workflowTableName
-      taskRunData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, taskRunData.transaction, taskRunData)
-
-      if (taskRunData[workflowDataProperty] && taskRunData[workflowDataProperty].recordset) {
-        // Create a message for each plot/filter associated with the current CSV file.
-        for (const record of taskRunData[workflowDataProperty].recordset) {
-          context.log(`Creating message for ${timeseriesDataFunctionType} ID ${record[timeseriesDataIdentifier]}`)
-          const message = {
-            taskRunId: taskRunData.taskRunId
-          }
-          message[timeseriesDataMessageKey] = record[timeseriesDataIdentifier]
-          taskRunData.outgoingMessages.push(message)
-        }
-      }
-    }
+    await buildWorkflowMessages(context, taskRunData)
 
     if (taskRunData.outgoingMessages.length > 0) {
       // Create a timeseries header record and prepare to send a message for each plot/filter associated
       // with the task run.
-      await executePreparedStatementInTransaction(
-        createTimeseriesHeader,
-        context,
-        taskRunData.transaction,
-        taskRunData)
+      await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
 
       context.bindings.importFromFews = taskRunData.outgoingMessages
     } else {
-      const errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
-      await executePreparedStatementInTransaction(
-        createStagingException,
-        context,
-        taskRunData.transaction,
-        taskRunData,
-        errorMessage
-      )
+      taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
+      await executePreparedStatementInTransaction(createStagingException, context, taskRunData.transaction, taskRunData)
     }
   }
 }
@@ -233,27 +201,34 @@ async function parseMessage (context, transaction, message) {
   return taskRunData
 }
 
+async function isMessageIgnored (context, taskRunData) {
+  let ignoreMessage = false
+  const timeseriesHeaderExistsForTaskRun =
+   await executePreparedStatementInTransaction(doesTimeseriesHeaderExistForTaskRun, context, taskRunData.transaction, taskRunData)
+
+  const stagingExceptionsExistForTaskRun =
+   await executePreparedStatementInTransaction(doStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
+
+  const timeseriesStagingExceptionsExistForTaskRun =
+    await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
+
+  if (stagingExceptionsExistForTaskRun || timeseriesStagingExceptionsExistForTaskRun) {
+    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Replay of failures is not supported yet`)
+    ignoreMessage = true
+  } else if (timeseriesHeaderExistsForTaskRun) {
+    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Timeseries header has been created`)
+    ignoreMessage = true
+  }
+  return ignoreMessage
+}
+
 async function processMessage (transaction, context, message) {
   try {
     // If a JSON message is received convert it to a string.
     const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message)
     if (preprocessedMessage) {
       const taskRunData = await parseMessage(context, transaction, preprocessedMessage)
-
-      const timeseriesHeaderExistsForTaskRun =
-        await executePreparedStatementInTransaction(doesTimeseriesHeaderExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
-      const stagingExceptionsExistForTaskRun =
-        await executePreparedStatementInTransaction(doStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
-      const timeseriesStagingExceptionsExistForTaskRun =
-        await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
-      if (stagingExceptionsExistForTaskRun || timeseriesStagingExceptionsExistForTaskRun) {
-        context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Replay of failures is not supported yet`)
-      } else if (timeseriesHeaderExistsForTaskRun) {
-        context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Timeseries header has been created`)
-      } else {
+      if (!(await isMessageIgnored(context, taskRunData))) {
         // As the forecast and approved indicators are booleans progression must be based on them being defined.
         if (taskRunData.taskRunCompletionTime && taskRunData.workflowId && taskRunData.taskRunId &&
           typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
