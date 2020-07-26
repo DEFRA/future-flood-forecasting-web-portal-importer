@@ -1,5 +1,25 @@
 const sql = require('mssql')
 
+const queryRoot = `
+  insert into #deletion_job_temp (reporting_id, timeseries_id, timeseries_header_id)
+    select
+      r.id,
+      r.timeseries_id,
+      t.timeseries_header_id
+    from
+      fff_reporting.timeseries_job r
+      join fff_staging.timeseries t on t.id = r.timeseries_id
+      join (
+        select
+          top(@deleteHeaderBatchSize) id,
+          import_time from fff_staging.timeseries_header
+        order by
+          import_time
+      ) h on t.timeseries_header_id = h.id
+    where
+      h.import_time < cast(@date as DateTimeOffset)
+`
+
 module.exports = async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate) {
   context.log.info(`Loading ${isSoftDate ? 'Soft' : 'Hard'} data into temp table`)
   const FME_COMPLETE_JOB_STATUS = 6
@@ -9,16 +29,7 @@ module.exports = async function insertDataIntoTemp (context, preparedStatement, 
   await preparedStatement.input('date', sql.DateTimeOffset)
   await preparedStatement.input('completeStatus', sql.Int)
   await preparedStatement.input('deleteHeaderBatchSize', sql.Int)
-
-  const query = `insert into #deletion_job_temp (reporting_id, timeseries_id, timeseries_header_id)
-      select r.id, r.timeseries_id, t.timeseries_header_id
-      from [fff_reporting].timeseries_job r
-        join [fff_staging].timeseries t on t.id = r.timeseries_id
-        join (select top(@deleteHeaderBatchSize) id, import_time from [fff_staging].timeseries_header order by import_time) h on t.timeseries_header_id = h.id
-      where
-        h.import_time < cast(@date as DateTimeOffset) ${isSoftDate ? 'and r.job_status = @completeStatus' : ''}`
-
-  await preparedStatement.prepare(query)
+  await preparedStatement.prepare(`${queryRoot} ${isSoftDate ? 'and r.job_status = @completeStatus' : ''}`)
 
   const parameters = {
     date: date,
