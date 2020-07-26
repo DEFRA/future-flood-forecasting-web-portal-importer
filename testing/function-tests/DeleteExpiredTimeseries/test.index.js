@@ -32,11 +32,13 @@ module.exports = describe('Timeseries data deletion tests', () => {
       softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
       await request.query(`delete from fff_reporting.timeseries_job`)
       await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
     })
     afterAll(async () => {
       await request.batch(`delete from fff_reporting.timeseries_job`)
       await request.batch(`delete from fff_staging.timeseries`)
+      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
       await pool.close()
     })
@@ -233,14 +235,18 @@ module.exports = describe('Timeseries data deletion tests', () => {
     let query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
-    declare @id2 uniqueidentifier
+      declare @id2 uniqueidentifier
       set @id2 = newid()
-    insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
-    values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
-    insert into fff_staging.timeseries (id, fews_data, fews_parameters,timeseries_header_id)
-    values (@id2, compress('data'),'parameters', @id1)
-    insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
-    values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+        values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
+      insert into fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+        values (@id3, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')
+      insert into fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
+        values (@id2, compress('data'),'parameters', @id1)
+      insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
+        values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -248,14 +254,18 @@ module.exports = describe('Timeseries data deletion tests', () => {
 
   async function checkDeletionStatus (expectedLength) {
     const result = await request.query(`
-    select r.description, h.import_time
-      from fff_staging.timeseries_header h
-      inner join fff_staging.timeseries t
-        on t.timeseries_header_id = h.id
-      inner join fff_reporting.timeseries_job r
-        on r.timeseries_id = t.id
-      order by import_time desc
-  `)
+      select
+        r.description,
+        h.import_time
+      from
+        fff_staging.timeseries_header h
+        inner join fff_staging.timeseries_staging_exception tse on tse.timeseries_header_id = h.id
+        inner join fff_staging.timeseries t on t.timeseries_header_id = h.id
+        inner join fff_reporting.timeseries_job r on r.timeseries_id = t.id
+      order by
+        h.import_time desc
+    `)
+
     expect(result.recordset.length).toBe(expectedLength)
   }
 
@@ -267,7 +277,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
         on t.timeseries_header_id = h.id
       inner join fff_reporting.timeseries_job r
         on r.timeseries_id = t.id
-      order by import_time desc
+      order by h.import_time desc
   `)
     expect(result.recordset[0].description).toBe(testDescription)
   }

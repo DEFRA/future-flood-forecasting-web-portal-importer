@@ -54,6 +54,7 @@ module.exports = async function (context, myTimer) {
     context.log.info(`Data delete starting.`)
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
 
     context.log('JavaScript timer trigger function ran!', timeStamp)
@@ -82,7 +83,7 @@ async function createTempTable (transaction, context) {
 
 async function deleteReportingRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete r from fff_reporting.TIMESERIES_JOB r
+    `delete r from fff_reporting.timeseries_job r
       inner join #deletion_job_temp te
       on te.reporting_id = r.id`
   )
@@ -92,7 +93,7 @@ async function deleteReportingRows (context, preparedStatement) {
 
 async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete t from fff_staging.TIMESERIES t
+    `delete t from fff_staging.timeseries t
       inner join #deletion_job_temp te
       on te.timeseries_id = t.id`
   )
@@ -100,12 +101,20 @@ async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.execute()
 }
 
+async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
+  await preparedStatement.prepare(
+    `delete tse from fff_staging.timeseries_staging_exception tse
+      inner join #deletion_job_temp te
+      on te.timeseries_header_id = tse.timeseries_header_id`
+  )
+  await preparedStatement.execute()
+}
+
 async function deleteHeaderRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete th from fff_staging.TIMESERIES_HEADER th
+    `delete th from fff_staging.timeseries_header th
       inner join #deletion_job_temp te
       on te.timeseries_header_id = th.id`
   )
-
   await preparedStatement.execute()
 }
