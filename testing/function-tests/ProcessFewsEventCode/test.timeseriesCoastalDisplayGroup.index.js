@@ -48,6 +48,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     }
   }
 
+  jest.mock('axios')
+
   describe('Message processing for coastal display group task run completion', () => {
     beforeAll(async () => {
       await commonCoastalTimeseriesTestUtils.beforeAll(pool)

@@ -3,12 +3,11 @@ const createStagingException = require('../Shared/timeseries-functions/create-st
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const doStagingExceptionsExistForTaskRun = require('./helpers/do-staging-exceptions-exist-for-task-run')
-const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
-const doTimeseriesStagingExceptionsExistForTaskRun = require('./helpers/do-timeseries-staging-exceptions-exist-for-task-run')
 const isForecast = require('./helpers/is-forecast')
 const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const isMessageIgnored = require('./helpers/is-message-ignored')
+const isPiServerOnline = require('./helpers/is-pi-server-online')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
 const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
@@ -47,9 +46,10 @@ const allDataRetrievalParameters = {
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
   context.log.info('JavaScript import time series function processing work item', message)
-  context.log.info(context.bindingData)
-  await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
-  // context.done() not required in async functions
+  if (await isPiServerOnline(context)) {
+    await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
+    // context.done() not required in async functions
+  }
 }
 
 // Get a list of plots associated with the workflow.
@@ -199,27 +199,6 @@ async function parseMessage (context, transaction, message) {
   taskRunData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, taskRunData)
   taskRunData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, taskRunData)
   return taskRunData
-}
-
-async function isMessageIgnored (context, taskRunData) {
-  let ignoreMessage = false
-  const timeseriesHeaderExistsForTaskRun =
-   await executePreparedStatementInTransaction(doesTimeseriesHeaderExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
-  const stagingExceptionsExistForTaskRun =
-   await executePreparedStatementInTransaction(doStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
-  const timeseriesStagingExceptionsExistForTaskRun =
-    await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
-  if (stagingExceptionsExistForTaskRun || timeseriesStagingExceptionsExistForTaskRun) {
-    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Replay of failures is not supported yet`)
-    ignoreMessage = true
-  } else if (timeseriesHeaderExistsForTaskRun) {
-    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Timeseries header has been created`)
-    ignoreMessage = true
-  }
-  return ignoreMessage
 }
 
 async function processMessage (transaction, context, message) {

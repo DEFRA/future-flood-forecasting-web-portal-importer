@@ -1,3 +1,4 @@
+const axios = require('axios')
 const moment = require('moment')
 const sql = require('mssql')
 const messageFunction = require('../../../ProcessFewsEventCode/index')
@@ -5,7 +6,17 @@ const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-util
 
 module.exports = function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-  const processMessage = async function (messageKey) {
+  const processMessage = async function (messageKey, mockResponse) {
+    if (mockResponse) {
+      axios.get.mockReturnValueOnce(mockResponse)
+    } else {
+      // Ensure the mocked PI Server is online.
+      axios.get.mockReturnValueOnce({
+        data: {
+          key: 'Filter data'
+        }
+      })
+    }
     await messageFunction(context, taskRunCompleteMessages[messageKey])
   }
 
@@ -118,6 +129,11 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
 
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
+  }
+
+  this.processMessageAndCheckExceptionIsThrown = async function (messageKey, mockErrorResponse) {
+    axios.get.mockRejectedValue(mockErrorResponse)
+    await expect(messageFunction(context, taskRunCompleteMessages[messageKey])).rejects.toThrow(mockErrorResponse)
   }
 
   this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {

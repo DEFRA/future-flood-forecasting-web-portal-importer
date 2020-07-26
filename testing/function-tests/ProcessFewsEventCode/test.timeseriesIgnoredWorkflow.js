@@ -12,6 +12,8 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
   const pool = jestConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
 
+  jest.mock('axios')
+
   describe('Message processing for ignored workflows', () => {
     beforeAll(async () => {
       await commonTimeseriesTestUtils.beforeAll(pool)

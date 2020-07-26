@@ -35,6 +35,8 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     }
   }
 
+  jest.mock('axios')
+
   describe('Message processing for fluvial display group task run completion', () => {
     beforeAll(async () => {
       await commonFluvialTimeseriesTestUtils.beforeAll(pool)
@@ -84,5 +86,19 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    it('should throw an exception when the core engine PI server is unavailable', async () => {
+      // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
+      // an exception is thrown to facilitate this process.
+      const mockResponse = new Error('connect ECONNREFUSED mockhost')
+      await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+    })
+    it('should throw an exception when a core engine PI server resource is unavailable', async () => {
+      const mockResponse = new Error('Request failed with status code 404')
+      mockResponse.response = {
+        data: 'Error text',
+        status: 404
+      }
+      await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+    })
   })
 })
