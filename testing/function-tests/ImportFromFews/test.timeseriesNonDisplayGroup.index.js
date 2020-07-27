@@ -44,7 +44,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     afterAll(async () => {
       await commonNonDisplayGroupTimeseriesTestUtils.afterAll(pool)
     })
-
     it('should import data for a single filter associated with a non-forecast task run', async () => {
       const mockResponse = {
         data: {
@@ -56,6 +55,20 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         mockResponses: [mockResponse]
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should not import duplicate timeseries', async () => {
+      const messageKey = 'singleFilterNonForecast'
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+      const config = {
+        messageKey: messageKey,
+        mockResponses: [mockResponse]
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(messageKey, 1)
     })
     it('should import data for multiple filters associated with a non-forecast task run', async () => {
       const mockResponses = [{
@@ -132,6 +145,18 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
     })
+    it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
+      const messageKey = 'unknownFilterId'
+      const expectedErrorDetails = {
+        sourceId: importFromFewsMessages[messageKey][0].filterId,
+        sourceType: 'F',
+        csvError: true,
+        csvType: 'N',
+        description: `Unable to find data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} in the non-display group CSV`
+      }
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(messageKey)
+    })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
       // an exception is thrown to facilitate this process.
@@ -165,15 +190,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterNonForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    // it('should not import data for duplicate task runs', async () => {
-    //   const mockResponse = {
-    //     data: {
-    //       key: 'Timeseries non-display groups data'
-    //     }
-    //   }
-    //   await importFromFewsTestUtils.processMessages('singleFilterNonForecast', [mockResponse])
-    //   await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('singleFilterNonForecast', 1)
-    // })
     it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
       const mockResponses = [
         {
@@ -323,8 +339,16 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
-    it('should not import data for an unknown timeseries type', async () => {
-      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('workflowUnknownTimeseriesType')
+    it('should create a timeseries staging exception for an unknown timeseries type', async () => {
+      const messageKey = 'workflowUnknownTimeseriesType'
+      const expectedErrorDetails = {
+        sourceId: importFromFewsMessages[messageKey][0].filterId,
+        sourceType: 'F',
+        csvError: true,
+        csvType: 'N',
+        description: `There is no recognizable timeseries type specified for the filter ${importFromFewsMessages[messageKey][0].filterId} in the non-display group CSV`
+      }
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
     })
     it('should import data for an approved:false message associated with a timeseries type not requiring approval', async () => {
       const mockResponse = {
@@ -376,7 +400,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000011', 'External_Historical_Workflow', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000012', 'Simulated_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}')
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}')
+
     `)
   }
 

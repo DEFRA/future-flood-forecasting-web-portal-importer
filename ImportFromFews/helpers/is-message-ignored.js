@@ -1,3 +1,4 @@
+const doStagingExceptionsExistForTaskRun = require('../../Shared/timeseries-functions/do-staging-exceptions-exist-for-task-run')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const isIgnoredWorkflow = require('../../Shared/timeseries-functions/is-ignored-workflow')
 const sql = require('mssql')
@@ -7,13 +8,16 @@ module.exports = async function (context, taskRunData) {
   if (await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData.workflowId)) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
   } else {
+    const stagingExceptionsExistForTaskRun =
+      await executePreparedStatementInTransaction(doStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
+
     const timeseriesExistForTaskRunPlotOrFilter =
       await executePreparedStatementInTransaction(doTimeseriesExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
 
     const timeseriesStagingExceptionsExistForTaskRunPlotOrFilter =
       await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
 
-    if (timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
+    if (stagingExceptionsExistForTaskRun || timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
       context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Replay of failures is not supported yet`)
       ignoreMessage = true
     } else if (timeseriesExistForTaskRunPlotOrFilter) {

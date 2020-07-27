@@ -29,6 +29,7 @@ module.exports = describe('Tests for preventing ignored workflow import', () => 
       context.bindings.importFromFews = []
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
       await commonTimeseriesTestUtils.beforeEach(pool)
+      await insertTimeseriesHeaders(pool)
     })
     afterAll(async () => {
       await commonTimeseriesTestUtils.afterAll(pool)
@@ -37,6 +38,7 @@ module.exports = describe('Tests for preventing ignored workflow import', () => 
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('ignoredWorkflowPlot')
     })
   })
+
   async function insertTimeseriesHeaders (pool) {
     const request = new sql.Request(pool)
     await request.input('taskRunStartTime', sql.DateTime2, importFromFewsMessages.commonMessageData.startTime)

@@ -1,3 +1,4 @@
+const doStagingExceptionsExistForTaskRun = require('../../Shared/timeseries-functions/do-staging-exceptions-exist-for-task-run')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
@@ -20,26 +21,6 @@ module.exports = async function (context, taskRunData) {
     ignoreMessage = true
   }
   return ignoreMessage
-}
-
-async function doStagingExceptionsExistForTaskRun (context, preparedStatement, taskRunData) {
-  await preparedStatement.input('taskRunId', sql.NVarChar)
-  await preparedStatement.prepare(`
-    select
-      id
-    from
-      fff_staging.staging_exception
-    where
-      task_run_id = @taskRunId
-    `)
-
-  const parameters = {
-    taskRunId: taskRunData.taskRunId
-  }
-
-  const result = await preparedStatement.execute(parameters)
-
-  return !!(result.recordset && result.recordset[0])
 }
 
 async function doTimeseriesStagingExceptionsExistForTaskRun (context, preparedStatement, taskRunData) {

@@ -12,7 +12,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonCoastalTimeseriesTestUtils = new CommonCoastalTimeseriesTestUtils(pool, taskRunCompleteMessages)
-  const request = new sql.Request(pool)
 
   const expectedData = {
     singlePlotApprovedForecast: {
@@ -90,10 +89,20 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(/\s+/)[1]
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
     })
+    it('should prevent replay of a task run associated with a staging exception', async () => {
+      const messageKey = 'unknownWorkflow'
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey)
+    })
+    it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
+      const messageKey = 'workflowWithTimeseriesStagingException'
+      await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
+    })
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })
     it('should create a timeseries header and create messages for a workflow task run associated with a single plot and a single filter', async () => {
+      const request = new sql.Request(pool)
       await request.batch(`
         insert into
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
@@ -110,4 +119,24 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
+
+  async function insertTimeseriesHeaderAndTimeseriesStagingException (pool) {
+    const request = new sql.Request(pool)
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      insert into fff_staging.timeseries_header
+        (id, task_completion_time, task_run_id, workflow_id, message)
+      values
+        (@id1, getutcdate(),'ukeafffsmc00:000000003','Test_Coastal_Workflow5', '{"key": "value"}')
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+      values
+        (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "error_plot"}', @id1, 'Error plot text')
+    `
+    query.replace(/"/g, "'")
+    await request.query(query)
+  }
 })

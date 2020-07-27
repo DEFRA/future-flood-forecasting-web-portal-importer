@@ -113,6 +113,11 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       const messageKey = 'invalidPlotAndFilterMessage'
       await importFromFewsTestUtils.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported(messageKey, `Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes`)
     })
+    it('should prevent replay of a task run associated with a staging exception', async () => {
+      const messageKey = 'invalidPlotAndFilterMessage'
+      await importFromFewsTestUtils.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported(messageKey, `Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes`)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(messageKey)
+    })
     it('should create a staging exception when a message does not contain a task run ID ', async () => {
       const messageKey = 'missingTaskRunIdMessage'
       await importFromFewsTestUtils.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported(messageKey, `Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes`)
