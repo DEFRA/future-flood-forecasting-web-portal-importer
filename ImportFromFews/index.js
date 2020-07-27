@@ -6,38 +6,14 @@ const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/b
 const { gzip } = require('../Shared/utils')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
-const doTimeseriesExistForTaskRunPlotOrFilter = require('./helpers/do-timeseries-exist-for-task-run-plot-or-filter')
-const doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter = require('./helpers/do-timeseries-staging-exceptions-exist-for-task-run-plot-or-filter')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
-const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
+const isMessageIgnored = require('./helpers/is-message-ignored')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-server-error-message')
 const TimeseriesStagingError = require('./helpers/timeseries-staging-error')
 
 module.exports = async function (context, message) {
   await doInTransaction(processMessage, context, 'The FEWS data import function has failed with the following error:', null, message)
-}
-
-async function isMessageIgnored (context, taskRunData) {
-  let ignoreMessage = false
-  if (await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData.workflowId)) {
-    context.log(`${taskRunData.workflowId} is an ignored workflow`)
-  } else {
-    const timeseriesExistForTaskRunPlotOrFilter =
-      await executePreparedStatementInTransaction(doTimeseriesExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
-
-    const timeseriesStagingExceptionsExistForTaskRunPlotOrFilter =
-      await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
-
-    if (timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
-      context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Replay of failures is not supported yet`)
-      ignoreMessage = true
-    } else if (timeseriesExistForTaskRunPlotOrFilter) {
-      context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Timeseries have been imported`)
-      ignoreMessage = true
-    }
-  }
-  return ignoreMessage
 }
 
 async function processMessageIfPossible (taskRunData, context, message) {
