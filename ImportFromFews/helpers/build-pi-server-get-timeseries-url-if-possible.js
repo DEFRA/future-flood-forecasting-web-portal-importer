@@ -105,6 +105,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
       csvError: true,
       csvType: 'N',
       fewsParameters: null,
+      payload: taskRunData.message,
       errorData: taskRunData.message,
       timeseriesHeaderId: taskRunData.timeseriesHeaderId,
       description: errorDescription
