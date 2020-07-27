@@ -1,4 +1,4 @@
-module.exports = describe('Tests for import timeseries display groups', () => {
+module.exports = describe('Tests for preventing ignored workflow import', () => {
   const importFromFewsMessages = require('./messages/ignored-workflow-messages')
   const { checkImportedData } = require('./display-group-test-utils')
   const Context = require('../mocks/defaultContext')

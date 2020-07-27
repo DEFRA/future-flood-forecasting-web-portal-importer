@@ -22,7 +22,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   const defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
-  describe('Message processing for non display group task run completion', () => {
+  describe('Message processing for non-display group timeseries import', () => {
     beforeAll(async () => {
       const request = new sql.Request(pool)
       await commonNonDisplayGroupTimeseriesTestUtils.beforeAll(pool)

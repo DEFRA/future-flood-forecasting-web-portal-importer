@@ -1,4 +1,4 @@
-module.exports = describe('Tests for import timeseries display groups', () => {
+module.exports = describe('Tests for import fluvial timeseries display groups', () => {
   const dateFormat = 'YYYY-MM-DD HH:mm:ss'
   const importFromFewsMessages = require('./messages/fluvial-display-group-messages')
   const { checkImportedData } = require('./display-group-test-utils')

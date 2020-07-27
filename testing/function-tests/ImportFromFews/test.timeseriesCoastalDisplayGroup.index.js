@@ -1,4 +1,4 @@
-module.exports = describe('Tests for import timeseries display groups', () => {
+module.exports = describe('Tests for import coastal timeseries display groups', () => {
   const dateFormat = 'YYYY-MM-DD HH:mm:ss'
   const importFromFewsMessages = require('./messages/coastal-display-group-messages')
   const { checkImportedData } = require('./display-group-test-utils')
@@ -17,7 +17,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   const pool = jestConnectionPool.pool
   const commonCoastalTimeseriesTestUtils = new CommonCoastalTimeseriesTestUtils(pool, importFromFewsMessages)
 
-  describe('Message processing for coastal display group task run completion', () => {
+  describe('Message processing for coastal display group timeseries import', () => {
     beforeAll(async () => {
       const request = new sql.Request(pool)
       await commonCoastalTimeseriesTestUtils.beforeAll(pool)
