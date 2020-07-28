@@ -56,6 +56,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const messageKey = 'singlePlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
+    it('should import data for a single plot associated with an approved forecast task run when the task run message is received as a string ', async () => {
+      const messageKey = 'singlePlotApprovedForecast'
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey], true)
+    })
     it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const messageKey = 'multiplePlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])

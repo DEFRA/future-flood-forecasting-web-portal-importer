@@ -6,7 +6,7 @@ const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-util
 
 module.exports = function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-  const processMessage = async function (messageKey, mockResponse) {
+  const processMessage = async function (messageKey, sendMessageAsString, mockResponse) {
     if (mockResponse) {
       axios.get.mockReturnValueOnce(mockResponse)
     } else {
@@ -17,7 +17,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         }
       })
     }
-    await messageFunction(context, taskRunCompleteMessages[messageKey])
+    const message = sendMessageAsString ? JSON.stringify(taskRunCompleteMessages[messageKey]) : taskRunCompleteMessages[messageKey]
+    await messageFunction(context, message)
   }
 
   const checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated = async function (expectedNumberOfTimeseriesHeaderRecords, expectedNumberOfOutgoingMessages) {
@@ -34,8 +35,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(context.bindings.importFromFews.length).toBe(expectedNumberOfOutgoingMessages)
   }
 
-  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData) {
-    await processMessage(messageKey)
+  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
+    await processMessage(messageKey, sendMessageAsString)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
     const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages['commonMessageData'].startTime} UTC`))
