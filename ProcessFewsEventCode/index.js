@@ -7,7 +7,7 @@ const isForecast = require('./helpers/is-forecast')
 const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const isMessageIgnored = require('./helpers/is-message-ignored')
-const isPiServerOnline = require('./helpers/is-pi-server-online')
+const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
 const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
@@ -46,10 +46,11 @@ const allDataRetrievalParameters = {
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
   context.log.info('JavaScript import time series function processing work item', message)
-  if (await isPiServerOnline(context)) {
-    await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
-    // context.done() not required in async functions
-  }
+  // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
+  // being placed on a dead letter queue.
+  await checkIfPiServerIsOnline(context)
+  await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
+  // context.done() not required in async functions
 }
 
 // Get a list of plots associated with the workflow.
@@ -178,12 +179,6 @@ async function parseMessage (context, transaction, message) {
     outgoingMessages: [],
     timeseriesStagingErrors: []
   }
-  // Retrieve data from twelve hours before the task run completed to five days after the task run completed by default.
-  // This time period can be overridden by the two environment variables
-  // FEWS_START_TIME_OFFSET_HOURS and FEWS_END_TIME_OFFSET_HOURS.
-  const startTimeDisplayGroupOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
-  const endTimeDisplayGroupOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
-
   taskRunData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, taskRunData)
   taskRunData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, taskRunData)
 
@@ -193,9 +188,6 @@ async function parseMessage (context, transaction, message) {
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunStartDate, context, transaction, taskRunData)} UTC`)).toISOString()
   taskRunData.taskRunCompletionTime =
     moment(new Date(`${await executePreparedStatementInTransaction(getTaskRunCompletionDate, context, transaction, taskRunData)} UTC`)).toISOString()
-  taskRunData.startTimeDisplayGroup = moment(taskRunData.taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours').toISOString()
-  taskRunData.endTimeDisplayGroup = moment(taskRunData.taskRunCompletionTime).add(endTimeDisplayGroupOffsetHours, 'hours').toISOString()
-  // Non display group times are calculated at load time
   taskRunData.forecast = await executePreparedStatementInTransaction(isForecast, context, transaction, taskRunData)
   taskRunData.approved = await executePreparedStatementInTransaction(isTaskRunApproved, context, transaction, taskRunData)
   return taskRunData
