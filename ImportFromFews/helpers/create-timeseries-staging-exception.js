@@ -1,6 +1,8 @@
 const sql = require('mssql')
 
 module.exports = async function (context, preparedStatement, errorData) {
+  context.log.error(errorData.description)
+
   await preparedStatement.input('sourceId', sql.NVarChar)
   await preparedStatement.input('sourceType', sql.NVarChar)
   await preparedStatement.input('csvError', sql.Bit)

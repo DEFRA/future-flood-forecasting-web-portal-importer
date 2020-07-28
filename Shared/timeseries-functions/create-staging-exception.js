@@ -18,6 +18,8 @@ async function createStagingExceptionInTransaction (transaction, context, stagin
 }
 
 async function createStagingException (context, preparedStatement, stagingExceptionData) {
+  context.log.error(stagingExceptionData.errorMessage)
+
   await preparedStatement.input('payload', sql.NVarChar)
   await preparedStatement.input('description', sql.NVarChar)
   await preparedStatement.input('taskRunId', sql.NVarChar)
