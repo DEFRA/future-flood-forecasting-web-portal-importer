@@ -2,7 +2,6 @@ const moment = require('moment')
 const sql = require('mssql')
 const { getEnvironmentVariableAsInteger } = require('../../Shared/utils')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const createTimeseriesStagingException = require('./create-timeseries-staging-exception')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
 
@@ -33,18 +32,14 @@ async function buildFewsTimeParameters (context, taskRunData) {
 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
   await executePreparedStatementInTransaction(getLocationsForWorkflowPlot, context, taskRunData.transaction, taskRunData)
-  if (taskRunData.locationIds) {
-    await buildTimeParameters(context, taskRunData)
-    const plotId = `&plotId=${taskRunData.plotId}`
-    const locationIds = `&locationIds=unkown` // ${taskRunData.locationIds.replace(/;/g, '&locationIds=')}`
-    taskRunData.fewsParameters = `${plotId}${locationIds}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
-    // Construct the URL used to retrieve timeseries display groups for the configured plot, locations and date range.
-    taskRunData.fewsPiUrl =
-      encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${taskRunData.fewsParameters}`)
-  } else {
-    await executePreparedStatementInTransaction(createTimeseriesStagingException, context, taskRunData.transaction, taskRunData.errorData)
-  }
+  await buildTimeParameters(context, taskRunData)
+  const plotId = `&plotId=${taskRunData.plotId}`
+  const locationIds = `&locationIds=${taskRunData.locationIds.replace(/;/g, '&locationIds=')}`
+  taskRunData.fewsParameters = `${plotId}${locationIds}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
+  // Construct the URL used to retrieve timeseries display groups for the configured plot, locations and date range.
+  taskRunData.fewsPiUrl =
+    encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
+      &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${taskRunData.fewsParameters}`)
 }
 
 async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunData) {

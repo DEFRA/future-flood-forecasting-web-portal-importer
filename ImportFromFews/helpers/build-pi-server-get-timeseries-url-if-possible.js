@@ -1,7 +1,6 @@
 const moment = require('moment')
 const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const createTimeseriesStagingException = require('./create-timeseries-staging-exception')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
 
@@ -11,19 +10,15 @@ const SIMULATED_FORECASTING = 'simulated_forecasting'
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
-  if (taskRunData.filterData) {
-    if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
-      if (!taskRunData.filterData.approvalRequired) {
-        context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
-      } else if (taskRunData.approved) {
-        context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
-      }
-      await buildPiServerUrlIfPossible(context, taskRunData)
-    } else {
-      context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
+  if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
+    if (!taskRunData.filterData.approvalRequired) {
+      context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
+    } else if (taskRunData.approved) {
+      context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
     }
+    await buildPiServerUrlIfPossible(context, taskRunData)
   } else {
-    await executePreparedStatementInTransaction(createTimeseriesStagingException, context, taskRunData.transaction, taskRunData.errorData)
+    context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
   }
 }
 
