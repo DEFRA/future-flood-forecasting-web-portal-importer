@@ -12,7 +12,7 @@
       "name": "importFromFews",
       "type": "serviceBus",
       "direction": "out",
-      "queueName": "import-fews-data-queue",
+      "queueName": "import-fews-data-topic",
       "subscriptionName": "%AZURE_SERVICE_BUS_IMPORT_FEWS_DATA_SUBSCRIPTION_NAME%",
       "connection": "AzureWebJobsServiceBus"
     }
