@@ -1,7 +1,33 @@
-module.exports = describe('Test forecast flags', () => {
-  const { isBoolean } = require('../../../Shared/utils')
+const Context = require('../mocks/defaultContext')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+const { isBoolean } = require('../../../Shared/utils')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../../../Shared/transaction-helper')
+const getBooleanIndicator = require('../../../ProcessFewsEventCode/helpers/get-boolean-indicator')
 
+const jestConnectionPool = new ConnectionPool()
+const pool = jestConnectionPool.pool
+const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
+
+let context
+module.exports = describe('Test forecast flags', () => {
   describe('Forecast flag testing ', () => {
+    beforeAll(async () => {
+      await commonTimeseriesTestUtils.beforeAll(pool)
+    })
+    beforeEach(async () => {
+      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // function implementation for the function context needs creating for each test.
+      context = new Context()
+      await commonTimeseriesTestUtils.beforeEach(pool)
+    })
+
+    afterAll(async () => {
+      await commonTimeseriesTestUtils.afterAll(pool)
+    })
+    it('should return undefined when a message does not contain an unexpected boolean value', async () => {
+      await doInTransaction(testInTransaction, context, 'Error')
+    })
     it('should return true for boolean values', () => {
       expect(isBoolean(true)).toBe(true)
       expect(isBoolean(false)).toBe(true)
@@ -16,3 +42,10 @@ module.exports = describe('Test forecast flags', () => {
     })
   })
 })
+
+async function testInTransaction (transaction, context) {
+  const taskRunData = {
+    message: 'input'
+  }
+  expect(await executePreparedStatementInTransaction(getBooleanIndicator, context, transaction, taskRunData, 'Approved')).toBe(undefined)
+}

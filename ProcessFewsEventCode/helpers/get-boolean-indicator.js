@@ -1,6 +1,6 @@
 const extract = require('./extract')
 
-module.exports = async function getIndicator (context, preparedStatement, taskRunData, indicatorName) {
+module.exports = async function (context, preparedStatement, taskRunData, indicatorName) {
   let indicator = taskRunData.message.includes('is made current manually')
 
   if (!indicator) {
