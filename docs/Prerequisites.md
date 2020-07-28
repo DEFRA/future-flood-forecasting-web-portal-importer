@@ -31,7 +31,7 @@
 
 * Microsoft Azure service bus queue named **fews-eventcode-queue**  
   * Messages are placed on this queue when a task run has completed within the core forecasting engine. Messages placed on this queue provide information on the completed task run to be processed by the **ProcessFewsEventCode** function.  The **ProcessFewsEventCode** function plces a message for each
-  plot and filter asspciated with the task run on a Microsoft Azure service bus queue named **fews-import-queue**.
+  plot and filter associated with the task run on a Microsoft Azure service bus queue named **fews-import-queue**.
 * Microsoft Azure service bus queue named **fews-import-queue**
   * A message is placed on this queue for each plot and filter associated with a completed task run within the core forecasting engine. Messages are
   processed by the **ImportFromFews** function. Mesage processing extracts timeseries associated with a plot or filter from the core forecasting engine and loads the data into the staging database.
