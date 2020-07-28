@@ -13,7 +13,7 @@ module.exports = async function (context, taskRunData) {
   if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
     if (!taskRunData.filterData.approvalRequired) {
       context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
-    } else if (taskRunData.approved) {
+    } else {
       context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
     }
     await buildPiServerUrlIfPossible(context, taskRunData)
