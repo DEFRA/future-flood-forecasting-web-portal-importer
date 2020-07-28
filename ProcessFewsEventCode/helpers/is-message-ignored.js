@@ -17,7 +17,7 @@ module.exports = async function (context, taskRunData) {
     context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Replay of failures is not supported yet`)
     ignoreMessage = true
   } else if (timeseriesHeaderExistsForTaskRun) {
-    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Timeseries header has been created`)
+    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Timeseries header has been created and message replay is not supported yet`)
     ignoreMessage = true
   }
   return ignoreMessage
