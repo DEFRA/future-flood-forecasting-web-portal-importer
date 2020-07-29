@@ -7,10 +7,10 @@ module.exports = async function (context) {
     await axios.get(fewsPiUrl)
   } catch (err) {
     if (typeof err.response === 'undefined') {
-      context.log.error('PI Server is unvailable')
+      context.log.error('PI Server is unavailable')
     } else {
       const piServerErrorMessage = getPiServerErrorMessage(context, err)
-      context.log.error(`An unexpected error occured when checking if the PI Server is unvailable - ${err.message} (${piServerErrorMessage})`)
+      context.log.error(`An unexpected error occured when checking if the PI Server is available - ${err.message} (${piServerErrorMessage})`)
     }
     // Attempt message replay.
     throw err
