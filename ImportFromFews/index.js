@@ -13,6 +13,7 @@ const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-s
 const TimeseriesStagingError = require('./helpers/timeseries-staging-error')
 
 module.exports = async function (context, message) {
+  context.log(`Processing timeseries import message: ${JSON.stringify(message)}`)
   await doInTransaction(processMessage, context, 'The FEWS data import function has failed with the following error:', null, message)
 }
 
@@ -111,6 +112,7 @@ async function retrieveFewsData (context, taskRunData) {
   }
   context.log(`Retrieving data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   const fewsResponse = await axios(axiosConfig)
+  context.log(`Retrieved data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   taskRunData.fewsData = await gzip(fewsResponse.data)
   context.log(`Compressed data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 }

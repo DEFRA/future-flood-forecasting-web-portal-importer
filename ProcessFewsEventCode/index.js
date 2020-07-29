@@ -45,7 +45,8 @@ const allDataRetrievalParameters = {
 
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
-  context.log.info('JavaScript import time series function processing work item', message)
+  const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
+  context.log(`Processing core engine message: ${messageToLog}`)
   // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
   // being placed on a dead letter queue.
   await checkIfPiServerIsOnline(context)
@@ -138,12 +139,12 @@ async function buildWorkflowMessages (context, taskRunData) {
     if (taskRunData[workflowDataProperty] && taskRunData[workflowDataProperty].recordset) {
       // Create a message for each plot/filter associated with the current CSV file.
       for (const record of taskRunData[workflowDataProperty].recordset) {
-        context.log(`Creating message for ${timeseriesDataFunctionType} ID ${record[timeseriesDataIdentifier]}`)
         const message = {
           taskRunId: taskRunData.taskRunId
         }
         message[timeseriesDataMessageKey] = record[timeseriesDataIdentifier]
         taskRunData.outgoingMessages.push(message)
+        context.log(`Created message for ${timeseriesDataFunctionType} ID ${record[timeseriesDataIdentifier]}`)
       }
     }
   }
@@ -162,7 +163,7 @@ async function processTaskRunData (context, taskRunData, transaction) {
       // Create a timeseries header record and prepare to send a message for each plot/filter associated
       // with the task run.
       await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
-
+      context.log(`Created timeseries header for ${taskRunData.taskRunId}`)
       context.bindings.importFromFews = taskRunData.outgoingMessages
     } else {
       taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
