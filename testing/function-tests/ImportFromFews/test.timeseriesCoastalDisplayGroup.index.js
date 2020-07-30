@@ -293,7 +293,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config[0].processMessagesConfig.messageKey, config[0].processMessagesConfig.mockResponses, config[0].expectedErrorDetails)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[1].processMessagesConfig)
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config[2].processMessagesConfig.messageKey, config[2].processMessagesConfig.mockResponses, config[2].expectedErrorDetails, 3)
-    })
+      // Provide a higher test timeout for this test.
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should throw an exception when the coastal_display_group_workflow table locks due to refresh', async () => {
       // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
       // so check that an exception is thrown to facilitate this process.
