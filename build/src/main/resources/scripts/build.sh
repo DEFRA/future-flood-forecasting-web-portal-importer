@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Copy the configuration file for each function into place based on whether a queue or topic build is being performed. 
-rm -f ImportTimeseriesRouter/function.json
+rm -f ProcessFewsEventCode/function.json
+rm -f ImportFromFews/function.json
 rm -f RefreshFluvialDisplayGroupData/function.json
 rm -f RefreshCoastalDisplayGroupData/function.json
 rm -f RefreshNonDisplayGroupData/function.json
@@ -14,10 +15,11 @@ rm -f DeleteExpiredTimeseries/function.json
 mvn clean -f build/pom.xml process-resources
 cp build/target/host.json.template host.json
 if [[ "${IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED}" == "true" ]]; then
-  cp build/src/main/resources/functions/ImportTimeseriesRouter/OutputBinding/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportTimeseriesRouter/
+  cp build/src/main/resources/functions/ImportFromFews/OutputBinding/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportFromFews/
 else
-  cp build/src/main/resources/functions/ImportTimeseriesRouter/NoOutputBinding/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportTimeseriesRouter/
+  cp build/src/main/resources/functions/ImportFromFews/NoOutputBinding/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ImportFromFews/
 fi
+cp build/src/main/resources/functions/ProcessFewsEventCode/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json ProcessFewsEventCode/
 cp build/src/main/resources/functions/RefreshFluvialDisplayGroupData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshFluvialDisplayGroupData/
 cp build/src/main/resources/functions/RefreshCoastalDisplayGroupData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshCoastalDisplayGroupData/
 cp build/src/main/resources/functions/RefreshNonDisplayGroupData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshNonDisplayGroupData/

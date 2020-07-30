@@ -30,7 +30,11 @@
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
 
 * Microsoft Azure service bus queue named **fews-eventcode-queue**  
-  * Messages are placed on this queue when a task run has completed within the core forecasting engine. Messages placed on this queue provide information on the completed task run to be processed by the **ImportTimeSeriesRouter** function.  The **ImportTimeSeriesRouter** function extracts timeseries from the core forecasting engine and loads the data into the staging database.
+  * Messages are placed on this queue when a task run has completed within the core forecasting engine. Messages placed on this queue provide information on the completed task run to be processed by the **ProcessFewsEventCode** function.  The **ProcessFewsEventCode** function places a message for each
+  plot and filter associated with the task run on a Microsoft Azure service bus queue named **fews-import-queue**.
+* Microsoft Azure service bus queue named **fews-import-queue**
+  * A message is placed on this queue for each plot and filter associated with a completed task run within the core forecasting engine. Messages are
+  processed by the **ImportFromFews** function. Message processing extracts timeseries associated with a plot or filter from the core forecasting engine and loads the data into the staging database.
 * Microsoft Azure service bus queue named **fews-fluvial-forecast-location-queue**  
   * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshFluvialForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
 * Microsoft Azure service bus queue named **fews-coastal-tidal-forecast-location-queue**  
@@ -48,11 +52,12 @@
 * Microsoft Azure service bus queue named **fews-ignored-workflows-queue**  
   * Messages are placed on this queue when the set of core forecasting engine workflows that should be ignored for staging puposes is updated . Messages are processed by the **RefreshIgnoredWorkflowData** function. Message processing retrieves the updated data and uses it to replace the content of the **IGNORED_WORKFLOW** table.
 * Optional Microsoft Azure service bus queue named **fews-staged-timeseries-queue**  
-  * This queue is optional and only required when combined with a corresponding active output binding on ImportTimeseriesRouter. Messages are placed on this queue when the **ImportTimeSeriesRouter** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
+  * This queue is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function. Messages are placed on this queue when the **ImportFromFews** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
 
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
 
-* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription  
+* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
+* Microsoft Azure service bus queue named **fews-import-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-fluvial-forecast-location-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-coastal-tidal-forecast-location-topic** and associated topic subscription
 * Microsoft Azure service bus topic named **fews-coastal-triton-forecast-location-topic** and associated topic subscription
@@ -61,7 +66,7 @@
 * Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription  
 * Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
-* Optional Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription. This topic is optional and only required when combined with a corresponding active output binding on ImportTimeseriesRouter.  
+* Optional Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription. This topic is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function.  
 
 The purpose of each topic is analagous to that of each corresponding queue.
 

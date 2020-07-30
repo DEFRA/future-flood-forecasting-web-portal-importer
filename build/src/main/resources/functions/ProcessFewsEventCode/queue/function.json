@@ -1,0 +1,18 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-eventcode-queue",
+      "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "importFromFews",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-import-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

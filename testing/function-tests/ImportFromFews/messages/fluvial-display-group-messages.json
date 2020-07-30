@@ -1,0 +1,38 @@
+{
+  "commonMessageData": {
+    "startTime": "2019-09-13 13:05:00",
+    "completionTime": "2019-09-13 13:06:00"
+  },
+  "singlePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "plotId": "Test Fluvial Plot1"
+    }
+  ],
+  "earlierSinglePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000003",
+      "plotId": "Test Fluvial Plot1"
+    }
+  ],
+  "multiplePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "plotId": "Test Fluvial Plot2a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "plotId": "Test Fluvial Plot2b"
+    }
+  ],
+  "singlePlotAndFilterApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000004",
+      "plotId": "SpanPlot2"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000004",
+      "filterId": "SpanFilter2"
+    }
+  ]
+}

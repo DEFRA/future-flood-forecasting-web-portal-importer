@@ -1,0 +1,18 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-import-queue",
+      "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "stagedTimeseries",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-staged-timeseries-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}

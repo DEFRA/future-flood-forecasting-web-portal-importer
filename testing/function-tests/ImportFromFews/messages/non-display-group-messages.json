@@ -1,0 +1,104 @@
+{
+  "commonMessageData": {
+    "startTime": "2019-09-13 13:05:00",
+    "completionTime": "2019-09-13 13:06:00"
+  },
+  "singleFilterNonForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "filterId": "Test Filter1"
+    }
+  ],
+  "multipleFilterNonForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "filterId": "Test Filter2a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "filterId": "Test Filter2b"
+    }
+  ],
+  "singleFilterApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000003",
+      "filterId": "Test Filter3"
+    }
+  ],
+  "filterAndPlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000013",
+      "filterId": "SpanFilter"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000013",
+      "plotId": "SpanPlot"
+    }
+  ],
+  "earlierSingleFilterTaskRun": [
+    {
+      "taskRunId": "ukeafffsmc00:000000004",
+      "filterId": "Test Filter4"
+    }
+  ],
+  "laterSingleFilterTaskRun": [
+    {
+      "taskRunId": "ukeafffsmc00:000000005",
+      "filterId": "Test Filter4"
+    }
+  ],
+  "unknownTaskRun": [
+    {
+      "taskRunId": "ukeafffsmc00:000000000",
+      "filterId": "Test Filter1"
+    }
+  ],
+  "unknownFilterId": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "filterId": "Unknown"
+    }
+  ],
+  "singleFilterApprovedForecastCustomOffset": [
+    {
+      "taskRunId": "ukeafffsmc00:000000008",
+      "filterId": "Test FilterCustomTimes"
+    }
+  ],
+  "singleFilterApprovedSimulatedForecast" : [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "filterId": "Test Filter SF"
+    }
+  ],
+  "singleFilterApprovedExternalForecasting" : [
+    {
+      "taskRunId": "ukeafffsmc00:000000010",
+      "filterId": "Test Filter EF"
+    }
+  ],
+  "singleFilterApprovedExternalHistorical" : [
+    {
+      "taskRunId": "ukeafffsmc00:000000011",
+      "filterId": "Test Filter EH"
+    }
+  ],
+  "workflowUnknownTimeseriesType":  [
+    {
+      "taskRunId": "ukeafffsmc00:000000015",
+      "filterId": "Test Filter Unknown Timeseries Type"
+    }
+  ],
+  "unapprovedExternalForecasting" : [
+    {
+      "taskRunId": "ukeafffsmc00:000000014",
+      "filterId": "Test Filter EF"
+    }
+  ],
+  "unapprovedSimulatedForecast":  [
+    {
+      "taskRunId": "ukeafffsmc00:000000012",
+      "filterId": "Test Filter SF"
+    }
+  ]
+}

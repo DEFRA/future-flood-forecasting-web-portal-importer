@@ -1,0 +1,12 @@
+{
+  "commonMessageData": {
+    "startTime": "2019-09-13 13:05:00",
+    "completionTime": "2019-09-13 13:06:00"
+  },  
+  "ignoredWorkflowPlot": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "plotId": "Ignored Workflow Plot"
+    }
+  ]
+}

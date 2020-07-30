@@ -1,0 +1,112 @@
+{
+  "commonMessageData": {
+    "startTime": "2019-09-13 13:05:00",
+    "completionTime": "2019-09-13 13:06:00"
+  },
+  "singlePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "plotId": "Test Coastal Plot"
+    }
+  ],
+  "laterSinglePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000004",
+      "plotId": "Test Coastal Plot 1"
+    }
+  ],
+  "earlierSinglePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000003",
+      "plotId": "Test Coastal Plot 1"
+    }
+  ],
+  "multiplePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "plotId": "Test Coastal Plot 2a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000002",
+      "plotId": "Test Coastal Plot 2b"
+    }
+  ],
+  "singlePlotAndFilterApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000007",
+      "plotId": "SpanPlot"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000007",
+      "filterId": "SpanFilter"
+    }
+  ],
+  "unapprovedWorkflowPlot": [
+    {
+      "taskRunId": "ukeafffsmc00:000000006",
+      "plotId": "Uapproved Workflow Plot"
+    }
+  ],
+  "unknownTaskRun": [
+    {
+      "taskRunId": "ukeafffsmc00:000000000",
+      "plotId": "Test Coastal Plot 1"
+    }
+  ],
+  "invalidPlotAndFilterMessage": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "plotId": "Test Coastal Plot 1",
+      "filterId": "Test Coastal Filter 1"
+    }
+  ],
+  "missingTaskRunIdMessage": [
+    {
+      "taskId": "ukeafffsmc00:000000001",
+      "plotId": "Test Coastal Plot 1"
+    }
+  ],
+  "missingPlotOrFilterIdMessage": [
+    {
+      "taskId": "ukeafffsmc00:000000001"
+    }
+  ],
+  "unknownPlotId": [
+    {
+      "taskRunId": "ukeafffsmc00:000000001",
+      "plotId": "Unknown"
+    }
+  ],
+  "workflowPlotDefinedInMultipleDisplayGroupCsvFiles": [
+    {
+      "taskRunId": "ukeafffsmc00:000000008",
+      "plotId": "Test Coastal Plot 4"
+    }
+  ],
+  "partialTaskRunLoadPartOne": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Span Plot 9a"
+    }
+  ],
+  "partialTaskRunLoadPartTwo": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Span Plot 9b"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Span Plot 9c"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "filterId": "Test Span Filter 9a"
+    }
+  ],
+  "partialTaskRunLoadPartThree": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "filterId": "Test Span Filter 9b"
+    }
+  ]
+}
