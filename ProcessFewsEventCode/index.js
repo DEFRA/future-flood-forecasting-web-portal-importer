@@ -47,9 +47,6 @@ module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
   const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
   context.log(`Processing core engine message: ${messageToLog}`)
-  // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
-  // being placed on a dead letter queue.
-  await checkIfPiServerIsOnline(context)
   await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
   // context.done() not required in async functions
 }
@@ -164,6 +161,9 @@ async function processTaskRunData (context, taskRunData, transaction) {
       // with the task run.
       await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
       context.log(`Created timeseries header for ${taskRunData.taskRunId}`)
+      // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
+      // being placed on a dead letter queue.
+      await checkIfPiServerIsOnline(context)
       context.bindings.importFromFews = taskRunData.outgoingMessages
     } else {
       taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
