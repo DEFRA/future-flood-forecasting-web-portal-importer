@@ -178,7 +178,8 @@ async function parseMessage (context, transaction, message) {
     transaction: transaction,
     throwStagingErrorFollowingStagingExceptionCreation: true,
     outgoingMessages: [],
-    timeseriesStagingErrors: []
+    timeseriesStagingErrors: [],
+    unprocessedFilterIds: []
   }
   taskRunData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, taskRunData)
   taskRunData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, taskRunData)
