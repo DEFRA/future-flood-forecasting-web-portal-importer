@@ -57,6 +57,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
       (
         select
           'C' as csv_type,
+          workflow_id,
           location_ids
         from
           fff_staging.coastal_display_group_workflow
@@ -68,6 +69,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
         union
         select
           'F' as csv_type,
+          workflow_id,
           location_ids
         from
           fff_staging.fluvial_display_group_workflow
@@ -79,6 +81,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
       ) dgw,
       fff_staging.timeseries_header th
     where
+      th.workflow_id = dgw.workflow_id and
       th.id = @timeseriesHeaderId and
       th.workflow_id = @workflowId
    `)
