@@ -104,7 +104,7 @@ async function getFiltersForWorkflow (context, preparedStatement, taskRunData) {
 }
 
 async function buildDataRetrievalParameters (context, taskRunData) {
-  let dataRetrievalParametersArray = []
+  const dataRetrievalParametersArray = []
 
   // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
   // reference data held in the staging database.
@@ -122,7 +122,7 @@ async function buildDataRetrievalParameters (context, taskRunData) {
 async function buildWorkflowMessages (context, taskRunData) {
   // Process data for each CSV file associated with the workflow.
   await buildDataRetrievalParameters(context, taskRunData)
-  for (let dataRetrievalParameters of taskRunData.dataRetrievalParametersArray) {
+  for (const dataRetrievalParameters of taskRunData.dataRetrievalParametersArray) {
     const timeseriesDataFunctionType = dataRetrievalParameters.timeseriesDataFunctionType
     const timeseriesDataIdentifier = dataRetrievalParameters.timeseriesDataIdentifier
     const timeseriesDataMessageKey = dataRetrievalParameters.timeseriesDataMessageKey

@@ -7,7 +7,6 @@ const Context = require('../mocks/defaultContext')
 const sql = require('mssql')
 
 module.exports = describe('Tests for preventing ignored workflow import', () => {
-
   let context
   let importFromFewsTestUtils
 

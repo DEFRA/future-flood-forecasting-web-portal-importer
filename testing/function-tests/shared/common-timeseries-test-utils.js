@@ -29,19 +29,19 @@ const IGNORED_WORKFLOW_LOCK_TIMEOUT_QUERY = `
     ('dummyWorkflow')
 `
 const lockTimeoutData = {
-  'coastalDisplayGroupWorkflow': {
+  coastalDisplayGroupWorkflow: {
     query: COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY,
     tableName: 'coastal_display_group_workflow'
   },
-  'fluvialDisplayGroupWorkflow': {
+  fluvialDisplayGroupWorkflow: {
     query: FLUVIAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY,
     tableName: 'fluvial_display_group_workflow'
   },
-  'nonDisplayGroupWorkflow': {
+  nonDisplayGroupWorkflow: {
     query: NON_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY,
     tableName: 'non_display_group_workflow'
   },
-  'ignoredWorkflow': {
+  ignoredWorkflow: {
     query: IGNORED_WORKFLOW_LOCK_TIMEOUT_QUERY,
     tableName: 'ignored_display_group_workflow'
   }

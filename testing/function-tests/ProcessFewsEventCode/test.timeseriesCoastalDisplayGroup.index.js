@@ -6,7 +6,6 @@ const Context = require('../mocks/defaultContext')
 const sql = require('mssql')
 
 module.exports = describe('Tests for import timeseries display groups', () => {
-
   let context
   let processFewsEventCodeTestUtils
 
@@ -18,33 +17,33 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     singlePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Coastal Plot' ]
+      outgoingPlotIds: ['Test Coastal Plot']
     },
     earlierSinglePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Coastal Plot 1' ]
+      outgoingPlotIds: ['Test Coastal Plot 1']
     },
     laterSinglePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Coastal Plot 1' ]
+      outgoingPlotIds: ['Test Coastal Plot 1']
     },
     multiplePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Coastal Plot 2a', 'Test Coastal Plot 2b' ]
+      outgoingPlotIds: ['Test Coastal Plot 2a', 'Test Coastal Plot 2b']
     },
     forecastApprovedManually: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Coastal Plot 1' ]
+      outgoingPlotIds: ['Test Coastal Plot 1']
     },
     singlePlotAndFilterApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'SpanPlot' ],
-      outgoingFilterIds: [ 'SpanFilter' ]
+      outgoingPlotIds: ['SpanPlot'],
+      outgoingFilterIds: ['SpanFilter']
     }
   }
 

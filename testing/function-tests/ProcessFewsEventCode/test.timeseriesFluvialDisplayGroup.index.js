@@ -16,22 +16,22 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     singlePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
+      outgoingPlotIds: ['Test Fluvial Plot1']
     },
     earlierSinglePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
+      outgoingPlotIds: ['Test Fluvial Plot1']
     },
     multiplePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot2a', 'Test Fluvial Plot2b' ]
+      outgoingPlotIds: ['Test Fluvial Plot2a', 'Test Fluvial Plot2b']
     },
     forecastApprovedManually: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
+      outgoingPlotIds: ['Test Fluvial Plot1']
     }
   }
 
