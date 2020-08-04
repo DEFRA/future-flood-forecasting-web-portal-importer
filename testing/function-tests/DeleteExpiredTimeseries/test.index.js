@@ -1,10 +1,11 @@
+const deleteFunction = require('../../../DeleteExpiredTimeseries/index')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const timer = require('../mocks/defaultTimer')
+const moment = require('moment')
+const sql = require('mssql')
+
 module.exports = describe('Timeseries data deletion tests', () => {
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const timer = require('../mocks/defaultTimer')
-  const deleteFunction = require('../../../DeleteExpiredTimeseries/index')
-  const moment = require('moment')
-  const sql = require('mssql')
 
   let context
   const jestConnectionPool = new ConnectionPool()

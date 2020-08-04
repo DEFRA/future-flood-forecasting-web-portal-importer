@@ -1,18 +1,16 @@
-module.exports = describe('Tests for import timeseries ignored workflows', () => {
-  const taskRunCompleteMessages = require('./messages/task-run-complete/ignored-workflow-messages')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-  const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
+const taskRunCompleteMessages = require('./messages/task-run-complete/ignored-workflow-messages')
+const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
+const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
 
+module.exports = describe('Tests for import timeseries ignored workflows', () => {
   let context
   let processFewsEventCodeTestUtils
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-
-  jest.mock('axios')
 
   describe('Message processing for ignored workflows', () => {
     beforeAll(async () => {

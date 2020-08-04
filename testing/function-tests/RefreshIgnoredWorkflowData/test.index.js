@@ -1,17 +1,18 @@
-module.exports = describe('Ignored workflow loader tests', () => {
-  const Context = require('../mocks/defaultContext')
-  const message = require('../mocks/defaultMessage')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const messageFunction = require('../../../RefreshIgnoredWorkflowData/index')
-  const fetch = require('node-fetch')
-  const sql = require('mssql')
-  const fs = require('fs')
+const messageFunction = require('../../../RefreshIgnoredWorkflowData/index')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const message = require('../mocks/defaultMessage')
+const fetch = require('node-fetch')
+const sql = require('mssql')
+const fs = require('fs')
 
+jest.mock('node-fetch')
+
+module.exports = describe('Ignored workflow loader tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
-  jest.mock('node-fetch')
 
   let context
   let dummyData

@@ -1,17 +1,17 @@
+const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
+const importFromFewsMessages = require('./messages/coastal-display-group-messages')
+const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
+const { checkImportedData } = require('./display-group-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const moment = require('moment')
+const sql = require('mssql')
+
 module.exports = describe('Tests for import coastal timeseries display groups', () => {
   const dateFormat = 'YYYY-MM-DD HH:mm:ss'
-  const importFromFewsMessages = require('./messages/coastal-display-group-messages')
-  const { checkImportedData } = require('./display-group-test-utils')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
-  const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-  const moment = require('moment')
-  const sql = require('mssql')
 
   let context
   let importFromFewsTestUtils
-  jest.mock('axios')
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool

@@ -1,16 +1,16 @@
+const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
+const importFromFewsMessages = require('./messages/non-display-group-messages')
+const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const moment = require('moment')
+const sql = require('mssql')
+
 module.exports = describe('Tests for import timeseries non-display groups', () => {
   const dateFormat = 'YYYY-MM-DD HH:mm:ss'
-  const importFromFewsMessages = require('./messages/non-display-group-messages')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
-  const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-  const moment = require('moment')
-  const sql = require('mssql')
 
   let context
   let importFromFewsTestUtils
-  jest.mock('axios')
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool

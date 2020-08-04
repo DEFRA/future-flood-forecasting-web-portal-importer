@@ -1,10 +1,11 @@
+const taskRunCompleteMessages = require('./messages/task-run-complete/coastal-display-group-messages')
+const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
+const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const sql = require('mssql')
+
 module.exports = describe('Tests for import timeseries display groups', () => {
-  const taskRunCompleteMessages = require('./messages/task-run-complete/coastal-display-group-messages')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
-  const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-  const sql = require('mssql')
 
   let context
   let processFewsEventCodeTestUtils
@@ -46,8 +47,6 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       outgoingFilterIds: [ 'SpanFilter' ]
     }
   }
-
-  jest.mock('axios')
 
   describe('Message processing for coastal display group task run completion', () => {
     beforeAll(async () => {

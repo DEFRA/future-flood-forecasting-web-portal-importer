@@ -3,7 +3,7 @@ const moment = require('moment')
 const sql = require('mssql')
 const messageFunction = require('../../../ProcessFewsEventCode/index')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-
+jest.mock('axios')
 module.exports = function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessage = async function (messageKey, sendMessageAsString, mockResponse) {

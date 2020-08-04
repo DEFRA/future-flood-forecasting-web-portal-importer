@@ -1,10 +1,11 @@
+const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
+const taskRunCompleteMessages = require('./messages/task-run-complete/non-display-group-messages')
+const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const sql = require('mssql')
+
 module.exports = describe('Tests for import timeseries non-display groups', () => {
-  const taskRunCompleteMessages = require('./messages/task-run-complete/non-display-group-messages')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
-  const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-  const sql = require('mssql')
 
   let context
   let processFewsEventCodeTestUtils
@@ -47,8 +48,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       outgoingFilterIds: [ 'SpanFilter' ]
     }
   }
-
-  jest.mock('axios')
 
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
