@@ -4,16 +4,28 @@ module.exports = async function (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
+  // Hold a table lock on the workflow view held for the duration of the transaction to guard
+  // against a workflow view refresh during processing.
   await preparedStatement.prepare(`
     select 
-      filter_id
+      source_id,
+      source_type
     from
-      fff_staging.non_display_group_workflow
+      fff_staging.v_workflow
+    with
+      (tablock holdlock)
     where
       workflow_id = @workflowId
     except
     select
-      substring(t.fews_parameters, 11, charindex('&', t.fews_parameters, 2) - 11) as filter_id
+      case
+        when t.fews_parameters like '&plotId=%' then substring(t.fews_parameters, 8, charindex('&', t.fews_parameters, 2) - 8)
+        when t.fews_parameters like '&filterId=%' then substring(t.fews_parameters, 11, charindex('&', t.fews_parameters, 2) - 11)
+        end as source_id,
+      case
+        when t.fews_parameters like '&plotId=%' then 'P'
+        when t.fews_parameters like '&filterId=%' then 'F'
+        end as source_type        
     from
       fff_staging.timeseries_header th,
       fff_staging.timeseries t
@@ -22,7 +34,8 @@ module.exports = async function (context, preparedStatement, taskRunData) {
       th.task_run_id = @taskRunId
     except
       select
-        substring(tse.fews_parameters, 11, charindex('&', tse.fews_parameters, 2) - 11) as filter_id
+        tse.source_id,
+        tse.source_type
       from
         fff_staging.timeseries_header th,
         fff_staging.timeseries_staging_exception tse
@@ -38,7 +51,10 @@ module.exports = async function (context, preparedStatement, taskRunData) {
 
   const result = await preparedStatement.execute(parameters)
 
-  for (let record of result.recordset) {
-    taskRunData.unprocessedFilterIds.push(record.filter_id)
+  for (const record of result.recordset) {
+    taskRunData.unprocessedItems.push({
+      sourceId: record.source_id,
+      sourceType: record.source_type
+    })
   }
 }
