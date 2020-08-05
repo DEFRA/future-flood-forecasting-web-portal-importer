@@ -1,11 +1,11 @@
-module.exports = describe('Timeseries data deletion tests', () => {
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const timer = require('../mocks/defaultTimer')
-  const deleteFunction = require('../../../DeleteExpiredTimeseries/index')
-  const moment = require('moment')
-  const sql = require('mssql')
+const deleteFunction = require('../../../DeleteExpiredTimeseries/index')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const timer = require('../mocks/defaultTimer')
+const moment = require('moment')
+const sql = require('mssql')
 
+module.exports = describe('Timeseries data deletion tests', () => {
   let context
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
@@ -199,7 +199,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const snapshotBoolean = await checkSnapshotIsolationOn()
       if (!snapshotBoolean) {
         // no snapshot isolation with no isolation lock hint and default READ COMMITED isolation (SQL server default)
-        let isolationHintSet = false
+        const isolationHintSet = false
         await checkSelectRejectsWithDeleteInProgress(isolationHintSet)
       } else {
         await checkDefaultSelectSucceedsWithDeleteInProgress(testDescription)
@@ -232,7 +232,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     // the function will look for anything older than the limit supplied (compared to current time).
     // As this insert happens first (current time is older in comparison to when the delete function runs),
     // the inserted data in tests will always be older. Date storage ISO 8601 allows this split seconds difference to be picked up.
-    let query = `
+    const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
       declare @id2 uniqueidentifier
@@ -304,7 +304,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // the isolation level used by other transactions on the three tables concerned
       const newRequest = new sql.Request(transaction)
 
-      let query = `
+      const query = `
       select 
         * 
       from 
@@ -328,7 +328,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       transaction = new sql.Transaction(pool)
       await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // the isolation level used by other transactions on the three tables concerned
       const newRequest = new sql.Request(transaction)
-      let query = `
+      const query = `
       declare @id1 uniqueidentifier set @id1 = newid()
       insert into 
         fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
@@ -353,7 +353,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       transaction1 = new sql.Transaction(pool)
       await transaction1.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // current delete level
       const newRequest = new sql.Request(transaction1)
-      let query =
+      const query =
         `delete
         from fff_reporting.TIMESERIES_JOB
         where JOB_STATUS = 6
@@ -366,7 +366,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       // Copy the lock timeout period
       let lockTimeoutValue
       process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
-      let query2 =
+      const query2 =
         `set lock_timeout ${lockTimeoutValue}
          select * from fff_reporting.TIMESERIES_JOB
         where JOB_STATUS = 6`
@@ -388,7 +388,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       transaction1 = new sql.Transaction(pool)
       await transaction1.begin()
       const newRequest = new sql.Request(transaction1)
-      let query =
+      const query =
         `delete
         from fff_reporting.TIMESERIES_JOB
         where JOB_STATUS = 6
@@ -401,7 +401,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       // Copy the lock timeout period
       let lockTimeoutValue
       process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
-      let query2 =
+      const query2 =
         `set lock_timeout ${lockTimeoutValue}
          select * from fff_reporting.TIMESERIES_JOB ${isolationHintSet ? 'with (readcommittedlock)' : ''}
         where JOB_STATUS = 6`

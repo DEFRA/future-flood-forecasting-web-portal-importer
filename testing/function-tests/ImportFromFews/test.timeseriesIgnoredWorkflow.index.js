@@ -1,15 +1,14 @@
-module.exports = describe('Tests for preventing ignored workflow import', () => {
-  const importFromFewsMessages = require('./messages/ignored-workflow-messages')
-  const { checkImportedData } = require('./display-group-test-utils')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-  const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-  const sql = require('mssql')
+const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+const importFromFewsMessages = require('./messages/ignored-workflow-messages')
+const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
+const { checkImportedData } = require('./display-group-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
+const sql = require('mssql')
 
+module.exports = describe('Tests for preventing ignored workflow import', () => {
   let context
   let importFromFewsTestUtils
-  jest.mock('axios')
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool

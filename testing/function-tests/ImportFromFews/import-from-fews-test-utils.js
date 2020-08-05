@@ -4,6 +4,8 @@ const sql = require('mssql')
 const messageFunction = require('../../../ImportFromFews/index')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 
+jest.mock('axios')
+
 module.exports = function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessages = async function (messageKey, mockResponses) {

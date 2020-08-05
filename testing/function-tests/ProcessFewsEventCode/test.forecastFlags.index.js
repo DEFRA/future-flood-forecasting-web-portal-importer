@@ -1,9 +1,9 @@
-const Context = require('../mocks/defaultContext')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const { isBoolean } = require('../../../Shared/utils')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../../../Shared/transaction-helper')
 const getBooleanIndicator = require('../../../ProcessFewsEventCode/helpers/get-boolean-indicator')
+const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const { isBoolean } = require('../../../Shared/utils')
+const Context = require('../mocks/defaultContext')
 
 const jestConnectionPool = new ConnectionPool()
 const pool = jestConnectionPool.pool

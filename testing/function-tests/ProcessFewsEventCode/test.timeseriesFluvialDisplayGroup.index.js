@@ -1,10 +1,10 @@
-module.exports = describe('Tests for import timeseries display groups', () => {
-  const taskRunCompleteMessages = require('./messages/task-run-complete/fluvial-display-group-messages')
-  const Context = require('../mocks/defaultContext')
-  const ConnectionPool = require('../../../Shared/connection-pool')
-  const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-timeseries-test-utils')
-  const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
+const taskRunCompleteMessages = require('./messages/task-run-complete/fluvial-display-group-messages')
+const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-timeseries-test-utils')
+const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
+const ConnectionPool = require('../../../Shared/connection-pool')
+const Context = require('../mocks/defaultContext')
 
+module.exports = describe('Tests for import timeseries display groups', () => {
   let context
   let processFewsEventCodeTestUtils
 
@@ -16,26 +16,24 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     singlePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
+      outgoingPlotIds: ['Test Fluvial Plot1']
     },
     earlierSinglePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
+      outgoingPlotIds: ['Test Fluvial Plot1']
     },
     multiplePlotApprovedForecast: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot2a', 'Test Fluvial Plot2b' ]
+      outgoingPlotIds: ['Test Fluvial Plot2a', 'Test Fluvial Plot2b']
     },
     forecastApprovedManually: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: [ 'Test Fluvial Plot1' ]
+      outgoingPlotIds: ['Test Fluvial Plot1']
     }
   }
-
-  jest.mock('axios')
 
   describe('Message processing for fluvial display group task run completion', () => {
     beforeAll(async () => {

@@ -58,7 +58,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         }
         let columnNames = ''
         let preparedStatementValues = ''
-        for (let columnObject of refreshData.functionSpecificData) {
+        for (const columnObject of refreshData.functionSpecificData) {
           // preparedStatement inputs
           columnNames = columnNames + `${columnObject.tableColumnName}, `
           preparedStatementValues = preparedStatementValues + `@${columnObject.tableColumnName}, ` // '@' values are input at execution.
@@ -74,13 +74,13 @@ async function refreshInternal (context, preparedStatement, refreshData) {
           (${preparedStatementValues})`)
 
         for (const row of csvRows) {
-          let preparedStatementExecuteObject = {}
+          const preparedStatementExecuteObject = {}
           try {
             // check all the expected values are present in the csv row and exclude incomplete csvRows.
             let rowError = false
-            for (let columnObject of refreshData.functionSpecificData) {
+            for (const columnObject of refreshData.functionSpecificData) {
               if (refreshData.keyInteregator) {
-                let keyPass = await refreshData.keyInteregator(columnObject.expectedCSVKey, row[`${columnObject.expectedCSVKey}`])
+                const keyPass = await refreshData.keyInteregator(columnObject.expectedCSVKey, row[`${columnObject.expectedCSVKey}`])
                 if (keyPass === false) {
                   rowError = true
                   break
