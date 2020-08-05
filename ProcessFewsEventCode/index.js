@@ -22,6 +22,7 @@ const allDataRetrievalParameters = {
     timeseriesDataFunctionType: 'plot',
     timeseriesDataIdentifier: 'plot_id',
     timeseriesDataMessageKey: 'plotId',
+    timeseriesSourceType: 'P',
     workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse',
     workflowTableName: 'fluvial_display_group_workflow'
   },
@@ -30,6 +31,7 @@ const allDataRetrievalParameters = {
     timeseriesDataFunctionType: 'plot',
     timeseriesDataIdentifier: 'plot_id',
     timeseriesDataMessageKey: 'plotId',
+    timeseriesSourceType: 'P',
     workflowDataProperty: 'coastalDisplayGroupWorkflowsResponse',
     workflowTableName: 'coastal_display_group_workflow'
   },
@@ -38,6 +40,7 @@ const allDataRetrievalParameters = {
     timeseriesDataFunctionType: 'filter',
     timeseriesDataIdentifier: 'filter_id',
     timeseriesDataMessageKey: 'filterId',
+    timeseriesSourceType: 'F',
     workflowDataProperty: 'nonDisplayGroupWorkflowsResponse',
     workflowTableName: 'non_display_group_workflow'
   }
@@ -179,7 +182,8 @@ async function parseMessage (context, transaction, message) {
     throwStagingErrorFollowingStagingExceptionCreation: true,
     outgoingMessages: [],
     timeseriesStagingErrors: [],
-    unprocessedFilterIds: []
+    unprocessedItems: [],
+    itemsEligibleForReplay: []
   }
   taskRunData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, taskRunData)
   taskRunData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, taskRunData)
