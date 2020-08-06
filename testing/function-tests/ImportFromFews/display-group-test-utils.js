@@ -56,9 +56,6 @@ module.exports = {
             startTimeDisplayGroupOffsetHours = offsetData.startTimeOffset
           } else {
             startTimeDisplayGroupOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
-            if (!Number.isInteger(startTimeDisplayGroupOffsetHours)) {
-              startTimeDisplayGroupOffsetHours = 24
-            }
           }
           if (offsetData.endTimeOffset && offsetData.endTimeOffset !== 0) {
             endTimeDisplayGroupOffsetHours = offsetData.endTimeOffset
