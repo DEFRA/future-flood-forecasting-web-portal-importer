@@ -44,6 +44,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       approved: true,
       outgoingPlotIds: ['SpanPlot'],
       outgoingFilterIds: ['SpanFilter']
+    },
+    taskRunWithStagingException: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Test Coastal Plot 2a', 'Test Coastal Plot 2b']
     }
   }
 
@@ -82,14 +87,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const messageKey = 'forecastApprovedManually'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should create a staging exception for an unknown forecast approved workflow', async () => {
-      const unknownWorkflow = 'unknownWorkflow'
-      const workflowId = taskRunCompleteMessages[unknownWorkflow].input.description.split(/\s+/)[1]
-      await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflow, `Missing PI Server input data for ${workflowId}`)
-    })
-    it('should prevent replay of a task run associated with a staging exception', async () => {
-      const messageKey = 'unknownWorkflow'
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey)
+    it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction', async () => {
+      const taskRunWithStagingExceptionMessageKey = 'taskRunWithStagingException'
+      const unknownWorkflowMessageKey = 'unknownWorkflow'
+      const workflowId = taskRunCompleteMessages[unknownWorkflowMessageKey].input.description.split(/\s+/)[1]
+      await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflowMessageKey, `Missing PI Server input data for ${workflowId}`)
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(taskRunWithStagingExceptionMessageKey, expectedData[taskRunWithStagingExceptionMessageKey])
     })
     it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
       const messageKey = 'workflowWithTimeseriesStagingException'

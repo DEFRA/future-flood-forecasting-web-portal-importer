@@ -1,4 +1,3 @@
-const doStagingExceptionsExistForTaskRun = require('../../Shared/timeseries-functions/do-staging-exceptions-exist-for-task-run')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
@@ -7,13 +6,10 @@ module.exports = async function (context, taskRunData) {
   const timeseriesHeaderExistsForTaskRun =
     await executePreparedStatementInTransaction(doesTimeseriesHeaderExistForTaskRun, context, taskRunData.transaction, taskRunData)
 
-  const stagingExceptionsExistForTaskRun =
-    await executePreparedStatementInTransaction(doStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
-
   const timeseriesStagingExceptionsExistForTaskRun =
     await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRun, context, taskRunData.transaction, taskRunData)
 
-  if (stagingExceptionsExistForTaskRun || timeseriesStagingExceptionsExistForTaskRun) {
+  if (timeseriesStagingExceptionsExistForTaskRun) {
     context.log(`Ignoring message for task run ${taskRunData.taskRunId} - Replay of failures is not supported yet`)
     ignoreMessage = true
   } else if (timeseriesHeaderExistsForTaskRun) {
