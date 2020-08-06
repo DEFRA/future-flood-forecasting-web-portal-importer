@@ -1,4 +1,4 @@
-const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+const createOrReplaceStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
 
 module.exports = async function (context, taskRunData, regex, expectedNumberOfMatches, matchIndexToReturn, errorMessageSubject, preparedStatement) {
   const matches = regex.exec(taskRunData.message)
@@ -11,6 +11,6 @@ module.exports = async function (context, taskRunData, regex, expectedNumberOfMa
     // format and cannot be replayed. In this case intervention is needed so create a staging
     // exception.
     taskRunData.errorMessage = `Unable to extract ${errorMessageSubject} from message`
-    return createStagingException(context, preparedStatement, taskRunData)
+    return createOrReplaceStagingException(context, preparedStatement, taskRunData)
   }
 }

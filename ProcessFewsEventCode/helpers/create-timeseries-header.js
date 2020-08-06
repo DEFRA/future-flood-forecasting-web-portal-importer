@@ -30,4 +30,5 @@ module.exports = async function createTimeseriesHeader (context, preparedStateme
   }
 
   await preparedStatement.execute(parameters)
+  context.log(`Created timeseries header for ${taskRunData.taskRunId}`)
 }

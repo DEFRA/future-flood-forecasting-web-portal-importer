@@ -1,4 +1,4 @@
-const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+const createOrReplaceStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
 
 module.exports = async function (context, preparedStatement, message) {
   const errorMessage = 'Message must be either a string or a pure object'
@@ -13,7 +13,7 @@ module.exports = async function (context, preparedStatement, message) {
         returnValue = Promise.resolve(JSON.stringify(message))
         break
       default:
-        returnValue = createStagingException(context, preparedStatement, { message: message, errorMessage: errorMessage })
+        returnValue = createOrReplaceStagingException(context, preparedStatement, { message: message, errorMessage: errorMessage })
         break
     }
   } else {
@@ -22,7 +22,7 @@ module.exports = async function (context, preparedStatement, message) {
     } else if (typeof message === 'string' && message.length === 0) {
       context.log.warn('Ignoring message with empty content')
     } else {
-      returnValue = createStagingException(context, preparedStatement, { message: message, errorMessage: errorMessage })
+      returnValue = createOrReplaceStagingException(context, preparedStatement, { message: message, errorMessage: errorMessage })
     }
   }
   return returnValue

@@ -1,6 +1,7 @@
 const moment = require('moment')
-const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
+const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
+const doesStagingExceptionExistForTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-task-run')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
@@ -67,14 +68,13 @@ async function processTaskRunData (context, taskRunData, transaction) {
       // Create a timeseries header record and prepare to send a message for each plot/filter associated
       // with the task run.
       await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
-      context.log(`Created timeseries header for ${taskRunData.taskRunId}`)
       // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
       // being placed on a dead letter queue.
       await checkIfPiServerIsOnline(context)
       context.bindings.importFromFews = taskRunData.outgoingMessages
     } else {
       taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
-      await executePreparedStatementInTransaction(createStagingException, context, taskRunData.transaction, taskRunData)
+      await executePreparedStatementInTransaction(createOrReplaceStagingException, context, taskRunData.transaction, taskRunData)
     }
   }
 }
@@ -84,6 +84,7 @@ async function parseMessage (context, transaction, message) {
     message: message,
     transaction: transaction,
     throwStagingErrorFollowingStagingExceptionCreation: true,
+    sourceFunction: 'P',
     outgoingMessages: [],
     timeseriesStagingErrors: [],
     unprocessedItems: [],
@@ -91,7 +92,7 @@ async function parseMessage (context, transaction, message) {
   }
   taskRunData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, taskRunData)
   taskRunData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, taskRunData)
-
+  taskRunData.stagingExceptionExists = await executePreparedStatementInTransaction(doesStagingExceptionExistForTaskRun, context, transaction, taskRunData)
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
   taskRunData.taskRunStartTime =

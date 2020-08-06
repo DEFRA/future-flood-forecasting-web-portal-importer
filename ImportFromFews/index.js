@@ -6,7 +6,8 @@ const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/b
 const { gzip } = require('../Shared/utils')
 const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
+const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
+const doesStagingExceptionExistForTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-task-run')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
 const isMessageIgnored = require('./helpers/is-message-ignored')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
@@ -27,13 +28,16 @@ async function processMessageIfPossible (taskRunData, context, message) {
     }
   } else {
     taskRunData.errorMessage = `Unable to retrieve TIMESERIES_HEADER record for task run ${message.taskRunId}`
-    await executePreparedStatementInTransaction(createStagingException, context, taskRunData.transaction, taskRunData)
+    await executePreparedStatementInTransaction(createOrReplaceStagingException, context, taskRunData.transaction, taskRunData)
   }
 }
 
 async function processMessage (transaction, context, message) {
   const taskRunData = Object.assign({}, message)
   taskRunData.message = message
+  taskRunData.sourceFunction = 'I'
+  taskRunData.stagingExceptionExists = await executePreparedStatementInTransaction(doesStagingExceptionExistForTaskRun, context, transaction, taskRunData)
+
   if (message.taskRunId &&
        ((!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId))) {
     taskRunData.transaction = transaction
@@ -54,7 +58,7 @@ async function processMessage (transaction, context, message) {
     await processMessageIfPossible(taskRunData, context, message)
   } else {
     taskRunData.errorMessage = 'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
-    await executePreparedStatementInTransaction(createStagingException, context, transaction, taskRunData)
+    await executePreparedStatementInTransaction(createOrReplaceStagingException, context, transaction, taskRunData)
   }
 }
 
