@@ -72,7 +72,7 @@ async function buildStartAndEndTimes (context, taskRunData) {
     taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(truncationOffsetHoursForward, 'hours').toISOString()
   } else {
-    // timeframe search period basis extends to the last observed time (either last taskrun end time or current task run start time)
+    // timeframe search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
     taskRunData.startTime = moment(taskRunData.startCreationTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.endCreationTime).add(truncationOffsetHoursForward, 'hours').toISOString()
   }
