@@ -87,7 +87,7 @@ async function getFiltersForWorkflow (context, preparedStatement, taskRunData) {
   // against a non display group data refresh during data retrieval.
   await preparedStatement.prepare(`
     select
-      filter_id, approved, timeseries_type, start_time_offset_hours, end_time_offset_hours
+      filter_id
     from
       fff_staging.non_display_group_workflow
     with
@@ -144,6 +144,11 @@ async function buildWorkflowMessages (context, taskRunData) {
         context.log(`Created message for ${timeseriesDataFunctionType} ID ${record[timeseriesDataIdentifier]}`)
       }
     }
+  }
+  let spanningWorkflowBoolean
+  if (taskRunData.forecast && taskRunData.nonDisplayGroupWorkflowsResponse.recordset.length > 0 && (taskRunData.coastalDisplayGroupWorkflowsResponse.recordset.length > 0 || taskRunData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0)) {
+    spanningWorkflowBoolean = true
+    taskRunData.outgoingMessages = taskRunData.outgoingMessages.map(message => ({ ...message, [`spanWorkflow`]: spanningWorkflowBoolean }))
   }
 }
 

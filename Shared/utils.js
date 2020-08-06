@@ -1,5 +1,6 @@
-const { createGzip } = require('zlib')
+const TimeseriesStagingError = require('../ImportFromFews/helpers/timeseries-staging-error')
 const { pipeline, Transform } = require('stream')
+const { createGzip } = require('zlib')
 const { promisify } = require('util')
 const pipe = promisify(pipeline)
 
@@ -35,5 +36,26 @@ module.exports = {
       environmentVariableAsInteger = Number(process.env[environmentVariableName])
     }
     return environmentVariableAsInteger
+  },
+  getOffsetAsInterger: function (offset, taskRunData) {
+    let integer
+    if (Number.isInteger(offset)) {
+      integer = Number(offset)
+    } else {
+      const errorDescription = `Unable to return an integer for an offset value: ${offset}`
+
+      const errorData = {
+        sourceId: taskRunData.sourceId,
+        sourceType: taskRunData.sourceType,
+        csvError: true,
+        csvType: 'U',
+        fewsParameters: null,
+        timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+        payload: taskRunData.message,
+        description: errorDescription
+      }
+      throw new TimeseriesStagingError(errorData, errorDescription)
+    }
+    return integer
   }
 }

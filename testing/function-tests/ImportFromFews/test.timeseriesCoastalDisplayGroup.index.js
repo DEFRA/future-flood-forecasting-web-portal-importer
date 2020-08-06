@@ -8,10 +8,9 @@ const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = describe('Tests for import coastal timeseries display groups', () => {
-  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
-
   let context
   let importFromFewsTestUtils
+  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
@@ -25,7 +24,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         insert into
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+          ('Span_Workflow', 'SpanFilter', 1, 10, 20, 'external_historical'),
+          ('Span_Workflow_Default_Offset', 'SpanFilterDefaultOffsets', 1, 0, 0, 'external_historical')
       `)
     })
     beforeEach(async () => {
@@ -88,8 +88,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env
       try {
-        process.env['FEWS_START_TIME_OFFSET_HOURS'] = 24
-        process.env['FEWS_END_TIME_OFFSET_HOURS'] = 48
+        process.env['FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS'] = 24
+        process.env['FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS'] = 48
         const mockResponse = {
           data: {
             key: 'Timeseries display groups data'
@@ -194,7 +194,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
-    it('should load a single plot associated with a workflow that is also associated with non display group data', async () => {
+    it('should load a single plot (with the correct offset timings inherited) associated with a workflow that is also associated with non display group data', async () => {
       const mockResponses = [
         {
           data: {
@@ -210,7 +210,31 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
-        mockResponses: mockResponses
+        mockResponses: mockResponses,
+        spanWorkflow: true,
+        workflowId: 'Span_Workflow'
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should load a single plot with the default ndg correct offset timings when timings are not specified in reference data for a workflow that is also associated with non display group data', async () => {
+      const mockResponses = [
+        {
+          data: {
+            key: 'Timeseries data'
+          }
+        },
+        {
+          data: {
+            key: 'Timeseries data'
+          }
+        }
+      ]
+
+      const config = {
+        messageKey: 'singlePlotAndFilterApprovedForecastDefaultOffsets',
+        mockResponses: mockResponses,
+        spanWorkflow: true,
+        workflowId: 'Span_Workflow_Default_Offset'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -330,7 +354,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Coastal_Workflow3', 1, 0, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000008', 'Test_Coastal_Workflow4', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'Partial_Load_Span_Workflow', 1, 1, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'Partial_Load_Span_Workflow', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:0000000010', 'Span_Workflow_Default_Offset', 1, 1, '{"input": "Test message"}')
     `)
   }
 })

@@ -81,6 +81,11 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
 
       for (const outgoingMessage of context.bindings.importFromFews) {
         expect(outgoingMessage.taskRunId).toBe(expectedTaskRunId)
+        if (expectedData.additionalOutgoingInformation) {
+          for (const inforamationKey in expectedData.additionalOutgoingInformation) {
+            expect(expectedData.additionalOutgoingInformation[`${inforamationKey}`]).toEqual(outgoingMessage[`${inforamationKey}`])
+          }
+        }
       }
 
       for (const outgoingPlotId of outgoingPlotIds) {

@@ -1,9 +1,10 @@
 const moment = require('moment')
 const sql = require('mssql')
-const { getEnvironmentVariableAsInteger } = require('../../Shared/utils')
+const { getEnvironmentVariableAsInteger, getOffsetAsInterger } = require('../../Shared/utils')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
+const getCustomOffsets = require('./get-workflow-offset-data')
 
 module.exports = async function (context, taskRunData) {
   if (taskRunData.approved) {
@@ -19,10 +20,33 @@ async function buildTimeParameters (context, taskRunData) {
 }
 
 async function buildStartAndEndTimes (context, taskRunData) {
-  const startTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_START_TIME_OFFSET_HOURS') || 14
-  const endTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_END_TIME_OFFSET_HOURS') || 120
-  taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  // Check if the workflow spans into NDG's, if it does inherit the first filters offset values
+  // have a look at the ndg tabe and see if the workflow exists
+  // if it does grab the first offsets values (as all should be the same for a workflow)
+  // a flag passed through to say the plot is part of a spanned workflow would be useful
+  if (taskRunData.message.spanWorkflow && taskRunData.message.spanWorkflow === true) {
+    // if there is a custom offset for non display groups
+    await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
+    let startTimeOffsetHours
+    let endTimeOffsetHours
+    if (taskRunData.offsetData.startTimeOffset && taskRunData.offsetData.startTimeOffset !== 0) {
+      startTimeOffsetHours = getOffsetAsInterger(taskRunData.offsetData.startTimeOffset, taskRunData)
+    } else {
+      startTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+    }
+    if (taskRunData.offsetData.endTimeOffset && taskRunData.offsetData.endTimeOffset !== 0) {
+      endTimeOffsetHours = getOffsetAsInterger(taskRunData.offsetData.endTimeOffset, taskRunData)
+    } else {
+      endTimeOffsetHours = 0 // The non display group default
+    }
+    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  } else {
+    const startTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS') || 14
+    const endTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS') || 120
+    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  }
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
@@ -50,40 +74,40 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
   // table lock held for the duration of the transaction to guard against a display group data
   // refresh during data retrieval.
   await preparedStatement.prepare(`
+  select
+  csv_type,
+  dgw.location_ids
+from
+  (
     select
-      csv_type,
-      dgw.location_ids
+      'C' as csv_type,
+      workflow_id,
+      location_ids
     from
-      (
-        select
-          'C' as csv_type,
-          workflow_id,
-          location_ids
-        from
-          fff_staging.coastal_display_group_workflow
-        with
-          (tablock holdlock)  
-        where
-          workflow_id = @workflowId and
-          plot_id = @plotId   
-        union
-        select
-          'F' as csv_type,
-          workflow_id,
-          location_ids
-        from
-          fff_staging.fluvial_display_group_workflow
-        with
-          (tablock holdlock)  
-        where
-          workflow_id = @workflowId and
-          plot_id = @plotId  
-      ) dgw,
-      fff_staging.timeseries_header th
+      fff_staging.coastal_display_group_workflow
+    with
+      (tablock holdlock)  
     where
-      th.workflow_id = dgw.workflow_id and
-      th.id = @timeseriesHeaderId and
-      th.workflow_id = @workflowId
+      workflow_id = @workflowId and
+      plot_id = @plotId   
+    union
+    select
+      'F' as csv_type,
+      workflow_id,
+      location_ids
+    from
+      fff_staging.fluvial_display_group_workflow
+    with
+      (tablock holdlock)  
+    where
+      workflow_id = @workflowId and
+      plot_id = @plotId  
+  ) dgw,
+  fff_staging.timeseries_header th
+where
+  th.workflow_id = dgw.workflow_id and
+  th.id = @timeseriesHeaderId and
+  th.workflow_id = @workflowId
    `)
 
   const parameters = {

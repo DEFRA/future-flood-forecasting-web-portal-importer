@@ -46,12 +46,32 @@ module.exports = {
       if (result.recordset[index].is_plot) {
         const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
 
+        let startTimeDisplayGroupOffsetHours
+        let endTimeDisplayGroupOffsetHours
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        const startTimeDisplayGroupOffsetHours = process.env['FEWS_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_START_TIME_OFFSET_HOURS']) : 14
-        const endTimeOffsetHours = process.env['FEWS_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_END_TIME_OFFSET_HOURS']) : 120
+        if (config.spanWorkflow) {
+          let offsetData = await getWorkflowOffsetData(context, pool, config.workflowId)
+          if (offsetData.startTimeOffset && offsetData.startTimeOffset !== 0) {
+            startTimeDisplayGroupOffsetHours = offsetData.startTimeOffset
+          } else {
+            startTimeDisplayGroupOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+            if (!Number.isInteger(startTimeDisplayGroupOffsetHours)) {
+              startTimeDisplayGroupOffsetHours = 24
+            }
+          }
+          if (offsetData.endTimeOffset && offsetData.endTimeOffset !== 0) {
+            endTimeDisplayGroupOffsetHours = offsetData.endTimeOffset
+          } else {
+            endTimeDisplayGroupOffsetHours = 0
+          }
+        } else {
+          startTimeDisplayGroupOffsetHours = process.env['FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS']) : 14
+          endTimeDisplayGroupOffsetHours = process.env['FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS']) : 120
+        }
+
         const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours').toISOString().substring(0, 19)
-        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString().substring(0, 19)
+        const expectedEndTime = moment(taskRunCompletionTime).add(endTimeDisplayGroupOffsetHours, 'hours').toISOString().substring(0, 19)
         expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime}Z`)
       }
@@ -68,4 +88,34 @@ module.exports = {
       }
     }
   }
+}
+
+async function getWorkflowOffsetData (context, pool, workflowId) {
+  const request = new sql.Request(pool)
+  await request.input('workflowId', sql.NVarChar, workflowId)
+  const result = await request.query(`
+    select top (1)
+      start_time_offset_hours,
+      end_time_offset_hours
+    from
+      fff_staging.non_display_group_workflow
+    with
+      (tablock holdlock)
+    where
+      workflow_id = @workflowId
+
+  `)
+
+  let offsetData
+
+  if (result && result.recordset && result.recordset[0]) {
+    offsetData = {
+      startTimeOffset: result.recordset[0].start_time_offset_hours,
+      endTimeOffset: result.recordset[0].end_time_offset_hours
+    }
+  } else {
+    context.log(`No offsets found.`)
+    offsetData = null
+  }
+  return offsetData
 }

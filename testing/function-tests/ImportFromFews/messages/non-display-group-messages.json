@@ -106,5 +106,17 @@
       "taskRunId": "ukeafffsmc00:000000012",
       "filterId": "Test Filter SF"
     }
+  ],
+  "customOffsetNonForecast":  [
+    {
+      "taskRunId": "ukeafffsmc00:000000017",
+      "filterId": "Custom_Offset_Filter"
+    }
+  ],
+  "customOffsetSimulatedForecast":  [
+    {
+      "taskRunId": "ukeafffsmc00:000000018",
+      "filterId": "Custom_Offset_Filter_Forecast"
+    }
   ]
 }

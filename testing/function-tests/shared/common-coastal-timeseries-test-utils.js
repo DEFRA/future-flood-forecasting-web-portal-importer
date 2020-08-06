@@ -20,7 +20,8 @@ module.exports = function (pool, messages) {
         ('Span_Workflow', 'SpanPlot', 'Test_Location'),
         ('Partial_Load_Span_Workflow', 'Test Span Plot 9a', 'Test_Location 9a'),
         ('Partial_Load_Span_Workflow', 'Test Span Plot 9b', 'Test_Location 9b'),
-        ('Partial_Load_Span_Workflow', 'Test Span Plot 9c', 'Test_Location 9b')
+        ('Partial_Load_Span_Workflow', 'Test Span Plot 9c', 'Test_Location 9b'),
+        ('Span_Workflow_Default_Offset', 'SpanPlot', 'Test_Location')
     `)
   }
   this.beforeEach = async function () {

@@ -2,6 +2,7 @@ const { objectToStream } = require('../shared/utils')
 const axios = require('axios')
 const sql = require('mssql')
 const messageFunction = require('../../../ImportFromFews/index')
+const { getOffsetAsInterger } = require('../../../Shared/utils')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 
 jest.mock('axios')
@@ -46,6 +47,31 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       th.id = t.timeseries_header_id
     `)
     expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
+  }
+
+  const checkTimeseriesStagingExceptions = async function (expectedErrorDetails) {
+    const request = new sql.Request(pool)
+    const result = await request.query(`
+    select top(1)
+      source_id,
+      source_type,
+      csv_error,
+      csv_type,
+      payload,
+      description
+    from
+      fff_staging.timeseries_staging_exception
+    order by
+      exception_time desc
+  `)
+
+    // Check the error details have been captured correctly.
+    expect(result.recordset[0].source_id).toEqual(expectedErrorDetails.sourceId)
+    expect(result.recordset[0].source_type).toEqual(expectedErrorDetails.sourceType)
+    expect(result.recordset[0].csv_error).toEqual(expectedErrorDetails.csvError)
+    expect(result.recordset[0].csv_type).toEqual(expectedErrorDetails.csvType)
+    expect(result.recordset[0].description).toEqual(expectedErrorDetails.description)
+    return result
   }
 
   this.processMessagesAndCheckImportedData = async function (config) {
@@ -96,27 +122,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
   this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, mockResponses, expectedErrorDetails, expectedNumberOfRecords) {
     await processMessages(messageKey, mockResponses)
-    const request = new sql.Request(pool)
-    const result = await request.query(`
-    select top(1)
-      source_id,
-      source_type,
-      csv_error,
-      csv_type,
-      payload,
-      description
-    from
-      fff_staging.timeseries_staging_exception
-    order by
-      exception_time desc
-    `)
-
-    // Check the error details have been captured correctly.
-    expect(result.recordset[0].source_id).toEqual(expectedErrorDetails.sourceId)
-    expect(result.recordset[0].source_type).toEqual(expectedErrorDetails.sourceType)
-    expect(result.recordset[0].csv_error).toEqual(expectedErrorDetails.csvError)
-    expect(result.recordset[0].csv_type).toEqual(expectedErrorDetails.csvType)
-    expect(result.recordset[0].description).toEqual(expectedErrorDetails.description)
+    let result = await checkTimeseriesStagingExceptions(expectedErrorDetails)
 
     // Check the problematic message has been captured correctly.
     expect(JSON.parse(result.recordset[0].payload)).toEqual(importFromFewsMessages[messageKey][0])
@@ -141,5 +147,21 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       workflow: workflow
     }
     await commonTimeseriesTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed(config)
+  }
+
+  this.checkTextOffsetRejectsWithError = async function (offsetValue, expectedErrorDetails) {
+    const taskRunData = {
+      timeseriesHeaderId: 'headerId',
+      sourceId: 'filterId',
+      sourceType: 'filter',
+      message: 'message content'
+    }
+
+    // the util function 'getOffsetAsInteger' is anonymous, Jest requires a function within an expect statement
+    async function assignVariableToFunction (offsetValue, taskRunData) {
+      await getOffsetAsInterger(offsetValue, taskRunData)
+    }
+
+    await expect(assignVariableToFunction(offsetValue, taskRunData)).rejects.toThrow(expectedErrorDetails)
   }
 }

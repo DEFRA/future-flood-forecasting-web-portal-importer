@@ -34,11 +34,25 @@
   "singlePlotAndFilterApprovedForecast": [
     {
       "taskRunId": "ukeafffsmc00:000000007",
-      "plotId": "SpanPlot"
+      "plotId": "SpanPlot",
+      "spanWorkflow": true
     },
     {
       "taskRunId": "ukeafffsmc00:000000007",
-      "filterId": "SpanFilter"
+      "filterId": "SpanFilter",
+      "spanWorkflow": true
+    }
+  ],
+  "singlePlotAndFilterApprovedForecastDefaultOffsets": [
+    {
+      "taskRunId": "ukeafffsmc00:0000000010",
+      "plotId": "SpanPlot",
+      "spanWorkflow": true
+    },
+    {
+      "taskRunId": "ukeafffsmc00:0000000010",
+      "filterId": "SpanFilterDefaultOffsets",
+      "spanWorkflow": true
     }
   ],
   "unapprovedWorkflowPlot": [
