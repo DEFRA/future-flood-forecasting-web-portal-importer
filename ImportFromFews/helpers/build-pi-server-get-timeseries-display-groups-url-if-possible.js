@@ -20,12 +20,9 @@ async function buildTimeParameters (context, taskRunData) {
 }
 
 async function buildStartAndEndTimes (context, taskRunData) {
-  // Check if the workflow spans into NDG's, if it does inherit the first filters offset values
-  // have a look at the ndg tabe and see if the workflow exists
-  // if it does grab the first offsets values (as all should be the same for a workflow)
-  // a flag passed through to say the plot is part of a spanned workflow would be useful
+  // Check if the workflow includes non-display group filters, if so inherit the ndg offset values
   if (taskRunData.message.spanWorkflow && taskRunData.message.spanWorkflow === true) {
-    // if there is a custom offset for non display groups
+    // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
     let startTimeOffsetHours
     let endTimeOffsetHours
@@ -37,7 +34,7 @@ async function buildStartAndEndTimes (context, taskRunData) {
     if (taskRunData.offsetData.endTimeOffset && taskRunData.offsetData.endTimeOffset !== 0) {
       endTimeOffsetHours = getOffsetAsInterger(taskRunData.offsetData.endTimeOffset, taskRunData)
     } else {
-      endTimeOffsetHours = 0 // The non display group default
+      endTimeOffsetHours = 0 // the non display group default
     }
     taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
