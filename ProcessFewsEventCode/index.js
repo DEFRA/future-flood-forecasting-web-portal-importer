@@ -10,39 +10,20 @@ const isMessageIgnored = require('./helpers/is-message-ignored')
 const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
-const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
 const getTaskRunId = require('./helpers/get-task-run-id')
+const getTaskRunPlotsAndFiltersToBeProcessed = require('./helpers/get-task-run-plots-and-filters-to-be-processed')
+const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
 const getWorkflowId = require('./helpers/get-workflow-id')
 const preprocessMessage = require('./helpers/preprocess-message')
-const sql = require('mssql')
 
-const allDataRetrievalParameters = {
-  fluvialDisplayGroupDataRetrievalParameters: {
-    workflowsFunction: getPlotsForWorkflow,
-    timeseriesDataFunctionType: 'plot',
-    timeseriesDataIdentifier: 'plot_id',
-    timeseriesDataMessageKey: 'plotId',
-    timeseriesSourceType: 'P',
-    workflowDataProperty: 'fluvialDisplayGroupWorkflowsResponse',
-    workflowTableName: 'fluvial_display_group_workflow'
+const sourceTypeLookup = {
+  F: {
+    description: 'filter',
+    messageKey: 'filterId'
   },
-  coastalDisplayGroupDataRetrievalParameters: {
-    workflowsFunction: getPlotsForWorkflow,
-    timeseriesDataFunctionType: 'plot',
-    timeseriesDataIdentifier: 'plot_id',
-    timeseriesDataMessageKey: 'plotId',
-    timeseriesSourceType: 'P',
-    workflowDataProperty: 'coastalDisplayGroupWorkflowsResponse',
-    workflowTableName: 'coastal_display_group_workflow'
-  },
-  nonDisplayGroupDataRetrievalParameters: {
-    workflowsFunction: getFiltersForWorkflow,
-    timeseriesDataFunctionType: 'filter',
-    timeseriesDataIdentifier: 'filter_id',
-    timeseriesDataMessageKey: 'filterId',
-    timeseriesSourceType: 'F',
-    workflowDataProperty: 'nonDisplayGroupWorkflowsResponse',
-    workflowTableName: 'non_display_group_workflow'
+  P: {
+    description: 'plot',
+    messageKey: 'plotId'
   }
 }
 
@@ -54,98 +35,21 @@ module.exports = async function (context, message) {
   // context.done() not required in async functions
 }
 
-// Get a list of plots associated with the workflow.
-async function getPlotsForWorkflow (context, preparedStatement, taskRunData) {
-  if (taskRunData.forecast && !taskRunData.approved) {
-    context.log.warn(`Ignoring unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
-  } else {
-    await preparedStatement.input('displayGroupWorkflowId', sql.NVarChar)
-    // Run the query within a transaction with a table lock held for the duration of the transaction to guard against a display group
-    // data refresh during data retrieval.
-    await preparedStatement.prepare(`
-      select
-        plot_id
-      from
-        fff_staging.${taskRunData.workflowTableName}
-      with
-        (tablock holdlock)
-      where
-        workflow_id = @displayGroupWorkflowId
-   `)
-
-    const parameters = {
-      displayGroupWorkflowId: taskRunData.workflowId
-    }
-
-    const response = await preparedStatement.execute(parameters)
-    return response
-  }
-}
-
-// Get a list of filters associated with the workflow.
-async function getFiltersForWorkflow (context, preparedStatement, taskRunData) {
-  await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
-
-  // Run the query within a transaction with a table lock held for the duration of the transaction to guard
-  // against a non display group data refresh during data retrieval.
-  await preparedStatement.prepare(`
-    select
-      filter_id
-    from
-      fff_staging.non_display_group_workflow
-    with
-      (tablock holdlock)
-    where
-      workflow_id = @nonDisplayGroupWorkflowId
-  `)
-  const parameters = {
-    nonDisplayGroupWorkflowId: taskRunData.workflowId
-  }
-
-  const response = await preparedStatement.execute(parameters)
-  return response
-}
-
-async function buildDataRetrievalParameters (context, taskRunData) {
-  const dataRetrievalParametersArray = []
-
-  // Prepare to retrieve timeseries data for the workflow task run from the core engine PI server using workflow
-  // reference data held in the staging database.
-  if (taskRunData.forecast) {
-    dataRetrievalParametersArray.push(allDataRetrievalParameters.fluvialDisplayGroupDataRetrievalParameters)
-    dataRetrievalParametersArray.push(allDataRetrievalParameters.coastalDisplayGroupDataRetrievalParameters)
-    // Core engine forecasts can be associated with display and non-display group CSV files.
-    dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
-  } else {
-    dataRetrievalParametersArray.push(allDataRetrievalParameters.nonDisplayGroupDataRetrievalParameters)
-  }
-  taskRunData.dataRetrievalParametersArray = dataRetrievalParametersArray
-}
-
 async function buildWorkflowMessages (context, taskRunData) {
   // Process data for each CSV file associated with the workflow.
-  await buildDataRetrievalParameters(context, taskRunData)
-  for (const dataRetrievalParameters of taskRunData.dataRetrievalParametersArray) {
-    const timeseriesDataFunctionType = dataRetrievalParameters.timeseriesDataFunctionType
-    const timeseriesDataIdentifier = dataRetrievalParameters.timeseriesDataIdentifier
-    const timeseriesDataMessageKey = dataRetrievalParameters.timeseriesDataMessageKey
-    const workflowDataProperty = dataRetrievalParameters.workflowDataProperty
-    const workflowsFunction = dataRetrievalParameters.workflowsFunction
-
-    // Retrieve workflow reference data for the current CSV file from the staging database.
-    taskRunData.workflowTableName = dataRetrievalParameters.workflowTableName
-    taskRunData[workflowDataProperty] = await executePreparedStatementInTransaction(workflowsFunction, context, taskRunData.transaction, taskRunData)
-
-    if (taskRunData[workflowDataProperty] && taskRunData[workflowDataProperty].recordset) {
-      // Create a message for each plot/filter associated with the current CSV file.
-      for (const record of taskRunData[workflowDataProperty].recordset) {
-        const message = {
-          taskRunId: taskRunData.taskRunId
-        }
-        message[timeseriesDataMessageKey] = record[timeseriesDataIdentifier]
-        taskRunData.outgoingMessages.push(message)
-        context.log(`Created message for ${timeseriesDataFunctionType} ID ${record[timeseriesDataIdentifier]}`)
+  await getTaskRunPlotsAndFiltersToBeProcessed(context, taskRunData)
+  const itemsToBeProcessed = taskRunData.unprocessedItems.concat(taskRunData.itemsEligibleForReplay)
+  // Create a message for each plot/filter to be processed for the task run.
+  for (const itemToBeProcessed of itemsToBeProcessed) {
+    if (itemToBeProcessed.sourceType === 'P' && taskRunData.forecast && !taskRunData.approved) {
+      context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
+    } else {
+      const message = {
+        taskRunId: taskRunData.taskRunId
       }
+      message[sourceTypeLookup[itemToBeProcessed.sourceType].messageKey] = itemToBeProcessed.sourceId
+      taskRunData.outgoingMessages.push(message)
+      context.log(`Created message for ${sourceTypeLookup[itemToBeProcessed.sourceType].description} ID ${itemToBeProcessed.sourceId}`)
     }
   }
 }

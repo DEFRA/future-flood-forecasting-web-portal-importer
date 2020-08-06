@@ -9,8 +9,7 @@ const timeseriesStagingExceptionsForTaskRunQuery = `
     fff_staging.timeseries_header th
   where
     th.id = tse.timeseries_header_id and
-    th.task_run_id = @taskRunId and
-    source_type = 'F'
+    th.task_run_id = @taskRunId
 `
 
 // Hold a table lock on the workflow view held for the duration of the transaction to guard
@@ -20,13 +19,14 @@ const deletionQuery = `
     tse
   from   
     fff_staging.timeseries_staging_exception tse
+    inner join fff_staging.timeseries_header th on th.id = tse.timeseries_header_id
     inner join
-    -- Remove the set of filters linked to TIMESERIES_STAGING_EXCEPTIONS associated
-    -- with the set of filters in the current non-display group CSV from the set of filters linked to
+    -- Remove the set of plots/filters linked to TIMESERIES_STAGING_EXCEPTIONS associated
+    -- with the set of plots/filters in the current workflow CSVs from the set of plots/filters linked to
     -- TIMESERIES_STAGING_EXCEPTIONS.
-    -- Anything remaining filters have been removed from the current non-display group CSV and
+    -- Anything remaining plots/filters have been removed from the current workflow CSVs and
     -- associated TIMESERIES_STAGING_EXCEPTIONS can be deleted accordingly.
-    -- This scenario will happen when filter ID typos are corrected.   
+    -- This scenario will happen when plots/filter ID typos are corrected.
     (
       ${timeseriesStagingExceptionsForTaskRunQuery.replace(/^/, '      ')}
       except
