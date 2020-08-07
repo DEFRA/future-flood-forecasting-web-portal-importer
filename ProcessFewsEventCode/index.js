@@ -1,7 +1,8 @@
 const moment = require('moment')
 const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
-const doesStagingExceptionExistForTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-task-run')
+const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/delete-staging-exceptions-by-source-function-and-task-run-id.js')
+const doesStagingExceptionExistForSourceFunctionOfTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-source-function-of-task-run')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
@@ -68,6 +69,9 @@ async function processTaskRunData (context, taskRunData, transaction) {
       // Create a timeseries header record and prepare to send a message for each plot/filter associated
       // with the task run.
       await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
+      if (taskRunData.stagingExceptionExistsForSourceFunction) {
+        await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, taskRunData.transaction, taskRunData)
+      }
       // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
       // being placed on a dead letter queue.
       await checkIfPiServerIsOnline(context)
@@ -92,7 +96,7 @@ async function parseMessage (context, transaction, message) {
   }
   taskRunData.taskRunId = await executePreparedStatementInTransaction(getTaskRunId, context, transaction, taskRunData)
   taskRunData.workflowId = await executePreparedStatementInTransaction(getWorkflowId, context, transaction, taskRunData)
-  taskRunData.stagingExceptionExists = await executePreparedStatementInTransaction(doesStagingExceptionExistForTaskRun, context, transaction, taskRunData)
+  taskRunData.stagingExceptionExistsForSourceFunction = await executePreparedStatementInTransaction(doesStagingExceptionExistForSourceFunctionOfTaskRun, context, transaction, taskRunData)
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
   taskRunData.taskRunStartTime =

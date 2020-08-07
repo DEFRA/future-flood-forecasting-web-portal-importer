@@ -7,7 +7,7 @@ const { gzip } = require('../Shared/utils')
 const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
-const doesStagingExceptionExistForTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-task-run')
+const doesStagingExceptionExistForSourceFunctionOfTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-source-function-of-task-run')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
 const isMessageIgnored = require('./helpers/is-message-ignored')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
@@ -36,7 +36,7 @@ async function processMessage (transaction, context, message) {
   const taskRunData = Object.assign({}, message)
   taskRunData.message = message
   taskRunData.sourceFunction = 'I'
-  taskRunData.stagingExceptionExists = await executePreparedStatementInTransaction(doesStagingExceptionExistForTaskRun, context, transaction, taskRunData)
+  taskRunData.stagingExceptionExistsForSourceFunction = await executePreparedStatementInTransaction(doesStagingExceptionExistForSourceFunctionOfTaskRun, context, transaction, taskRunData)
 
   if (message.taskRunId &&
        ((!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId))) {

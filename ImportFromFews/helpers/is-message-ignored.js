@@ -1,4 +1,4 @@
-const doesStagingExceptionExistForTaskRun = require('../../Shared/timeseries-functions/does-staging-exception-exist-for-task-run')
+const doesStagingExceptionExistForSourceFunctionOfTaskRun = require('../../Shared/timeseries-functions/does-staging-exception-exist-for-source-function-of-task-run')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const isIgnoredWorkflow = require('../../Shared/timeseries-functions/is-ignored-workflow')
 const sql = require('mssql')
@@ -9,7 +9,7 @@ module.exports = async function (context, taskRunData) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
   } else {
     const stagingExceptionsExistForTaskRun =
-      await executePreparedStatementInTransaction(doesStagingExceptionExistForTaskRun, context, taskRunData.transaction, taskRunData)
+      await executePreparedStatementInTransaction(doesStagingExceptionExistForSourceFunctionOfTaskRun, context, taskRunData.transaction, taskRunData)
 
     const timeseriesExistForTaskRunPlotOrFilter =
       await executePreparedStatementInTransaction(doTimeseriesExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)

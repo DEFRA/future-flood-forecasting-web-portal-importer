@@ -1,11 +1,12 @@
 const sql = require('mssql')
+const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('./delete-staging-exceptions-by-source-function-and-task-run-id')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
 const StagingError = require('./staging-error')
 
 module.exports = async function (context, preparedStatement, stagingExceptionData) {
   const transaction = preparedStatement.parent
   await transaction.rollback()
-  await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, stagingExceptionData)
+  await doInTransaction(createOrReplaceStagingExceptionInTransaction, context, 'Unable to create staging exception', null, stagingExceptionData)
   if (stagingExceptionData.throwStagingErrorFollowingStagingExceptionCreation) {
     throw new StagingError(stagingExceptionData.errorMessage)
   } else {
@@ -13,7 +14,8 @@ module.exports = async function (context, preparedStatement, stagingExceptionDat
   }
 }
 
-async function createStagingExceptionInTransaction (transaction, context, stagingExceptionData) {
+async function createOrReplaceStagingExceptionInTransaction (transaction, context, stagingExceptionData) {
+  await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, transaction, stagingExceptionData)
   await executePreparedStatementInTransaction(createStagingException, context, transaction, stagingExceptionData)
 }
 

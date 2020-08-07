@@ -15,7 +15,14 @@ async function deleteStagingException (context, preparedStatement, stagingExcept
       fff_staging.staging_exception
     where 
       task_run_id = @taskRunId and
-      source_function = @sourceFunction 
+      coalesce(
+        source_function,
+        convert(nvarchar(1), case
+          when payload like '%description%' then 'P'
+          when payload like '%taskRunId%' then 'I'
+          end
+        )
+      ) = @sourceFunction
   `)
 
   const parameters = {

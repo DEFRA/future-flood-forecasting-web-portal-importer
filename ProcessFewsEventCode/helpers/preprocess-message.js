@@ -1,4 +1,4 @@
-const createOrReplaceStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+const createOrReplaceStagingException = require('../../Shared/timeseries-functions/create-or-replace-staging-exception')
 
 module.exports = async function (context, preparedStatement, message) {
   const errorMessage = 'Message must be either a string or a pure object'
