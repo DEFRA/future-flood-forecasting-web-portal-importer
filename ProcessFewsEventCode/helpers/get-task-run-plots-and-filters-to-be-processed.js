@@ -18,7 +18,7 @@ const query = `
 `
 
 module.exports = async function (context, taskRunData) {
-  if (taskRunData.timeseriesHeaderExistForTaskRun) {
+  if (taskRunData.timeseriesHeaderExistsForTaskRun) {
     await executePreparedStatementInTransaction(getUnprocessedTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
     await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersEligibleForReplay, context, taskRunData.transaction, taskRunData)
   } else {

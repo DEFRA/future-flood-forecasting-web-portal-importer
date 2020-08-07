@@ -94,6 +94,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflowMessageKey, `Missing PI Server input data for ${workflowId}`)
       await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(taskRunWithStagingExceptionMessageKey, expectedData[taskRunWithStagingExceptionMessageKey])
     })
+    it('should prevent replay of a task run when all plots/filers have been processed', async () => {
+      const messageKey = 'singlePlotApprovedForecast'
+      await insertTimeseriesHeaderAndTimeseries(pool)
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
+    })
     it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
       const messageKey = 'workflowWithTimeseriesStagingException'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
@@ -120,6 +125,26 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
   })
+
+  async function insertTimeseriesHeaderAndTimeseries (pool) {
+    const request = new sql.Request(pool)
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      insert into fff_staging.timeseries_header
+        (id, task_completion_time, task_run_id, workflow_id, message)
+      values
+        (@id1, getutcdate(),'ukeafffsmc00:000000001','Test_Coastal_Workflow', '{"key": "value"}')
+      insert into fff_staging.timeseries
+        (id, fews_data, fews_parameters, timeseries_header_id, import_time)
+      values
+        (@id2, compress('fews_data'), '&plotId=Test Coastal Plot&more parameters', @id1, getutcdate())
+    `
+    query.replace(/"/g, "'")
+    await request.query(query)
+  }
 
   async function insertTimeseriesHeaderAndTimeseriesStagingException (pool) {
     const request = new sql.Request(pool)

@@ -19,7 +19,7 @@ module.exports = async function (context, preparedStatement, taskRunData) {
     except
     select
       case
-        when t.fews_parameters like '&plotId=%' then substring(t.fews_parameters, 8, charindex('&', t.fews_parameters, 2) - 8)
+        when t.fews_parameters like '&plotId=%' then substring(t.fews_parameters, 9, charindex('&', t.fews_parameters, 2) - 9)
         when t.fews_parameters like '&filterId=%' then substring(t.fews_parameters, 11, charindex('&', t.fews_parameters, 2) - 11)
         end as source_id,
       case
