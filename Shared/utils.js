@@ -33,14 +33,14 @@ module.exports = {
   getEnvironmentVariableAsInteger: function (environmentVariableName) {
     let environmentVariableAsInteger
     if (Number.isInteger(process.env[environmentVariableName])) {
-      environmentVariableAsInteger = Number(process.env[environmentVariableName])
+      environmentVariableAsInteger = Math.abs(Number(process.env[environmentVariableName]))
     }
     return environmentVariableAsInteger
   },
   getOffsetAsInterger: function (offset, taskRunData) {
     let integer
     if (Number.isInteger(offset)) {
-      integer = Number(offset)
+      integer = Math.abs(Number(offset))
     } else {
       const errorDescription = `Unable to return an integer for an offset value: ${offset}`
 
