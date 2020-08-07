@@ -52,27 +52,27 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
     it('should import data for a single plot associated with an approved forecast task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should import data for a single plot associated with an approved forecast task run when the task run message is received as a string ', async () => {
       const messageKey = 'singlePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey], true)
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey], true)
     })
     it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const messageKey = 'multiplePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should not import data for an unapproved forecast task run', async () => {
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedForecast')
     })
     it('should not import data for an out-of-date forecast approved task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', 1, 1)
     })
     it('should import data for a forecast manually approved task run', async () => {
       const messageKey = 'forecastApprovedManually'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should create a staging exception for an unknown forecast approved workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'

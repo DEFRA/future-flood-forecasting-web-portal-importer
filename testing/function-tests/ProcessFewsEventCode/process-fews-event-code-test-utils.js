@@ -35,7 +35,22 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(context.bindings.importFromFews.length).toBe(expectedNumberOfOutgoingMessages)
   }
 
-  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
+  const checkNoStagingExceptionsExistForSourceFunctionOfTaskRun = async function (taskRunId) {
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, taskRunId)
+    const result = await request.query(`
+      select
+        count(id) as number
+      from
+        fff_staging.staging_exception
+      where
+        task_run_id = @taskRunId and
+        source_function = 'P'
+    `)
+    expect(result.recordset[0].number).toBe(0)
+  }
+
+  this.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist = async function (messageKey, expectedData, sendMessageAsString) {
     await processMessage(messageKey, sendMessageAsString)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
@@ -90,6 +105,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       for (const outgoingFilterId of outgoingFilterIds) {
         expect(expectedData.outgoingFilterIds).toContainEqual(outgoingFilterId)
       }
+
+      await checkNoStagingExceptionsExistForSourceFunctionOfTaskRun(expectedTaskRunId)
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')
     }

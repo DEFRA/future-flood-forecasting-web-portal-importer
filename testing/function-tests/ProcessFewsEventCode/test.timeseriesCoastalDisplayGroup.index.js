@@ -69,30 +69,30 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
     it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should create a timeseries header and create messages for multiple plots associated with an approved forecast task run', async () => {
       const messageKey = 'multiplePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should ignore an unapproved forecast task run', async () => {
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedForecast')
     })
     it('should ignore an approved out of date forecast task run', async () => {
       const messageKey = 'laterSinglePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', 1, 1)
     })
     it('should create a timeseries header and create a message for a single plot associated with a forecast task run approved manually', async () => {
       const messageKey = 'forecastApprovedManually'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction', async () => {
       const taskRunWithStagingExceptionMessageKey = 'taskRunWithStagingException'
       const unknownWorkflowMessageKey = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflowMessageKey].input.description.split(/\s+/)[1]
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflowMessageKey, `Missing PI Server input data for ${workflowId}`)
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(taskRunWithStagingExceptionMessageKey, expectedData[taskRunWithStagingExceptionMessageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(taskRunWithStagingExceptionMessageKey, expectedData[taskRunWithStagingExceptionMessageKey])
     })
     it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
       const messageKey = 'workflowWithTimeseriesStagingException'
@@ -111,7 +111,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
       `)
       const messageKey = 'singlePlotAndFilterApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should throw an exception when the coastal display group workflow table locks due to refresh', async () => {
       // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
