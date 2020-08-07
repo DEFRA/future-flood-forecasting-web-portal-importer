@@ -53,6 +53,7 @@ module.exports = function (pool) {
     await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
     await request.batch(`delete from fff_staging.non_display_group_workflow`)
     await request.batch(`delete from fff_staging.ignored_workflow`)
+    await request.batch(`delete from fff_staging.workflow_refresh`)
   }
   const deleteTimeseriesData = async function (request) {
     await request.batch(`delete from fff_staging.timeseries_staging_exception`)
@@ -70,6 +71,14 @@ module.exports = function (pool) {
       values
         ('Test_Ignored_Workflow_1'),
         ('Test_Ignored_Workflow_2')
+    `)
+    await request.batch(`
+      insert into
+        fff_staging.workflow_refresh (csv_type)
+      values
+        ('C'),
+        ('F'),
+        ('N')
     `)
   }
   this.beforeEach = async function () {

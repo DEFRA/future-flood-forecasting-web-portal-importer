@@ -49,6 +49,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       forecast: true,
       approved: true,
       outgoingPlotIds: ['Test Coastal Plot 2a', 'Test Coastal Plot 2b']
+    },
+    taskRunWithTimeseriesStagingException: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Test Coastal Plot 5']
     }
   }
 
@@ -99,10 +104,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderAndTimeseries(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
     })
-    it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
-      const messageKey = 'workflowWithTimeseriesStagingException'
+    it('should allow replay of a task run associated with a timeseries staging exception', async () => {
+      const messageKey = 'taskRunWithTimeseriesStagingException'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
+      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
     })
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
@@ -148,19 +153,27 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderAndTimeseriesStagingException (pool) {
     const request = new sql.Request(pool)
+    const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingException'])
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
       declare @id2 uniqueidentifier
       set @id2 = newid()
       insert into fff_staging.timeseries_header
-        (id, task_completion_time, task_run_id, workflow_id, message)
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(),'ukeafffsmc00:000000003','Test_Coastal_Workflow5', '{"key": "value"}')
+        (@id1,
+        convert(datetime2, '2019-09-13 13:05:00', 126) at time zone 'utc',
+        convert(datetime2, '2019-09-13 13:06:00', 126) at time zone 'utc',
+        1,
+        1,
+        'ukeafffsmc00:000000003',
+        'Test_Coastal_Workflow5',
+        '${message}')
       insert into fff_staging.timeseries_staging_exception
-        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "error_plot"}', @id1, 'Error plot text')
+        (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "error_plot"}', @id1, 'Error plot text', dateadd(hour, -1, getutcdate()))
     `
     query.replace(/"/g, "'")
     await request.query(query)

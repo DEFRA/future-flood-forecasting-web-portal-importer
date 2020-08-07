@@ -27,9 +27,11 @@ const query = `
       (
         tse.exception_time < (
           select
-            refresh_time
+            wr.refresh_time
           from
-            fff_staging.workflow_refresh
+            fff_staging.workflow_refresh wr
+          where
+            tse.csv_type = wr.csv_type
         )    
       )    
     )    

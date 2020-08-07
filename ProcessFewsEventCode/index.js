@@ -8,7 +8,6 @@ const { doInTransaction, executePreparedStatementInTransaction } = require('../S
 const isForecast = require('./helpers/is-forecast')
 const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const isMessageIgnored = require('./helpers/is-message-ignored')
 const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
 const isTaskRunApproved = require('./helpers/is-task-run-approved')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
@@ -67,15 +66,16 @@ async function processTaskRunData (context, taskRunData, transaction) {
     await buildWorkflowMessages(context, taskRunData)
 
     if (taskRunData.outgoingMessages.length > 0) {
-      // Create a timeseries header record and prepare to send a message for each plot/filter associated
-      // with the task run.
-      await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
+      if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
+        await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
+      }
       if (taskRunData.stagingExceptionExistsForSourceFunction) {
         await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, taskRunData.transaction, taskRunData)
       }
       // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
       // being placed on a dead letter queue.
       await checkIfPiServerIsOnline(context)
+      // Prepare to send a message for each plot/filter associated with the task run.
       context.bindings.importFromFews = taskRunData.outgoingMessages
     } else if (taskRunData.timeseriesHeaderExistsForTaskRun) {
       context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
@@ -118,17 +118,15 @@ async function processMessage (transaction, context, message) {
     const preprocessedMessage = await executePreparedStatementInTransaction(preprocessMessage, context, transaction, message)
     if (preprocessedMessage) {
       const taskRunData = await parseMessage(context, transaction, preprocessedMessage)
-      if (!(await isMessageIgnored(context, taskRunData))) {
-        // As the forecast and approved indicators are booleans progression must be based on them being defined.
-        if (taskRunData.taskRunCompletionTime && taskRunData.workflowId && taskRunData.taskRunId &&
-          typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
-          // Do not import out of date forecast data.
-          if (!taskRunData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, taskRunData)) {
-            await processTaskRunData(context, taskRunData, transaction)
-          } else {
-            context.log.warn(`Ignoring message for task run ${taskRunData.taskRunId} completed on ${taskRunData.taskRunCompletionTime}` +
-              ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
-          }
+      // As the forecast and approved indicators are booleans progression must be based on them being defined.
+      if (taskRunData.taskRunCompletionTime && taskRunData.workflowId && taskRunData.taskRunId &&
+        typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
+        // Do not import out of date forecast data.
+        if (!taskRunData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, transaction, taskRunData)) {
+          await processTaskRunData(context, taskRunData, transaction)
+        } else {
+          context.log.warn(`Ignoring message for task run ${taskRunData.taskRunId} completed on ${taskRunData.taskRunCompletionTime}` +
+            ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
         }
       }
     }
