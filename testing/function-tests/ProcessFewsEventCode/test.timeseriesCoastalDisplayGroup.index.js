@@ -53,9 +53,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     taskRunWithTimeseriesStagingExceptions: {
       forecast: true,
       approved: true,
-      outgoingPlotIds: ['Test Coastal Plot 5'],
+      outgoingPlotIds: ['Test Coastal Plot 5a', 'Test Coastal Plot 5b', 'Test Coastal Plot 5c'],
       remainingTimeseriesStagingExceptions: [{
-        sourceId: 'Test Coastal Plot 5',
+        sourceId: 'Test Coastal Plot 5a',
         sourceType: 'P'
       }]
     }
@@ -178,7 +178,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'Test Coastal Plot 5', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 5"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
+        (@id3, 'Test Coastal Plot 5a', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 5a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
     `
     query.replace(/"/g, "'")
     await request.query(query)
