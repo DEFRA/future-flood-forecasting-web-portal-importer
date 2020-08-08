@@ -2,6 +2,7 @@ const moment = require('moment')
 const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
 const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/delete-staging-exceptions-by-source-function-and-task-run-id.js')
+const deleteTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/delete-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
 const doesStagingExceptionExistForSourceFunctionOfTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-source-function-of-task-run')
 const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
@@ -37,7 +38,7 @@ module.exports = async function (context, message) {
   // context.done() not required in async functions
 }
 
-async function buildWorkflowMessages (context, taskRunData) {
+async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, taskRunData) {
   // Process data for each CSV file associated with the workflow.
   await getTaskRunPlotsAndFiltersToBeProcessed(context, taskRunData)
   const itemsToBeProcessed = taskRunData.unprocessedItems.concat(taskRunData.itemsEligibleForReplay)
@@ -54,6 +55,7 @@ async function buildWorkflowMessages (context, taskRunData) {
       context.log(`Created message for ${sourceTypeLookup[itemToBeProcessed.sourceType].description} ID ${itemToBeProcessed.sourceId}`)
     }
   }
+  await processOutgoingMessagesIfPossible(context, taskRunData)
 }
 
 async function processTaskRunData (context, taskRunData, transaction) {
@@ -63,26 +65,30 @@ async function processTaskRunData (context, taskRunData, transaction) {
   if (ignoredWorkflow) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
   } else {
-    await buildWorkflowMessages(context, taskRunData)
+    await buildAndProcessOutgoingWorkflowMessagesIfPossible(context, taskRunData)
+  }
+}
 
-    if (taskRunData.outgoingMessages.length > 0) {
-      if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
-        await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
-      }
-      if (taskRunData.stagingExceptionExistsForSourceFunction) {
-        await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, taskRunData.transaction, taskRunData)
-      }
-      // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
-      // being placed on a dead letter queue.
-      await checkIfPiServerIsOnline(context)
-      // Prepare to send a message for each plot/filter associated with the task run.
-      context.bindings.importFromFews = taskRunData.outgoingMessages
-    } else if (taskRunData.timeseriesHeaderExistsForTaskRun) {
-      context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
-    } else {
-      taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
-      await executePreparedStatementInTransaction(createOrReplaceStagingException, context, taskRunData.transaction, taskRunData)
+async function processOutgoingMessagesIfPossible (context, taskRunData) {
+  if (taskRunData.outgoingMessages.length > 0) {
+    if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
+      await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
     }
+    if (taskRunData.stagingExceptionExistsForSourceFunction) {
+      await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, taskRunData.transaction, taskRunData)
+    }
+    await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
+
+    // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
+    // being placed on a dead letter queue.
+    await checkIfPiServerIsOnline(context)
+    // Prepare to send a message for each plot/filter associated with the task run.
+    context.bindings.importFromFews = taskRunData.outgoingMessages
+  } else if (taskRunData.timeseriesHeaderExistsForTaskRun) {
+    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
+  } else {
+    taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
+    await executePreparedStatementInTransaction(createOrReplaceStagingException, context, taskRunData.transaction, taskRunData)
   }
 }
 

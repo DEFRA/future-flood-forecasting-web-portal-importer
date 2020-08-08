@@ -49,6 +49,7 @@ const deletionQuery = `
 `
 module.exports = async function (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
+  await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.prepare(deletionQuery)
 
   const parameters = {

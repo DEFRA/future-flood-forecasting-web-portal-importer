@@ -50,7 +50,29 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(result.recordset[0].number).toBe(0)
   }
 
-  this.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist = async function (messageKey, expectedData, sendMessageAsString) {
+  const checkExpectedTimeseriesStagingExceptionsForTaskRun = async function (taskRunId, expectedData) {
+    const expectedTimeseriesStagingExceptionsForTaskRun = expectedData.remainingTimeseriesStagingExceptions || []
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, taskRunId)
+    const result = await request.query(`
+      select
+        tse.source_id,
+        tse.source_type
+      from
+        fff_staging.timeseries_staging_exception tse,
+        fff_staging.timeseries_header th
+      where
+        th.task_run_id = @taskRunId and
+        th.id = tse.timeseries_header_id
+    `)
+    expect(result.recordset.length).toBe(expectedTimeseriesStagingExceptionsForTaskRun.length)
+    for (const index in expectedTimeseriesStagingExceptionsForTaskRun) {
+      expect(result.recordset[index].source_id).toBe(expectedTimeseriesStagingExceptionsForTaskRun[index].sourceId)
+      expect(result.recordset[index].source_type).toBe(expectedTimeseriesStagingExceptionsForTaskRun[index].sourceType)
+    }
+  }
+
+  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
     await processMessage(messageKey, sendMessageAsString)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
@@ -107,6 +129,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       }
 
       await checkNoStagingExceptionsExistForSourceFunctionOfTaskRun(expectedTaskRunId)
+      await checkExpectedTimeseriesStagingExceptionsForTaskRun(expectedTaskRunId, expectedData)
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')
     }

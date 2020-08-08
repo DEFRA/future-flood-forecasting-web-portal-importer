@@ -75,23 +75,23 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
     it('should create a timeseries header and create a message for a single filter associated with a non-forecast task run', async () => {
       const messageKey = 'singleFilterNonForecast'
-      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should create a timeseries header and create messages for multiple filters associated with a non-forecast task run', async () => {
       const messageKey = 'multipleFilterNonForecast'
-      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should create a timeseries header and create a message for a single filter associated with an approved forecast task run', async () => {
       const messageKey = 'singleFilterApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should create a timeseries header and create messages for an approved forecast workflow task run associated with a single plot and a single filter', async () => {
       const messageKey = 'filterAndPlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should ignore an approved out of date forecast task run', async () => {
       const messageKey = 'singleFilterTaskRun'
-      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSingleFilterTaskRun', 1, 1)
     })
     it('should create a staging exception for an unknown workflow', async () => {
@@ -132,7 +132,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         ('Dual_Workflow', 'Test Coastal Plot 1', 'Test Coastal Location 1')
       `)
       const messageKey = 'filterAndPlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageCheckDataIsCreatedAndNoStagingExceptionsExist(messageKey, expectedData[messageKey])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
   })
 })
