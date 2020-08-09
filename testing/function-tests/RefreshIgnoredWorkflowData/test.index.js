@@ -1,7 +1,8 @@
-const messageFunction = require('../../../RefreshIgnoredWorkflowData/index')
+const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const message = require('../mocks/defaultMessage')
+const messageFunction = require('../../../RefreshIgnoredWorkflowData/index')
 const fetch = require('node-fetch')
 const sql = require('mssql')
 const fs = require('fs')
@@ -14,6 +15,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
 
+  let commonWorkflowCsvTestUtils
   let context
   let dummyData
 
@@ -30,9 +32,14 @@ module.exports = describe('Ignored workflow loader tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      const config = {
+        csvType: 'I'
+      }
+      commonWorkflowCsvTestUtils = new CommonWorkflowCsvTestUtils(context, pool, config)
       dummyData = [{ WorkflowId: 'dummyData' }]
       await request.batch(`delete from fff_staging.csv_staging_exception`)
       await request.batch(`delete from fff_staging.ignored_workflow`)
+      await request.batch(`delete from fff_staging.workflow_refresh`)
       await request.batch(`insert into fff_staging.ignored_workflow (WORKFLOW_ID) values ('dummyData')`)
     })
 
@@ -244,6 +251,12 @@ module.exports = describe('Ignored workflow loader tests', () => {
           WORKFLOW_ID = '${WorkflowId}'
         `)
         expect(databaseResult.recordset[0].number).toEqual(1)
+      }
+
+      if (expectedNumberOfRows > 1) {
+        // If the CSV table is expected to contain rows other than the row of dummy data check that the workflow refresh table
+        // contains a row for the CSV.
+        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData()
       }
     }
     // Check exceptions

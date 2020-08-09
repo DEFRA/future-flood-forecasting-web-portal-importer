@@ -32,6 +32,31 @@ async function refreshInTransaction (transaction, context, refreshData) {
   if (refreshData.postOperation) {
     await refreshData.postOperation(transaction, context)
   }
+
+  if (refreshData.workflowRefreshCsvType && !transaction._rollbackRequested) {
+    await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+  }
+}
+
+async function updateWorkflowRefreshTable (context, preparedStatement, refreshData) {
+  await preparedStatement.input('csvType', sql.NVarChar)
+
+  await preparedStatement.prepare(`
+    merge fff_staging.workflow_refresh with (holdlock) as target
+    using (values (@csvType, getutcdate())) as source (csv_type, refresh_time)
+    on (target.csv_type = source.csv_type)
+    when matched then
+      update set target.refresh_time = source.refresh_time
+    when not matched then
+      insert (csv_type, refresh_time)
+        values (csv_type, refresh_time);
+  `)
+
+  const parameters = {
+    csvType: refreshData.workflowRefreshCsvType
+  }
+
+  await preparedStatement.execute(parameters)
 }
 
 async function refreshInternal (context, preparedStatement, refreshData) {

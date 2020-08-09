@@ -1,7 +1,8 @@
-const messageFunction = require('../../../RefreshNonDisplayGroupData/index')
+const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
-const message = require('../mocks/defaultMessage')
 const Context = require('../mocks/defaultContext')
+const message = require('../mocks/defaultMessage')
+const messageFunction = require('../../../RefreshNonDisplayGroupData/index')
 const fetch = require('node-fetch')
 const sql = require('mssql')
 const fs = require('fs')
@@ -15,6 +16,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
 
+  let commonWorkflowCsvTestUtils
   let context
   let dummyData
 
@@ -33,11 +35,16 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      const config = {
+        csvType: 'N'
+      }
+      commonWorkflowCsvTestUtils = new CommonWorkflowCsvTestUtils(context, pool, config)
       dummyData = {
         dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
       await request.batch(`delete from fff_staging.csv_staging_exception`)
       await request.batch(`delete from fff_staging.non_display_group_workflow`)
+      await request.batch(`delete from fff_staging.workflow_refresh`)
       await request.batch(`
           insert into
             fff_staging.non_display_group_workflow
@@ -354,6 +361,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         const expectedDataSorted = expectedData.sort()
         // get an array of filter ids for a given workflow id from the database
         expect(dbData).toEqual(expectedDataSorted)
+      }
+
+      if (expectedNumberOfRows > 1) {
+        // If the CSV table is expected to contain rows other than the row of dummy data check that the workflow refresh table
+        // contains a row for the CSV.
+        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData()
       }
     }
     // Check exceptions
