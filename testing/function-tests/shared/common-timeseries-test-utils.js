@@ -94,6 +94,21 @@ module.exports = function (pool) {
     // Closing the DB connection allows Jest to exit successfully.
     await pool.close()
   }
+  this.checkNoStagingExceptionsExistForSourceFunctionOfTaskRun = async function (config) {
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, config.taskRunId)
+    await request.input('sourceFunction', sql.NVarChar, config.sourceFunction)
+    const result = await request.query(`
+      select
+        count(id) as number
+      from
+        fff_staging.staging_exception
+      where
+        task_run_id = @taskRunId and
+        source_function = @sourceFunction
+    `)
+    expect(result.recordset[0].number).toBe(0)
+  }
   this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (config) {
     let transaction
     try {

@@ -66,8 +66,8 @@
   "invalidPlotAndFilterMessage": [
     {
       "taskRunId": "ukeafffsmc00:000000001",
-      "plotId": "Test Coastal Plot 1",
-      "filterId": "Test Coastal Filter 1"
+      "plotId": "Test Coastal Plot",
+      "filterId": "Test Coastal Filter"
     }
   ],
   "missingTaskRunIdMessage": [

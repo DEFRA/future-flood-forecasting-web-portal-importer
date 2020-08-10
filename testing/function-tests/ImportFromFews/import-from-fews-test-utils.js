@@ -80,6 +80,12 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     if (config.expectedNumberOfImportedRecords > 0 || (config.mockResponses && config.mockResponses.length)) {
       const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
       await checkAmountOfDataImported(taskRunId, config.expectedNumberOfImportedRecords || config.mockResponses.length)
+
+      const stagingExceptionConfig = {
+        sourceFunction: 'I',
+        taskRunId: taskRunId
+      }
+      await commonTimeseriesTestUtils.checkNoStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
     }
   }
 

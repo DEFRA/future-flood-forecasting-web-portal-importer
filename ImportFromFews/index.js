@@ -1,17 +1,17 @@
 const axios = require('axios')
 const sql = require('mssql')
-const createTimeseriesStagingException = require('./helpers/create-timeseries-staging-exception')
 const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
 const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-url-if-possible')
-const { gzip } = require('../Shared/utils')
-const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
-const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
-const doesStagingExceptionExistForSourceFunctionOfTaskRun = require('../Shared/timeseries-functions/does-staging-exception-exist-for-source-function-of-task-run')
-const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
-const isMessageIgnored = require('./helpers/is-message-ignored')
-const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const createTimeseriesStagingException = require('./helpers/create-timeseries-staging-exception')
+const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/delete-staging-exceptions-by-source-function-and-task-run-id.js')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-server-error-message')
+const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
+const { gzip } = require('../Shared/utils')
+const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const isMessageIgnored = require('./helpers/is-message-ignored')
+const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
 const TimeseriesStagingError = require('./helpers/timeseries-staging-error')
 
 module.exports = async function (context, message) {
@@ -36,7 +36,6 @@ async function processMessage (transaction, context, message) {
   const taskRunData = Object.assign({}, message)
   taskRunData.message = message
   taskRunData.sourceFunction = 'I'
-  taskRunData.stagingExceptionExistsForSourceFunction = await executePreparedStatementInTransaction(doesStagingExceptionExistForSourceFunctionOfTaskRun, context, transaction, taskRunData)
 
   if (message.taskRunId &&
        ((!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId))) {
@@ -97,6 +96,7 @@ async function importFromFews (context, taskRunData) {
       if (taskRunData.fewsPiUrl) {
         await retrieveFewsData(context, taskRunData)
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
+        await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, taskRunData.transaction, taskRunData)
       }
     } else {
       context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
