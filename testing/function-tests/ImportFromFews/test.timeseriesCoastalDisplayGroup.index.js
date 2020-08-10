@@ -211,8 +211,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
         mockResponses: mockResponses,
-        spanWorkflow: true,
-        workflowId: 'Span_Workflow'
+        spanWorkflowId: 'Span_Workflow'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -233,8 +232,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastDefaultOffsets',
         mockResponses: mockResponses,
-        spanWorkflow: true,
-        workflowId: 'Span_Workflow_Default_Offset'
+        spanWorkflowId: 'Span_Workflow_Default_Offset'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -257,7 +255,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         {
           processMessagesConfig: {
             messageKey: partOneMessageKey,
-            mockResponses: [badRequestMockResponse]
+            mockResponses: [badRequestMockResponse],
+            spanWorkflowId: 'Partial_Load_Span_Workflow'
           },
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[partOneMessageKey][0].plotId,
@@ -286,13 +285,15 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
                   key: 'Timeseries data'
                 }
               }
-            ]
+            ],
+            spanWorkflowId: 'Partial_Load_Span_Workflow'
           }
         },
         {
           processMessagesConfig: {
             messageKey: partThreeMessageKey,
-            mockResponses: [internalServerErrorMockResponse]
+            mockResponses: [internalServerErrorMockResponse],
+            spanWorkflowId: 'Partial_Load_Span_Workflow'
           },
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[partThreeMessageKey][0].filterId,

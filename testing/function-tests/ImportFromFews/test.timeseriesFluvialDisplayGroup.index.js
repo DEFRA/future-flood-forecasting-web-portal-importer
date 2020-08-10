@@ -25,7 +25,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         insert into
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('Span_Workflow2', 'SpanFilter2', 1, 0, 0, 'external_historical')
+          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical'),
+          ('Span_Workflow2', 'SpanFilterOffset', 1, 10, 11, 'external_historical')
       `)
     })
     beforeEach(async () => {
@@ -106,7 +107,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, [mockResponse], expectedErrorDetails)
     })
-    it('should load a single plot associated with a workflow that is also associated with non display group data', async () => {
+    it('should load a single plot associated with a workflow that is also associated with non display group data, inheriting the default offsets for the ndg data', async () => {
       const mockResponses = [
         {
           data: {
@@ -122,7 +123,29 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
-        mockResponses: mockResponses
+        mockResponses: mockResponses,
+        spanWorkflowId: 'Span_Workflow'
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should load a single plot associated with a workflow that is also associated with non display group data, inheriting the specified offsets for the ndg data', async () => {
+      const mockResponses = [
+        {
+          data: {
+            key: 'Timeseries data'
+          }
+        },
+        {
+          data: {
+            key: 'Timeseries data'
+          }
+        }
+      ]
+
+      const config = {
+        messageKey: 'singlePlotAndFilterApprovedForecastCustomOffset',
+        mockResponses: mockResponses,
+        spanWorkflowId: 'Span_Workflow2'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -156,7 +179,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000001', 'Test_Fluvial_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000002', 'Test_Fluvial_Workflow2', 1, 1, '{"input": "Test message"}'),
          (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000003', 'Test_Fluvial_Workflow1', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004', 'Span_Workflow2', 1, 1, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Span_Workflow2', 1, 1, '{"input": "Test message"}')
     `)
   }
 })

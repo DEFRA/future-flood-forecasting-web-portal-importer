@@ -44,10 +44,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       forecast: true,
       approved: true,
       outgoingPlotIds: [ 'SpanPlot' ],
-      outgoingFilterIds: [ 'SpanFilter' ],
-      additionalOutgoingInformation: {
-        spanWorkflow: true
-      }
+      outgoingFilterIds: [ 'SpanFilter' ]
     }
   }
 
@@ -127,10 +124,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterApprovedForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('should log that a workflow spans plots and filters in the outgoing message', async () => {
-      const messageKey = 'filterAndPlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
     it('should ignore a duplicate task run', async () => {
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])

@@ -37,7 +37,7 @@ module.exports = {
     }
     return environmentVariableAsInteger
   },
-  getOffsetAsInterger: function (offset, taskRunData) {
+  getOffsetAsInteger: function (offset, taskRunData) {
     let integer
     if (Number.isInteger(offset)) {
       integer = Math.abs(Number(offset))

@@ -1,6 +1,6 @@
 const moment = require('moment')
 const sql = require('mssql')
-const { getEnvironmentVariableAsInteger, getOffsetAsInterger } = require('../../Shared/utils')
+const { getEnvironmentVariableAsInteger, getOffsetAsInteger } = require('../../Shared/utils')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
@@ -21,18 +21,18 @@ async function buildTimeParameters (context, taskRunData) {
 
 async function buildStartAndEndTimes (context, taskRunData) {
   // Check if the workflow includes non-display group filters, if so inherit the ndg offset values
-  if (taskRunData.message.spanWorkflow && taskRunData.message.spanWorkflow === true) {
+  if (taskRunData.spanWorkflow && taskRunData.spanWorkflow === true) {
     // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
     let startTimeOffsetHours
     let endTimeOffsetHours
     if (taskRunData.offsetData.startTimeOffset && taskRunData.offsetData.startTimeOffset !== 0) {
-      startTimeOffsetHours = getOffsetAsInterger(taskRunData.offsetData.startTimeOffset, taskRunData)
+      startTimeOffsetHours = getOffsetAsInteger(taskRunData.offsetData.startTimeOffset, taskRunData)
     } else {
       startTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
     }
     if (taskRunData.offsetData.endTimeOffset && taskRunData.offsetData.endTimeOffset !== 0) {
-      endTimeOffsetHours = getOffsetAsInterger(taskRunData.offsetData.endTimeOffset, taskRunData)
+      endTimeOffsetHours = getOffsetAsInteger(taskRunData.offsetData.endTimeOffset, taskRunData)
     } else {
       endTimeOffsetHours = 0 // the non display group default
     }
@@ -71,41 +71,41 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
   // table lock held for the duration of the transaction to guard against a display group data
   // refresh during data retrieval.
   await preparedStatement.prepare(`
-  select
-  csv_type,
-  dgw.location_ids
-from
-  (
     select
-      'C' as csv_type,
-      workflow_id,
-      location_ids
-    from
-      fff_staging.coastal_display_group_workflow
-    with
-      (tablock holdlock)  
-    where
-      workflow_id = @workflowId and
-      plot_id = @plotId   
-    union
-    select
-      'F' as csv_type,
-      workflow_id,
-      location_ids
-    from
-      fff_staging.fluvial_display_group_workflow
-    with
-      (tablock holdlock)  
-    where
-      workflow_id = @workflowId and
-      plot_id = @plotId  
-  ) dgw,
-  fff_staging.timeseries_header th
-where
-  th.workflow_id = dgw.workflow_id and
-  th.id = @timeseriesHeaderId and
-  th.workflow_id = @workflowId
-   `)
+    csv_type,
+        dgw.location_ids
+      from
+        (
+        select
+          'C' as csv_type,
+          workflow_id,
+          location_ids
+        from
+          fff_staging.coastal_display_group_workflow
+        with
+          (tablock holdlock)  
+        where
+          workflow_id = @workflowId and
+          plot_id = @plotId   
+        union
+        select
+          'F' as csv_type,
+          workflow_id,
+          location_ids
+        from
+          fff_staging.fluvial_display_group_workflow
+        with
+          (tablock holdlock)  
+        where
+          workflow_id = @workflowId and
+          plot_id = @plotId  
+        ) dgw,
+        fff_staging.timeseries_header th
+      where
+        th.workflow_id = dgw.workflow_id and
+        th.id = @timeseriesHeaderId and
+        th.workflow_id = @workflowId
+  `)
 
   const parameters = {
     plotId: taskRunData.plotId,

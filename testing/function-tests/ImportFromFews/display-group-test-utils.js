@@ -50,14 +50,14 @@ module.exports = {
         let endTimeDisplayGroupOffsetHours
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
-        if (config.spanWorkflow) {
-          let offsetData = await getWorkflowOffsetData(context, pool, config.workflowId)
-          if (offsetData.startTimeOffset && offsetData.startTimeOffset !== 0) {
+        if (config.spanWorkflowId) {
+          let offsetData = await getWorkflowOffsetData(context, pool, config.spanWorkflowId)
+          if (offsetData && offsetData.startTimeOffset && offsetData.startTimeOffset !== 0) {
             startTimeDisplayGroupOffsetHours = offsetData.startTimeOffset
           } else {
             startTimeDisplayGroupOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
           }
-          if (offsetData.endTimeOffset && offsetData.endTimeOffset !== 0) {
+          if (offsetData && offsetData.endTimeOffset && offsetData.endTimeOffset !== 0) {
             endTimeDisplayGroupOffsetHours = offsetData.endTimeOffset
           } else {
             endTimeDisplayGroupOffsetHours = 0
@@ -100,7 +100,6 @@ async function getWorkflowOffsetData (context, pool, workflowId) {
       (tablock holdlock)
     where
       workflow_id = @workflowId
-
   `)
 
   let offsetData

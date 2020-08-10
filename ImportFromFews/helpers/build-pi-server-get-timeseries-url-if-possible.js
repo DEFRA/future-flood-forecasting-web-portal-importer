@@ -1,7 +1,7 @@
 const moment = require('moment')
 const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const { getEnvironmentVariableAsInteger, getOffsetAsInterger } = require('../../Shared/utils')
+const { getEnvironmentVariableAsInteger, getOffsetAsInteger } = require('../../Shared/utils')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
 
@@ -57,12 +57,12 @@ async function buildStartAndEndTimes (context, taskRunData) {
   let truncationOffsetHoursForward
 
   if (taskRunData.filterData.startTimeOffset && taskRunData.filterData.startTimeOffset !== 0) {
-    truncationOffsetHoursBackward = getOffsetAsInterger(taskRunData.filterData.startTimeOffset, taskRunData)
+    truncationOffsetHoursBackward = getOffsetAsInteger(taskRunData.filterData.startTimeOffset, taskRunData)
   } else {
     truncationOffsetHoursBackward = getEnvironmentVariableAsInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
   }
   if (taskRunData.filterData.endTimeOffset && taskRunData.filterData.endTimeOffset !== 0) {
-    truncationOffsetHoursForward = getOffsetAsInterger(taskRunData.filterData.endTimeOffset, taskRunData)
+    truncationOffsetHoursForward = getOffsetAsInteger(taskRunData.filterData.endTimeOffset, taskRunData)
   } else {
     truncationOffsetHoursForward = 0
   }

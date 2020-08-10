@@ -145,11 +145,6 @@ async function buildWorkflowMessages (context, taskRunData) {
       }
     }
   }
-  let spanningWorkflowBoolean
-  if (taskRunData.forecast && taskRunData.nonDisplayGroupWorkflowsResponse.recordset.length > 0 && (taskRunData.coastalDisplayGroupWorkflowsResponse.recordset.length > 0 || taskRunData.fluvialDisplayGroupWorkflowsResponse.recordset.length > 0)) {
-    spanningWorkflowBoolean = true
-    taskRunData.outgoingMessages = taskRunData.outgoingMessages.map(message => ({ ...message, [`spanWorkflow`]: spanningWorkflowBoolean }))
-  }
 }
 
 async function processTaskRunData (context, taskRunData, transaction) {

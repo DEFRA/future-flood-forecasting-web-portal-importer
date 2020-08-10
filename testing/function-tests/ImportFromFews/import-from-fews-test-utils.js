@@ -2,7 +2,7 @@ const { objectToStream } = require('../shared/utils')
 const axios = require('axios')
 const sql = require('mssql')
 const messageFunction = require('../../../ImportFromFews/index')
-const { getOffsetAsInterger } = require('../../../Shared/utils')
+const { getOffsetAsInteger } = require('../../../Shared/utils')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 
 jest.mock('axios')
@@ -159,7 +159,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
     // the util function 'getOffsetAsInteger' is anonymous, Jest requires a function within an expect statement
     async function assignVariableToFunction (offsetValue, taskRunData) {
-      await getOffsetAsInterger(offsetValue, taskRunData)
+      await getOffsetAsInteger(offsetValue, taskRunData)
     }
 
     await expect(assignVariableToFunction(offsetValue, taskRunData)).rejects.toThrow(expectedErrorDetails)
