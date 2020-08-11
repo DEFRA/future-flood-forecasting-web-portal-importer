@@ -1,3 +1,4 @@
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
 // Hold a table lock on the workflow view held for the duration of the transaction to guard
@@ -36,7 +37,11 @@ const query = `
       )    
     )    
 `
-module.exports = async function (context, preparedStatement, taskRunData) {
+module.exports = async function (context, taskRunData) {
+  await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersEligibleForReplay, context, taskRunData.transaction, taskRunData)
+}
+
+async function getTaskRunPlotsAndFiltersEligibleForReplay (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
 

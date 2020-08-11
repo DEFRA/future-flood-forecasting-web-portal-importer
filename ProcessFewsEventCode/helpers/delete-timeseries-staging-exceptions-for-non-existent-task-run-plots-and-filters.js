@@ -1,3 +1,4 @@
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
 const timeseriesStagingExceptionsForTaskRunQuery = `
@@ -47,7 +48,11 @@ const deletionQuery = `
     on tse.source_id = dtse.source_id and
        tse.source_type = dtse.source_type
 `
-module.exports = async function (context, preparedStatement, taskRunData) {
+module.exports = async function (context, taskRunData) {
+  await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
+}
+
+async function deleteTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.prepare(deletionQuery)

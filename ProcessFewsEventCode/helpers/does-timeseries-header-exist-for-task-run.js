@@ -1,6 +1,12 @@
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
-module.exports = async function (context, preparedStatement, taskRunData) {
+module.exports = async function (context, taskRunData) {
+  const timeseriesHeaderExistForTaskRun = await executePreparedStatementInTransaction(doesTimeseriesHeaderExistForTaskRun, context, taskRunData.transaction, taskRunData)
+  return timeseriesHeaderExistForTaskRun
+}
+
+async function doesTimeseriesHeaderExistForTaskRun (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
 
   await preparedStatement.prepare(`

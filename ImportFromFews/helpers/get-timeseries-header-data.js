@@ -1,3 +1,4 @@
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
 const query = `
@@ -32,7 +33,11 @@ const query = `
     task_run_id = @taskRunId
 `
 
-module.exports = async function (context, preparedStatement, taskRunData) {
+module.exports = async function (context, taskRunData) {
+  await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
+}
+
+async function getTimeseriesHeaderData (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.prepare(query)
 

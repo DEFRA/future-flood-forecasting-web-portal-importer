@@ -1,7 +1,13 @@
+const { executePreparedStatementInTransaction } = require('../transaction-helper')
 const moment = require('moment')
 const sql = require('mssql')
 
-module.exports = async function (context, preparedStatement, taskRunData) {
+module.exports = async function (context, taskRunData) {
+  const isLatestTaskRunForWorkflowResult = await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData)
+  return isLatestTaskRunForWorkflowResult
+}
+
+async function isLatestTaskRunForWorkflow (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('workflowId', sql.NVarChar)
 

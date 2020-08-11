@@ -1,3 +1,4 @@
+const { executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const sql = require('mssql')
 
 const queryRoot = `
@@ -20,7 +21,11 @@ const queryRoot = `
       h.import_time < cast(@date as DateTimeOffset)
 `
 
-module.exports = async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate) {
+module.exports = async function (context, transaction, date, isSoftDate) {
+  await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, isSoftDate)
+}
+
+async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate) {
   context.log.info(`Loading ${isSoftDate ? 'Soft' : 'Hard'} data into temp table`)
   const FME_COMPLETE_JOB_STATUS = 6
   let deleteHeaderRowBatchSize

@@ -4,7 +4,7 @@ const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
   let ignoreMessage = false
-  if (await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData.workflowId)) {
+  if (await isIgnoredWorkflow(context, taskRunData)) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
   } else {
     const timeseriesExistForTaskRunPlotOrFilter =

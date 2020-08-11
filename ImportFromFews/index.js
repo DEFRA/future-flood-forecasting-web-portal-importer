@@ -20,7 +20,7 @@ module.exports = async function (context, message) {
 }
 
 async function processMessageIfPossible (taskRunData, context, message) {
-  await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
+  await getTimeseriesHeaderData(context, taskRunData)
   if (taskRunData.timeseriesHeaderId) {
     if (!(await isMessageIgnored(context, taskRunData))) {
       await executePreparedStatementInTransaction(isSpanWorkflow, context, taskRunData.transaction, taskRunData)
@@ -28,18 +28,18 @@ async function processMessageIfPossible (taskRunData, context, message) {
     }
   } else {
     taskRunData.errorMessage = `Unable to retrieve TIMESERIES_HEADER record for task run ${message.taskRunId}`
-    await executePreparedStatementInTransaction(createOrReplaceStagingException, context, taskRunData.transaction, taskRunData)
+    await createOrReplaceStagingException(context, taskRunData)
   }
 }
 
 async function processMessage (transaction, context, message) {
   const taskRunData = Object.assign({}, message)
+  taskRunData.transaction = transaction
   taskRunData.message = message
   taskRunData.sourceFunction = 'I'
 
   if (message.taskRunId &&
        ((!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId))) {
-    taskRunData.transaction = transaction
     if (taskRunData.plotId) {
       taskRunData.sourceId = taskRunData.plotId
       taskRunData.sourceType = 'P'
@@ -57,7 +57,7 @@ async function processMessage (transaction, context, message) {
     await processMessageIfPossible(taskRunData, context, message)
   } else {
     taskRunData.errorMessage = 'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
-    await executePreparedStatementInTransaction(createOrReplaceStagingException, context, transaction, taskRunData)
+    await createOrReplaceStagingException(context, taskRunData)
   }
 }
 
@@ -75,6 +75,7 @@ async function processImportError (context, taskRunData, err) {
       const piServerErrorMessage = await getPiServerErrorMessage(context, err)
       const errorDescription = `An error occured while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
       errorData = {
+        transaction: taskRunData.transaction,
         sourceId: taskRunData.sourceId,
         sourceType: taskRunData.sourceType,
         csvError: csvError,
@@ -85,18 +86,18 @@ async function processImportError (context, taskRunData, err) {
         description: errorDescription
       }
     }
-    await executePreparedStatementInTransaction(createTimeseriesStagingException, context, taskRunData.transaction, errorData)
+    await createTimeseriesStagingException(context, errorData)
   }
 }
 
 async function importFromFews (context, taskRunData) {
   try {
-    if (!taskRunData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData)) {
+    if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
       await taskRunData['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
       if (taskRunData.fewsPiUrl) {
         await retrieveFewsData(context, taskRunData)
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
-        await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, taskRunData.transaction, taskRunData)
+        await deleteStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
       }
     } else {
       context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +

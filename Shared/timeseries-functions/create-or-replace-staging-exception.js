@@ -3,8 +3,8 @@ const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('./delete-sta
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
 const StagingError = require('./staging-error')
 
-module.exports = async function (context, preparedStatement, stagingExceptionData) {
-  const transaction = preparedStatement.parent
+module.exports = async function (context, stagingExceptionData) {
+  const transaction = stagingExceptionData.transaction
   await transaction.rollback()
   await doInTransaction(createOrReplaceStagingExceptionInTransaction, context, 'Unable to create staging exception', null, stagingExceptionData)
   if (stagingExceptionData.throwStagingErrorFollowingStagingExceptionCreation) {
@@ -15,8 +15,10 @@ module.exports = async function (context, preparedStatement, stagingExceptionDat
 }
 
 async function createOrReplaceStagingExceptionInTransaction (transaction, context, stagingExceptionData) {
-  await executePreparedStatementInTransaction(deleteStagingExceptionBySourceFunctionAndTaskRunId, context, transaction, stagingExceptionData)
-  await executePreparedStatementInTransaction(createStagingException, context, transaction, stagingExceptionData)
+  const newStagingExceptionData = Object.assign({}, stagingExceptionData)
+  newStagingExceptionData.transaction = transaction
+  await deleteStagingExceptionBySourceFunctionAndTaskRunId(context, newStagingExceptionData)
+  await executePreparedStatementInTransaction(createStagingException, context, transaction, newStagingExceptionData)
 }
 
 async function createStagingException (context, preparedStatement, stagingExceptionData) {

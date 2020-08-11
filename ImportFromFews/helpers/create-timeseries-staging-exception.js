@@ -1,8 +1,12 @@
 const sql = require('mssql')
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
-module.exports = async function (context, preparedStatement, errorData) {
+module.exports = async function (context, errorData) {
+  await executePreparedStatementInTransaction(createTimeseriesStagingException, context, errorData.transaction, errorData)
+}
+
+async function createTimeseriesStagingException (context, preparedStatement, errorData) {
   context.log.error(errorData.description)
-
   await preparedStatement.input('sourceId', sql.NVarChar)
   await preparedStatement.input('sourceType', sql.NVarChar)
   await preparedStatement.input('csvError', sql.Bit)

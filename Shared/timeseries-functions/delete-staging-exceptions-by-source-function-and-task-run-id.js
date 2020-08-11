@@ -1,8 +1,8 @@
 const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../transaction-helper')
 
-module.exports = async function (context, preparedStatement, stagingExceptionData) {
-  const transaction = preparedStatement.parent
+module.exports = async function (context, stagingExceptionData) {
+  const transaction = stagingExceptionData.transaction
   await executePreparedStatementInTransaction(deleteStagingException, context, transaction, stagingExceptionData)
 }
 

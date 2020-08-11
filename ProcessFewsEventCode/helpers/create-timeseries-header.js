@@ -1,6 +1,11 @@
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
-module.exports = async function createTimeseriesHeader (context, preparedStatement, taskRunData) {
+module.exports = async function (context, taskRunData) {
+  await executePreparedStatementInTransaction(createTimeseriesHeader, context, taskRunData.transaction, taskRunData)
+}
+
+async function createTimeseriesHeader (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunStartTime', sql.DateTime2)
   await preparedStatement.input('taskRunCompletionTime', sql.DateTime2)
   await preparedStatement.input('taskRunId', sql.NVarChar)

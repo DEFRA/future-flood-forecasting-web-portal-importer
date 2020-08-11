@@ -124,6 +124,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
       : `Found locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} in coastal and fluvial display group CSVs`
 
     const errorData = {
+      transaction: taskRunData.transaction,
       sourceId: taskRunData.sourceId,
       sourceType: taskRunData.sourceType,
       csvError: true,

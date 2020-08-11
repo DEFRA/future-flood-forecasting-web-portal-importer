@@ -19,8 +19,8 @@ const query = `
 
 module.exports = async function (context, taskRunData) {
   if (taskRunData.timeseriesHeaderExistsForTaskRun) {
-    await executePreparedStatementInTransaction(getUnprocessedTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
-    await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersEligibleForReplay, context, taskRunData.transaction, taskRunData)
+    await getUnprocessedTaskRunPlotsAndFilters(context, taskRunData)
+    await getTaskRunPlotsAndFiltersEligibleForReplay(context, taskRunData)
   } else {
     await executePreparedStatementInTransaction(getAllPlotsAndFiltersForWorkflow, context, taskRunData.transaction, taskRunData)
   }

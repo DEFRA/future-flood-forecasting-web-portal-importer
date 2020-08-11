@@ -103,6 +103,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
     // FEWS parameters must be specified otherwise the data return is likely to be very large
     const errorDescription = `There is no recognizable timeseries type specified for the filter ${taskRunData.filterId} in the non-display group CSV`
     const errorData = {
+      transaction: taskRunData.transaction,
       sourceId: taskRunData.sourceId,
       sourceType: taskRunData.sourceType,
       csvError: true,
@@ -153,6 +154,7 @@ async function getWorkflowFilterData (context, preparedStatement, taskRunData) {
   } else {
     const errorDescription = `Unable to find data for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} in the non-display group CSV`
     const errorData = {
+      transaction: taskRunData.transaction,
       sourceId: taskRunData.sourceId,
       sourceType: taskRunData.sourceType,
       csvError: true,
