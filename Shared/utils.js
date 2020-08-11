@@ -48,7 +48,7 @@ module.exports = {
         sourceId: taskRunData.sourceId,
         sourceType: taskRunData.sourceType,
         csvError: true,
-        csvType: 'U',
+        csvType: taskRunData.csvType || 'U',
         fewsParameters: null,
         timeseriesHeaderId: taskRunData.timeseriesHeaderId,
         payload: taskRunData.message,
