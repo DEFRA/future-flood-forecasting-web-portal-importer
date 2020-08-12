@@ -2,8 +2,7 @@ const { executePreparedStatementInTransaction } = require('../transaction-helper
 const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
-  const isIgnoredWorkflowResult = await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData)
-  return isIgnoredWorkflowResult
+  return Promise.resolve(await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData))
 }
 
 async function isIgnoredWorkflow (context, preparedStatement, taskRunData) {

@@ -3,8 +3,7 @@ const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
-  const isLatestTaskRunForWorkflowResult = await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData)
-  return isLatestTaskRunForWorkflowResult
+  return Promise.resolve(await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData))
 }
 
 async function isLatestTaskRunForWorkflow (context, preparedStatement, taskRunData) {
