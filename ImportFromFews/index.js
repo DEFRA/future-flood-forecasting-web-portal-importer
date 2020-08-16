@@ -1,7 +1,8 @@
 const axios = require('axios')
 const sql = require('mssql')
-const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
+const buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-fallback-url-if-possible')
 const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-url-if-possible')
+const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
 const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
 const createTimeseriesStagingException = require('./helpers/create-timeseries-staging-exception')
 const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/delete-staging-exceptions-by-source-function-and-task-run-id.js')
@@ -44,14 +45,27 @@ async function processMessage (transaction, context, message) {
       taskRunData.sourceId = taskRunData.plotId
       taskRunData.sourceType = 'P'
       taskRunData.sourceTypeDescription = 'plot'
-      taskRunData.buildPiServerUrlIfPossibleFunction = buildPiServerGetTimeseriesDisplayGroupUrlIfPossible
+      taskRunData.buildPiServerUrlCalls = [
+        {
+          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupUrlIfPossible
+        },
+        // A fallback function that attempts to remove problematic locations from the original PI Server call
+        // if the original PI Server call fails.
+        {
+          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible
+        }
+      ]
       // Set the CSV type as unknown until the CSV file containing the plot can be found.
       taskRunData.csvType = 'U'
     } else {
       taskRunData.sourceId = taskRunData.filterId
       taskRunData.sourceType = 'F'
       taskRunData.sourceTypeDescription = 'filter'
-      taskRunData.buildPiServerUrlIfPossibleFunction = buildPiServerGetTimeseriesUrlIfPossible
+      taskRunData.buildPiServerUrlCalls = [
+        {
+          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesUrlIfPossible
+        }
+      ]
       taskRunData.csvType = 'N'
     }
     await processMessageIfPossible(taskRunData, context, message)
@@ -61,12 +75,29 @@ async function processMessage (transaction, context, message) {
   }
 }
 
+async function processDataRetrievalError (context, taskRunData, err) {
+  if (err.response && err.response.status === 400) {
+    const piServerErrorMessage = await getPiServerErrorMessage(context, err)
+    context.log.warn(`Bad request made to PI Server for (${piServerErrorMessage}) ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+    const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
+    // A bad request was made to the PI server. Store the error as it might be needed to create a
+    // timeseries staging exception once all data retrieval attempts from the PI server have been made.
+    buildPiServerUrlCall.error = err
+  } else {
+    throw err
+  }
+}
+
 async function processImportError (context, taskRunData, err) {
   let errorData
   if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
     context.log.error(`Failed to connect to ${process.env['FEWS_PI_API']}`)
+    // If connection to the PI Server fails propagate the failure so that standard Azure message replay
+    // functionality is used.
     throw err
   } else {
+    // For other errors create a timeseries staging exception to indicate that
+    // manual intervention is required before replay of the task run is attempted.
     if (err instanceof TimeseriesStagingError) {
       errorData = err.context
     } else {
@@ -93,9 +124,8 @@ async function processImportError (context, taskRunData, err) {
 async function importFromFews (context, taskRunData) {
   try {
     if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-      await taskRunData['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
-      if (taskRunData.fewsPiUrl) {
-        await retrieveFewsData(context, taskRunData)
+      await retrieveFewsData(context, taskRunData)
+      if (taskRunData.fewsData) {
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
         await deleteStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
       }
@@ -109,9 +139,34 @@ async function importFromFews (context, taskRunData) {
 }
 
 async function retrieveFewsData (context, taskRunData) {
+  // Iterate through the available functions for retrieving data from the PI server until one
+  // succeeds or the set of available functions is exhausted.
+  for (const index in taskRunData.buildPiServerUrlCalls) {
+    taskRunData.piServerUrlCallsIndex = index
+    const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[index]
+    try {
+      await buildPiServerUrlCall['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
+      if (buildPiServerUrlCall.fewsPiUrl) {
+        await retrieveAndCompressFewsData(context, taskRunData)
+        taskRunData.fewsParameters = buildPiServerUrlCall.fewsParameters
+        taskRunData.fewsPiUrl = buildPiServerUrlCall.fewsPiUrl
+        // Fews data has been retrieved and compressed so no further calls to the PI Server are needed.
+        break
+      } else {
+        // The URL could not be built. Do not make any more calls to the PI Server.
+        break
+      }
+    } catch (err) {
+      await processDataRetrievalError(context, taskRunData, err)
+    }
+  }
+  await processFewsDataRetrievalResults(context, taskRunData)
+}
+
+async function retrieveAndCompressFewsData (context, taskRunData) {
   const axiosConfig = {
     method: 'get',
-    url: taskRunData.fewsPiUrl,
+    url: taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex].fewsPiUrl,
     responseType: 'stream',
     headers: {
       Accept: 'application/json'
@@ -122,6 +177,13 @@ async function retrieveFewsData (context, taskRunData) {
   context.log(`Retrieved data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   taskRunData.fewsData = await gzip(fewsResponse.data)
   context.log(`Compressed data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+}
+
+async function processFewsDataRetrievalResults (context, taskRunData) {
+  if (taskRunData.buildPiServerUrlCalls[0].error) {
+    // If the original call to the PI server caused an error create a timeseries staging exception.
+    await processImportError(context, taskRunData, taskRunData.buildPiServerUrlCalls[0].error)
+  }
 }
 
 async function createStagedTimeseriesMessageIfNeeded (context, timeseriesId) {

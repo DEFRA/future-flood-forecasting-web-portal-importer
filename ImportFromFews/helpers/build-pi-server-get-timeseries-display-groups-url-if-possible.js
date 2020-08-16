@@ -41,7 +41,7 @@ const unaggregatedFluvialDisplayGroupWorkflowLocationsQuery = `
   select
     value as location_id
   from
-    fff_staging.fluviall_display_group_workflow
+    fff_staging.fluvial_display_group_workflow
       cross apply string_split(location_ids, ';')
   where
     workflow_id = @workflowId and
@@ -125,15 +125,17 @@ async function buildFewsTimeParameters (context, taskRunData) {
 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
   await buildLocationsToImportForWorkflowPlot(context, taskRunData)
+
   if (taskRunData.locationIds) {
+    const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
     await buildTimeParameters(context, taskRunData)
     const plotId = `&plotId=${taskRunData.plotId}`
     const locationIds = `&locationIds=${taskRunData.locationIds.replace(/;/g, '&locationIds=')}`
-    taskRunData.fewsParameters = `${plotId}${locationIds}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
+    buildPiServerUrlCall.fewsParameters = `${plotId}${locationIds}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
     // Construct the URL used to retrieve timeseries display groups for the configured plot, locations and date range.
-    taskRunData.fewsPiUrl =
+    buildPiServerUrlCall.fewsPiUrl =
       encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${taskRunData.fewsParameters}`)
+        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${buildPiServerUrlCall.fewsParameter}`)
   } else {
     context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})` +
       `- Timeseries for all locations have been imported`)
@@ -226,11 +228,9 @@ async function buildUnprocessedPlotLocationsForTaskRunQuery (context, taskRunDat
 }
 
 async function buildUnprocessedPlotLocationsForTaskRun (context, preparedStatement, taskRunData) {
-  await preparedStatement.input('plotId', sql.NVarChar)
-  await preparedStatement.input('taskRunId', sql.NVarChar)
-  await preparedStatement.input('workflowId', sql.NVarChar)
   const locationsToImportForWorkflowPlotQuery = await buildUnprocessedPlotLocationsForTaskRunQuery(context, taskRunData)
   await preparedStatement.input('plotId', sql.NVarChar)
+  await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.prepare(locationsToImportForWorkflowPlotQuery)
 

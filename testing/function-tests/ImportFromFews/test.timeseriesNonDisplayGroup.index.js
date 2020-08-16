@@ -133,26 +133,17 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
     it('should create a timeseries staging exception when a message contains an unknown filter ID', async () => {
       const messageKey = 'unknownFilterId'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].filterId,
-        sourceType: 'F',
-        csvError: true,
-        csvType: 'N',
-        description: `Unable to find data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} in the non-display group CSV`
+      const config = {
+        messageKey: messageKey,
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].filterId,
+          sourceType: 'F',
+          csvError: true,
+          csvType: 'N',
+          description: `Unable to find data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} in the non-display group CSV`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
-    })
-    it('should prevent replay of a task run associated with a timeseries staging exception', async () => {
-      const messageKey = 'unknownFilterId'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].filterId,
-        sourceType: 'F',
-        csvError: true,
-        csvType: 'N',
-        description: `Unable to find data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} in the non-display group CSV`
-      }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
-      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(messageKey)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
@@ -167,14 +158,18 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         status: 404
       }
       const messageKey = 'singleFilterNonForecast'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].filterId,
-        sourceType: 'F',
-        csvError: false,
-        csvType: null,
-        description: `An error occured while processing data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
+      const config = {
+        messageKey: messageKey,
+        mockResponses: [ mockResponse ],
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].filterId,
+          sourceType: 'F',
+          csvError: false,
+          csvType: null,
+          description: `An error occured while processing data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, [mockResponse], expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should throw an exception when the non_display_group_workflow table locks due to refresh', async () => {
       // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
@@ -338,14 +333,17 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
     it('should create a timeseries staging exception for an unknown timeseries type', async () => {
       const messageKey = 'workflowUnknownTimeseriesType'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].filterId,
-        sourceType: 'F',
-        csvError: true,
-        csvType: 'N',
-        description: `There is no recognizable timeseries type specified for the filter ${importFromFewsMessages[messageKey][0].filterId} in the non-display group CSV`
+      const config = {
+        messageKey: messageKey,
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].filterId,
+          sourceType: 'F',
+          csvError: true,
+          csvType: 'N',
+          description: `There is no recognizable timeseries type specified for the filter ${importFromFewsMessages[messageKey][0].filterId} in the non-display group CSV`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should import data for an approved:false message associated with a timeseries type not requiring approval', async () => {
       const mockResponse = {

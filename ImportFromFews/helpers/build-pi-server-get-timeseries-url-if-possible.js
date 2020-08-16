@@ -87,18 +87,19 @@ async function buildFewsTimeParameters (context, taskRunData) {
 }
 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
+  const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
   const filterData = taskRunData.filterData
   await buildTimeParameters(context, taskRunData)
   if (filterData.timeseriesType && (filterData.timeseriesType === EXTERNAL_HISTORICAL || filterData.timeseriesType === EXTERNAL_FORECASTING)) {
-    taskRunData.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
+    buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
   } else if (filterData.timeseriesType && filterData.timeseriesType === SIMULATED_FORECASTING) {
-    taskRunData.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
+    buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
   }
 
-  if (taskRunData.fewsParameters) {
-    taskRunData.fewsPiUrl =
+  if (buildPiServerUrlCall.fewsParameters) {
+    buildPiServerUrlCall.fewsPiUrl =
       encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=true&showProducts=false
-        &omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&documentVersion=1.26&documentFormat=PI_JSON&forecastCount=1${taskRunData.fewsParameters}`)
+        &omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&documentFormat=PI_JSON&forecastCount=1${taskRunData.fewsParameters}`)
   } else {
     // FEWS parameters must be specified otherwise the data return is likely to be very large
     const errorDescription = `There is no recognizable timeseries type specified for the filter ${taskRunData.filterId} in the non-display group CSV`

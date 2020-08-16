@@ -44,5 +44,23 @@
       "taskRunId": "ukeafffsmc00:000000005",
       "filterId": "SpanFilterOffset"
     }
+  ],
+  "singlePlotApprovedForecastWithMultipleLocations": [
+    {
+      "taskRunId": "ukeafffsmc00:000000005",
+      "plotId": "Test Fluvial Plot3"
+    }
+  ],
+  "singlePlotApprovedForecastWithNoKnownLocations": [
+    {
+      "taskRunId": "ukeafffsmc00:000000006",
+      "plotId": "Test Fluvial Plot4"
+    }
+  ],
+  "singlePlotApprovedForecastWithSomeKnownLocations": [
+    {
+      "taskRunId": "ukeafffsmc00:000000007",
+      "plotId": "Test Fluvial Plot5"
+    }
   ]
 }

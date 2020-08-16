@@ -13,13 +13,13 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     if (mockResponses) {
       let mock = axios
       for (const mockResponse of mockResponses) {
-        const mockResponseWithDataAsStream = Object.assign({}, mockResponse)
+        const mockResponseWithDataAsStream = JSON.parse(JSON.stringify(mockResponse))
         if (mockResponse instanceof Error) {
           mockResponseWithDataAsStream.response.data = await objectToStream(mockResponse.response.data)
           // A mock Error is being cloned so just copy the error message and stack trace manually.
           mockResponseWithDataAsStream.message = mockResponse.message
           mockResponseWithDataAsStream.stack = mockResponse.stack
-          mock = axios.mockRejectedValue(mockResponseWithDataAsStream)
+          mock = axios.mockRejectedValueOnce(mockResponseWithDataAsStream)
         } else {
           mockResponseWithDataAsStream.data = await objectToStream(mockResponse.data)
           mock = mock.mockReturnValueOnce(mockResponseWithDataAsStream)
@@ -49,7 +49,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
   }
 
-  const checkTimeseriesStagingExceptions = async function (expectedErrorDetails) {
+  const checkTimeseriesStagingExceptions = async function (config) {
     const request = new sql.Request(pool)
     const result = await request.query(`
     select top(1)
@@ -66,12 +66,20 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
   `)
 
     // Check the error details have been captured correctly.
-    expect(result.recordset[0].source_id).toEqual(expectedErrorDetails.sourceId)
-    expect(result.recordset[0].source_type).toEqual(expectedErrorDetails.sourceType)
-    expect(result.recordset[0].csv_error).toEqual(expectedErrorDetails.csvError)
-    expect(result.recordset[0].csv_type).toEqual(expectedErrorDetails.csvType)
-    expect(result.recordset[0].description).toEqual(expectedErrorDetails.description)
+    expect(result.recordset[0].source_id).toEqual(config.expectedErrorDetails.sourceId)
+    expect(result.recordset[0].source_type).toEqual(config.expectedErrorDetails.sourceType)
+    expect(result.recordset[0].csv_error).toEqual(config.expectedErrorDetails.csvError)
+    expect(result.recordset[0].csv_type).toEqual(config.expectedErrorDetails.csvType)
+    expect(result.recordset[0].description).toEqual(config.expectedErrorDetails.description)
+
+    // Check the problematic message has been captured correctly.
+    expect(JSON.parse(result.recordset[0].payload)).toEqual(importFromFewsMessages[config.messageKey][0])
     return result
+  }
+
+  const processMessagesAndCheckTimeseriesStagingExceptionIsCreated = async function (config) {
+    await processMessages(config.messageKey, config.mockResponses)
+    await checkTimeseriesStagingExceptions(config)
   }
 
   this.processMessagesAndCheckImportedData = async function (config) {
@@ -126,15 +134,15 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     await checkAmountOfDataImported(taskRunId, 0)
   }
 
-  this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, mockResponses, expectedErrorDetails, expectedNumberOfRecords) {
-    await processMessages(messageKey, mockResponses)
-    let result = await checkTimeseriesStagingExceptions(expectedErrorDetails)
+  this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (config) {
+    await processMessagesAndCheckTimeseriesStagingExceptionIsCreated(config)
+    const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
+    await checkAmountOfDataImported(taskRunId, config.expectedNumberOfRecords || 0)
+  }
 
-    // Check the problematic message has been captured correctly.
-    expect(JSON.parse(result.recordset[0].payload)).toEqual(importFromFewsMessages[messageKey][0])
-
-    const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
-    await checkAmountOfDataImported(taskRunId, expectedNumberOfRecords || 0)
+  this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndPartialDataIsImported = async function (config) {
+    await processMessagesAndCheckTimeseriesStagingExceptionIsCreated(config)
+    await checkImportedDataFunction(config, context, pool)
   }
 
   this.processMessagesAndCheckExceptionIsThrown = async function (messageKey, mockErrorResponse) {

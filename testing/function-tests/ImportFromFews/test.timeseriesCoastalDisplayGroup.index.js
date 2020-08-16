@@ -139,23 +139,29 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     })
     it('should create a timeseries staging exception when a message contains an unknown plot or filter ID', async () => {
       const messageKey = 'unknownPlotId'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].plotId,
-        sourceType: 'P',
-        csvError: true,
-        csvType: 'U',
-        description: `Unable to find locations for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ukeafffsmc00:000000001 in any display group CSV`
+      const config = {
+        messageKey: messageKey,
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: true,
+          csvType: 'U',
+          description: `Unable to find locations for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ukeafffsmc00:000000001 in any display group CSV`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should create a timeseries staging exception when a workflow plot is defined in multiple display group CSV files', async () => {
       const messageKey = 'workflowPlotDefinedInMultipleDisplayGroupCsvFiles'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].plotId,
-        sourceType: 'P',
-        csvError: true,
-        csvType: 'U',
-        description: `Found locations for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} in coastal and fluvial display group CSVs`
+      const config = {
+        messageKey: messageKey,
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: true,
+          csvType: 'U',
+          description: `Found locations for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} in coastal and fluvial display group CSVs`
+        }
       }
       const request = new sql.Request(pool)
       await request.batch(`
@@ -164,7 +170,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         values
           ('Test_Coastal_Workflow4', 'Test Coastal Plot 4', 'Test Coastal Location 4')
     `)
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
@@ -180,14 +186,18 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }
 
       const messageKey = 'singlePlotApprovedForecast'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].plotId,
-        sourceType: 'P',
-        csvError: false,
-        csvType: null,
-        description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Coastal_Workflow): Request failed with status code 404 (${mockResponse.response.data})`
+      const config = {
+        messageKey: messageKey,
+        mockResponses: [ mockResponse ],
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: false,
+          csvType: null,
+          description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Coastal_Workflow): Request failed with status code 404 (${mockResponse.response.data})`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, [mockResponse], expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should import data for a single plot associated with an approved forecast with an output binding set to active', async () => {
       const mockResponse = {
@@ -264,11 +274,9 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }
       const config = [
         {
-          processMessagesConfig: {
-            messageKey: partOneMessageKey,
-            mockResponses: [badRequestMockResponse],
-            spanWorkflowId: 'Partial_Load_Span_Workflow'
-          },
+          messageKey: partOneMessageKey,
+          mockResponses: [badRequestMockResponse, badRequestMockResponse],
+          spanWorkflowId: 'Partial_Load_Span_Workflow',
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[partOneMessageKey][0].plotId,
             sourceType: 'P',
@@ -278,41 +286,36 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
           }
         },
         {
-          processMessagesConfig: {
-            messageKey: partTwoMessageKey,
-            mockResponses: [
-              {
-                data: {
-                  key: 'Timeseries data'
-                }
-              },
-              {
-                data: {
-                  key: 'Timeseries data'
-                }
-              },
-              {
-                data: {
-                  key: 'Timeseries data'
-                }
+          messageKey: partTwoMessageKey,
+          mockResponses: [
+            {
+              data: {
+                key: 'Timeseries data'
               }
-            ],
-            spanWorkflowId: 'Partial_Load_Span_Workflow'
-          }
+            },
+            {
+              data: {
+                key: 'Timeseries data'
+              }
+            },
+            {
+              data: {
+                key: 'Timeseries data'
+              }
+            }
+          ]
         },
         {
-          processMessagesConfig: {
-            messageKey: partThreeMessageKey,
-            mockResponses: [internalServerErrorMockResponse],
-            spanWorkflowId: 'Partial_Load_Span_Workflow'
-          },
+          messageKey: partThreeMessageKey,
+          mockResponses: [internalServerErrorMockResponse],
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[partThreeMessageKey][0].filterId,
             sourceType: 'F',
             csvError: false,
             csvType: null,
             description: `An error occured while processing data for filter ${importFromFewsMessages[partThreeMessageKey][0].filterId} of task run ${importFromFewsMessages[partOneMessageKey][0].taskRunId} (workflow Partial_Load_Span_Workflow): Request failed with status code ${internalServerErrorMockResponse.response.status} (${internalServerErrorMockResponse.response.data})`
-          }
+          },
+          expectedNumberOfRecords: 3
         }
       ]
 
@@ -326,9 +329,9 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
           ('Partial_Load_Span_Workflow', 'Test Span Filter 9b', 1, 0, 0, 'external_historical')
       `)
 
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config[0].processMessagesConfig.messageKey, config[0].processMessagesConfig.mockResponses, config[0].expectedErrorDetails)
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[1].processMessagesConfig)
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config[2].processMessagesConfig.messageKey, config[2].processMessagesConfig.mockResponses, config[2].expectedErrorDetails, 3)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config[0])
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[1])
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config[2])
       // Provide a higher test timeout for this test.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should throw an exception when the coastal_display_group_workflow table locks due to refresh', async () => {
