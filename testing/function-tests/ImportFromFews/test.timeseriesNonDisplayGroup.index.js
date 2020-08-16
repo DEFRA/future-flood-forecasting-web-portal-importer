@@ -3,6 +3,7 @@ const importFromFewsMessages = require('./messages/non-display-group-messages')
 const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
+const timeseriesTypeConstants = require('../../../ImportFromFews/helpers/timeseries-type-constants')
 const moment = require('moment')
 const sql = require('mssql')
 
@@ -14,10 +15,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool, importFromFewsMessages)
-
-  const SIMULATED_FORECASTING = 'simulated_forecasting'
-  const EXTERNAL_FORECASTING = 'external_forecasting'
-  const EXTERNAL_HISTORICAL = 'external_historical'
+  const defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
   describe('Message processing for non-display group timeseries import', () => {
     beforeAll(async () => {
@@ -291,7 +289,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'singleFilterApprovedSimulatedForecast',
         mockResponses: [mockResponse],
         overrideValues: {
-          timeseriesType: SIMULATED_FORECASTING
+          timeseriesType: timeseriesTypeConstants.SIMULATED_FORECASTING
         }
       }
 
@@ -308,7 +306,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'singleFilterApprovedExternalHistorical',
         mockResponses: [mockResponse],
         overrideValues: {
-          timeseriesType: EXTERNAL_HISTORICAL
+          timeseriesType: timeseriesTypeConstants.EXTERNAL_HISTORICAL
         }
       }
 
@@ -325,7 +323,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'singleFilterApprovedExternalForecasting',
         mockResponses: [mockResponse],
         overrideValues: {
-          timeseriesType: EXTERNAL_FORECASTING
+          timeseriesType: timeseriesTypeConstants.EXTERNAL_FORECASTING
         }
       }
 
@@ -468,10 +466,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
     const previousTaskRunEndTimeRequest = new sql.Request(pool)
     const currentTaskRunCompletionTimeseriesRequest = new sql.Request(pool)
-    let defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
-    if (!Number.isInteger(defaultTruncationOffsetHours)) {
-      defaultTruncationOffsetHours = 24
-    }
+
     await previousTaskRunEndTimeRequest.input('taskRunId', sql.VarChar, taskRunId)
     const previousTaskRunEndTimeResult = await previousTaskRunEndTimeRequest.query(`
       select
@@ -565,7 +560,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
         let expectedEndTime = moment(taskRunCompletionTime)
 
-        if (config.overrideValues && config.overrideValues.timeseriesType === SIMULATED_FORECASTING) {
+        if (config.overrideValues && config.overrideValues.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
           // expected start and end times are both equal to the taskRunCompletion time for simulated forecasts
           expectedStartTime = moment(taskRunCompletionTime)
           expectedEndTime = moment(taskRunCompletionTime)
@@ -585,7 +580,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
 
         // Check fews parameters have been captured correctly.
-        if (config.overrideValues && config.overrideValues.timeseriesType === SIMULATED_FORECASTING) {
+        if (config.overrideValues && config.overrideValues.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
           expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).not.toContain('Creation')

@@ -3,23 +3,27 @@ const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
+const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const timeseriesTypeConstants = require('./timeseries-type-constants')
 const TimeseriesStagingError = require('./timeseries-staging-error')
-
-const EXTERNAL_HISTORICAL = 'external_historical'
-const EXTERNAL_FORECASTING = 'external_forecasting'
-const SIMULATED_FORECASTING = 'simulated_forecasting'
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
-  if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
-    if (!taskRunData.filterData.approvalRequired) {
-      context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
+  // Ensure data is not imported for out of date external/simulated forecasts.
+  if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+    if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
+      if (!taskRunData.filterData.approvalRequired) {
+        context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
+      } else {
+        context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
+      }
+      await buildPiServerUrlIfPossible(context, taskRunData)
     } else {
-      context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
+      context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
     }
-    await buildPiServerUrlIfPossible(context, taskRunData)
   } else {
-    context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
+    context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
+      ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
   }
 }
 
@@ -90,9 +94,9 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
   const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
   const filterData = taskRunData.filterData
   await buildTimeParameters(context, taskRunData)
-  if (filterData.timeseriesType && (filterData.timeseriesType === EXTERNAL_HISTORICAL || filterData.timeseriesType === EXTERNAL_FORECASTING)) {
+  if (filterData.timeseriesType && (filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL || filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING)) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
-  } else if (filterData.timeseriesType && filterData.timeseriesType === SIMULATED_FORECASTING) {
+  } else if (filterData.timeseriesType && filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
   }
 
@@ -209,4 +213,8 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
   }
 
   return taskRunData
+}
+
+function isForecast (context, taskRunData) {
+  return taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING
 }
