@@ -135,7 +135,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
     // Construct the URL used to retrieve timeseries display groups for the configured plot, locations and date range.
     buildPiServerUrlCall.fewsPiUrl =
       encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${buildPiServerUrlCall.fewsParameter}`)
+        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${buildPiServerUrlCall.fewsParameters}`)
   } else {
     context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})` +
       `- Timeseries for all locations have been imported`)
