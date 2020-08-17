@@ -205,7 +205,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       ]
       const config = [
         {
-          messageKey: 'singleFilterNonForecast',
+          messageKey: 'singleFilterNonForecastEarlier',
           mockResponses: [mockResponses[0]]
         },
         {
@@ -401,8 +401,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000012', 'Simulated_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}')
-
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}'),
+       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:0000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}')
     `)
   }
 
@@ -428,7 +428,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
             fff_staging.timeseries_header th
           where
             task_run_id = @taskRunId
-        )    
+        ) and
+        task_completion_time < (
+          select
+            task_completion_time
+          from
+            fff_staging.timeseries_header
+          where
+            task_run_id = @taskRunId
+        )
     `)
 
     const previousTaskRunEndTime = previousTaskRunEndTimeResult.recordset[0].previous_task_run_end_time
@@ -453,6 +461,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         fff_staging.timeseries t
       where
         th.id = t.timeseries_header_id and
+        th.task_run_id = @taskRunId and
         th.workflow_id in
         (
           select
