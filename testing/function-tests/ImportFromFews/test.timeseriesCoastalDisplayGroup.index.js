@@ -37,7 +37,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       context.bindings.importFromFews = []
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
       await commonCoastalTimeseriesTestUtils.beforeEach(pool)
-      await insertTimeseriesHeaders(pool)
+      await insertTimeseriesHeadersAndTimeseriesStagingExceptions(pool)
     })
     afterAll(async () => {
       await commonCoastalTimeseriesTestUtils.afterAll(pool)
@@ -84,6 +84,24 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         messageKey: 'laterSinglePlotApprovedForecast',
         mockResponses: [mockResponse]
       }
+
+      // Add a timeseries staging exception to an obsolete forecast.
+      const request = new sql.Request(pool)
+      await request.batch(`
+        declare @id1 uniqueidentifier;
+        select
+          @id1 = id
+        from
+          fff_staging.timeseries_header
+        where
+          task_run_id = 'ukeafffsmc00:000000003';
+
+        insert into
+          fff_staging.timeseries_staging_exception
+            (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+          values
+            (@id1, 'Test Coastal Plot 1', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 1"}', @id1, 'Error plot text');
+      `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast')
     })
@@ -315,7 +333,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
             csvType: null,
             description: `An error occured while processing data for filter ${importFromFewsMessages[partThreeMessageKey][0].filterId} of task run ${importFromFewsMessages[partOneMessageKey][0].taskRunId} (workflow Partial_Load_Span_Workflow): Request failed with status code ${internalServerErrorMockResponse.response.status} (${internalServerErrorMockResponse.response.data})`
           },
-          expectedNumberOfRecords: 3
+          expectedNumberOfRecords: 3,
+          expectedNumberOfTimeseriesStagingExceptionRecords: 2
         }
       ]
 
@@ -358,7 +377,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     })
   })
 
-  async function insertTimeseriesHeaders (pool) {
+  async function insertTimeseriesHeadersAndTimeseriesStagingExceptions (pool) {
     const request = new sql.Request(pool)
     const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
     const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')

@@ -52,7 +52,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
   const checkTimeseriesStagingExceptions = async function (config) {
     const request = new sql.Request(pool)
     const result = await request.query(`
-    select top(1)
+    select
       source_id,
       source_type,
       csv_error,
@@ -65,7 +65,11 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       exception_time desc
   `)
 
-    // Check the error details have been captured correctly.
+    expect(result.recordset.length).toEqual(config.expectedNumberOfTimeseriesStagingExceptionRecords || 1)
+
+    // Check the error details of the latest timeseries staging exception have been captured correctly.
+    // If there is more than one timeseries staging exception, earlier tests will have checked the details of
+    // earlier timeseries staging exceptions.
     expect(result.recordset[0].source_id).toEqual(config.expectedErrorDetails.sourceId)
     expect(result.recordset[0].source_type).toEqual(config.expectedErrorDetails.sourceType)
     expect(result.recordset[0].csv_error).toEqual(config.expectedErrorDetails.csvError)
@@ -94,6 +98,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
         taskRunId: taskRunId
       }
       await commonTimeseriesTestUtils.checkNoStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+      await commonTimeseriesTestUtils.checkNumberOfTimeseriesStagingExceptionsForTaskRun(config)
     }
   }
 

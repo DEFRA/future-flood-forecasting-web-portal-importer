@@ -109,6 +109,21 @@ module.exports = function (pool) {
     `)
     expect(result.recordset[0].number).toBe(0)
   }
+  this.checkNumberOfTimeseriesStagingExceptionsForTaskRun = async function (config) {
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, config.taskRunId)
+    const result = await request.query(`
+      select
+        count(tse.id) as number
+      from
+        fff_staging.timeseries_staging_exception tse,
+        fff_staging.timeseries_header th
+      where
+        th.id = tse.timeseries_header_id and
+        th.task_run_id = @taskRunId
+    `)
+    expect(result.recordset[0].number).toBe(config.expectedNumberOfTimeseriesStagingExceptions || 0)
+  }
   this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (config) {
     let transaction
     try {
