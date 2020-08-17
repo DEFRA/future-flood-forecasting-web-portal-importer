@@ -16,6 +16,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const pool = jestConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool, importFromFewsMessages)
   const defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+  const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
+  const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
 
   describe('Message processing for non-display group timeseries import', () => {
     beforeAll(async () => {
@@ -111,7 +113,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
-    it('should not import data for a task run that is out-of-date compared with data in staging ', async () => {
+    it('should not import data for a standard forecast task run that is out-of-date compared with data in staging ', async () => {
       const mockResponse = {
         data: {
           key: 'Timeseries display groups data'
@@ -123,6 +125,34 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSingleFilterTaskRun')
+    })
+    it('should not import data for an external forecasting task run that is out-of-date compared with data in staging ', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      const config = {
+        messageKey: 'singleFilterApprovedExternalForecasting',
+        mockResponses: [mockResponse]
+      }
+
+      const request = new sql.Request(pool)
+
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+
+      await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.format(dateFormat))
+      await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.format(dateFormat))
+
+      await request.batch(`
+        insert into
+          fff_staging.timeseries_header
+            (task_start_time, task_completion_time, task_run_id, workflow_id, forecast, approved, message)
+          values
+            (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000016', 'External_Forecasting_Workflow1', 0, 0, '{"input": "Test message"}')
+       `)
+
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSingleFilterApprovedExternalForecasting')
     })
     it('should create a staging exception when a timeseries header does not exist for a task run', async () => {
       const messageKey = 'unknownTaskRun'
@@ -423,8 +453,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   async function insertTimeseriesHeaders (pool) {
     const request = new sql.Request(pool)
-    const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
-    const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
     const laterTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).add(30, 'seconds')
     const laterTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).add(30, 'seconds')
     await request.input('taskRunStartTime', sql.DateTime2, importFromFewsMessages.commonMessageData.startTime)
@@ -448,7 +476,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Test_Workflow5', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000008', 'Test_workflowCustomTimes', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'Simulated_Forecasting_Workflow1', 1, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000010', 'External_Forecasting_Workflow1', 1, 1, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000010', 'External_Forecasting_Workflow1', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000011', 'External_Historical_Workflow', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000012', 'Simulated_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
@@ -525,6 +553,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           where
             task_run_id = @taskRunId   
         )
+      order by
+        t.import_time
     `)
 
     expect(result.recordset.length).toBe(config.mockResponses.length)

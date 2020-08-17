@@ -31,7 +31,7 @@ module.exports = {
       where
         th.id = t.timeseries_header_id
       order by
-      t.import_time desc
+        t.import_time desc
     `)
 
     expect(result.recordset.length).toBe(config.expectedNumberOfImportedRecords || config.mockResponses.length)
