@@ -36,7 +36,7 @@ async function processMessageIfPossible (taskRunData, context, message) {
 }
 
 async function processMessage (transaction, context, message) {
-  const taskRunData = JSON.parse(JSON.stringify(message))
+  const taskRunData = Object.assign({}, message)
   taskRunData.transaction = transaction
   taskRunData.message = message
   taskRunData.sourceFunction = 'I'

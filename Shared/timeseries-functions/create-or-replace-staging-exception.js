@@ -15,7 +15,7 @@ module.exports = async function (context, stagingExceptionData) {
 }
 
 async function createOrReplaceStagingExceptionInTransaction (transaction, context, stagingExceptionData) {
-  const newStagingExceptionData = JSON.parse(JSON.stringify(stagingExceptionData))
+  const newStagingExceptionData = Object.assign({}, stagingExceptionData)
   newStagingExceptionData.transaction = transaction
   await deleteStagingExceptionBySourceFunctionAndTaskRunId(context, newStagingExceptionData)
   await executePreparedStatementInTransaction(createStagingException, context, transaction, newStagingExceptionData)
