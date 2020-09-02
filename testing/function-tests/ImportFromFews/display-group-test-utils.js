@@ -91,7 +91,7 @@ async function getWorkflowOffsetData (context, pool, workflowId) {
   const request = new sql.Request(pool)
   await request.input('workflowId', sql.NVarChar, workflowId)
   const result = await request.query(`
-    select top (1)
+    select distinct
       start_time_offset_hours,
       end_time_offset_hours
     from
@@ -104,14 +104,17 @@ async function getWorkflowOffsetData (context, pool, workflowId) {
 
   let offsetData
 
-  if (result && result.recordset && result.recordset[0]) {
+  if (result && result.recordset && result.recordset[0] && result.recordset.length === 1) {
     offsetData = {
       startTimeOffset: result.recordset[0].start_time_offset_hours,
       endTimeOffset: result.recordset[0].end_time_offset_hours
     }
   } else {
-    context.log(`No offsets found.`)
-    offsetData = null
+    if (result && result.recordset && result.recordset[0] && result.recordset.length > 1) {
+      context.log(`Multiple custom offsets have been found.`)
+    } else {
+      context.log(`No offsets found.`)
+    } offsetData = null
   }
   return offsetData
 }
