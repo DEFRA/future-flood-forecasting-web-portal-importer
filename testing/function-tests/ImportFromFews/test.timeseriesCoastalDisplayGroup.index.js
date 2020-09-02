@@ -25,7 +25,9 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
           ('Span_Workflow', 'SpanFilter', 1, 10, 20, 'external_historical'),
-          ('Span_Workflow_Default_Offset', 'SpanFilterDefaultOffsets', 1, 0, 0, 'external_historical')
+          ('Span_Workflow_Default_Offset', 'SpanFilterDefaultOffsets', 1, 0, 0, 'external_historical'),
+          ('Span_Workflow_Multiple_Offsets', 'Multiple Offsets Filter1', 1, 3, 5, 'external_historical'),
+          ('Span_Workflow_Multiple_Offsets', 'Multiple Offsets Filter2', 1, 7, 9, 'external_historical')
       `)
     })
     beforeEach(async () => {
@@ -331,6 +333,17 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    it('should create a timeseries staging exception for a spanning workflow plot with multiple different custom offsets specified', async () => {
+      const messageKey = 'multipleOffsets'
+      const expectedErrorDetails = {
+        sourceId: importFromFewsMessages[messageKey][0].plotId,
+        sourceType: 'P',
+        csvError: true,
+        csvType: 'C',
+        description: `There are multiple custom offsets (2) specified for the workflow: Span_Workflow_Multiple_Offsets. Task run ukeafffsmc00:0000000011 in the non-display group CSV`
+      }
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
+    })
   })
 
   async function insertTimeseriesHeaders (pool) {
@@ -356,7 +369,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000008', 'Test_Coastal_Workflow4', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'Partial_Load_Span_Workflow', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:0000000010', 'Span_Workflow_Default_Offset', 1, 1, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:0000000010', 'Span_Workflow_Default_Offset', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:0000000011', 'Span_Workflow_Multiple_Offsets', 1, 1, '{"input": "Test message"}')
     `)
   }
 })

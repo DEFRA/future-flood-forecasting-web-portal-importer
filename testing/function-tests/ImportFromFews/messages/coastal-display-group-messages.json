@@ -34,25 +34,21 @@
   "singlePlotAndFilterApprovedForecast": [
     {
       "taskRunId": "ukeafffsmc00:000000007",
-      "plotId": "SpanPlot",
-      "spanWorkflow": true
+      "plotId": "SpanPlot"
     },
     {
       "taskRunId": "ukeafffsmc00:000000007",
-      "filterId": "SpanFilter",
-      "spanWorkflow": true
+      "filterId": "SpanFilter"
     }
   ],
   "singlePlotAndFilterApprovedForecastDefaultOffsets": [
     {
       "taskRunId": "ukeafffsmc00:0000000010",
-      "plotId": "SpanPlot",
-      "spanWorkflow": true
+      "plotId": "SpanPlot"
     },
     {
       "taskRunId": "ukeafffsmc00:0000000010",
-      "filterId": "SpanFilterDefaultOffsets",
-      "spanWorkflow": true
+      "filterId": "SpanFilterDefaultOffsets"
     }
   ],
   "unapprovedWorkflowPlot": [
@@ -121,6 +117,12 @@
     {
       "taskRunId": "ukeafffsmc00:000000009",
       "filterId": "Test Span Filter 9b"
+    }
+  ],
+  "multipleOffsets": [
+    {
+      "taskRunId": "ukeafffsmc00:0000000011",
+      "plotId": "Multiple Offsets Plot"
     }
   ]
 }

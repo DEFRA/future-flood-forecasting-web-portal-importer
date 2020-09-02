@@ -2,7 +2,7 @@ const sql = require('mssql')
 const TimeseriesStagingError = require('./timeseries-staging-error')
 
 const findOffsetQuery = `
-  select top (1)
+  select distinct
     start_time_offset_hours,
     end_time_offset_hours
   from
@@ -22,14 +22,19 @@ module.exports = async function (context, preparedStatement, taskRunData) {
   }
   const result = await preparedStatement.execute(parameters)
 
-  if (result && result.recordset && result.recordset[0]) {
+  if (result && result.recordset && result.recordset[0] && result.recordset.length === 1) {
     taskRunData.offsetData = {
       startTimeOffset: result.recordset[0].start_time_offset_hours,
       endTimeOffset: result.recordset[0].end_time_offset_hours
     }
   } else {
-    context.log(`No offsets found for workflow: ${taskRunData.workflowId}`)
-    const errorDescription = `Unable to find offset data for the workflow ${taskRunData.workflowId} of task run ${taskRunData.taskRunId} in the non-display group CSV`
+    let errorMessage
+    errorMessage = `No custom offsets found for workflow: ${taskRunData.workflowId}.`
+    if (result && result.recordset && result.recordset[0] && result.recordset.length > 1) {
+      errorMessage = `There are multiple custom offsets (${result.recordset.length}) specified for the workflow: ${taskRunData.workflowId}.`
+    }
+    context.log(errorMessage)
+    const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV`
     const errorData = {
       sourceId: taskRunData.sourceId,
       sourceType: taskRunData.sourceType,

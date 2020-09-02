@@ -33,7 +33,7 @@ module.exports = async function (context, preparedStatement, taskRunData) {
         0
       end
       as 
-        Span_Workflow
+        span_workflow
   `)
 
   const parameters = {
@@ -42,7 +42,7 @@ module.exports = async function (context, preparedStatement, taskRunData) {
 
   const result = await preparedStatement.execute(parameters)
 
-  if (result && result.recordset && result.recordset[0].Span_Workflow === 1) {
+  if (result && result.recordset && result.recordset[0].span_workflow === 1) {
     taskRunData.spanWorkflow = true
   } else {
     taskRunData.spanWorkflow = false

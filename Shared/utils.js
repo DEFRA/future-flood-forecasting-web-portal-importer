@@ -30,17 +30,17 @@ module.exports = {
     await pipe(stream, gzip, byteArrayTransform)
     return Buffer.concat(buffers, buffersLength)
   },
-  getEnvironmentVariableAsInteger: function (environmentVariableName) {
+  getEnvironmentVariableAsAbsoluteInteger: function (environmentVariableName) {
     let environmentVariableAsInteger
     if (Number.isInteger(process.env[environmentVariableName])) {
       environmentVariableAsInteger = Math.abs(Number(process.env[environmentVariableName]))
     }
     return environmentVariableAsInteger
   },
-  getOffsetAsInteger: function (offset, taskRunData) {
-    let integer
+  getOffsetAsAbsoluteInteger: function (offset, taskRunData) {
+    let offsetInteger
     if (Number.isInteger(offset)) {
-      integer = Math.abs(Number(offset))
+      offsetInteger = Math.abs(Number(offset))
     } else {
       const errorDescription = `Unable to return an integer for an offset value: ${offset}`
 
@@ -56,6 +56,6 @@ module.exports = {
       }
       throw new TimeseriesStagingError(errorData, errorDescription)
     }
-    return integer
+    return offsetInteger
   }
 }
