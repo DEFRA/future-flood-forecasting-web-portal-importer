@@ -165,6 +165,7 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
 
   await preparedStatement.prepare(`
     select
+      task_run_id as previous_staged_task_run_id,
       max(task_completion_time) as previous_staged_task_completion_time
     from
       fff_staging.timeseries_header
@@ -178,6 +179,8 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
         where
           task_run_id = @taskRunId
       )
+      group by 
+        task_run_id
   `)
 
   const parameters = {

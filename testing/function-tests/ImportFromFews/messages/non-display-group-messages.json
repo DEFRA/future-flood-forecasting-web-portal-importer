@@ -8,6 +8,12 @@
       "taskRunId": "ukeafffsmc00:000000001",
       "filterId": "Test Filter1"
     }
+  ],  
+  "singleFilterNonForecastEarlier": [
+    {
+      "taskRunId": "ukeafffsmc00:0000000016",
+      "filterId": "Test Filter1"
+    }
   ],
   "multipleFilterNonForecast": [
     {
