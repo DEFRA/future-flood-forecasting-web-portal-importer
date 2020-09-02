@@ -178,7 +178,7 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
           fff_staging.timeseries_header
         where
           task_run_id = @taskRunId
-          )
+      )
       group by 
         task_run_id
   `)
