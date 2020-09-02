@@ -22,7 +22,7 @@ async function buildKnownLocations (context, taskRunData) {
   const errorMessageFromOriginalPiServerCall = taskRunData.buildPiServerUrlCalls[0].error.response.data
   const unknownLocationsIdsFromPiServerError = await getUnknownLocationsFromPiServerErrorMessage(context, errorMessageFromOriginalPiServerCall)
   const allLocationsIds = new Set(taskRunData.locationIds.split(';'))
-  // Calculate the difference between the set of all locations and the set of unknown locations.
+  // Calculate the difference between the set of all locations eligible for import and the set of unknown locations.
   const knownLocationsIds = new Set([...allLocationsIds].filter(locationId => !unknownLocationsIdsFromPiServerError.has(locationId)))
   taskRunData.knownLocationsIds = [...knownLocationsIds].join(';')
 }
