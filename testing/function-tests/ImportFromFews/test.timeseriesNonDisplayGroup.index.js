@@ -458,7 +458,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}'),
-       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:0000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}')
+       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:0000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000017', 'Custom_Offset_Workflow', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000018', 'Custom_Offset_Workflow_Forecast', 0, 0, '{"input": "Test message"}')
     `)
