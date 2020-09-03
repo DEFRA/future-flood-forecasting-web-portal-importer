@@ -76,29 +76,29 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
       dgw.location_ids
     from
       (
-      select
-        'C' as csv_type,
-        workflow_id,
-        location_ids
-      from
-        fff_staging.coastal_display_group_workflow
-      with
-        (tablock holdlock)  
-      where
-        workflow_id = @workflowId and
-        plot_id = @plotId   
-      union
-      select
-        'F' as csv_type,
-        workflow_id,
-        location_ids
-      from
-        fff_staging.fluvial_display_group_workflow
-      with
-        (tablock holdlock)  
-      where
-        workflow_id = @workflowId and
-        plot_id = @plotId  
+        select
+          'C' as csv_type,
+          workflow_id,
+          location_ids
+        from
+          fff_staging.coastal_display_group_workflow
+        with
+          (tablock holdlock)  
+        where
+          workflow_id = @workflowId and
+          plot_id = @plotId   
+        union
+        select
+          'F' as csv_type,
+          workflow_id,
+          location_ids
+        from
+          fff_staging.fluvial_display_group_workflow
+        with
+          (tablock holdlock)  
+        where
+          workflow_id = @workflowId and
+          plot_id = @plotId  
       ) dgw,
       fff_staging.timeseries_header th
     where

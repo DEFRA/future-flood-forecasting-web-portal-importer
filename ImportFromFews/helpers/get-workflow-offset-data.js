@@ -28,13 +28,15 @@ module.exports = async function (context, preparedStatement, taskRunData) {
       endTimeOffset: result.recordset[0].end_time_offset_hours
     }
   } else {
-    let errorMessage
-    errorMessage = `No custom offsets found for workflow: ${taskRunData.workflowId}.`
+    let offsetValuesCount
     if (result && result.recordset && result.recordset[0] && result.recordset.length > 1) {
-      errorMessage = `There are multiple custom offsets (${result.recordset.length}) specified for the workflow: ${taskRunData.workflowId}.`
+      offsetValuesCount = result.recordset.length
+    } else {
+      offsetValuesCount = 0
     }
+    let errorMessage = `An error has been found in the custom offsets for workflow: ${taskRunData.workflowId}. ${offsetValuesCount} found.`
     context.log(errorMessage)
-    const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV`
+    const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV.`
     const errorData = {
       sourceId: taskRunData.sourceId,
       sourceType: taskRunData.sourceType,

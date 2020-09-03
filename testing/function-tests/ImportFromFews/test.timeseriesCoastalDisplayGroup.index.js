@@ -340,7 +340,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         sourceType: 'P',
         csvError: true,
         csvType: 'C',
-        description: `There are multiple custom offsets (2) specified for the workflow: Span_Workflow_Multiple_Offsets. Task run ukeafffsmc00:0000000011 in the non-display group CSV`
+        description: `An error has been found in the custom offsets for workflow: Span_Workflow_Multiple_Offsets. 2 found. Task run ukeafffsmc00:0000000011 in the non-display group CSV.`
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
     })
