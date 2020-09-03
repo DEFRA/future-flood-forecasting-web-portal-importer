@@ -13,7 +13,8 @@ module.exports = function (pool, messages) {
           ('Test_Fluvial_Workflow1', 'Test Fluvial Plot1', 'Test Location1'),
           ('Test_Fluvial_Workflow2', 'Test Fluvial Plot2a', 'Test Location2a'),
           ('Test_Fluvial_Workflow2', 'Test Fluvial Plot2b', 'Test Location2b'),
-          ('Span_Workflow2', 'SpanPlot2', 'Test_Location')
+          ('Span_Workflow', 'SpanPlot', 'Test_Location'),
+          ('Span_Workflow2', 'SpanPlot2', 'Test_Location2')
       `)
   }
   this.beforeEach = async function () {

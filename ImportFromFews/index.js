@@ -4,6 +4,7 @@ const createTimeseriesStagingException = require('./helpers/create-timeseries-st
 const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
 const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-url-if-possible')
 const { gzip } = require('../Shared/utils')
+const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
@@ -21,6 +22,7 @@ async function processMessageIfPossible (taskRunData, context, message) {
   await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
   if (taskRunData.timeseriesHeaderId) {
     if (!(await isMessageIgnored(context, taskRunData))) {
+      await executePreparedStatementInTransaction(isSpanWorkflow, context, taskRunData.transaction, taskRunData)
       await importFromFews(context, taskRunData)
     }
   } else {

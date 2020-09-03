@@ -1,6 +1,7 @@
 const moment = require('moment')
 const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
 
@@ -56,18 +57,25 @@ async function buildStartAndEndTimes (context, taskRunData) {
   let truncationOffsetHoursForward
 
   if (taskRunData.filterData.startTimeOffset && taskRunData.filterData.startTimeOffset !== 0) {
-    truncationOffsetHoursBackward = Math.abs(taskRunData.filterData.startTimeOffset)
+    truncationOffsetHoursBackward = getOffsetAsAbsoluteInteger(taskRunData.filterData.startTimeOffset, taskRunData)
   } else {
-    truncationOffsetHoursBackward = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+    truncationOffsetHoursBackward = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
   }
   if (taskRunData.filterData.endTimeOffset && taskRunData.filterData.endTimeOffset !== 0) {
-    truncationOffsetHoursForward = Math.abs(taskRunData.filterData.endTimeOffset)
+    truncationOffsetHoursForward = getOffsetAsAbsoluteInteger(taskRunData.filterData.endTimeOffset, taskRunData)
   } else {
     truncationOffsetHoursForward = 0
   }
 
-  taskRunData.startTime = moment(taskRunData.startCreationTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-  taskRunData.endTime = moment(taskRunData.endCreationTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+  if (taskRunData.filterData.timeseriesType === SIMULATED_FORECASTING) {
+    // timeframe search period basis is the current end time for forecast data
+    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+  } else {
+    // timeframe search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
+    taskRunData.startTime = moment(taskRunData.startCreationTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+    taskRunData.endTime = moment(taskRunData.endCreationTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+  }
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
@@ -127,7 +135,6 @@ async function getWorkflowFilterData (context, preparedStatement, taskRunData) {
     where
       workflow_id = @nonDisplayGroupWorkflowId and
       filter_id = @filterId
-
   `)
   const parameters = {
     nonDisplayGroupWorkflowId: taskRunData.workflowId,

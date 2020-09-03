@@ -1,9 +1,10 @@
 const moment = require('moment')
 const sql = require('mssql')
-const { getEnvironmentVariableAsInteger } = require('../../Shared/utils')
+const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const TimeseriesStagingError = require('./timeseries-staging-error')
+const getCustomOffsets = require('./get-workflow-offset-data')
 
 module.exports = async function (context, taskRunData) {
   if (taskRunData.approved) {
@@ -19,10 +20,30 @@ async function buildTimeParameters (context, taskRunData) {
 }
 
 async function buildStartAndEndTimes (context, taskRunData) {
-  const startTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_START_TIME_OFFSET_HOURS') || 14
-  const endTimeOffsetHours = getEnvironmentVariableAsInteger('FEWS_END_TIME_OFFSET_HOURS') || 120
-  taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-  taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  // Check if the workflow includes non-display group filters, if so inherit the ndg offset values
+  if (taskRunData.spanWorkflow && taskRunData.spanWorkflow === true) {
+    // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
+    await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
+    let startTimeOffsetHours
+    let endTimeOffsetHours
+    if (taskRunData.offsetData.startTimeOffset && taskRunData.offsetData.startTimeOffset !== 0) {
+      startTimeOffsetHours = getOffsetAsAbsoluteInteger(taskRunData.offsetData.startTimeOffset, taskRunData)
+    } else {
+      startTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+    }
+    if (taskRunData.offsetData.endTimeOffset && taskRunData.offsetData.endTimeOffset !== 0) {
+      endTimeOffsetHours = getOffsetAsAbsoluteInteger(taskRunData.offsetData.endTimeOffset, taskRunData)
+    } else {
+      endTimeOffsetHours = 0 // the non display group default
+    }
+    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  } else {
+    const startTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS') || 14
+    const endTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS') || 120
+    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+  }
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
@@ -84,7 +105,7 @@ async function getLocationsForWorkflowPlot (context, preparedStatement, taskRunD
       th.workflow_id = dgw.workflow_id and
       th.id = @timeseriesHeaderId and
       th.workflow_id = @workflowId
-   `)
+  `)
 
   const parameters = {
     plotId: taskRunData.plotId,

@@ -28,11 +28,21 @@
   "singlePlotAndFilterApprovedForecast": [
     {
       "taskRunId": "ukeafffsmc00:000000004",
-      "plotId": "SpanPlot2"
+      "plotId": "SpanPlot"
     },
     {
       "taskRunId": "ukeafffsmc00:000000004",
-      "filterId": "SpanFilter2"
+      "filterId": "SpanFilter"
+    }
+  ],
+  "singlePlotAndFilterApprovedForecastCustomOffset": [
+    {
+      "taskRunId": "ukeafffsmc00:000000005",
+      "plotId": "SpanPlot2"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000005",
+      "filterId": "SpanFilterOffset"
     }
   ]
 }

@@ -7,10 +7,9 @@ const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = describe('Tests for import timeseries non-display groups', () => {
-  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
-
   let context
   let importFromFewsTestUtils
+  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
@@ -19,8 +18,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   const SIMULATED_FORECASTING = 'simulated_forecasting'
   const EXTERNAL_FORECASTING = 'external_forecasting'
   const EXTERNAL_HISTORICAL = 'external_historical'
-
-  const defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
 
   describe('Message processing for non-display group timeseries import', () => {
     beforeAll(async () => {
@@ -263,8 +260,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'singleFilterApprovedForecastCustomOffset',
         mockResponses: [mockResponse],
         overrideValues: {
-          forward: 20,
-          backward: -10
+          endTime: 20,
+          startTime: 10
         }
       }
 
@@ -367,6 +364,65 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should not import data for an approved:false message associated with a timeseries type requiring approval', async () => {
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('unapprovedSimulatedForecast')
     })
+    it('should adopt the default start-time offset setting not an env var text start-time-offset setting, for a single filter associated with a non-forecast', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+
+      process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS = 'ten'
+
+      const config = {
+        messageKey: 'singleFilterNonForecast',
+        mockResponses: [mockResponse]
+      }
+
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should adopt the custom offset values for a single filter associated with an external_historical non-forecast, using creation times when calculating offsets', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+
+      const config = {
+        messageKey: 'customOffsetNonForecast',
+        mockResponses: [mockResponse],
+        overrideValues: {
+          timeseriesType: 'external_historical',
+          endTime: 20,
+          startTime: 10
+        }
+      }
+
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should adopt the custom offset values for a single filter associated with a simulated forecast, ignoring creation times when calculating offsets', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+
+      const config = {
+        messageKey: 'customOffsetSimulatedForecast',
+        mockResponses: [mockResponse],
+        overrideValues: {
+          timeseriesType: 'simulated_forecasting',
+          endTime: 12,
+          startTime: 8
+        }
+      }
+
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should throw a timeseries staging exception when an non-integer custom offset is provided', async () => {
+      const offsetValue = 'ten'
+      let expectedErrorDetails = new Error('Unable to return an integer for an offset value: ten')
+      await importFromFewsTestUtils.checkTextOffsetRejectsWithError(offsetValue, expectedErrorDetails)
+    })
   })
 
   async function insertTimeseriesHeaders (pool) {
@@ -402,7 +458,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}'),
-       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:0000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}')
+       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:0000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000017', 'Custom_Offset_Workflow', 0, 0, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000018', 'Custom_Offset_Workflow_Forecast', 0, 0, '{"input": "Test message"}')
     `)
   }
 
@@ -412,7 +470,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
     const previousTaskRunEndTimeRequest = new sql.Request(pool)
     const currentTaskRunCompletionTimeseriesRequest = new sql.Request(pool)
-
+    let defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+    if (!Number.isInteger(defaultTruncationOffsetHours)) {
+      defaultTruncationOffsetHours = 24
+    }
     await previousTaskRunEndTimeRequest.input('taskRunId', sql.VarChar, taskRunId)
     const previousTaskRunEndTimeResult = await previousTaskRunEndTimeRequest.query(`
       select
@@ -496,21 +557,32 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
         let expectedStartTime
+        // expected start and end time are used as creation times for those queries utilising creation times.
+        // The actual query start and end times use these times as a basis for the offsets.
         if (previousTaskRunEndTime) {
           expectedStartTime = previousTaskRunEndTime
         } else {
           expectedStartTime = moment(result.recordset[index].task_start_time)
         }
 
-        const expectedEndTime = moment(taskRunCompletionTime)
+        let expectedEndTime = moment(taskRunCompletionTime)
 
+        if (config.overrideValues && config.overrideValues.timeseriesType === SIMULATED_FORECASTING) {
+          // expected start and end times are both equal to the taskRunCompletion time for simulated forecasts
+          expectedStartTime = moment(taskRunCompletionTime)
+          expectedEndTime = moment(taskRunCompletionTime)
+        }
         let expectedOffsetStartTime
         let expectedOffsetEndTime
-        if (config.overrideValues && (config.overrideValues.backward || config.overrideValues.forward)) {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(Math.abs(config.overrideValues.backward), 'hours')
-          expectedOffsetEndTime = moment(expectedEndTime).add(Math.abs(config.overrideValues.forward), 'hours')
+
+        if (config.overrideValues && config.overrideValues.startTime) {
+          expectedOffsetStartTime = moment(expectedStartTime).subtract(Math.abs(config.overrideValues.startTime), 'hours')
         } else {
           expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
+        }
+        if (config.overrideValues && config.overrideValues.endTime) {
+          expectedOffsetEndTime = moment(expectedEndTime).add(Math.abs(config.overrideValues.endTime), 'hours')
+        } else {
           expectedOffsetEndTime = expectedEndTime
         }
 

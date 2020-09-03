@@ -26,7 +26,9 @@ module.exports = function (pool, messages) {
           ('External_Historical_Workflow', 'Test Filter EH', 0, 0, 0, 'external_historical'),
           ('Unknown_Timeseries_Type_Workflow', 'Test Filter Unknown Timeseries Type', 0, 0, 0, 'Not specified'),
           ('Partial_Load_Span_Workflow', 'Test Span Filter 9a', 1, 0, 0, 'external_historical'),
-          ('Partial_Load_Span_Workflow', 'Test Span Filter 9b', 1, 0, 0, 'external_historical')
+          ('Partial_Load_Span_Workflow', 'Test Span Filter 9b', 1, 0, 0, 'external_historical'),
+          ('Custom_Offset_Workflow', 'Custom_Offset_Filter', 0, 10, 20, 'external_historical'),
+          ('Custom_Offset_Workflow_Forecast', 'Custom_Offset_Filter_Forecast', 0, 8, 12, 'simulated_forecasting')
       `)
   }
   this.beforeEach = async function () {
