@@ -11,11 +11,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   let context
   let importFromFewsTestUtils
   const dateFormat = 'YYYY-MM-DD HH:mm:ss'
-
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool, importFromFewsMessages)
-  const defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
   const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
   const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
 
@@ -248,10 +246,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const config = {
         messageKey: 'singleFilterNonForecast',
-        mockResponses: [mockResponse],
-        overrideValues: {
-          backward: -10
-        }
+        mockResponses: [mockResponse]
       }
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
@@ -494,7 +489,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
     const previousTaskRunEndTimeRequest = new sql.Request(pool)
     const currentTaskRunCompletionTimeseriesRequest = new sql.Request(pool)
-
+    let defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+    if (!Number.isInteger(defaultTruncationOffsetHours)) {
+      defaultTruncationOffsetHours = 24
+    }
     await previousTaskRunEndTimeRequest.input('taskRunId', sql.VarChar, taskRunId)
     const previousTaskRunEndTimeResult = await previousTaskRunEndTimeRequest.query(`
       select

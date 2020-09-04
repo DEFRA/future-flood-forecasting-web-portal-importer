@@ -73,7 +73,7 @@ async function buildStartAndEndTimes (context, taskRunData) {
     truncationOffsetHoursForward = 0
   }
 
-  if (taskRunData.filterData.timeseriesType === SIMULATED_FORECASTING) {
+  if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     // timeframe search period basis is the current end time for forecast data
     taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(truncationOffsetHoursForward, 'hours').toISOString()

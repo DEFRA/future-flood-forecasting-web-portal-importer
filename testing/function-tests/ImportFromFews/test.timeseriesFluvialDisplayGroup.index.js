@@ -25,8 +25,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         insert into
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical'),
-          ('Span_Workflow2', 'SpanFilterOffset', 1, 10, 11, 'external_historical')
+          ('Span_Workflow2', 'SpanFilter2', 1, 0, 0, 'external_historical'),
+          ('Span_Workflow3', 'SpanFilterOffset', 1, 10, 11, 'external_historical')
       `)
     })
     beforeEach(async () => {
@@ -261,7 +261,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
         mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow'
+        spanWorkflowId: 'Span_Workflow2'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -282,7 +282,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastCustomOffset',
         mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow2'
+        spanWorkflowId: 'Span_Workflow3'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -316,8 +316,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000001', 'Test_Fluvial_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000002', 'Test_Fluvial_Workflow2', 1, 1, '{"input": "Test message"}'),
          (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000003', 'Test_Fluvial_Workflow1', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004a', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004b', 'Span_Workflow2', 1, 1, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004a', 'Span_Workflow2', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004b', 'Span_Workflow3', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Test_Fluvial_Workflow3', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Fluvial_Workflow4', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Test_Fluvial_Workflow5', 1, 1, '{"input": "Test message"}')

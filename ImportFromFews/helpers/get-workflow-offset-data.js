@@ -38,6 +38,7 @@ module.exports = async function (context, preparedStatement, taskRunData) {
     context.log(errorMessage)
     const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV.`
     const errorData = {
+      transaction: taskRunData.transaction,
       sourceId: taskRunData.sourceId,
       sourceType: taskRunData.sourceType,
       csvError: true,

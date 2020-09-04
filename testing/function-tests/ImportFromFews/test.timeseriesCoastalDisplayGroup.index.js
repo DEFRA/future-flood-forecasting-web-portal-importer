@@ -321,11 +321,13 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
                 key: 'Timeseries data'
               }
             }
-          ]
+          ],
+          spanWorkflowId: 'Partial_Load_Span_Workflow'
         },
         {
           messageKey: partThreeMessageKey,
           mockResponses: [internalServerErrorMockResponse],
+          spanWorkflowId: 'Partial_Load_Span_Workflow',
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[partThreeMessageKey][0].filterId,
             sourceType: 'F',
@@ -366,14 +368,17 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
     it('should create a timeseries staging exception for a spanning workflow plot with multiple different custom offsets specified', async () => {
       const messageKey = 'multipleOffsets'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].plotId,
-        sourceType: 'P',
-        csvError: true,
-        csvType: 'C',
-        description: `An error has been found in the custom offsets for workflow: Span_Workflow_Multiple_Offsets. 2 found. Task run ukeafffsmc00:0000000011 in the non-display group CSV.`
+      const config = {
+        messageKey: messageKey,
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: true,
+          csvType: 'C',
+          description: `An error has been found in the custom offsets for workflow: Span_Workflow_Multiple_Offsets. 2 found. Task run ukeafffsmc00:0000000011 in the non-display group CSV.`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, null, expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
   })
 

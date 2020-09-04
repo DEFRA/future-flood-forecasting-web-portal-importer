@@ -153,15 +153,9 @@ async function buildCsvTypeForWorkflowPlot (context, preparedStatement, taskRunD
     with
       (tablock holdlock)
     where
-<<<<<<< HEAD
-      th.workflow_id = dgw.workflow_id and
-      th.id = @timeseriesHeaderId and
-      th.workflow_id = @workflowId
-=======
       workflow_id = @workflowId and
       source_id = @plotId and
       source_type = 'P'
->>>>>>> Facilitate replay for plots when a subset of locations has been loaded
   `)
 
   const parameters = {
