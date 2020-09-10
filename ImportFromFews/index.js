@@ -125,8 +125,10 @@ async function processImportError (context, taskRunData, err) {
 
 async function importFromFews (context, taskRunData) {
   try {
-    if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+    if (taskRunData.forecast && await isLatestTaskRunForWorkflow(context, taskRunData)) {
       await deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
+    }
+    if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
       await retrieveFewsData(context, taskRunData)
       if (taskRunData.fewsData) {
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)

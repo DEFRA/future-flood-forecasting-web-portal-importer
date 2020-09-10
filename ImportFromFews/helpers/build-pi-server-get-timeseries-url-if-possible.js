@@ -10,6 +10,9 @@ const TimeseriesStagingError = require('./timeseries-staging-error')
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
+  if (isForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
+    await deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
+  }
   // Ensure data is not imported for out of date external/simulated forecasts.
   if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
     await deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
