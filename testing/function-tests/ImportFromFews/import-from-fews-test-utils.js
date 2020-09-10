@@ -116,7 +116,8 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     select top(1)
       payload,
       task_run_id,
-      description
+      description,
+      source_function
     from
       fff_staging.staging_exception
     order by
@@ -135,6 +136,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     }
 
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
+    expect(result.recordset[0].source_function).toBe('I')
     const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
     await checkAmountOfDataImported(taskRunId, 0)
   }

@@ -27,18 +27,20 @@ async function createStagingException (context, preparedStatement, stagingExcept
   await preparedStatement.input('payload', sql.NVarChar)
   await preparedStatement.input('description', sql.NVarChar)
   await preparedStatement.input('taskRunId', sql.NVarChar)
+  await preparedStatement.input('sourceFunction', sql.NVarChar)
 
   await preparedStatement.prepare(`
     insert into
-      fff_staging.staging_exception (payload, description, task_run_id)
+      fff_staging.staging_exception (payload, description, task_run_id, source_function)
     values
-     (@payload, @description, @taskRunId)
+     (@payload, @description, @taskRunId, @sourceFunction)
   `)
 
   const parameters = {
     payload: typeof (stagingExceptionData.message) === 'string' ? stagingExceptionData.message : JSON.stringify(stagingExceptionData.message),
     description: stagingExceptionData.errorMessage,
-    taskRunId: stagingExceptionData.taskRunId || null
+    taskRunId: stagingExceptionData.taskRunId || null,
+    sourceFunction: stagingExceptionData.sourceFunction || null
   }
 
   await preparedStatement.execute(parameters)
