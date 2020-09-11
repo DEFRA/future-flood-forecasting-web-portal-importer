@@ -31,7 +31,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     }
   }
 
-  const checkAmountOfDataImported = async function (taskRunId, expectedNumberOfRecords) {
+  const checkAmountOfDataImportedForTaskRun = async function (taskRunId, expectedNumberOfRecords) {
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.VarChar, taskRunId)
     const result = await request.query(`
@@ -91,7 +91,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     await checkImportedDataFunction(config, context, pool)
     if (config.expectedNumberOfImportedRecords > 0 || (config.mockResponses && config.mockResponses.length)) {
       const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
-      await checkAmountOfDataImported(taskRunId, config.expectedNumberOfImportedRecords || config.mockResponses.length)
+      await checkAmountOfDataImportedForTaskRun(taskRunId, config.expectedNumberOfImportedRecords || config.mockResponses.length)
 
       const stagingExceptionConfig = {
         sourceFunction: 'I',
@@ -105,7 +105,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
   this.processMessagesAndCheckNoDataIsImported = async function (messageKey, expectedNumberOfRecords) {
     await processMessages(messageKey)
     const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
-    await checkAmountOfDataImported(taskRunId, expectedNumberOfRecords || 0)
+    await checkAmountOfDataImportedForTaskRun(taskRunId, expectedNumberOfRecords || 0)
   }
 
   this.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, expectedErrorDescription) {
@@ -138,13 +138,13 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
     expect(result.recordset[0].source_function).toBe('I')
     const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
-    await checkAmountOfDataImported(taskRunId, 0)
+    await checkAmountOfDataImportedForTaskRun(taskRunId, 0)
   }
 
   this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported = async function (config) {
     await processMessagesAndCheckTimeseriesStagingExceptionIsCreated(config)
     const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
-    await checkAmountOfDataImported(taskRunId, config.expectedNumberOfRecords || 0)
+    await checkAmountOfDataImportedForTaskRun(taskRunId, config.expectedNumberOfRecords || 0)
   }
 
   this.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndPartialDataIsImported = async function (config) {
