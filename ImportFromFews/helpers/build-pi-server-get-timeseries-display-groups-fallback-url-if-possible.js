@@ -12,7 +12,7 @@ module.exports = async function (context, taskRunData) {
     // Construct the URL used to retrieve timeseries display groups for the configured plot, locations and date range.
     buildPiServerUrlCall.fewsPiUrl =
       encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
-        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${taskRunData.fewsParameters}`)
+        &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${buildPiServerUrlCall.fewsParameters}`)
   } else {
     context.log.warn(`Unable to find any known locations for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   }
