@@ -102,10 +102,14 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     }
   }
 
-  this.processMessagesAndCheckNoDataIsImported = async function (messageKey, expectedNumberOfRecords) {
+  this.processMessagesAndCheckNoDataIsImported = async function (messageKey, expectedNumberOfRecords, expectedNumberOfTimeseriesStagingExceptions) {
     await processMessages(messageKey)
     const taskRunId = importFromFewsMessages[messageKey][0].taskRunId
     await checkAmountOfDataImportedForTaskRun(taskRunId, expectedNumberOfRecords || 0)
+    const config = {
+      expectedNumberOfTimeseriesStagingExceptions: expectedNumberOfTimeseriesStagingExceptions || 0
+    }
+    await commonTimeseriesTestUtils.checkNumberOfTimeseriesStagingExceptionsForTaskRun(config)
   }
 
   this.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, expectedErrorDescription) {
