@@ -76,11 +76,6 @@
       "plotId": "Test Coastal Plot 1"
     }
   ],
-  "missingPlotOrFilterIdMessage": [
-    {
-      "taskId": "ukeafffsmc00:000000001"
-    }
-  ],
   "unknownPlotId": [
     {
       "taskRunId": "ukeafffsmc00:000000001",
