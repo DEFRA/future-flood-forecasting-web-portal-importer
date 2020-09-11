@@ -2,7 +2,8 @@
 
 if  ! `nc -z $SQLTESTDB_HOST $SQLTESTDB_PORT`; then
   cd testing/staging-database
-  rm -rf future-flood-forecasting-web-portal-staging 
+  rm -rf future-flood-forecasting-web-portal-staging
+  git clone https://github.com/DEFRA/future-flood-forecasting-web-portal-staging.git
   cd future-flood-forecasting-web-portal-staging
   ./local-bootstrap.sh
 fi
