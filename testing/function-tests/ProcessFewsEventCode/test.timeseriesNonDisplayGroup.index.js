@@ -124,10 +124,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterApprovedForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('should ignore a duplicate task run', async () => {
-      const messageKey = 'singleFilterNonForecast'
+    it('should load a single filter associated with a workflow that is also associated with display group data', async () => {
+      await request.batch(`
+      insert into
+        fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
+      values
+        ('Dual_Workflow', 'Test Coastal Plot 1', 'Test Coastal Location 1')
+      `)
+      const messageKey = 'filterAndPlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1, 1)
     })
   })
 })

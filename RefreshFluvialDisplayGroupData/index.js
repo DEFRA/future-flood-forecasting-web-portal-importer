@@ -5,6 +5,7 @@ module.exports = async function (context, message) {
   const refreshData = {
     // Location of csv:
     csvUrl: process.env['FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL'],
+    workflowRefreshCsvType: 'F',
     // Destination table in staging database
     tableName: '#fluvial_display_group_workflow_temp',
     partialTableUpdate: { flag: false },

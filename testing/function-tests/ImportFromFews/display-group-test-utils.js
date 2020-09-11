@@ -15,19 +15,26 @@ module.exports = {
         th.task_run_id,
         th.task_completion_time,
         cast(decompress(t.fews_data) as varchar(max)) as fews_data,
-        convert(bit, case
-          when t.fews_parameters like '&plotId=%' then 1
-          else 0
+        case
+          when t.fews_parameters like '&plotId=%' then substring(fews_parameters, charindex('&plotId=', fews_parameters) + 8,  charindex('&', fews_parameters, 7) - (charindex('&plotId=', fews_parameters) + 8))
+          when t.fews_parameters like '&filterId=%' then substring(fews_parameters, charindex('&filterId=', fews_parameters) + 10,  charindex('&', fews_parameters, 9) - (charindex('&filterId=', fews_parameters) + 10))
           end
-        ) as is_plot
+        as source_id,
+        case
+          when t.fews_parameters like '&plotId=%' then 'P'
+          when t.fews_parameters like '&filterId=%' then 'F'
+          end
+        as source_type
       from
         fff_staging.timeseries_header th,
         fff_staging.timeseries t
       where
         th.id = t.timeseries_header_id
+      order by
+        t.import_time desc
     `)
 
-    expect(result.recordset.length).toBe(config.mockResponses.length)
+    expect(result.recordset.length).toBe(config.expectedNumberOfImportedRecords || config.mockResponses.length)
 
     // Database interaction is asynchronous so the order in which records are written
     // cannot be guaranteed.
@@ -43,7 +50,7 @@ module.exports = {
       receivedPrimaryKeys.push(result.recordset[index].id)
 
       // Check that plot timeseries data has been persisted correctly (filter timeseries data is checked in other unit tests).
-      if (result.recordset[index].is_plot) {
+      if (result.recordset[index].source_type === 'P') {
         const taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
 
         let startTimeDisplayGroupOffsetHours
@@ -71,10 +78,23 @@ module.exports = {
         const expectedEndTime = moment(taskRunCompletionTime).add(endTimeDisplayGroupOffsetHours, 'hours').toISOString().substring(0, 19)
         expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedStartTime}Z`)
         expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedEndTime}Z`)
+
+        if (config.expectedLocationData && result.recordset[index].source_id === config.expectedLocationData[index].plotId) {
+          // Check that the persisted FEWS parameters contain expected locations.
+          for (const location of config.expectedLocationData[index].includedLocations) {
+            expect(result.recordset[index].fews_parameters).toContain(`&locationIds=${location}`)
+          }
+
+          for (const location of config.expectedLocationData[index].excludedLocations) {
+            expect(result.recordset[index].fews_parameters).not.toContain(`&locationIds=${location}`)
+          }
+        }
       }
     }
 
-    for (const mockResponse of config.mockResponses) {
+    const nonErrorMockResponses = config.mockResponses.filter(mockResponse => !(mockResponse instanceof Error))
+
+    for (const mockResponse of nonErrorMockResponses) {
       expect(receivedFewsData).toContainEqual(mockResponse.data)
     }
 

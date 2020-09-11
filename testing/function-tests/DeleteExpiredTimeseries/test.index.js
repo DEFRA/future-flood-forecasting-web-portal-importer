@@ -259,7 +259,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
         h.import_time
       from
         fff_staging.timeseries_header h
-        inner join fff_staging.timeseries_staging_exception tse on tse.timeseries_header_id = h.id
+        inner join fff_staging.v_active_timeseries_staging_exception tse on tse.timeseries_header_id = h.id
         inner join fff_staging.timeseries t on t.timeseries_header_id = h.id
         inner join fff_reporting.timeseries_job r on r.timeseries_id = t.id
       order by

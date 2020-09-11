@@ -27,22 +27,40 @@
   ],
   "singlePlotAndFilterApprovedForecast": [
     {
-      "taskRunId": "ukeafffsmc00:000000004",
-      "plotId": "SpanPlot"
+      "taskRunId": "ukeafffsmc00:000000004a",
+      "plotId": "SpanPlot2"
     },
     {
-      "taskRunId": "ukeafffsmc00:000000004",
-      "filterId": "SpanFilter"
+      "taskRunId": "ukeafffsmc00:000000004a",
+      "filterId": "SpanFilter2"
     }
   ],
   "singlePlotAndFilterApprovedForecastCustomOffset": [
     {
-      "taskRunId": "ukeafffsmc00:000000005",
-      "plotId": "SpanPlot2"
+      "taskRunId": "ukeafffsmc00:000000004b",
+      "plotId": "SpanPlot3"
     },
     {
-      "taskRunId": "ukeafffsmc00:000000005",
+      "taskRunId": "ukeafffsmc00:000000004b",
       "filterId": "SpanFilterOffset"
+    }
+  ],
+  "singlePlotApprovedForecastWithMultipleLocations": [
+    {
+      "taskRunId": "ukeafffsmc00:000000005",
+      "plotId": "Test Fluvial Plot3"
+    }
+  ],
+  "singlePlotApprovedForecastWithNoKnownLocations": [
+    {
+      "taskRunId": "ukeafffsmc00:000000006",
+      "plotId": "Test Fluvial Plot4"
+    }
+  ],
+  "singlePlotApprovedForecastWithSomeKnownLocations": [
+    {
+      "taskRunId": "ukeafffsmc00:000000007",
+      "plotId": "Test Fluvial Plot5"
     }
   ]
 }

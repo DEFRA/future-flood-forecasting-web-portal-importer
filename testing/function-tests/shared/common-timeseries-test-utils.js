@@ -53,6 +53,7 @@ module.exports = function (pool) {
     await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
     await request.batch(`delete from fff_staging.non_display_group_workflow`)
     await request.batch(`delete from fff_staging.ignored_workflow`)
+    await request.batch(`delete from fff_staging.workflow_refresh`)
   }
   const deleteTimeseriesData = async function (request) {
     await request.batch(`delete from fff_staging.timeseries_staging_exception`)
@@ -71,6 +72,14 @@ module.exports = function (pool) {
         ('Test_Ignored_Workflow_1'),
         ('Test_Ignored_Workflow_2')
     `)
+    await request.batch(`
+      insert into
+        fff_staging.workflow_refresh (csv_type)
+      values
+        ('C'),
+        ('F'),
+        ('N')
+    `)
   }
   this.beforeEach = async function () {
     // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -84,6 +93,36 @@ module.exports = function (pool) {
     await deleteTimeseriesData(request)
     // Closing the DB connection allows Jest to exit successfully.
     await pool.close()
+  }
+  this.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun = async function (config) {
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, config.taskRunId)
+    await request.input('sourceFunction', sql.NVarChar, config.sourceFunction)
+    const result = await request.query(`
+      select
+        count(id) as number
+      from
+        fff_staging.v_active_staging_exception
+      where
+        task_run_id = @taskRunId and
+        source_function = @sourceFunction
+    `)
+    expect(result.recordset[0].number).toBe(0)
+  }
+  this.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun = async function (config) {
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, config.taskRunId)
+    const result = await request.query(`
+      select
+        count(tse.id) as number
+      from
+        fff_staging.v_active_timeseries_staging_exception tse,
+        fff_staging.timeseries_header th
+      where
+        th.id = tse.timeseries_header_id and
+        th.task_run_id = @taskRunId
+    `)
+    expect(result.recordset[0].number).toBe(config.expectedNumberOfTimeseriesStagingExceptions || 0)
   }
   this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (config) {
     let transaction

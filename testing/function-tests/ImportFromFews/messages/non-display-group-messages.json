@@ -83,6 +83,12 @@
       "filterId": "Test Filter EF"
     }
   ],
+  "earlierSingleFilterApprovedExternalForecasting" : [
+    {
+      "taskRunId": "ukeafffsmc00:000000016",
+      "filterId": "Test Filter EF"
+    }
+  ],
   "singleFilterApprovedExternalHistorical" : [
     {
       "taskRunId": "ukeafffsmc00:000000011",

@@ -1,4 +1,4 @@
-const { doInTransaction, executePreparedStatementInTransaction } = require('../../../Shared/transaction-helper')
+const { doInTransaction } = require('../../../Shared/transaction-helper')
 const getBooleanIndicator = require('../../../ProcessFewsEventCode/helpers/get-boolean-indicator')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
@@ -45,7 +45,8 @@ module.exports = describe('Test forecast flags', () => {
 
 async function testInTransaction (transaction, context) {
   const taskRunData = {
-    message: 'input'
+    message: 'input',
+    transaction: transaction
   }
-  expect(await executePreparedStatementInTransaction(getBooleanIndicator, context, transaction, taskRunData, 'Approved')).toBe(undefined)
+  expect(await getBooleanIndicator(context, taskRunData, 'Approved')).toBe(undefined)
 }

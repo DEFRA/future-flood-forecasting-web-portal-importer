@@ -48,8 +48,8 @@ module.exports = async function (context, myTimer) {
 
     await createTempTable(transaction, context)
 
-    await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, hardDate, false)
-    await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, softDate, true)
+    await insertDataIntoTemp(context, transaction, hardDate, false)
+    await insertDataIntoTemp(context, transaction, softDate, true)
 
     context.log.info(`Data delete starting.`)
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)

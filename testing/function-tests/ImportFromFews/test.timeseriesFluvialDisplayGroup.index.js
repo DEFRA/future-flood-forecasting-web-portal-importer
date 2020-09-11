@@ -25,8 +25,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         insert into
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
         values
-          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical'),
-          ('Span_Workflow2', 'SpanFilterOffset', 1, 10, 11, 'external_historical')
+          ('Span_Workflow2', 'SpanFilter2', 1, 0, 0, 'external_historical'),
+          ('Span_Workflow3', 'SpanFilterOffset', 1, 10, 11, 'external_historical')
       `)
     })
     beforeEach(async () => {
@@ -97,15 +97,152 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       }
 
       const messageKey = 'singlePlotApprovedForecast'
-      const expectedErrorDetails = {
-        sourceId: importFromFewsMessages[messageKey][0].plotId,
-        sourceType: 'P',
-        csvError: false,
-        csvType: null,
-        payload: importFromFewsMessages[messageKey][0],
-        description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
+      const config = {
+        messageKey: messageKey,
+        mockResponses: [ mockResponse ],
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: false,
+          csvType: null,
+          payload: importFromFewsMessages[messageKey][0],
+          description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
+        }
       }
-      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(messageKey, [mockResponse], expectedErrorDetails)
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
+    })
+    it('should create a timeseries staging exception when one or more locations linked to a plot do not exist and allow replay following CSV resolution of the problem', async () => {
+      const messageKey = 'singlePlotApprovedForecastWithSomeKnownLocations'
+      const badRequestMockResponse = new Error('Request failed with status code 400')
+      badRequestMockResponse.response = {
+        data: 'Location Test Location3c does not exists Location Test Location3d does not exists',
+        status: 400
+      }
+
+      const knownLocationsMockReponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+
+      const initialLocationData = {
+        plotId: importFromFewsMessages[messageKey][0].plotId,
+        includedLocations: [ 'Test Location3a', 'Test Location3b' ],
+        excludedLocations: [ 'Test Location3c', 'Test Location3d' ]
+      }
+
+      const config = [
+        {
+          messageKey: messageKey,
+          mockResponses: [badRequestMockResponse, knownLocationsMockReponse],
+          expectedErrorDetails: {
+            sourceId: importFromFewsMessages[messageKey][0].plotId,
+            sourceType: 'P',
+            csvError: true,
+            csvType: 'F',
+            description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow5): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+          },
+          expectedLocationData: [initialLocationData],
+          expectedNumberOfImportedRecords: 1
+        },
+        {
+          messageKey: messageKey,
+          expectedLocationData: [initialLocationData],
+          expectedNumberOfImportedRecords: 1
+        }
+      ]
+
+      const request = new sql.Request(pool)
+
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndPartialDataIsImported(config[0])
+
+      await request.batch(`
+        update
+          fff_staging.fluvial_display_group_workflow
+        set
+          location_ids = 'Test Location3a;Test Location3b'
+        where
+          workflow_id = 'Test_Fluvial_Workflow5' and
+          plot_id = 'Test Fluvial Plot5'
+      `)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(config[1].messageKey, 1)
+    })
+    it('should create a timeseries staging exception when one or more locations linked to a plot do not exist and allow replay following core engine resolution of the problem', async () => {
+      const messageKey = 'singlePlotApprovedForecastWithMultipleLocations'
+      const badRequestMockResponse = new Error('Request failed with status code 400')
+      badRequestMockResponse.response = {
+        data: 'Location Test Location3c does not exists Location Test Location3d does not exists',
+        status: 400
+      }
+
+      const knownLocationsMockReponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+
+      const initialLocationData = {
+        plotId: importFromFewsMessages[messageKey][0].plotId,
+        includedLocations: [ 'Test Location3a', 'Test Location3b' ],
+        excludedLocations: [ 'Test Location3c', 'Test Location3d' ]
+      }
+
+      const config = [
+        {
+          messageKey: messageKey,
+          mockResponses: [badRequestMockResponse, knownLocationsMockReponse],
+          expectedErrorDetails: {
+            sourceId: importFromFewsMessages[messageKey][0].plotId,
+            sourceType: 'P',
+            csvError: true,
+            csvType: 'F',
+            description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow3): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+          },
+          expectedLocationData: [initialLocationData],
+          expectedNumberOfImportedRecords: 1
+        },
+        {
+          messageKey: messageKey,
+          mockResponses: [
+            {
+              data: {
+                key: 'Timeseries data'
+              }
+            }
+          ],
+          expectedLocationData: [
+            {
+              plotId: importFromFewsMessages[messageKey][0].plotId,
+              includedLocations: [ 'Test Location3c', 'Test Location3d' ],
+              excludedLocations: [ 'Test Location3a', 'Test Location3b' ]
+            },
+            initialLocationData
+          ],
+          expectedNumberOfImportedRecords: 2
+        }
+      ]
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndPartialDataIsImported(config[0])
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[1])
+    })
+    it('should create a timeseries staging exception when no locations linked to a plot exist', async () => {
+      const messageKey = 'singlePlotApprovedForecastWithNoKnownLocations'
+      const badRequestMockResponse = new Error('Request failed with status code 400')
+      badRequestMockResponse.response = {
+        data: 'Location Test Location3c does not exists Location Test Location3d does not exists',
+        status: 400
+      }
+      const config = {
+        messageKey: messageKey,
+        mockResponses: [badRequestMockResponse, badRequestMockResponse],
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: true,
+          csvType: 'F',
+          description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow4): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+        }
+      }
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
     it('should load a single plot associated with a workflow that is also associated with non display group data, inheriting the default offsets for the ndg data', async () => {
       const mockResponses = [
@@ -124,7 +261,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
         mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow'
+        spanWorkflowId: 'Span_Workflow2'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -145,7 +282,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastCustomOffset',
         mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow2'
+        spanWorkflowId: 'Span_Workflow3'
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -179,8 +316,11 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000001', 'Test_Fluvial_Workflow1', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000002', 'Test_Fluvial_Workflow2', 1, 1, '{"input": "Test message"}'),
          (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000003', 'Test_Fluvial_Workflow1', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Span_Workflow2', 1, 1, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004a', 'Span_Workflow2', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004b', 'Span_Workflow3', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Test_Fluvial_Workflow3', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Fluvial_Workflow4', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Test_Fluvial_Workflow5', 1, 1, '{"input": "Test message"}')
     `)
   }
 })

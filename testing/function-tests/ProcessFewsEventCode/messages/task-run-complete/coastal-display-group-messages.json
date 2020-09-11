@@ -57,15 +57,6 @@
       "level": "INFO"
     }
   },
-  "unknownWorkflow": {
-    "input": {
-      "code": "TASKRUN.Complete",
-      "entryTime": 1568379065,
-      "description": "Task  Unknown_Workflow with ID ukeafffsmc00:000000001 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
-      "source": "ukeafffsmc00:000000001",
-      "level": "INFO"
-    }
-  },
   "forecastWithoutApprovalStatus": {
     "input": {
       "code": "TASKRUN.Complete",
@@ -86,12 +77,30 @@
       "endTime": "2019-09-13 13:06:00"
     }
   },
-  "workflowWithTimeseriesStagingException": {
+  "taskRunWithTimeseriesStagingExceptions": {
     "input": {
       "code": "TASKRUN.Complete",
       "entryTime": 1568379065,
       "description": "Task Test_Coastal_Workflow5 with ID ukeafffsmc00:000000003 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
       "source": "ukeafffsmc00:000000003",
+      "level": "INFO"
+    }
+  },
+  "unknownWorkflow": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task  Unknown_Workflow with ID ukeafffsmc00:000000004 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000004",
+      "level": "INFO"
+    }
+  },
+  "taskRunWithStagingException": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task  Test_Coastal_Workflow2 with ID ukeafffsmc00:000000004 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000004",
       "level": "INFO"
     }
   }

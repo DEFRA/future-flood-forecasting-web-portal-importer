@@ -10,6 +10,9 @@ module.exports = async function (context, err) {
       let errorDetails
       if (err.response.data instanceof Readable) {
         errorDetails = await getErrorDetailsFromStream(err.response.data)
+        // Replace the response data with the details received from the stream
+        // as the stream can only be read once.
+        err.response.data = errorDetails
       } else {
         errorDetails = err.response.data
       }

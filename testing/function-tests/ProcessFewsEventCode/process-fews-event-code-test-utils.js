@@ -35,6 +35,30 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(context.bindings.importFromFews.length).toBe(expectedNumberOfOutgoingMessages)
   }
 
+  const checkExpectedActiveTimeseriesStagingExceptionsForTaskRun = async function (taskRunId, expectedData) {
+    const expectedTimeseriesStagingExceptionsForTaskRun = expectedData.remainingTimeseriesStagingExceptions || []
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, taskRunId)
+    const result = await request.query(`
+      select
+        tse.source_id,
+        tse.source_type
+      from
+        fff_staging.v_active_timeseries_staging_exception tse,
+        fff_staging.timeseries_header th
+      where
+        th.task_run_id = @taskRunId and
+        th.id = tse.timeseries_header_id
+      order by
+        tse.source_id
+    `)
+    expect(result.recordset.length).toBe(expectedTimeseriesStagingExceptionsForTaskRun.length)
+    for (const index in expectedTimeseriesStagingExceptionsForTaskRun) {
+      expect(result.recordset[index].source_id).toBe(expectedTimeseriesStagingExceptionsForTaskRun[index].sourceId)
+      expect(result.recordset[index].source_type).toBe(expectedTimeseriesStagingExceptionsForTaskRun[index].sourceType)
+    }
+  }
+
   this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
     await processMessage(messageKey, sendMessageAsString)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
@@ -90,6 +114,13 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       for (const outgoingFilterId of outgoingFilterIds) {
         expect(expectedData.outgoingFilterIds).toContainEqual(outgoingFilterId)
       }
+
+      const stagingExceptionConfig = {
+        sourceFunction: 'P',
+        taskRunId: expectedTaskRunId
+      }
+      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+      await checkExpectedActiveTimeseriesStagingExceptionsForTaskRun(expectedTaskRunId, expectedData)
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')
     }
@@ -110,9 +141,10 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     select top(1)
       payload,
       task_run_id,
-      description
+      description,
+      source_function
     from
-      fff_staging.staging_exception
+      fff_staging.v_active_staging_exception
     order by
       exception_time desc
     `)
@@ -129,6 +161,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     }
 
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
+    expect(result.recordset[0].source_function).toBe('P')
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
   }
 

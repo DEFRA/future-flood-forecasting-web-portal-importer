@@ -1,16 +1,20 @@
 const axios = require('axios')
 const sql = require('mssql')
-const createTimeseriesStagingException = require('./helpers/create-timeseries-staging-exception')
-const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
+const buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-fallback-url-if-possible')
 const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-url-if-possible')
-const { gzip } = require('../Shared/utils')
-const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
+const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
+const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
+const createTimeseriesStagingException = require('./helpers/create-timeseries-staging-exception')
+const deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter = require('./helpers/deactivate-timeseries-staging-exceptions-for-task-run-plot-or-filter')
+const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./helpers/deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
+const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id.js')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
-const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
-const isMessageIgnored = require('./helpers/is-message-ignored')
-const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-server-error-message')
+const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
+const { gzip } = require('../Shared/utils')
+const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const isMessageIgnored = require('./helpers/is-message-ignored')
+const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
 const TimeseriesStagingError = require('./helpers/timeseries-staging-error')
 
 module.exports = async function (context, message) {
@@ -19,7 +23,7 @@ module.exports = async function (context, message) {
 }
 
 async function processMessageIfPossible (taskRunData, context, message) {
-  await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
+  await getTimeseriesHeaderData(context, taskRunData)
   if (taskRunData.timeseriesHeaderId) {
     if (!(await isMessageIgnored(context, taskRunData))) {
       await executePreparedStatementInTransaction(isSpanWorkflow, context, taskRunData.transaction, taskRunData)
@@ -27,34 +31,62 @@ async function processMessageIfPossible (taskRunData, context, message) {
     }
   } else {
     taskRunData.errorMessage = `Unable to retrieve TIMESERIES_HEADER record for task run ${message.taskRunId}`
-    await executePreparedStatementInTransaction(createStagingException, context, taskRunData.transaction, taskRunData)
+    await createOrReplaceStagingException(context, taskRunData)
   }
 }
 
 async function processMessage (transaction, context, message) {
   const taskRunData = Object.assign({}, message)
+  taskRunData.transaction = transaction
   taskRunData.message = message
+  taskRunData.sourceFunction = 'I'
+
   if (message.taskRunId &&
        ((!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId))) {
-    taskRunData.transaction = transaction
     if (taskRunData.plotId) {
       taskRunData.sourceId = taskRunData.plotId
       taskRunData.sourceType = 'P'
       taskRunData.sourceTypeDescription = 'plot'
-      taskRunData.buildPiServerUrlIfPossibleFunction = buildPiServerGetTimeseriesDisplayGroupUrlIfPossible
+      taskRunData.buildPiServerUrlCalls = [
+        {
+          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupUrlIfPossible
+        },
+        // A fallback function that attempts to remove problematic locations from the original PI Server call
+        // if the original PI Server call fails.
+        {
+          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible
+        }
+      ]
       // Set the CSV type as unknown until the CSV file containing the plot can be found.
       taskRunData.csvType = 'U'
     } else {
       taskRunData.sourceId = taskRunData.filterId
       taskRunData.sourceType = 'F'
       taskRunData.sourceTypeDescription = 'filter'
-      taskRunData.buildPiServerUrlIfPossibleFunction = buildPiServerGetTimeseriesUrlIfPossible
+      taskRunData.buildPiServerUrlCalls = [
+        {
+          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesUrlIfPossible
+        }
+      ]
       taskRunData.csvType = 'N'
     }
     await processMessageIfPossible(taskRunData, context, message)
   } else {
     taskRunData.errorMessage = 'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
-    await executePreparedStatementInTransaction(createStagingException, context, transaction, taskRunData)
+    await createOrReplaceStagingException(context, taskRunData)
+  }
+}
+
+async function processDataRetrievalError (context, taskRunData, err) {
+  if (err.response && err.response.status === 400) {
+    const piServerErrorMessage = await getPiServerErrorMessage(context, err)
+    context.log.warn(`Bad request made to PI Server for (${piServerErrorMessage}) ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+    const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
+    // A bad request was made to the PI server. Store the error as it might be needed to create a
+    // timeseries staging exception once all data retrieval attempts from the PI server have been made.
+    buildPiServerUrlCall.error = err
+  } else {
+    throw err
   }
 }
 
@@ -62,8 +94,12 @@ async function processImportError (context, taskRunData, err) {
   let errorData
   if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
     context.log.error(`Failed to connect to ${process.env['FEWS_PI_API']}`)
+    // If connection to the PI Server fails propagate the failure so that standard Azure message replay
+    // functionality is used.
     throw err
   } else {
+    // For other errors create a timeseries staging exception to indicate that
+    // manual intervention is required before replay of the task run is attempted.
     if (err instanceof TimeseriesStagingError) {
       errorData = err.context
     } else {
@@ -72,6 +108,7 @@ async function processImportError (context, taskRunData, err) {
       const piServerErrorMessage = await getPiServerErrorMessage(context, err)
       const errorDescription = `An error occured while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
       errorData = {
+        transaction: taskRunData.transaction,
         sourceId: taskRunData.sourceId,
         sourceType: taskRunData.sourceType,
         csvError: csvError,
@@ -82,17 +119,20 @@ async function processImportError (context, taskRunData, err) {
         description: errorDescription
       }
     }
-    await executePreparedStatementInTransaction(createTimeseriesStagingException, context, taskRunData.transaction, errorData)
+    await createTimeseriesStagingException(context, errorData)
   }
 }
 
 async function importFromFews (context, taskRunData) {
   try {
-    if (!taskRunData.forecast || await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData)) {
-      await taskRunData['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
-      if (taskRunData.fewsPiUrl) {
-        await retrieveFewsData(context, taskRunData)
+    if (taskRunData.forecast && await isLatestTaskRunForWorkflow(context, taskRunData)) {
+      await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
+    }
+    if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+      await retrieveFewsData(context, taskRunData)
+      if (taskRunData.fewsData) {
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
+        await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
       }
     } else {
       context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
@@ -104,9 +144,34 @@ async function importFromFews (context, taskRunData) {
 }
 
 async function retrieveFewsData (context, taskRunData) {
+  // Iterate through the available functions for retrieving data from the PI server until one
+  // succeeds or the set of available functions is exhausted.
+  for (const index in taskRunData.buildPiServerUrlCalls) {
+    taskRunData.piServerUrlCallsIndex = index
+    const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[index]
+    try {
+      await buildPiServerUrlCall['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
+      if (buildPiServerUrlCall.fewsPiUrl) {
+        await retrieveAndCompressFewsData(context, taskRunData)
+        taskRunData.fewsParameters = buildPiServerUrlCall.fewsParameters
+        taskRunData.fewsPiUrl = buildPiServerUrlCall.fewsPiUrl
+        // Fews data has been retrieved and compressed so no further calls to the PI Server are needed.
+        break
+      } else {
+        // The URL could not be built. Do not make any more calls to the PI Server.
+        break
+      }
+    } catch (err) {
+      await processDataRetrievalError(context, taskRunData, err)
+    }
+  }
+  await processFewsDataRetrievalResults(context, taskRunData)
+}
+
+async function retrieveAndCompressFewsData (context, taskRunData) {
   const axiosConfig = {
     method: 'get',
-    url: taskRunData.fewsPiUrl,
+    url: taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex].fewsPiUrl,
     responseType: 'stream',
     headers: {
       Accept: 'application/json'
@@ -117,6 +182,17 @@ async function retrieveFewsData (context, taskRunData) {
   context.log(`Retrieved data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   taskRunData.fewsData = await gzip(fewsResponse.data)
   context.log(`Compressed data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+}
+
+async function processFewsDataRetrievalResults (context, taskRunData) {
+  // Deactivate previous timeseries staging exceptions for the plot/filter of the task run.
+  // If the current attempt to process the plot/filter succeeds with no errors all is well.
+  // If the current attempt to process the plot/filter does not succeed a new timeseries staging exception will be created.
+  await deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter(context, taskRunData)
+  if (taskRunData.buildPiServerUrlCalls[0].error) {
+    // If the original call to the PI server caused an error create a timeseries staging exception.
+    await processImportError(context, taskRunData, taskRunData.buildPiServerUrlCalls[0].error)
+  }
 }
 
 async function createStagedTimeseriesMessageIfNeeded (context, timeseriesId) {
