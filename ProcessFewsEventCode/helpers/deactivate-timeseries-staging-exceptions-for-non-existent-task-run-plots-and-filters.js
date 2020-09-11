@@ -51,10 +51,10 @@ const deactivationQuery = `
        tse.source_type = dtse.source_type
 `
 module.exports = async function (context, taskRunData) {
-  await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
+  await executePreparedStatementInTransaction(deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
 }
 
-async function deleteTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters (context, preparedStatement, taskRunData) {
+async function deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.prepare(deactivationQuery)

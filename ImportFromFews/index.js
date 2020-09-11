@@ -185,7 +185,7 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
 }
 
 async function processFewsDataRetrievalResults (context, taskRunData) {
-  // Delete previous timeseries staging exceptions for the plot/filter of the task run.
+  // Deactivate previous timeseries staging exceptions for the plot/filter of the task run.
   // If the current attempt to process the plot/filter succeeds with no errors all is well.
   // If the current attempt to process the plot/filter does not succeed a new timeseries staging exception will be created.
   await deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter(context, taskRunData)
