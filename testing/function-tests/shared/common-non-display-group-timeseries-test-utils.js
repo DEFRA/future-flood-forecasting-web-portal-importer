@@ -1,4 +1,3 @@
-// const moment = require('moment')
 const sql = require('mssql')
 const CommonTimeseriesTestUtils = require('./common-timeseries-test-utils')
 
