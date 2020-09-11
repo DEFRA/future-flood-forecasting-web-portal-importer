@@ -35,7 +35,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(context.bindings.importFromFews.length).toBe(expectedNumberOfOutgoingMessages)
   }
 
-  const checkExpectedTimeseriesStagingExceptionsForTaskRun = async function (taskRunId, expectedData) {
+  const checkExpectedActiveTimeseriesStagingExceptionsForTaskRun = async function (taskRunId, expectedData) {
     const expectedTimeseriesStagingExceptionsForTaskRun = expectedData.remainingTimeseriesStagingExceptions || []
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.NVarChar, taskRunId)
@@ -44,7 +44,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         tse.source_id,
         tse.source_type
       from
-        fff_staging.timeseries_staging_exception tse,
+        fff_staging.v_active_timeseries_staging_exception tse,
         fff_staging.timeseries_header th
       where
         th.task_run_id = @taskRunId and
@@ -119,8 +119,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         sourceFunction: 'P',
         taskRunId: expectedTaskRunId
       }
-      await commonTimeseriesTestUtils.checkNoStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
-      await checkExpectedTimeseriesStagingExceptionsForTaskRun(expectedTaskRunId, expectedData)
+      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+      await checkExpectedActiveTimeseriesStagingExceptionsForTaskRun(expectedTaskRunId, expectedData)
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')
     }
@@ -144,7 +144,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       description,
       source_function
     from
-      fff_staging.staging_exception
+      fff_staging.v_active_staging_exception
     order by
       exception_time desc
     `)

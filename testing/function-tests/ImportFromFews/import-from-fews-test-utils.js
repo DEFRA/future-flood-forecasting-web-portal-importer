@@ -49,7 +49,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     expect(result.recordset[0].number).toBe(expectedNumberOfRecords)
   }
 
-  const checkTimeseriesStagingExceptions = async function (config) {
+  const checkActiveTimeseriesStagingExceptions = async function (config) {
     const request = new sql.Request(pool)
     const result = await request.query(`
     select
@@ -60,7 +60,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       payload,
       description
     from
-      fff_staging.timeseries_staging_exception
+      fff_staging.v_active_timeseries_staging_exception
     order by
       exception_time desc
   `)
@@ -83,7 +83,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
   const processMessagesAndCheckTimeseriesStagingExceptionIsCreated = async function (config) {
     await processMessages(config.messageKey, config.mockResponses)
-    await checkTimeseriesStagingExceptions(config)
+    await checkActiveTimeseriesStagingExceptions(config)
   }
 
   this.processMessagesAndCheckImportedData = async function (config) {
@@ -97,8 +97,8 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
         sourceFunction: 'I',
         taskRunId: taskRunId
       }
-      await commonTimeseriesTestUtils.checkNoStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
-      await commonTimeseriesTestUtils.checkNumberOfTimeseriesStagingExceptionsForTaskRun(config)
+      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+      await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun(config)
     }
   }
 
@@ -109,7 +109,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     const config = {
       expectedNumberOfTimeseriesStagingExceptions: expectedNumberOfTimeseriesStagingExceptions || 0
     }
-    await commonTimeseriesTestUtils.checkNumberOfTimeseriesStagingExceptionsForTaskRun(config)
+    await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun(config)
   }
 
   this.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, expectedErrorDescription) {
@@ -123,7 +123,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       description,
       source_function
     from
-      fff_staging.staging_exception
+      fff_staging.v_active_staging_exception
     order by
       exception_time desc
     `)

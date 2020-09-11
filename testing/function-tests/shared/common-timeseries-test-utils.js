@@ -94,7 +94,7 @@ module.exports = function (pool) {
     // Closing the DB connection allows Jest to exit successfully.
     await pool.close()
   }
-  this.checkNoStagingExceptionsExistForSourceFunctionOfTaskRun = async function (config) {
+  this.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun = async function (config) {
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.NVarChar, config.taskRunId)
     await request.input('sourceFunction', sql.NVarChar, config.sourceFunction)
@@ -102,21 +102,21 @@ module.exports = function (pool) {
       select
         count(id) as number
       from
-        fff_staging.staging_exception
+        fff_staging.v_active_staging_exception
       where
         task_run_id = @taskRunId and
         source_function = @sourceFunction
     `)
     expect(result.recordset[0].number).toBe(0)
   }
-  this.checkNumberOfTimeseriesStagingExceptionsForTaskRun = async function (config) {
+  this.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun = async function (config) {
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.NVarChar, config.taskRunId)
     const result = await request.query(`
       select
         count(tse.id) as number
       from
-        fff_staging.timeseries_staging_exception tse,
+        fff_staging.v_active_timeseries_staging_exception tse,
         fff_staging.timeseries_header th
       where
         th.id = tse.timeseries_header_id and

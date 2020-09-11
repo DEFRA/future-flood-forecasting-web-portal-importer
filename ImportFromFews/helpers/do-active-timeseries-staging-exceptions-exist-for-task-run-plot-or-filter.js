@@ -2,10 +2,10 @@ const { executePreparedStatementInTransaction } = require('../../Shared/transact
 const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
-  return Promise.resolve(await executePreparedStatementInTransaction(doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData))
+  return Promise.resolve(await executePreparedStatementInTransaction(doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData))
 }
 
-async function doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter (context, preparedStatement, taskRunData) {
+async function doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('sourceId', sql.NVarChar)
   await preparedStatement.input('sourceType', sql.NChar)
@@ -15,7 +15,7 @@ async function doTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter (context
       tse.id
     from
       fff_staging.timeseries_header th,
-      fff_staging.timeseries_staging_exception tse
+      fff_staging.v_active_timeseries_staging_exception tse
     where
       th.task_run_id = @taskRunId and
       th.id = tse.timeseries_header_id and

@@ -2,17 +2,19 @@ const { executePreparedStatementInTransaction } = require('../../Shared/transact
 const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
-  await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionsForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
+  await executePreparedStatementInTransaction(deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter, context, taskRunData.transaction, taskRunData)
 }
 
-async function deleteTimeseriesStagingExceptionsForTaskRunPlotOrFilter (context, preparedStatement, taskRunData) {
+async function deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('sourceId', sql.NVarChar)
   await preparedStatement.input('sourceType', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    delete
+    update
       tse
+    set
+      tse.active = 0
     from
       fff_staging.timeseries_staging_exception tse
       inner join fff_staging.timeseries_header th

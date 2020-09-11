@@ -3,17 +3,19 @@ const { executePreparedStatementInTransaction } = require('../transaction-helper
 
 module.exports = async function (context, stagingExceptionData) {
   const transaction = stagingExceptionData.transaction
-  await executePreparedStatementInTransaction(deleteStagingException, context, transaction, stagingExceptionData)
+  await executePreparedStatementInTransaction(deactivateStagingException, context, transaction, stagingExceptionData)
 }
 
-async function deleteStagingException (context, preparedStatement, stagingExceptionData) {
+async function deactivateStagingException (context, preparedStatement, stagingExceptionData) {
   await preparedStatement.input('sourceFunction', sql.NVarChar)
   await preparedStatement.input('taskRunId', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    delete from
+    update
       fff_staging.staging_exception
-    where 
+    set
+      active = 0
+    where
       task_run_id = @taskRunId and
       coalesce(
         source_function,

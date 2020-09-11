@@ -5,9 +5,9 @@ const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/b
 const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
 const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
 const createTimeseriesStagingException = require('./helpers/create-timeseries-staging-exception')
-const deleteTimeseriesStagingExceptionsForTaskRunPlotOrFilter = require('./helpers/delete-timeseries-staging-exceptions-for-task-run-plot-or-filter')
-const deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./helpers/delete-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/delete-staging-exceptions-by-source-function-and-task-run-id.js')
+const deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter = require('./helpers/deactivate-timeseries-staging-exceptions-for-task-run-plot-or-filter')
+const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./helpers/deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
+const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id.js')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-server-error-message')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
@@ -126,13 +126,13 @@ async function processImportError (context, taskRunData, err) {
 async function importFromFews (context, taskRunData) {
   try {
     if (taskRunData.forecast && await isLatestTaskRunForWorkflow(context, taskRunData)) {
-      await deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
+      await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
     }
     if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
       await retrieveFewsData(context, taskRunData)
       if (taskRunData.fewsData) {
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
-        await deleteStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
+        await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
       }
     } else {
       context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
@@ -188,7 +188,7 @@ async function processFewsDataRetrievalResults (context, taskRunData) {
   // Delete previous timeseries staging exceptions for the plot/filter of the task run.
   // If the current attempt to process the plot/filter succeeds with no errors all is well.
   // If the current attempt to process the plot/filter does not succeed a new timeseries staging exception will be created.
-  await deleteTimeseriesStagingExceptionsForTaskRunPlotOrFilter(context, taskRunData)
+  await deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter(context, taskRunData)
   if (taskRunData.buildPiServerUrlCalls[0].error) {
     // If the original call to the PI server caused an error create a timeseries staging exception.
     await processImportError(context, taskRunData, taskRunData.buildPiServerUrlCalls[0].error)

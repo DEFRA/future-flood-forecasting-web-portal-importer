@@ -1,6 +1,6 @@
 const moment = require('moment')
 const sql = require('mssql')
-const deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./delete-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
+const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
@@ -11,11 +11,11 @@ const TimeseriesStagingError = require('./timeseries-staging-error')
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
   if (isForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    await deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
+    await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
   if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    await deleteObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
+    await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
     if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
       if (!taskRunData.filterData.approvalRequired) {
         context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)

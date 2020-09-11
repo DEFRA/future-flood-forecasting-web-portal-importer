@@ -1,5 +1,5 @@
 const sql = require('mssql')
-const deleteStagingExceptionBySourceFunctionAndTaskRunId = require('./delete-staging-exceptions-by-source-function-and-task-run-id')
+const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('./deactivate-staging-exceptions-by-source-function-and-task-run-id')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
 const StagingError = require('./staging-error')
 
@@ -17,7 +17,7 @@ module.exports = async function (context, stagingExceptionData) {
 async function createOrReplaceStagingExceptionInTransaction (transaction, context, stagingExceptionData) {
   const newStagingExceptionData = Object.assign({}, stagingExceptionData)
   newStagingExceptionData.transaction = transaction
-  await deleteStagingExceptionBySourceFunctionAndTaskRunId(context, newStagingExceptionData)
+  await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, newStagingExceptionData)
   await executePreparedStatementInTransaction(createStagingException, context, transaction, newStagingExceptionData)
 }
 
