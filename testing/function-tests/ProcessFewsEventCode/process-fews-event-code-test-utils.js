@@ -49,6 +49,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       where
         th.task_run_id = @taskRunId and
         th.id = tse.timeseries_header_id
+      order by
+        tse.source_id
     `)
     expect(result.recordset.length).toBe(expectedTimeseriesStagingExceptionsForTaskRun.length)
     for (const index in expectedTimeseriesStagingExceptionsForTaskRun) {
