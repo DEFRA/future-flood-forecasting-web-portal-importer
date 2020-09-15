@@ -125,9 +125,6 @@ async function processImportError (context, taskRunData, err) {
 
 async function importFromFews (context, taskRunData) {
   try {
-    if (taskRunData.forecast && await isLatestTaskRunForWorkflow(context, taskRunData)) {
-      await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
-    }
     if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
       await retrieveFewsData(context, taskRunData)
       if (taskRunData.fewsData) {
@@ -137,6 +134,9 @@ async function importFromFews (context, taskRunData) {
     } else {
       context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
         ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
+    }
+    if (taskRunData.forecast && await isLatestTaskRunForWorkflow(context, taskRunData)) {
+      await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
     }
   } catch (err) {
     await processImportError(context, taskRunData, err)

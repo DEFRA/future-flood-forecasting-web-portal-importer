@@ -27,7 +27,8 @@ async function deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFil
       tse.source_type = @sourceType and
       th.workflow_id = @workflowId and
       th.task_completion_time < @taskRunCompletionTime and
-      th.task_run_id <> @taskRunId
+      th.task_run_id <> @taskRunId and
+      tse.active = 1
   `)
 
   const parameters = {

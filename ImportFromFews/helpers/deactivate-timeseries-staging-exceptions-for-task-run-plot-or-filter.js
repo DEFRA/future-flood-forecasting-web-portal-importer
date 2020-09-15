@@ -23,7 +23,8 @@ async function deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter (cont
       th.id = tse.timeseries_header_id and
       th.task_run_id = @taskRunId and
       tse.source_id = @sourceId and
-      tse.source_type = @sourceType
+      tse.source_type = @sourceType and
+      tse.active = 1
   `)
 
   const parameters = {
