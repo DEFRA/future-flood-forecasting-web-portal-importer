@@ -47,6 +47,8 @@ const deactivationQuery = `
     ) dtse -- Timeseries staging exceptions to be deactivated 
     on tse.source_id = dtse.source_id and
        tse.source_type = dtse.source_type
+  where
+    tse.active = 1
 `
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
