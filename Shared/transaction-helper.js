@@ -76,14 +76,14 @@ module.exports = {
       // through the arguments from the caller.
       return await fn(context, preparedStatement, ...args)
     } catch (err) {
-      context.log.error(`PreparedStatement Transaction-helper error: '${err.message}'.`)
+      context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`)
       throw err
     } finally {
       try {
         if (preparedStatement && preparedStatement.prepared) {
           await preparedStatement.unprepare()
         }
-      } catch (err) { context.log.error(`PreparedStatement Transaction-helper error: '${err.message}'.`) }
+      } catch (err) { context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`) }
     }
   }
 }
