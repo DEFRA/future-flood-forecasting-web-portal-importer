@@ -9,16 +9,14 @@ async function getUnprocessedTaskRunPlotsAndFilters (context, preparedStatement,
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
-  // Hold a table lock on the workflow view held for the duration of the transaction to guard
-  // against a workflow view refresh during processing.
+  // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
+  // guard against a workflow table refresh during processing.
   await preparedStatement.prepare(`
     select 
       source_id,
       source_type
     from
       fff_staging.v_workflow
-    with
-      (tablock holdlock)
     where
       workflow_id = @workflowId
     except

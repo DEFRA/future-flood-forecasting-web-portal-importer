@@ -150,8 +150,6 @@ async function buildCsvTypeForWorkflowPlot (context, preparedStatement, taskRunD
       csv_type
     from
       fff_staging.v_workflow
-    with
-      (tablock holdlock)
     where
       workflow_id = @workflowId and
       source_id = @plotId and
