@@ -1,16 +1,14 @@
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
-// Hold a table lock on the workflow view held for the duration of the transaction to guard
-// against a workflow view refresh during processing.
+// Note that table locks are held on each table used by the workflow view for the duration of the transaction to
+// guard against a workflow table refresh during processing.
 const query = `
   select 
     source_id,
     source_type
   from
     fff_staging.v_workflow
-  with
-    (tablock holdlock)  
   where
     workflow_id = @workflowId
   intersect

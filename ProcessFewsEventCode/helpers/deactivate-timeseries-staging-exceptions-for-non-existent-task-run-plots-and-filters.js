@@ -13,8 +13,8 @@ const activeTimeseriesStagingExceptionsForTaskRunQuery = `
     th.task_run_id = @taskRunId
 `
 
-// Hold a table lock on the workflow view held for the duration of the transaction to guard
-// against a workflow view refresh during processing.
+// Note that table locks are held on each table used by the workflow view for the duration of the transaction to
+// guard against a workflow table refresh during processing.
 const deactivationQuery = `
   update
     tse
@@ -39,8 +39,6 @@ const deactivationQuery = `
           source_type
         from
           fff_staging.v_workflow
-        with
-          (tablock holdlock)
         where
           workflow_id = @workflowId            
         intersect
