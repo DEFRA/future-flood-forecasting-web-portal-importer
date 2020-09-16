@@ -64,5 +64,8 @@ async function deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAn
     workflowId: taskRunData.workflowId
   }
 
-  await preparedStatement.execute(parameters)
+  // Temporary patch to disable deactivation on Azure while lock timeouts caused by parallel processing are resolved.
+  if (process.env['SQLDB_CONNECTION_STRING'].includes('localhost')) {
+    await preparedStatement.execute(parameters)
+  }
 }
