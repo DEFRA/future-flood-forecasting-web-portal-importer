@@ -183,9 +183,9 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    select
+    select top(1)
       task_run_id as previous_staged_task_run_id,
-      max(task_completion_time) as previous_staged_task_completion_time
+      task_completion_time as previous_staged_task_completion_time
     from
       fff_staging.timeseries_header
     where
@@ -198,8 +198,8 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
         where
           task_run_id = @taskRunId
       )
-      group by 
-        task_run_id
+    order by 
+      task_completion_time desc
   `)
 
   const parameters = {
