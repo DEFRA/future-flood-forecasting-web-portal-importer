@@ -33,8 +33,5 @@ async function deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter (cont
     sourceType: taskRunData.message.plotId ? 'P' : 'F'
   }
 
-  // Temporary patch to disable deactivation on Azure while lock timeouts caused by parallel processing are resolved.
-  if (process.env['SQLDB_CONNECTION_STRING'].includes('localhost')) {
-    await preparedStatement.execute(parameters)
-  }
+  await preparedStatement.execute(parameters)
 }
