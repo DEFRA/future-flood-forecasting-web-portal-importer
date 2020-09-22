@@ -1,0 +1,3 @@
+Centre,criticalConditionID,outputLocationID,TargetAreaCode,inputLocationID,inputParameterID,lowerBoundInclusive,lowerBound,upperBoundInclusive,upperBound,Priority
+CENTRE1CENTRE1CENTRE1CENTRE1CENTRE1CENTRE1CENTRE1CENTRE1CENTRE1CEN,dummy,dummy,dummy,dummy,dummy,0,0.1,1,0.2,9
+CENTRE1,dummy,dummy,dummy,dummy,dummy,0,0.1,1,0.2,5

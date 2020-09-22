@@ -36,6 +36,7 @@
 | NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                           |
 | IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                                    |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                               |
+| MVT_URL                                   | URL used to provide the multivariate threshold information                                                                                   |
 
 ### Request Timeout Considerations
 
@@ -57,6 +58,7 @@ default of 15 seconds. Request timeout tuning is achieved through the mssql conn
 | AZURE_SERVICE_BUS_COASTAL_TRITON_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-triton-forecast-location-topic   |
 | AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-mvt-forecast-location-topic         |
 | AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                                 |
+| AZURE_SERVICE_BUS_MVT_SUBSCRIPTION_NAME | Subscription name associated with fews-mvt-topic                                                             |
 
 ## Redundant Legacy Runtime Function App Settings/Environment Variables
 
