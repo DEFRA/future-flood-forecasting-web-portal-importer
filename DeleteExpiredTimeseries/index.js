@@ -53,6 +53,7 @@ module.exports = async function (context, myTimer) {
 
     context.log.info(`Data delete starting.`)
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteTimeseriesExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
@@ -68,9 +69,11 @@ async function createTempTable (transaction, context) {
   await new sql.Request(transaction).batch(`
       create table #deletion_job_temp
       (
-        reporting_id uniqueidentifier not null,
-        timeseries_id uniqueidentifier not null,
-        timeseries_header_id uniqueidentifier not null
+        reporting_id uniqueidentifier,
+        timeseries_id uniqueidentifier,
+        timeseries_header_id uniqueidentifier not null,
+        exceptions_id uniqueidentifier,
+        import_time datetimeoffset,
       )
       CREATE CLUSTERED INDEX ix_deletion_job_temp_reporting_id
         ON #deletion_job_temp (reporting_id)
@@ -78,6 +81,8 @@ async function createTempTable (transaction, context) {
         ON #deletion_job_temp (timeseries_id)
       CREATE INDEX ix_deletion_job_temp_timeseries_header_id
         ON #deletion_job_temp (timeseries_header_id)
+      CREATE INDEX ix_deletion_job_temp_exceptions_id
+        ON #deletion_job_temp (exceptions_id)
     `)
 }
 
@@ -88,6 +93,15 @@ async function deleteReportingRows (context, preparedStatement) {
       on te.reporting_id = r.id`
   )
 
+  await preparedStatement.execute()
+}
+
+async function deleteTimeseriesExceptionRows (context, preparedStatement) {
+  await preparedStatement.prepare(
+    `delete e from fff_staging.timeseries_staging_exception e
+        inner join #deletion_job_temp te
+        on te.exceptions_id = e.id`
+  )
   await preparedStatement.execute()
 }
 
