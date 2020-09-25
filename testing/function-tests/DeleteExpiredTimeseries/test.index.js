@@ -14,6 +14,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
   let softLimit
 
   describe('The delete expired staging timeseries data function:', () => {
+    // there are 3 possible sceanrios of data to be deleted:
+    // 1) Data row exists in header-timeseries-reporting (and possible exceptions for partial loading)
+    // 2) Data row exists in header and exceptions for failed loads
+    // 3) Data row exists in header alone if data not loaded for header (in no data is returned or data out of date)
     beforeAll(async () => {
       await pool.connect()
       await request.batch(`set lock_timeout 5000;`)
@@ -205,6 +209,50 @@ module.exports = describe('Timeseries data deletion tests', () => {
         await checkDefaultSelectSucceedsWithDeleteInProgress(testDescription)
       }
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
+    it('should persist a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+      const testDescription = 'should persist a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit'
+
+      const expectedNumberofRows = 1
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertTimeseriesExceptionRecordIntoTables(importDate, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should NOT persist a record only existing in timeseries_header and timeseries_staging_exception that is older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+      const testDescription = 'should NOT persist a record only existing in timeseries_header and timeseries_staging_exception that is older than the hard limit'
+
+      const expectedNumberofRows = 0
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertTimeseriesExceptionRecordIntoTables(importDate, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should persist a record only existing in timeseries_header that is younger than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+      const testDescription = 'should persist a record only existing in timeseries_header that is younger than the hard limit'
+
+      const expectedNumberofRows = 1
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertHeaderRecordIntoTables(importDate, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should NOT persist a record only existing in timeseries_header that is older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+      const testDescription = 'should NOT persist a record only existing in timeseries_header that is older than the hard limit'
+
+      const expectedNumberofRows = 0
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertHeaderRecordIntoTables(importDate, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
   })
 
   async function createImportDate (importDateStatus) {
@@ -227,11 +275,12 @@ module.exports = describe('Timeseries data deletion tests', () => {
     await deleteFunction(context, timer) // calling actual function here
   }
 
+  // The importDate is created using the same limits (ENV VARs) that the function uses to calculate old data,
+  // the function will look for anything older than the limit supplied (compared to current time).
+  // As this insert happens first (current time is older in comparison to when the delete function runs),
+  // the inserted data in tests will always be older. Date storage ISO 8601 allows this split seconds difference to be picked up.
+
   async function insertRecordIntoTables (importDate, statusCode, testDescription) {
-    // The importDate is created using the same limits (ENV VARs) that the function uses to calculate old data,
-    // the function will look for anything older than the limit supplied (compared to current time).
-    // As this insert happens first (current time is older in comparison to when the delete function runs),
-    // the inserted data in tests will always be older. Date storage ISO 8601 allows this split seconds difference to be picked up.
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
@@ -252,18 +301,44 @@ module.exports = describe('Timeseries data deletion tests', () => {
     await request.query(query)
   }
 
+  async function insertTimeseriesExceptionRecordIntoTables (importDate, statusCode, testDescription) {
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+        values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
+      insert into fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+        values (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')`
+    query.replace(/"/g, "'")
+
+    await request.query(query)
+  }
+
+  async function insertHeaderRecordIntoTables (importDate, statusCode, testDescription) {
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+        values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
+    query.replace(/"/g, "'")
+
+    await request.query(query)
+  }
+
   async function checkDeletionStatus (expectedLength) {
     const result = await request.query(`
-      select
+    select
         r.description,
         h.import_time
-      from
-        fff_staging.timeseries_header h
-        inner join fff_staging.v_active_timeseries_staging_exception tse on tse.timeseries_header_id = h.id
-        inner join fff_staging.timeseries t on t.timeseries_header_id = h.id
-        inner join fff_reporting.timeseries_job r on r.timeseries_id = t.id
-      order by
-        h.import_time desc
+    from
+      fff_staging.timeseries_header h
+      left join fff_staging.timeseries t on t.timeseries_header_id = h.id
+      left join fff_reporting.timeseries_job r on r.timeseries_id = t.id
+      left join fff_staging.timeseries_staging_exception e on e.timeseries_header_id = h.id
+    order by
+      h.import_time desc
     `)
 
     expect(result.recordset.length).toBe(expectedLength)
