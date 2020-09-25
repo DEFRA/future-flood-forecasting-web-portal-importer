@@ -53,7 +53,6 @@ module.exports = async function (context, myTimer) {
 
     context.log.info(`Data delete starting.`)
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
-    await executePreparedStatementInTransaction(deleteTimeseriesExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
@@ -96,7 +95,7 @@ async function deleteReportingRows (context, preparedStatement) {
   await preparedStatement.execute()
 }
 
-async function deleteTimeseriesExceptionRows (context, preparedStatement) {
+async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete e from fff_staging.timeseries_staging_exception e
         inner join #deletion_job_temp te
