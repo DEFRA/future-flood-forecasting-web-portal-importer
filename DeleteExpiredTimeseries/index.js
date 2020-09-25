@@ -54,7 +54,6 @@ module.exports = async function (context, myTimer) {
     context.log.info(`Data delete starting.`)
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
-    await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
 
     context.log('JavaScript timer trigger function ran!', timeStamp)
