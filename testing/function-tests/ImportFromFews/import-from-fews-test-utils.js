@@ -60,7 +60,11 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       payload,
       description
     from
-      fff_staging.v_active_timeseries_staging_exception
+      fff_staging.timeseries_staging_exception
+    where
+      (
+        fff_staging.is_timeseries_staging_exception_active(id)
+      ) = 1
     order by
       exception_time desc
   `)
@@ -97,7 +101,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
         sourceFunction: 'I',
         taskRunId: taskRunId
       }
-      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+      await commonTimeseriesTestUtils.checkNumberOfActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
       await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun(config)
     }
   }

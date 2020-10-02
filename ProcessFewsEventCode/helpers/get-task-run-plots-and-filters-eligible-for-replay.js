@@ -17,7 +17,7 @@ const query = `
     tse.source_type
   from
     fff_staging.timeseries_header th,
-    fff_staging.v_active_timeseries_staging_exception tse
+    fff_staging.timeseries_staging_exception tse
   where
     th.id = tse.timeseries_header_id and
     th.task_run_id = @taskRunId and
@@ -33,7 +33,10 @@ const query = `
             tse.csv_type = wr.csv_type
         )    
       )    
-    )    
+    ) and
+    (
+      fff_staging.is_timeseries_staging_exception_active(tse.id)
+    ) = 1
 `
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersEligibleForReplay, context, taskRunData.transaction, taskRunData)

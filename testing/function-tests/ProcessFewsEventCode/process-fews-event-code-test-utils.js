@@ -44,11 +44,14 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         tse.source_id,
         tse.source_type
       from
-        fff_staging.v_active_timeseries_staging_exception tse,
+        fff_staging.timeseries_staging_exception tse,
         fff_staging.timeseries_header th
       where
         th.task_run_id = @taskRunId and
-        th.id = tse.timeseries_header_id
+        th.id = tse.timeseries_header_id and
+        (
+          fff_staging.is_timeseries_staging_exception_active(tse.id)
+        ) = 1
       order by
         tse.source_id
     `)
@@ -119,7 +122,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         sourceFunction: 'P',
         taskRunId: expectedTaskRunId
       }
-      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+      await commonTimeseriesTestUtils.checkNumberOfActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
       await checkExpectedActiveTimeseriesStagingExceptionsForTaskRun(expectedTaskRunId, expectedData)
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')

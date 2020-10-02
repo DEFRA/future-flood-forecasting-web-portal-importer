@@ -108,11 +108,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderAndTimeseries(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
     })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration. The timeseries staging exception should be deleted', async () => {
+    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration. The timeseries staging exception should be deactivated', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000000) + 5000)
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })

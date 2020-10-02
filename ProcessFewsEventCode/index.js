@@ -1,8 +1,6 @@
 const moment = require('moment')
-const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
+const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
-const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id.js')
-const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/deactivate-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
 const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
 const { doInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
@@ -74,9 +72,6 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
       await createTimeseriesHeader(context, taskRunData)
     }
 
-    await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
-    await deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters(context, taskRunData)
-
     // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
     // being placed on a dead letter queue.
     await checkIfPiServerIsOnline(context)
@@ -86,7 +81,7 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
   } else {
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
-    await createOrReplaceStagingException(context, taskRunData)
+    await createStagingException(context, taskRunData)
   }
 }
 
