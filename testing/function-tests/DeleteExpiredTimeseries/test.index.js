@@ -1,5 +1,4 @@
 const deleteFunction = require('../../../DeleteExpiredTimeseries/index')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const timer = require('../mocks/defaultTimer')
@@ -18,10 +17,6 @@ module.exports = describe('Timeseries data deletion tests', () => {
     beforeAll(async () => {
       await pool.connect()
       await request.batch(`set lock_timeout 5000;`)
-      // Populate the FFF_STAGING.WORKFLOW_REFRESH table to ensure the timeseries staging exception
-      // used in the tests is considered active.
-      const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-      await commonTimeseriesTestUtils.beforeAll()
     })
 
     // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
@@ -247,7 +242,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
         values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
       insert into fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
-        values (@id3, 'error_plot', 'P', 1, 'U', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')
+        values (@id3, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')
       insert into fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
         values (@id2, compress('data'),'parameters', @id1)
       insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
