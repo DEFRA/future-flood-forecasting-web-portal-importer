@@ -96,7 +96,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const messageKey = 'forecastApprovedManually'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction', async () => {
+    it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction. The staging exception should be deactivated', async () => {
       const taskRunWithStagingExceptionMessageKey = 'taskRunWithStagingException'
       const unknownWorkflowMessageKey = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflowMessageKey].input.description.split(/\s+/)[1]
@@ -112,7 +112,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000000) + 5000)
+    })
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
     })

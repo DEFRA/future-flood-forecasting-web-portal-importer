@@ -10,7 +10,6 @@ const sql = require('mssql')
 module.exports = describe('Tests for import coastal timeseries display groups', () => {
   let context
   let importFromFewsTestUtils
-  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
@@ -85,8 +84,11 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         mockResponses: [mockResponse]
       }
 
-      // Add a timeseries staging exception to an obsolete forecast.
+      // Add a staging exception and timeseries staging exception to an obsolete forecast to ensure they are deactivated.
+      const exceptionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(15, 'seconds')
       const request = new sql.Request(pool)
+      await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
+
       await request.batch(`
         declare @id1 uniqueidentifier;
         select
@@ -95,6 +97,11 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
           fff_staging.timeseries_header
         where
           task_run_id = 'ukeafffsmc00:000000003';
+
+        insert into
+          fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+        values
+          ('taskRunId invalid message', 'Error', 'ukeafffsmc00:000000003', 'I', 'Test_Coastal_Workflow5', @exceptionTime);
 
         insert into
           fff_staging.timeseries_staging_exception
@@ -386,10 +393,10 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     const request = new sql.Request(pool)
     const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
     const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
-    await request.input('taskRunStartTime', sql.DateTime2, importFromFewsMessages.commonMessageData.startTime)
-    await request.input('taskRunCompletionTime', sql.DateTime2, importFromFewsMessages.commonMessageData.completionTime)
-    await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.format(dateFormat))
-    await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.format(dateFormat))
+    await request.input('taskRunStartTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.startTime).toISOString())
+    await request.input('taskRunCompletionTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.completionTime).toISOString())
+    await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.toISOString())
+    await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.toISOString())
 
     await request.batch(`
       insert into

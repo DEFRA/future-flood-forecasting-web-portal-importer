@@ -15,15 +15,12 @@ async function doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter (c
       tse.id
     from
       fff_staging.timeseries_header th,
-      fff_staging.timeseries_staging_exception tse
+      fff_staging.v_active_timeseries_staging_exception tse
     where
       th.task_run_id = @taskRunId and
       th.id = tse.timeseries_header_id and
       tse.source_id = @sourceId and
-      tse.source_type = @sourceType and
-      (
-        fff_staging.is_timeseries_staging_exception_active(tse.id)
-      ) = 1
+      tse.source_type = @sourceType
     `)
 
   const parameters = {

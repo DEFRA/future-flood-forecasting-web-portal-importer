@@ -8,8 +8,6 @@ const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = describe('Tests for import fluvial timeseries display groups', () => {
-  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
-
   let context
   let importFromFewsTestUtils
 
@@ -80,6 +78,17 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         messageKey: 'singlePlotApprovedForecast',
         mockResponses: [mockResponse]
       }
+
+      // Add a staging exception to an obsolete forecast to ensure it is deactivated.
+      const exceptionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(15, 'seconds')
+      const request = new sql.Request(pool)
+      await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
+      await request.query(`
+        insert into
+          fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+        values
+          ('taskRunId invalid message', 'Error', 'ukeafffsmc00:000000003', 'I', 'Test_Fluvial_Workflow1', @exceptionTime);
+      `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast')
     })
@@ -303,10 +312,10 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     const request = new sql.Request(pool)
     const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
     const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
-    await request.input('taskRunStartTime', sql.DateTime2, importFromFewsMessages.commonMessageData.startTime)
-    await request.input('taskRunCompletionTime', sql.DateTime2, importFromFewsMessages.commonMessageData.completionTime)
-    await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.format(dateFormat))
-    await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.format(dateFormat))
+    await request.input('taskRunStartTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.startTime).toISOString())
+    await request.input('taskRunCompletionTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.completionTime).toISOString())
+    await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.toISOString())
+    await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.toISOString())
 
     await request.batch(`
       insert into

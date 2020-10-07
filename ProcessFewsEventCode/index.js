@@ -1,6 +1,9 @@
 const moment = require('moment')
 const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
+const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
+const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id')
+const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/deactivate-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
 const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
 const { doInTransaction } = require('../Shared/transaction-helper')
 const isForecast = require('./helpers/is-forecast')
@@ -71,6 +74,10 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
       await createTimeseriesHeader(context, taskRunData)
     }
+
+    await deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId(context, taskRunData)
+    await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
+    await deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters(context, taskRunData)
 
     // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
     // being placed on a dead letter queue.
