@@ -14,7 +14,7 @@ async function doesTimeseriesHeaderExistForTaskRun (context, preparedStatement, 
       from
         fff_staging.timeseries_header
       where
-        task_run_id = @taskRunId     
+        task_run_id = @taskRunId
     `)
 
   const parameters = {

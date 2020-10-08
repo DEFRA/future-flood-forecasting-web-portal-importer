@@ -19,6 +19,8 @@ async function isForecastWorkflow (context, preparedStatement, stagingExceptionD
       cdgw.workflow_id
     from
       fff_staging.coastal_display_group_workflow cdgw
+    with
+      (tablock holdlock)
     where
       cdgw.workflow_id = @workflowId
     union
@@ -26,6 +28,8 @@ async function isForecastWorkflow (context, preparedStatement, stagingExceptionD
       fdgw.workflow_id
     from
       fff_staging.fluvial_display_group_workflow fdgw
+    with
+      (tablock holdlock)
     where
       fdgw.workflow_id = @workflowId
     union
@@ -33,6 +37,8 @@ async function isForecastWorkflow (context, preparedStatement, stagingExceptionD
       ndgw.workflow_id
     from
       fff_staging.non_display_group_workflow ndgw
+    with
+      (tablock holdlock)
     where
       ndgw.workflow_id = @workflowId and
       ndgw.timeseries_type in ('external_forecasting', 'simulated_forecasting')
