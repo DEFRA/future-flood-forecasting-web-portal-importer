@@ -44,7 +44,7 @@ async function getUnprocessedTaskRunPlotsAndFilters (context, preparedStatement,
         fff_staging.v_active_timeseries_staging_exception tse
       where
         th.id = tse.timeseries_header_id and
-        th.task_run_id = @taskRunId  
+        th.task_run_id = @taskRunId
   `)
 
   const parameters = {

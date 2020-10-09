@@ -10,7 +10,6 @@ const sql = require('mssql')
 module.exports = describe('Tests for import timeseries non-display groups', () => {
   let context
   let importFromFewsTestUtils
-  const dateFormat = 'YYYY-MM-DD HH:mm:ss'
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool, importFromFewsMessages)
@@ -47,8 +46,19 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       const config = {
         messageKey: 'singleFilterNonForecast',
-        mockResponses: [mockResponse]
+        mockResponses: [mockResponse],
+        expectedNumberOfStagingExceptions: 1
       }
+      // Check that a staging exception associated with an earlier task run of the same workflow is not deactivated.
+      const exceptionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(15, 'seconds')
+      const request = new sql.Request(pool)
+      await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
+      await request.query(`
+        insert into
+          fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+        values
+          ('Invalid message', 'Error', 'ukeafffsmc00:0000000016', 'I', 'Test_Workflow1', @exceptionTime);
+      `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should not import duplicate timeseries', async () => {
@@ -139,8 +149,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
 
-      await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.format(dateFormat))
-      await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.format(dateFormat))
+      await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.toISOString())
+      await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.toISOString())
 
       await request.batch(`
         insert into
@@ -450,12 +460,12 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const request = new sql.Request(pool)
     const laterTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).add(30, 'seconds')
     const laterTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).add(30, 'seconds')
-    await request.input('taskRunStartTime', sql.DateTime2, importFromFewsMessages.commonMessageData.startTime)
-    await request.input('taskRunCompletionTime', sql.DateTime2, importFromFewsMessages.commonMessageData.completionTime)
-    await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.format(dateFormat))
-    await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.format(dateFormat))
-    await request.input('laterTaskRunStartTime', sql.DateTime2, laterTaskRunStartTime.format(dateFormat))
-    await request.input('laterTaskRunCompletionTime', sql.DateTime2, laterTaskRunCompletionTime.format(dateFormat))
+    await request.input('taskRunStartTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.startTime).toISOString())
+    await request.input('taskRunCompletionTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.completionTime).toISOString())
+    await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.toISOString())
+    await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.toISOString())
+    await request.input('laterTaskRunStartTime', sql.DateTime2, laterTaskRunStartTime.toISOString())
+    await request.input('laterTaskRunCompletionTime', sql.DateTime2, laterTaskRunCompletionTime.toISOString())
 
     await request.batch(`
       insert into
@@ -549,7 +559,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           from
             fff_staging.timeseries_header th
           where
-            task_run_id = @taskRunId   
+            task_run_id = @taskRunId
         )
       order by
         t.import_time

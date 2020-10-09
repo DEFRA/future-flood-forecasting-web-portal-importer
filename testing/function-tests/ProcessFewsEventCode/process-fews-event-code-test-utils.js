@@ -117,9 +117,11 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
 
       const stagingExceptionConfig = {
         sourceFunction: 'P',
-        taskRunId: expectedTaskRunId
+        taskRunId: expectedTaskRunId,
+        expectedNumberOfStagingExceptions: expectedData.expectedNumberOfStagingExceptions || 0
       }
-      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+
+      await commonTimeseriesTestUtils.checkNumberOfActiveStagingExceptionsForSourceFunctionOfWorkflow(stagingExceptionConfig)
       await checkExpectedActiveTimeseriesStagingExceptionsForTaskRun(expectedTaskRunId, expectedData)
     } else {
       throw new Error('Expected one TIMESERIES_HEADER record')

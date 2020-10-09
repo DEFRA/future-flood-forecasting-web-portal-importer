@@ -95,9 +95,11 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
       const stagingExceptionConfig = {
         sourceFunction: 'I',
-        taskRunId: taskRunId
+        taskRunId: taskRunId,
+        expectedNumberOfStagingExceptions: config.expectedNumberOfStagingExceptions || 0
       }
-      await commonTimeseriesTestUtils.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun(stagingExceptionConfig)
+
+      await commonTimeseriesTestUtils.checkNumberOfActiveStagingExceptionsForSourceFunctionOfWorkflow(stagingExceptionConfig)
       await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun(config)
     }
   }

@@ -103,7 +103,12 @@ async function deleteTimeseriesRows (context, preparedStatement) {
 
 async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete tse from fff_staging.timeseries_staging_exception tse
+    `delete tse from fff_staging.inactive_timeseries_staging_exception itse
+      inner join fff_staging.timeseries_staging_exception tse
+      on itse.timeseries_staging_exception_id = tse.id
+      inner join #deletion_job_temp te
+      on te.timeseries_header_id = tse.timeseries_header_id;
+     delete tse from fff_staging.timeseries_staging_exception tse
       inner join #deletion_job_temp te
       on te.timeseries_header_id = tse.timeseries_header_id`
   )

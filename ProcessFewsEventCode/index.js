@@ -1,7 +1,8 @@
 const moment = require('moment')
-const createOrReplaceStagingException = require('../Shared/timeseries-functions/create-or-replace-staging-exception')
+const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
-const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id.js')
+const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
+const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id')
 const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/deactivate-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
 const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
 const { doInTransaction } = require('../Shared/transaction-helper')
@@ -74,6 +75,7 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
       await createTimeseriesHeader(context, taskRunData)
     }
 
+    await deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId(context, taskRunData)
     await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
     await deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters(context, taskRunData)
 
@@ -86,7 +88,7 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
   } else {
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
-    await createOrReplaceStagingException(context, taskRunData)
+    await createStagingException(context, taskRunData)
   }
 }
 

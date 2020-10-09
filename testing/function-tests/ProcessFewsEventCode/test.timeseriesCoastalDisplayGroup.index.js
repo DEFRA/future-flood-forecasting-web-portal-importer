@@ -96,7 +96,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       const messageKey = 'forecastApprovedManually'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction', async () => {
+    it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction. The staging exception should be deactivated', async () => {
       const taskRunWithStagingExceptionMessageKey = 'taskRunWithStagingException'
       const unknownWorkflowMessageKey = 'unknownWorkflow'
       const workflowId = taskRunCompleteMessages[unknownWorkflowMessageKey].input.description.split(/\s+/)[1]
@@ -108,7 +108,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderAndTimeseries(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
     })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration. The timeseries staging exception should be deleted', async () => {
+    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration. The timeseries staging exception should be deactivated', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])

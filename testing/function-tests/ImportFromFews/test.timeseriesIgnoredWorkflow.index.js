@@ -4,6 +4,7 @@ const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
 const { checkImportedData } = require('./display-group-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
+const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = describe('Tests for preventing ignored workflow import', () => {
@@ -40,8 +41,8 @@ module.exports = describe('Tests for preventing ignored workflow import', () => 
 
   async function insertTimeseriesHeaders (pool) {
     const request = new sql.Request(pool)
-    await request.input('taskRunStartTime', sql.DateTime2, importFromFewsMessages.commonMessageData.startTime)
-    await request.input('taskRunCompletionTime', sql.DateTime2, importFromFewsMessages.commonMessageData.completionTime)
+    await request.input('taskRunStartTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.startTime).toISOString())
+    await request.input('taskRunCompletionTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.completionTime).toISOString())
 
     await request.batch(`
       insert into

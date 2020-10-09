@@ -11,10 +11,10 @@ async function deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter (cont
   await preparedStatement.input('sourceType', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    update
-      tse
-    set
-      tse.active = 0
+    insert into
+      fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id)
+    select
+      tse.id
     from
       fff_staging.timeseries_staging_exception tse
       inner join fff_staging.timeseries_header th
@@ -24,7 +24,15 @@ async function deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter (cont
       th.task_run_id = @taskRunId and
       tse.source_id = @sourceId and
       tse.source_type = @sourceType and
-      tse.active = 1
+      not exists
+        (
+          select
+            1
+          from
+            fff_staging.inactive_timeseries_staging_exception itse
+          where
+            itse.timeseries_staging_exception_id = tse.id
+        )
   `)
 
   const parameters = {
@@ -33,8 +41,5 @@ async function deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter (cont
     sourceType: taskRunData.message.plotId ? 'P' : 'F'
   }
 
-  // Temporary patch to disable deactivation on Azure while lock timeouts caused by parallel processing are resolved.
-  if (process.env['SQLDB_CONNECTION_STRING'].includes('localhost')) {
-    await preparedStatement.execute(parameters)
-  }
+  await preparedStatement.execute(parameters)
 }

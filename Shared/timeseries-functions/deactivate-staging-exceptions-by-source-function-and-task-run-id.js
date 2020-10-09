@@ -11,10 +11,12 @@ async function deactivateStagingException (context, preparedStatement, stagingEx
   await preparedStatement.input('taskRunId', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    update
-      fff_staging.staging_exception
-    set
-      active = 0
+    insert into
+      fff_staging.inactive_staging_exception (staging_exception_id)
+    select
+      se.id
+    from
+      fff_staging.staging_exception se
     where
       task_run_id = @taskRunId and
       coalesce(
@@ -24,7 +26,16 @@ async function deactivateStagingException (context, preparedStatement, stagingEx
           when payload like '%taskRunId%' then 'I'
           end
         )
-      ) = @sourceFunction
+      ) = @sourceFunction and
+      not exists
+        (
+          select
+            1
+          from
+            fff_staging.inactive_staging_exception ise
+          where
+            ise.staging_exception_id = se.id
+        )
   `)
 
   const parameters = {
@@ -32,8 +43,5 @@ async function deactivateStagingException (context, preparedStatement, stagingEx
     sourceFunction: stagingExceptionData.sourceFunction
   }
 
-  // Temporary patch to disable deactivation on Azure while lock timeouts caused by parallel processing are resolved.
-  if (process.env['SQLDB_CONNECTION_STRING'].includes('localhost')) {
-    await preparedStatement.execute(parameters)
-  }
+  await preparedStatement.execute(parameters)
 }

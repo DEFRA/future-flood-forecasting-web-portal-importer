@@ -3,6 +3,7 @@ const taskRunCompleteMessages = require('./messages/task-run-complete/non-displa
 const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
+const moment = require('moment')
 const sql = require('mssql')
 
 module.exports = describe('Tests for import timeseries non-display groups', () => {
@@ -28,7 +29,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     singleFilterNonForecast: {
       forecast: false,
       approved: false,
-      outgoingFilterIds: ['Test Filter1']
+      outgoingFilterIds: ['Test Filter1'],
+      expectedNumberOfStagingExceptions: 1
     },
     multipleFilterNonForecast: {
       forecast: false,
@@ -74,6 +76,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
 
     it('should create a timeseries header and create a message for a single filter associated with a non-forecast task run', async () => {
+      // Create a staging exception associated with an earlier task run of the workflow. It should not be deactivated.
+      const exceptionTime = moment.utc(taskRunCompleteMessages.commonMessageData.completionTime).subtract(15, 'seconds')
+      await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
+      await request.query(`
+        insert into
+          fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+        values
+          ('description: invalid message', 'Error', 'ukeafffsmc00:000000003', 'P', 'Test_Workflow1', @exceptionTime);
+      `)
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })

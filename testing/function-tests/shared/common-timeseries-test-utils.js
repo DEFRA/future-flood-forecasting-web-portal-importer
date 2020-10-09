@@ -56,9 +56,11 @@ module.exports = function (pool) {
     await request.batch(`delete from fff_staging.workflow_refresh`)
   }
   const deleteTimeseriesData = async function (request) {
+    await request.batch(`delete from fff_staging.inactive_timeseries_staging_exception`)
     await request.batch(`delete from fff_staging.timeseries_staging_exception`)
     await request.batch(`delete from fff_staging.timeseries`)
     await request.batch(`delete from fff_staging.timeseries_header`)
+    await request.batch(`delete from fff_staging.inactive_staging_exception`)
     await request.batch(`delete from fff_staging.staging_exception`)
   }
   this.beforeAll = async function () {
@@ -94,7 +96,7 @@ module.exports = function (pool) {
     // Closing the DB connection allows Jest to exit successfully.
     await pool.close()
   }
-  this.checkNoActiveStagingExceptionsExistForSourceFunctionOfTaskRun = async function (config) {
+  this.checkNumberOfActiveStagingExceptionsForSourceFunctionOfWorkflow = async function (config) {
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.NVarChar, config.taskRunId)
     await request.input('sourceFunction', sql.NVarChar, config.sourceFunction)
@@ -104,10 +106,17 @@ module.exports = function (pool) {
       from
         fff_staging.v_active_staging_exception
       where
-        task_run_id = @taskRunId and
-        source_function = @sourceFunction
+        source_function = @sourceFunction and
+        workflow_id = (
+          select
+            workflow_id
+          from
+            fff_staging.timeseries_header
+          where
+            task_run_id = @taskRunId
+        )
     `)
-    expect(result.recordset[0].number).toBe(0)
+    expect(result.recordset[0].number).toBe(config.expectedNumberOfStagingExceptions || 0)
   }
   this.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun = async function (config) {
     const request = new sql.Request(pool)
