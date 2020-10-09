@@ -7,16 +7,15 @@ const queryRoot = `
         r.id as reporting_id,
         t.id as timeseries_id,
         h.id as header_id,
-        e.id as exceptions_id,
+        tse.id as exceptions_id,
         h.import_time
     from
       fff_staging.timeseries_header h
       left join fff_staging.timeseries t on t.timeseries_header_id = h.id
       left join fff_reporting.timeseries_job r on r.timeseries_id = t.id
-      left join fff_staging.timeseries_staging_exception e on e.timeseries_header_id = h.id
+      left join fff_staging.timeseries_staging_exception tse on tse.timeseries_header_id = h.id
     where
-      h.import_time < cast(@date as datetimeoffset)
-`
+      h.import_time < cast(@date as datetimeoffset)`
 
 module.exports = async function (context, transaction, date, isSoftDate) {
   await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, isSoftDate)

@@ -34,8 +34,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 200
       hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
       softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
+      // The order of deletion is sentiive to referential integrity
       await request.query(`delete from fff_reporting.timeseries_job`)
       await request.batch(`delete from fff_staging.timeseries`)
+      await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
     })
@@ -253,6 +255,24 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
+    it('should remove an inactive timeseries exception with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+      const expectedNumberofRows = 0
+      const importDate = await createImportDate(importDateStatus)
+
+      await insertTimeseriesExceptionRecordIntoTables(importDate)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
+    it('should NOT remove an inactive timeseries exception with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+      const expectedNumberofRows = 1
+      const importDate = await createImportDate(importDateStatus)
+
+      await insertTimeseriesExceptionRecordIntoTables(importDate)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
   })
 
   async function createImportDate (importDateStatus) {
@@ -301,7 +321,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     await request.query(query)
   }
 
-  async function insertTimeseriesExceptionRecordIntoTables (importDate, statusCode, testDescription) {
+  async function insertTimeseriesExceptionRecordIntoTables (importDate) {
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
@@ -310,7 +330,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
       insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
         values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
       insert into fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
-        values (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')`
+        values (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')
+      insert into fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id, deactivation_time)
+        values (@id2, cast('2017-01-25' as datetimeoffset))`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -336,7 +358,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       fff_staging.timeseries_header h
       left join fff_staging.timeseries t on t.timeseries_header_id = h.id
       left join fff_reporting.timeseries_job r on r.timeseries_id = t.id
-      left join fff_staging.timeseries_staging_exception e on e.timeseries_header_id = h.id
+      left join fff_staging.timeseries_staging_exception tse on tse.timeseries_header_id = h.id
+      left join fff_staging.inactive_timeseries_staging_exception itse on itse.timeseries_staging_exception_id = tse.id
     order by
       h.import_time desc
     `)

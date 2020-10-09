@@ -52,8 +52,11 @@ module.exports = async function (context, myTimer) {
     await insertDataIntoTemp(context, transaction, softDate, true)
 
     context.log.info(`Data delete starting.`)
+    // The order of deletion is sentiive to referential integrity
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteInactiveTimeseriesStagingExceptionRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteActiveTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
 
     context.log('JavaScript timer trigger function ran!', timeStamp)
@@ -94,15 +97,6 @@ async function deleteReportingRows (context, preparedStatement) {
   await preparedStatement.execute()
 }
 
-async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
-  await preparedStatement.prepare(
-    `delete e from fff_staging.timeseries_staging_exception e
-        inner join #deletion_job_temp te
-        on te.exceptions_id = e.id`
-  )
-  await preparedStatement.execute()
-}
-
 async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete t from fff_staging.timeseries t
@@ -113,16 +107,22 @@ async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.execute()
 }
 
-async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
+async function deleteActiveTimeseriesStagingExceptionRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete tse from fff_staging.inactive_timeseries_staging_exception itse
-      inner join fff_staging.timeseries_staging_exception tse
-      on itse.timeseries_staging_exception_id = tse.id
+    `delete tse from fff_staging.timeseries_staging_exception tse
       inner join #deletion_job_temp te
-      on te.timeseries_header_id = tse.timeseries_header_id;
-     delete tse from fff_staging.timeseries_staging_exception tse
+      on te.exceptions_id = tse.id`
+  )
+  await preparedStatement.execute()
+}
+
+async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedStatement) {
+  // every inactive timeseries staging exception is linked to a timeseries staging exception via foreign key
+  // exceptions are copied into inactive not move to inactive
+  await preparedStatement.prepare(
+    `delete itse from fff_staging.inactive_timeseries_staging_exception itse
       inner join #deletion_job_temp te
-      on te.timeseries_header_id = tse.timeseries_header_id`
+      on itse.timeseries_staging_exception_id = te.exceptions_id`
   )
   await preparedStatement.execute()
 }
