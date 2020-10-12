@@ -162,26 +162,26 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const importDate = await createImportDate(importDateStatus)
       await checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert(importDate)
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
-    it('Should reject delete if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is not set', async () => {
+    it('Should prevent a delete if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is not set', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = null
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
     })
-    it('Should reject delete if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is a string', async () => {
+    it('should prevent a delete if the DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT has been set as a string', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
+    })
+    it('Should prevent a delete if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is a string', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 'string'
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.'))
     })
-    it('Should reject delete if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is 0 hours', async () => {
+    it('Should prevent a delete if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is 0 hours', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 0
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
     })
-    it('should reject delete with a soft limit set higher than the hard limit', async () => {
+    it('should prevent a delete with a soft limit set higher than the hard limit', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 51
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 50
 
-      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
-    })
-    it('should reject delete if the soft-limit has been set as a string', async () => {
-      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
     })
     it('A seperate transaction WITH isolation lock hint should NOT be able to select rows from the reporting table whilst the delete transaction is taking place on those rows', async () => {
