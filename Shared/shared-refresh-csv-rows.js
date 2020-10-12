@@ -87,7 +87,11 @@ async function refreshInternal (context, preparedStatement, refreshData) {
           // preparedStatement inputs
           columnNames = columnNames + `${columnObject.tableColumnName}, `
           preparedStatementValues = preparedStatementValues + `@${columnObject.tableColumnName}, ` // '@' values are input at execution.
-          await preparedStatement.input(columnObject.tableColumnName, sql[columnObject.tableColumnType])
+          if (columnObject.tableColumnType === 'Decimal') {
+            await preparedStatement.input(columnObject.tableColumnName, sql.Decimal(columnObject.precision, columnObject.scale))
+          } else {
+            await preparedStatement.input(columnObject.tableColumnName, sql[`${columnObject.tableColumnType}`])
+          }
         }
         columnNames = columnNames.slice(0, -2)
         preparedStatementValues = preparedStatementValues.slice(0, -2)
