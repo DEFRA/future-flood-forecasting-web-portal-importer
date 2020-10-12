@@ -52,9 +52,11 @@ module.exports = async function (context, myTimer) {
     await insertDataIntoTemp(context, transaction, softDate, true)
 
     context.log.info(`Data delete starting.`)
+    // The order of deletion is sentiive to referential integrity
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
-    await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteInactiveTimeseriesStagingExceptionRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteActiveTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
 
     context.log('JavaScript timer trigger function ran!', timeStamp)
@@ -68,9 +70,11 @@ async function createTempTable (transaction, context) {
   await new sql.Request(transaction).batch(`
       create table #deletion_job_temp
       (
-        reporting_id uniqueidentifier not null,
-        timeseries_id uniqueidentifier not null,
-        timeseries_header_id uniqueidentifier not null
+        reporting_id uniqueidentifier,
+        timeseries_id uniqueidentifier,
+        timeseries_header_id uniqueidentifier not null,
+        exceptions_id uniqueidentifier,
+        import_time datetimeoffset,
       )
       CREATE CLUSTERED INDEX ix_deletion_job_temp_reporting_id
         ON #deletion_job_temp (reporting_id)
@@ -78,6 +82,8 @@ async function createTempTable (transaction, context) {
         ON #deletion_job_temp (timeseries_id)
       CREATE INDEX ix_deletion_job_temp_timeseries_header_id
         ON #deletion_job_temp (timeseries_header_id)
+      CREATE INDEX ix_deletion_job_temp_exceptions_id
+        ON #deletion_job_temp (exceptions_id)
     `)
 }
 
@@ -101,16 +107,22 @@ async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.execute()
 }
 
-async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
+async function deleteActiveTimeseriesStagingExceptionRows (context, preparedStatement) {
   await preparedStatement.prepare(
-    `delete tse from fff_staging.inactive_timeseries_staging_exception itse
-      inner join fff_staging.timeseries_staging_exception tse
-      on itse.timeseries_staging_exception_id = tse.id
+    `delete tse from fff_staging.timeseries_staging_exception tse
       inner join #deletion_job_temp te
-      on te.timeseries_header_id = tse.timeseries_header_id;
-     delete tse from fff_staging.timeseries_staging_exception tse
+      on te.exceptions_id = tse.id`
+  )
+  await preparedStatement.execute()
+}
+
+async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedStatement) {
+  // every inactive timeseries staging exception is linked to a timeseries staging exception via foreign key
+  // exceptions are copied into inactive not move to inactive
+  await preparedStatement.prepare(
+    `delete itse from fff_staging.inactive_timeseries_staging_exception itse
       inner join #deletion_job_temp te
-      on te.timeseries_header_id = tse.timeseries_header_id`
+      on itse.timeseries_staging_exception_id = te.exceptions_id`
   )
   await preparedStatement.execute()
 }
