@@ -113,15 +113,11 @@ async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate)
   await preparedStatement.input('date', sql.DateTimeOffset)
   await preparedStatement.input('completeStatus', sql.Int)
   await preparedStatement.input('deleteHeaderBatchSize', sql.Int)
-  try {
-    if (isSoftDate) {
-      // the softdate query will need refactoring to accoutn for partial loading both in timeseries and timeseries_staging_exception
-      await preparedStatement.prepare(queryRootSoft)
-    } else {
-      await preparedStatement.prepare(queryRootHard)
-    }
-  } catch (err) {
-    console.log(err)
+  if (isSoftDate) {
+    // the softdate query will need refactoring to accoutn for partial loading both in timeseries and timeseries_staging_exception
+    await preparedStatement.prepare(queryRootSoft)
+  } else {
+    await preparedStatement.prepare(queryRootHard)
   }
   const parameters = {
     date: date,
