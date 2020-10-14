@@ -78,16 +78,24 @@ union
    h.import_time < cast(@date as datetimeoffset)
 union
   -- linked rows only in header-timeseries
-  select top(@deleteHeaderBatchSize)
+  select
     null as reporting_id,
     t.id as timeseries_id,
     h.id as header_id,
     h.import_time,
     null as exceptions_id
-  from fff_staging.timeseries_header h
-    join fff_staging.timeseries t on t.timeseries_header_id = h.id
+  from fff_staging.timeseries t
+    join (
+  select
+      top(@deleteHeaderBatchSize)
+      id,
+      import_time
+    from fff_staging.timeseries_header
+    order by
+    import_time
+) h on t.timeseries_header_id = h.id
   where
-  h.import_time < cast(@date as datetimeoffset)
+h.import_time < cast(@date as datetimeoffset)
 union
   -- rows only in header
   select top(@deleteHeaderBatchSize)
@@ -114,7 +122,7 @@ async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate)
   await preparedStatement.input('completeStatus', sql.Int)
   await preparedStatement.input('deleteHeaderBatchSize', sql.Int)
   if (isSoftDate) {
-    // the softdate query will need refactoring to accoutn for partial loading both in timeseries and timeseries_staging_exception
+    // the softdate query will need refactoring to account for partial loading both in timeseries and timeseries_staging_exception
     await preparedStatement.prepare(queryRootSoft)
   } else {
     await preparedStatement.prepare(queryRootHard)
