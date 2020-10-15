@@ -49,14 +49,15 @@ module.exports = async function (context, myTimer) {
     await createTempTable(transaction, context)
 
     await insertDataIntoTemp(context, transaction, hardDate, false)
+    // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
     await insertDataIntoTemp(context, transaction, softDate, true)
 
     context.log.info(`Data delete starting.`)
     // The order of deletion is sentiive to referential integrity
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
-    await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteInactiveTimeseriesStagingExceptionRows, context, transaction)
-    await executePreparedStatementInTransaction(deleteActiveTimeseriesStagingExceptionRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
 
     context.log('JavaScript timer trigger function ran!', timeStamp)
@@ -91,29 +92,33 @@ async function deleteReportingRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete r from fff_reporting.timeseries_job r
       inner join #deletion_job_temp te
-      on te.reporting_id = r.id`
+      on te.reporting_id = r.id
+      select @@rowcount as deleted`
   )
-
-  await preparedStatement.execute()
+  let result = await preparedStatement.execute()
+  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Reporting' table.`)
 }
 
 async function deleteTimeseriesRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete t from fff_staging.timeseries t
       inner join #deletion_job_temp te
-      on te.timeseries_id = t.id`
+      on te.timeseries_id = t.id
+      select @@rowcount as deleted`
   )
-
-  await preparedStatement.execute()
+  let result = await preparedStatement.execute()
+  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Timeseries' table.`)
 }
 
-async function deleteActiveTimeseriesStagingExceptionRows (context, preparedStatement) {
+async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete tse from fff_staging.timeseries_staging_exception tse
       inner join #deletion_job_temp te
-      on te.exceptions_id = tse.id`
+      on te.exceptions_id = tse.id
+      select @@rowcount as deleted`
   )
-  await preparedStatement.execute()
+  let result = await preparedStatement.execute()
+  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'TimeseriesStagingException' table.`)
 }
 
 async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedStatement) {
@@ -122,16 +127,20 @@ async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedSt
   await preparedStatement.prepare(
     `delete itse from fff_staging.inactive_timeseries_staging_exception itse
       inner join #deletion_job_temp te
-      on itse.timeseries_staging_exception_id = te.exceptions_id`
+      on itse.timeseries_staging_exception_id = te.exceptions_id
+      select @@rowcount as deleted`
   )
-  await preparedStatement.execute()
+  let result = await preparedStatement.execute()
+  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'InactiveTimeseriesStagingException' table.`)
 }
 
 async function deleteHeaderRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete th from fff_staging.timeseries_header th
       inner join #deletion_job_temp te
-      on te.timeseries_header_id = th.id`
+      on te.timeseries_header_id = th.id
+      select @@rowcount as deleted`
   )
-  await preparedStatement.execute()
+  let result = await preparedStatement.execute()
+  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Header' table.`)
 }

@@ -60,17 +60,19 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should delete a record with a complete job status and with an import date older than the soft limit', async () => {
+    // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
+    it('should NOT (due to inactive soft limit functionality) delete a record with a complete job status and with an import date older than the soft limit', async () => {
       const importDateStatus = 'exceedsSoft'
       const statusCode = 6
-      const testDescription = 'should delete a record with a complete job status and with an import date older than the soft limit'
+      const testDescription = 'should NOT (due to inactive soft limit functionality) delete a record with a complete job status and with an import date older than the soft limit'
 
-      const expectedNumberofRows = 0
+      const expectedNumberofRows = 2
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
+      await checkDescription(testDescription)
     })
     it('should delete a record with an incomplete job status and with an import date older than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
@@ -89,7 +91,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const statusCode = 5
       const testDescription = 'should NOT delete a record with an incomplete job status and with an import date older than the soft limit'
 
-      const expectedNumberofRows = 1
+      const expectedNumberofRows = 2
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)
@@ -131,7 +133,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const statusCode = 5
       const testDescription = 'should NOT delete a record with an incomplete job status and with an import date younger than the soft limit'
 
-      const expectedNumberofRows = 1
+      const expectedNumberofRows = 2
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)
@@ -144,7 +146,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const statusCode = 6
       const testDescription = 'should NOT delete a record with a complete job status and with an import date younger than the soft limit'
 
-      const expectedNumberofRows = 1
+      const expectedNumberofRows = 2
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)
@@ -273,6 +275,20 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
+    it('should delete all records for a single header row given a batch size smaller than the number of rows in the reporting table/timeseries table/exceptions table/inactive exceptions table for an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+      const statusCode = 6
+      const testDescription = 'should delete all records for a single header row given a batch size smaller than the number of rows in the reporting table/timeseries table/exceptions table/inactive exceptions table for an import date older than the hard limit'
+
+      const expectedNumberofRows = 0
+
+      process.env.TIMESERIES_DELETE_BATCH_SIZE = 1
+
+      const importDate = await createImportDate(importDateStatus)
+      await insertMultipleRowsIntoEachTableForOneHeaderRecord(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+    })
   })
 
   async function createImportDate (importDateStatus) {
@@ -311,7 +327,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       insert into fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
         values (@id2, compress('data'),'parameters', @id1)
       insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
-        values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
+        values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
+        (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -329,6 +346,36 @@ module.exports = describe('Timeseries data deletion tests', () => {
         values (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')
       insert into fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id, deactivation_time)
         values (@id2, cast('2017-01-25' as datetimeoffset))`
+    query.replace(/"/g, "'")
+
+    await request.query(query)
+  }
+
+  async function insertMultipleRowsIntoEachTableForOneHeaderRecord (importDate, statusCode, testDescription) {
+    const query = `
+      declare @headerId uniqueidentifier
+      set @headerId = newid()
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+
+      insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+        values (@headerId, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
+      insert into fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
+        values (@id1, compress('data'),'parameters', @headerId),
+        (@id2, compress('data'),'parameters', @headerId)
+      insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
+        values (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
+        (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')
+      insert into fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+        values 
+        (@id1, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @headerId, 'Error plot text'),
+        (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @headerId, 'Error plot text')
+      insert into fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id, deactivation_time)
+        values 
+        (@id1, cast('2017-01-25' as datetimeoffset)),
+        (@id2, cast('2017-01-25' as datetimeoffset))`
     query.replace(/"/g, "'")
 
     await request.query(query)
