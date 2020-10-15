@@ -55,7 +55,7 @@ module.exports = async function (context, myTimer) {
     // The order of deletion is sentiive to referential integrity
     await executePreparedStatementInTransaction(deleteReportingRows, context, transaction)
     await executePreparedStatementInTransaction(deleteInactiveTimeseriesStagingExceptionRows, context, transaction)
-    await executePreparedStatementInTransaction(deleteActiveTimeseriesStagingExceptionRows, context, transaction)
+    await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
 
@@ -109,7 +109,7 @@ async function deleteTimeseriesRows (context, preparedStatement) {
   context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Timeseries' table.`)
 }
 
-async function deleteActiveTimeseriesStagingExceptionRows (context, preparedStatement) {
+async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
   await preparedStatement.prepare(
     `delete tse from fff_staging.timeseries_staging_exception tse
       inner join #deletion_job_temp te
@@ -117,7 +117,7 @@ async function deleteActiveTimeseriesStagingExceptionRows (context, preparedStat
       select @@rowcount as deleted`
   )
   let result = await preparedStatement.execute()
-  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'ActiveTimeseriesStagingException' table.`)
+  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'TimeseriesStagingException' table.`)
 }
 
 async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedStatement) {
