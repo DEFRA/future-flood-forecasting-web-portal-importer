@@ -61,18 +61,19 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkDeletionStatus(expectedNumberofRows)
     })
     // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
-    // it('should delete a record with a complete job status and with an import date older than the soft limit', async () => {
-    //   const importDateStatus = 'exceedsSoft'
-    //   const statusCode = 6
-    //   const testDescription = 'should delete a record with a complete job status and with an import date older than the soft limit'
+    it('should NOT (due to inactive soft limit functionality) delete a record with a complete job status and with an import date older than the soft limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+      const statusCode = 6
+      const testDescription = 'should NOT (due to inactive soft limit functionality) delete a record with a complete job status and with an import date older than the soft limit'
 
-    //   const expectedNumberofRows = 0
+      const expectedNumberofRows = 2
 
-    //   const importDate = await createImportDate(importDateStatus)
-    //   await insertRecordIntoTables(importDate, statusCode, testDescription)
-    //   await runTimerFunction()
-    //   await checkDeletionStatus(expectedNumberofRows)
-    // })
+      const importDate = await createImportDate(importDateStatus)
+      await insertRecordIntoTables(importDate, statusCode, testDescription)
+      await runTimerFunction()
+      await checkDeletionStatus(expectedNumberofRows)
+      await checkDescription(testDescription)
+    })
     it('should delete a record with an incomplete job status and with an import date older than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 5
