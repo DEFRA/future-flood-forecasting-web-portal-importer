@@ -60,6 +60,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
+    // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
     // it('should delete a record with a complete job status and with an import date older than the soft limit', async () => {
     //   const importDateStatus = 'exceedsSoft'
     //   const statusCode = 6
@@ -166,10 +167,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = null
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
     })
-    // it('Should prevent deletion if the DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT has been set as a string', async () => {
-    //   process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
-    //   await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
-    // })
+    it('Should prevent deletion if the DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT has been set as a string', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 'eighty'
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
+    })
     it('Should prevent deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is a string', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 'string'
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.'))
@@ -178,12 +179,12 @@ module.exports = describe('Timeseries data deletion tests', () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 0
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
     })
-    // it('Should prevent deletion with a soft limit set higher than the hard limit', async () => {
-    //   process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 51
-    //   process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 50
+    it('Should prevent deletion with a soft limit set higher than the hard limit', async () => {
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 51
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 50
 
-    //   await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
-    // })
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
+    })
     it('A seperate transaction WITH isolation lock hint should NOT be able to select rows from the reporting table whilst the delete transaction is taking place on those rows', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 6

@@ -1,36 +1,6 @@
 const { executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const sql = require('mssql')
 
-const queryRootSoft = `
--- ! the softdate query will need refactoring to accoutn for partial loading both in timeseries and timeseries_staging_exception
-insert into #deletion_job_temp
-  (reporting_id, timeseries_id, timeseries_header_id, import_time, exceptions_id)
--- linked rows in header-timeseries-reporting (not including rows in only header-timeseries or only header)
-  select
-    r.id as reporting_id,
-    t.id as timeseries_id,
-    h.id as header_id,
-    h.import_time,
-    e.id as exceptions_id
-  from
-    fff_reporting.timeseries_job r
-    join fff_staging.timeseries t on t.id = r.timeseries_id
-    join (
-  select
-      top(@deleteHeaderBatchSize)
-      id,
-      import_time
-    from fff_staging.timeseries_header
-    order by
-      import_time
-  ) h on t.timeseries_header_id = h.id
-  -- for a soft date use a left join on tse to account for the records that exist in both timeseries and tse (this is pressuming none partial loading)
-  left join fff_staging.timeseries_staging_exception e on e.timeseries_header_id = h.id
-  where
-  h.import_time < cast(@date as datetimeoffset)
-  and r.job_status = @completeStatus
-  `
-
 const queryRootHard = `
 insert into #deletion_job_temp
   (reporting_id, timeseries_id, timeseries_header_id, import_time, exceptions_id)
@@ -122,7 +92,8 @@ async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate)
   await preparedStatement.input('completeStatus', sql.Int)
   await preparedStatement.input('deleteHeaderBatchSize', sql.Int)
   if (isSoftDate) {
-    // the softdate query will need refactoring to account for partial loading both in timeseries and timeseries_staging_exception
+    // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
+    const queryRootSoft = null
     await preparedStatement.prepare(queryRootSoft)
   } else {
     await preparedStatement.prepare(queryRootHard)
