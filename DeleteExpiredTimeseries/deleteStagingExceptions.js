@@ -15,11 +15,11 @@ delete ise
     se.exception_time < cast(@date as datetimeoffset)
   order by
     se.exception_time
-  ) se on ise.staging_exception_id = se.id
+  ) se on ise.staging_exception_id = se.id;
 
 -- staging exceptions to be deleted
 with
-  deletesecte
+  dsecte
   as
   (
     select top (@deleteRowBatchSize)
@@ -29,7 +29,7 @@ with
     exception_time < cast(@date as datetimeoffset)
     order by exception_time
   )
-delete from deletesecte
+delete from dsecte
 `
 
 module.exports = async function (context, transaction, date) {
@@ -45,7 +45,7 @@ async function deleteStagingExceptions (context, preparedStatement, date) {
   await preparedStatement.prepare(query)
   const parameters = {
     date,
-    deleteHeaderBatchSize: deleteRowBatchSize
+    deleteRowBatchSize: deleteRowBatchSize
   }
   await preparedStatement.execute(parameters)
 }
