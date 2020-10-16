@@ -1,4 +1,5 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const deleteStagingExceptions = require('./deleteStagingExceptions')
 const insertDataIntoTemp = require('./insertDataIntoTempTable')
 const moment = require('moment')
 const sql = require('mssql')
@@ -59,6 +60,7 @@ module.exports = async function (context, myTimer) {
     await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
+    await deleteStagingExceptions(context, transaction, hardDate)
 
     context.log('JavaScript timer trigger function ran!', timeStamp)
   }
