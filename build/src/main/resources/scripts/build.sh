@@ -28,4 +28,5 @@ cp build/src/main/resources/functions/RefreshCoastalTidalForecastLocationData/$F
 cp build/src/main/resources/functions/RefreshCoastalTritonForecastLocationData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshCoastalTritonForecastLocationData/
 cp build/src/main/resources/functions/RefreshCoastalMVTForecastLocationData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshCoastalMVTForecastLocationData/
 cp build/src/main/resources/functions/RefreshIgnoredWorkflowData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshIgnoredWorkflowData/
+cp build/src/main/resources/functions/RefreshMVTData/$FFFS_WEB_PORTAL_BUILD_TYPE/function.json RefreshMVTData/
 cp build/src/main/resources/functions/DeleteExpiredTimeseries/function.json DeleteExpiredTimeseries/

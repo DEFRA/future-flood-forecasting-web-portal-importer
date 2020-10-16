@@ -36,6 +36,7 @@ describe('Run all unit tests in sequence', () => {
     }
   })
 
+  require('./function-tests/RefreshMVTData/test.index')
   require('./function-tests/DeleteExpiredTimeseries/test.index')
   require('./function-tests/RefreshFluvialDisplayGroupData/test.index')
   require('./function-tests/RefreshCoastalDisplayGroupData/test.index')

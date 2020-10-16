@@ -9,6 +9,7 @@
   * fews-coastal-triton-forecast-location-queue
   * fews-coastal-mvt-forecast-location-queue
   * fews-ignored-workflows-queue
+  * fews-mvt-queue
 * Messages placed on the fews-eventcode-queue or fews-eventcode-topic **must** adhere to the format used for
   Azure service bus alerts in the core forecasting engine.
 * If the output binding is implememnted, messages placed on the fews-staged-timeseries-queue or fews-staged-timeseries-topic **must** conform to the following format:
