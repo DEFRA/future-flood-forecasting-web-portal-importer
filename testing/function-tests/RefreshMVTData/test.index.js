@@ -67,7 +67,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       const expectedNumberOfExceptionRows = 0
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedMVTData, expectedNumberOfExceptionRows)
     })
-    it('should refresh given a valid csv with 0 exceptions', async () => {
+    it('should refresh given a valid csv, with 0 exceptions', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid.csv',
@@ -249,6 +249,46 @@ module.exports = describe('Refresh mvt data tests', () => {
       await expect(MVTRefreshFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
+    it('should refresh a valid csv containing empty values for decimal columns', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'empty-decimal-values.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedMVTData = [
+        {
+          CENTRE: 'CENTRE1',
+          CRITICAL_CONDITION_ID: 'dummy',
+          INPUT_LOCATION_ID: 'dummy',
+          OUTPUT_LOCATION_ID: 'dummy',
+          TARGET_AREA_CODE: 'dummy',
+          INPUT_PARAMETER_ID: 'dummy',
+          LOWER_BOUND: 0.1,
+          UPPER_BOUND: null,
+          LOWER_BOUND_INCLUSIVE: 0,
+          UPPER_BOUND_INCLUSIVE: 1,
+          PRIORITY: 9
+        },
+        {
+          CENTRE: 'CENTRE2',
+          CRITICAL_CONDITION_ID: 'dummy',
+          INPUT_LOCATION_ID: 'dummy',
+          OUTPUT_LOCATION_ID: 'dummy',
+          TARGET_AREA_CODE: 'dummy',
+          INPUT_PARAMETER_ID: 'dummy',
+          LOWER_BOUND: null,
+          UPPER_BOUND: 0,
+          LOWER_BOUND_INCLUSIVE: 0,
+          UPPER_BOUND_INCLUSIVE: 0,
+          PRIORITY: 1
+        }]
+      await mockFetchResponse(mockResponseData)
+      await MVTRefreshFunction(context, message)
+      // we cannot check for null columns with comparison operators, such as =, <, or <>. Simply check the row count is correct.
+      await checkResultCount(expectedMVTData.length)
+    })
   })
 
   async function refreshMVTDataAndCheckExpectedResults (mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription) {
@@ -270,7 +310,7 @@ module.exports = describe('Refresh mvt data tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription) {
+  async function checkResultCount (expectedNumberOfRows) {
     const MVTCount = await request.query(`
     select 
       count(*) 
@@ -278,9 +318,14 @@ module.exports = describe('Refresh mvt data tests', () => {
       number
     from 
       fff_staging.multivariate_thresholds`)
-    const expectedNumberOfRows = expectedMVTData.length
+
     expect(MVTCount.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Actual data row count: ${MVTCount.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
+  }
+
+  async function checkExpectedResults (expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription) {
+    const expectedNumberOfRows = expectedMVTData.length
+    await checkResultCount(expectedNumberOfRows)
     // Check each expected row is in the database
     if (expectedNumberOfRows > 0) {
       for (const row of expectedMVTData) {
