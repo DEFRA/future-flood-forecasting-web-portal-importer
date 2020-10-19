@@ -14,6 +14,22 @@
 |-------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED | When set to true, this provides an output binding connecting to an azure service bus queue named 'fews-staged-timeseries-queue'|
 
+## Mandatory Runtime Function App Settings/Environment Variables For Deployments Affecting The Structure Of Core Forecasting Engine Workflow Configuration Data
+
+| name                                      | description                                                                                           |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| AzureWebJobs.ImportFromFews.Disabled             | Disable the ImportFromFews function (Set to true)                                              |
+| AzureWebJobs.ProcessFewsEventCode.Disabled       | Disable the ProcessFewsEventCode function (Set to true)                                        |
+
+The ImportFromFews and ProcessFewsEventCode functions **must** be disabled during deployments affecting the structure of core forecasting engine workflow configuration data. The endpoints **must** remain disabled until messages on the following Azure Service Bus queues/topics have been processed **successfully**.
+
+* fews-coastal-display-group-queue/fews-coastal-display-group-topic
+* fews-fluvial-display-group-queue/fews-fluvial-display-group-topic
+* fews-ignored-workflows-queue/fews-ignored-workflows-topic
+* fews-non-display-group-queue/fews-non-display-group-topic
+
+This prevents core forecasting engine messages from being processed until supporting configuration data has been loaded.
+
 ## Mandatory Runtime Function App Settings/Environment Variables
 
 | name                                             | description                                                                                    |
@@ -25,8 +41,7 @@
 | FEWS_PI_API                                      | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API|
 | FUNCTIONS_EXTENSION_VERSION                      | Functions runtime version (**must be ~2**)                                                     |
 | FUNCTIONS_WORKER_RUNTIME                         | The language worker runtime to load in the function app (**must be node**)                     |
-| SQLDB_CONNECTION_STRING                          | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note
-                                                     below)                                                                                         |
+| SQLDB_CONNECTION_STRING                          | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below) |                                                                                        |
 | WEBSITE_NODE_DEFAULT_VERSION                     | Default version of Node.js (**Microsoft Azure default is recommended**)                        |
 | FLUVIAL_FORECAST_LOCATION_URL                    | URL used to provide the forecast location data                                                 |
 | COASTAL_TRITON_FORECAST_LOCATION_URL             | URL used to provide the coastal triton location data                                           |
@@ -38,8 +53,8 @@
 | IGNORED_WORKFLOW_URL                             | URL used to provide the ignored workflows                                                      |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT             | The number of hours before the current time before which all timeseries data should be removed |
 | MVT_URL                                          | URL used to provide the multivariate threshold information                                     |
-| AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default                                           |
-| AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default                                     |
+| AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default (Set to true)                             |
+| AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default (Set to true)                       |
 
 ### Request Timeout Considerations
 
