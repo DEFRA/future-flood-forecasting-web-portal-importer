@@ -2,7 +2,8 @@ const { Readable } = require('stream')
 
 module.exports = {
   objectToStream: async function (object) {
-    const stream = await bufferToStream(Buffer.from(typeof object === 'string' ? object : JSON.stringify(object)))
+    // Indent the object to be converted to a stream to test that minification functions as expected.
+    const stream = await bufferToStream(Buffer.from(typeof object === 'string' ? object : JSON.stringify(object, null, 2)))
     return stream
   }
 }
