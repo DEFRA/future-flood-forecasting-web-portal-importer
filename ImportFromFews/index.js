@@ -12,7 +12,7 @@ const deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible = require
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const getPiServerErrorMessage = require('../Shared/timeseries-functions/get-pi-server-error-message')
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
-const { gzip } = require('../Shared/utils')
+const { minifyAndGzip } = require('../Shared/utils')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const isMessageIgnored = require('./helpers/is-message-ignored')
 const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
@@ -185,7 +185,7 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
   context.log(`Retrieving data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   const fewsResponse = await axios(axiosConfig)
   context.log(`Retrieved data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
-  taskRunData.fewsData = await gzip(fewsResponse.data)
+  taskRunData.fewsData = await minifyAndGzip(fewsResponse.data)
   context.log(`Compressed data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 }
 
