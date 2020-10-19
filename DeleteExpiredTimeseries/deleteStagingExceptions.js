@@ -41,11 +41,11 @@ async function deleteStagingExceptions (context, preparedStatement, date) {
   let deleteRowBatchSize
   process.env['TIMESERIES_DELETE_BATCH_SIZE'] ? deleteRowBatchSize = process.env['TIMESERIES_DELETE_BATCH_SIZE'] : deleteRowBatchSize = 1000
   await preparedStatement.input('date', sql.DateTimeOffset)
-  await preparedStatement.input('deleteBatchSize', sql.Int)
+  await preparedStatement.input('deleteRowBatchSize', sql.Int)
   await preparedStatement.prepare(query)
   const parameters = {
     date,
-    deleteRowBatchSize: deleteRowBatchSize
+    deleteRowBatchSize
   }
   await preparedStatement.execute(parameters)
 }
