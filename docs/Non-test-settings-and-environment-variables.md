@@ -10,33 +10,36 @@
 
 ## Optional Build Time Environment Variables
 
-| name                                      | description                                                                                                                    |
+| name                                      | description                                                                                           |
 |-------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED | When set to true, this provides an output binding connecting to an azure service bus queue named 'fews-staged-timeseries-queue'|
 
 ## Mandatory Runtime Function App Settings/Environment Variables
 
-| name                                      | description                                                                                                                                  |
-|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------- |
-| APPINSIGHTS_INSTRUMENTATIONKEY            | Instrumention key controlling if telemetry is sent to the ApplicationInsights service                                                        |
-| AzureWebJobsServiceBus                    | Service bus connection string used by the function app                                                                                       |
-| AzureWebJobsStorage                       | Storage account connection string used by the function app                                                                                   |
-| AZURE_STORAGE_CONNECTION_STRING           | Storage account connection string used by the function app                                                                                   |
-| FEWS_PI_API                               | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API                                              |
-| FUNCTIONS_EXTENSION_VERSION               | Functions runtime version (**must be ~2**)                                                                                                   |
-| FUNCTIONS_WORKER_RUNTIME                  | The language worker runtime to load in the function app (**must be node**)                                                                   |
-| SQLDB_CONNECTION_STRING                   | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below)                                          |
-| WEBSITE_NODE_DEFAULT_VERSION              | Default version of Node.js (**Microsoft Azure default is recommended**)                                                                      |
-| FLUVIAL_FORECAST_LOCATION_URL             | URL used to provide the forecast location data                                                                                               |
-| COASTAL_TRITON_FORECAST_LOCATION_URL      | URL used to provide the coastal triton location data                                                                                         |
-| COASTAL_TIDAL_FORECAST_LOCATION_URL       | URL used to provide the coastal tidal location data                                                                                          |
-| COASTAL_MVT_FORECAST_LOCATION_URL         | URL used to provide the coastal mvt location data                                                                                            |
-| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the fluvial display groups workflow reference data                                                                       |
-| COASTAL_DISPLAY_GROUP_WORKFLOW_URL        | URL used to provide the coastal display groups workflow reference data                                                                       |
-| NON_DISPLAY_GROUP_WORKFLOW_URL            | URL used to provide the non display groups workflow reference data                                                                           |
-| IGNORED_WORKFLOW_URL                      | URL used to provide the ignored workflows                                                                                                    |
-| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT      | The number of hours before the current time before which all timeseries data should be removed                                               |
-| MVT_URL                                   | URL used to provide the multivariate threshold information                                                                                   |
+| name                                             | description                                                                                    |
+|--------------------------------------------------|------------------------------------------------------------------------------------------------|
+| APPINSIGHTS_INSTRUMENTATIONKEY                   | Instrumention key controlling if telemetry is sent to the ApplicationInsights service          |
+| AzureWebJobsServiceBus                           | Service bus connection string used by the function app                                         |
+| AzureWebJobsStorage                              | Storage account connection string used by the function app                                     |
+| AZURE_STORAGE_CONNECTION_STRING                  | Storage account connection string used by the function app                                     |
+| FEWS_PI_API                                      | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API|
+| FUNCTIONS_EXTENSION_VERSION                      | Functions runtime version (**must be ~2**)                                                     |
+| FUNCTIONS_WORKER_RUNTIME                         | The language worker runtime to load in the function app (**must be node**)                     |
+| SQLDB_CONNECTION_STRING                          | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note
+                                                     below)                                                                                         |
+| WEBSITE_NODE_DEFAULT_VERSION                     | Default version of Node.js (**Microsoft Azure default is recommended**)                        |
+| FLUVIAL_FORECAST_LOCATION_URL                    | URL used to provide the forecast location data                                                 |
+| COASTAL_TRITON_FORECAST_LOCATION_URL             | URL used to provide the coastal triton location data                                           |
+| COASTAL_TIDAL_FORECAST_LOCATION_URL              | URL used to provide the coastal tidal location data                                            |
+| COASTAL_MVT_FORECAST_LOCATION_URL                | URL used to provide the coastal mvt location data                                              |
+| FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL               | URL used to provide the fluvial display groups workflow reference data                         |
+| COASTAL_DISPLAY_GROUP_WORKFLOW_URL               | URL used to provide the coastal display groups workflow reference data                         |
+| NON_DISPLAY_GROUP_WORKFLOW_URL                   | URL used to provide the non display groups workflow reference data                             |
+| IGNORED_WORKFLOW_URL                             | URL used to provide the ignored workflows                                                      |
+| DELETE_EXPIRED_TIMESERIES_HARD_LIMIT             | The number of hours before the current time before which all timeseries data should be removed |
+| MVT_URL                                          | URL used to provide the multivariate threshold information                                     |
+| AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default                                           |
+| AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default                                     |
 
 ### Request Timeout Considerations
 
