@@ -36,15 +36,20 @@ module.exports = describe('Timeseries data deletion tests', () => {
       softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
       // The order of deletion is sentiive to referential integrity
       await request.query(`delete from fff_reporting.timeseries_job`)
-      await request.batch(`delete from fff_staging.timeseries`)
       await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries`)
       await request.batch(`delete from fff_staging.timeseries_staging_exception`)
+      await request.batch(`delete from fff_staging.inactive_staging_exception`)
+      await request.batch(`delete from fff_staging.staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
     })
     afterAll(async () => {
-      await request.batch(`delete from fff_reporting.timeseries_job`)
+      await request.query(`delete from fff_reporting.timeseries_job`)
+      await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.timeseries`)
       await request.batch(`delete from fff_staging.timeseries_staging_exception`)
+      await request.batch(`delete from fff_staging.inactive_staging_exception`)
+      await request.batch(`delete from fff_staging.staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
       await pool.close()
     })
@@ -289,6 +294,26 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
+    it('should delete a staging exception record with a complete job status and with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+
+      const expectedNumberofRows = 0
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows)
+    })
+    it('should NOT delete a staging exception record with a complete job status and with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+
+      const expectedNumberofRows = 1
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows)
+    })
   })
 
   async function createImportDate (importDateStatus) {
@@ -381,6 +406,22 @@ module.exports = describe('Timeseries data deletion tests', () => {
     await request.query(query)
   }
 
+  async function insertStagingExceptionRecordIntoTables (exceptionTime) {
+    try {
+      const query = `
+    declare @id1 uniqueidentifier
+    set @id1 = newid()
+      insert into fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
+        values (@id1, 0, 'payload', 'description', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')
+`
+      query.replace(/"/g, "'")
+
+      await request.query(query)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
   async function insertHeaderRecordIntoTables (importDate, statusCode, testDescription) {
     const query = `
       declare @id1 uniqueidentifier
@@ -410,6 +451,20 @@ module.exports = describe('Timeseries data deletion tests', () => {
     expect(result.recordset.length).toBe(expectedLength)
   }
 
+  async function checkStagingExceptionDeletionStatus (expectedLength) {
+    const result = await request.query(`
+    select
+        se.id,
+        ise.id
+    from
+      fff_staging.staging_exception se
+      left join fff_staging.inactive_staging_exception ise on ise.staging_exception_id = se.id
+    order by
+      se.exception_time desc
+    `)
+
+    expect(result.recordset.length).toBe(expectedLength)
+  }
   async function checkDescription (testDescription) {
     const result = await request.query(`
     select r.description
