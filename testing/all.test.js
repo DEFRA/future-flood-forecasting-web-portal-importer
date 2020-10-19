@@ -51,6 +51,7 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ProcessFewsEventCode/test.timeseriesCoastalDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesIgnoredWorkflow')
   require('./function-tests/ProcessFewsEventCode/test.forecastFlags.index')
+  require('./function-tests/ReplayProcessFewsEventCode/test.index')
   require('./function-tests/ImportFromFews/test.timeseriesNonDisplayGroup.index')
   require('./function-tests/ImportFromFews/test.timeseriesFluvialDisplayGroup.index')
   require('./function-tests/ImportFromFews/test.timeseriesCoastalDisplayGroup.index')
