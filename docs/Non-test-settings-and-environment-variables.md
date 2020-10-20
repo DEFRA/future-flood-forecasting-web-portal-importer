@@ -53,8 +53,8 @@ This prevents core forecasting engine messages from being processed until suppor
 | IGNORED_WORKFLOW_URL                             | URL used to provide the ignored workflows                                                      |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT             | The number of hours before the current time before which all timeseries data should be removed |
 | MVT_URL                                          | URL used to provide the multivariate threshold information                                     |
-| AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default (Set to true)                             |
-| AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default (Set to true)                       |
+| AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default (set to true)                             |
+| AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default (set to true)                       |
 
 ### Request Timeout Considerations
 

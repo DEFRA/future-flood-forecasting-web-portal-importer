@@ -3,6 +3,7 @@
 Node.js Microsoft Azure functions responsible for extracting data from the core forecasting engine and importing it into a staging database prior to transformation for reporting and visualisation purposes.
 
 * Message based triggering is used when:
+  * Importing multivariate threshold data
   * Importing data for frequently updated locations that are not associated with a core forecasting engine display group.
   * Importing data for multiple locations associated with a core forecasting engine fluvial display group.
   * Importing data for multiple locations associated with a core forecasting engine coastal display group.
@@ -23,6 +24,7 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * [Non-test related function app settings and environment variables](docs/Non-test-settings-and-environment-variables.md)
 * [Running the queue/topic based functions](docs/Running-the-queue-topic-functions.md)
 * [Testing](docs/Testing.md)
+* [Replaying Messages From Dead Letter Queues After An Outage](docs/Replaying-dead-letter-messages.md)
 
 ## Contributing to this project
 
