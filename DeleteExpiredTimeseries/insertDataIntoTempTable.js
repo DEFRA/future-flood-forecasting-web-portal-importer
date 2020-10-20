@@ -16,7 +16,7 @@ insert into #deletion_job_temp
     join fff_staging.timeseries t on t.id = r.timeseries_id
     join (
   select
-      top(@deleteHeaderBatchSize)
+      top(@deleteHeaderRowBatchSize)
       id,
       import_time
     from fff_staging.timeseries_header
@@ -37,7 +37,7 @@ union
     fff_staging.timeseries_staging_exception e
     join (
     select
-      top(@deleteHeaderBatchSize)
+      top(@deleteHeaderRowBatchSize)
       id,
       import_time
     from fff_staging.timeseries_header
@@ -57,7 +57,7 @@ union
   from fff_staging.timeseries t
     join (
   select
-      top(@deleteHeaderBatchSize)
+      top(@deleteHeaderRowBatchSize)
       id,
       import_time
     from fff_staging.timeseries_header
@@ -68,7 +68,7 @@ union
 h.import_time < cast(@date as datetimeoffset)
 union
   -- rows only in header
-  select top(@deleteHeaderBatchSize)
+  select top(@deleteHeaderRowBatchSize)
     null as reporting_id,
     null as timeseries_id,
     h.id as header_id,
@@ -78,19 +78,17 @@ union
   where
   h.import_time < cast(@date as datetimeoffset)`
 
-module.exports = async function (context, transaction, date, isSoftDate) {
-  await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, isSoftDate)
+module.exports = async function (context, transaction, date, isSoftDate, deleteHeaderRowBatchSize) {
+  await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, isSoftDate, deleteHeaderRowBatchSize)
 }
 
-async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate) {
+async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate, deleteHeaderRowBatchSize) {
   context.log.info(`Loading ${isSoftDate ? 'Soft' : 'Hard'} data into temp table`)
   const FME_COMPLETE_JOB_STATUS = 6
-  let deleteHeaderRowBatchSize
-  process.env['TIMESERIES_DELETE_BATCH_SIZE'] ? deleteHeaderRowBatchSize = process.env['TIMESERIES_DELETE_BATCH_SIZE'] : deleteHeaderRowBatchSize = 1000
 
   await preparedStatement.input('date', sql.DateTimeOffset)
   await preparedStatement.input('completeStatus', sql.Int)
-  await preparedStatement.input('deleteHeaderBatchSize', sql.Int)
+  await preparedStatement.input('deleteHeaderRowBatchSize', sql.Int)
   if (isSoftDate) {
     // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
     const queryRootSoft = null
@@ -99,9 +97,9 @@ async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate)
     await preparedStatement.prepare(queryRootHard)
   }
   const parameters = {
-    date: date,
+    date,
     completeStatus: FME_COMPLETE_JOB_STATUS,
-    deleteHeaderBatchSize: deleteHeaderRowBatchSize
+    deleteHeaderRowBatchSize
   }
 
   await preparedStatement.execute(parameters)

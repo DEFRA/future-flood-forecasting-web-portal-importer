@@ -294,23 +294,45 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should delete a staging exception record with a complete job status and with an import date older than the hard limit', async () => {
+    it('should delete a staging exception record (and the associated inactive-staging-exception) and with an import date older than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
 
       const expectedNumberofRows = 0
 
       const exceptionTime = await createImportDate(importDateStatus)
-      await insertStagingExceptionRecordIntoTables(exceptionTime)
+      await insertInactiveStagingExceptionRecordIntoTables(exceptionTime)
       await runTimerFunction()
       await checkStagingExceptionDeletionStatus(expectedNumberofRows)
     })
-    it('should NOT delete a staging exception record with a complete job status and with an import date older than the hard limit', async () => {
+    it('should NOT delete a staging exception record (and the associated inactive-staging-exception) with an import date younger than the hard limit', async () => {
       const importDateStatus = 'exceedsSoft'
 
       const expectedNumberofRows = 1
+      const expectedDescription = 'this record has an associated inactive exception'
 
       const exceptionTime = await createImportDate(importDateStatus)
-      await insertStagingExceptionRecordIntoTables(exceptionTime)
+      await insertInactiveStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows, expectedDescription)
+    })
+    it('should NOT delete a staging exception record (with no associated-inactive-staging exception) with an import date younger than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+
+      const expectedNumberofRows = 1
+      const expectedDescription = 'this record has no associated inactive exception'
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertActiveStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows, expectedDescription)
+    })
+    it('should delete a staging exception record (with no associated-inactive-staging exception) with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+
+      const expectedNumberofRows = 0
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertActiveStagingExceptionRecordIntoTables(exceptionTime)
       await runTimerFunction()
       await checkStagingExceptionDeletionStatus(expectedNumberofRows)
     })
@@ -406,14 +428,30 @@ module.exports = describe('Timeseries data deletion tests', () => {
     await request.query(query)
   }
 
-  async function insertStagingExceptionRecordIntoTables (exceptionTime) {
+  async function insertInactiveStagingExceptionRecordIntoTables (exceptionTime) {
     try {
       const query = `
-    declare @id1 uniqueidentifier
-    set @id1 = newid()
+      declare @inactive_staging_exception uniqueidentifier
+        set @inactive_staging_exception = newid()
       insert into fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
-        values (@id1, 0, 'payload', 'description', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')
-`
+        values (@inactive_staging_exception, 0, 'payload', 'this record has an associated inactive exception', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')
+      insert into fff_staging.inactive_staging_exception (staging_exception_id, deactivation_time)
+        values (@inactive_staging_exception, cast('${exceptionTime}' as datetimeoffset))`
+      query.replace(/"/g, "'")
+
+      await request.query(query)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  async function insertActiveStagingExceptionRecordIntoTables (exceptionTime) {
+    try {
+      const query = `
+      declare @active_staging_exception uniqueidentifier
+        set @active_staging_exception = newid()
+      insert into fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
+        values (@active_staging_exception, 0, 'payload', 'this record has no associated inactive exception', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')`
       query.replace(/"/g, "'")
 
       await request.query(query)
@@ -451,19 +489,23 @@ module.exports = describe('Timeseries data deletion tests', () => {
     expect(result.recordset.length).toBe(expectedLength)
   }
 
-  async function checkStagingExceptionDeletionStatus (expectedLength) {
+  async function checkStagingExceptionDeletionStatus (expectedLength, expectedDescription) {
     const result = await request.query(`
     select
         se.id,
+        se.description,
         ise.id
     from
       fff_staging.staging_exception se
-      left join fff_staging.inactive_staging_exception ise on ise.staging_exception_id = se.id
+      full outer join fff_staging.inactive_staging_exception ise on ise.staging_exception_id = se.id
     order by
       se.exception_time desc
     `)
 
     expect(result.recordset.length).toBe(expectedLength)
+    if (expectedDescription) {
+      expect(result.recordset[0].description).toBe(expectedDescription)
+    }
   }
   async function checkDescription (testDescription) {
     const result = await request.query(`
