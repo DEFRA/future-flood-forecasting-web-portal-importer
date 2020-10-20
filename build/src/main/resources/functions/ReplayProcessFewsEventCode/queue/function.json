@@ -1,0 +1,18 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-eventcode-queue/$DeadLetterQueue",
+      "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "processFewsEventCode",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-eventcode-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}
