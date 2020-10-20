@@ -67,6 +67,7 @@ default of 15 seconds. Request timeout tuning is achieved through the mssql conn
 | name                                                  | description                                                                                    |
 |-------------------------------------------------------|------------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                         |
+| AZURE_SERVICE_BUS_FEWS_IMPORT_SUBSCRIPTION_NAME       | Subscription name associated with fews-import-topic                                            |
 | AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME | Subscription name associated with fews-staged-timeseries-topic                                 |
 | AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-display-group-topic                         |
 | AZURE_SERVICE_BUS_COASTAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-display-group-topic                         |
