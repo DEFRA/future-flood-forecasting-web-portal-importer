@@ -6,7 +6,7 @@ const deleteStagingExceptionsQuery = `
 with
   dsecte
   as
-    (
+  (
     select 
       top (@deleteRowBatchSize)*
     from 
