@@ -468,7 +468,6 @@ module.exports = describe('Timeseries data deletion tests', () => {
     query.replace(/"/g, "'")
 
     await request.query(query)
-
   }
 
   async function insertHeaderRecordIntoTables (importDate, statusCode, testDescription) {

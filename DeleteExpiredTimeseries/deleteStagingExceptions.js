@@ -6,14 +6,14 @@ const deleteStagingExceptionsQuery = `
 with
   dsecte
   as
-  (
-  select 
-    top (@deleteRowBatchSize)*
-  from 
-    fff_staging.staging_exception
-  where
-    exception_time < cast(@expiryDate as datetimeoffset)
-    order by exception_time
+    (
+    select 
+      top (@deleteRowBatchSize)*
+    from 
+      fff_staging.staging_exception
+    where
+      exception_time < cast(@expiryDate as datetimeoffset)
+      order by exception_time
   )
 delete 
   from 
