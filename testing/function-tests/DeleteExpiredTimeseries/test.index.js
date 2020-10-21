@@ -36,15 +36,20 @@ module.exports = describe('Timeseries data deletion tests', () => {
       softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
       // The order of deletion is sentiive to referential integrity
       await request.query(`delete from fff_reporting.timeseries_job`)
-      await request.batch(`delete from fff_staging.timeseries`)
       await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries`)
       await request.batch(`delete from fff_staging.timeseries_staging_exception`)
+      await request.batch(`delete from fff_staging.inactive_staging_exception`)
+      await request.batch(`delete from fff_staging.staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
     })
     afterAll(async () => {
-      await request.batch(`delete from fff_reporting.timeseries_job`)
+      await request.query(`delete from fff_reporting.timeseries_job`)
+      await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.timeseries`)
       await request.batch(`delete from fff_staging.timeseries_staging_exception`)
+      await request.batch(`delete from fff_staging.inactive_staging_exception`)
+      await request.batch(`delete from fff_staging.staging_exception`)
       await request.batch(`delete from fff_staging.timeseries_header`)
       await pool.close()
     })
@@ -289,6 +294,48 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
+    it('should delete a staging exception record (and the associated inactive-staging-exception) and with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+
+      const expectedNumberofRows = 0
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertInactiveStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows)
+    })
+    it('should NOT delete a staging exception record (and the associated inactive-staging-exception) with an import date younger than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+
+      const expectedNumberofRows = 1
+      const expectedDescription = 'this record has an associated inactive exception'
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertInactiveStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows, expectedDescription)
+    })
+    it('should NOT delete a staging exception record (with no associated-inactive-staging exception) with an import date younger than the hard limit', async () => {
+      const importDateStatus = 'exceedsSoft'
+
+      const expectedNumberofRows = 1
+      const expectedDescription = 'this record has no associated inactive exception'
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows, expectedDescription)
+    })
+    it('should delete a staging exception record (with no associated-inactive-staging exception) with an import date older than the hard limit', async () => {
+      const importDateStatus = 'exceedsHard'
+
+      const expectedNumberofRows = 0
+
+      const exceptionTime = await createImportDate(importDateStatus)
+      await insertStagingExceptionRecordIntoTables(exceptionTime)
+      await runTimerFunction()
+      await checkStagingExceptionDeletionStatus(expectedNumberofRows)
+    })
   })
 
   async function createImportDate (importDateStatus) {
@@ -360,22 +407,64 @@ module.exports = describe('Timeseries data deletion tests', () => {
       declare @id2 uniqueidentifier
       set @id2 = newid()
 
-      insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
-        values (@headerId, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
-      insert into fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
-        values (@id1, compress('data'),'parameters', @headerId),
+      insert into 
+        fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+      values 
+        (@headerId, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
+      insert into 
+        fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
+      values 
+        (@id1, compress('data'),'parameters', @headerId),
         (@id2, compress('data'),'parameters', @headerId)
-      insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
-        values (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
+      insert into 
+        fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
+      values 
+        (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
         (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')
-      insert into fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
-        values 
+      insert into 
+        fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+      values 
         (@id1, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @headerId, 'Error plot text'),
         (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @headerId, 'Error plot text')
-      insert into fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id, deactivation_time)
-        values 
+      insert into 
+        fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id, deactivation_time)
+      values 
         (@id1, cast('2017-01-25' as datetimeoffset)),
         (@id2, cast('2017-01-25' as datetimeoffset))`
+    query.replace(/"/g, "'")
+
+    await request.query(query)
+  }
+
+  async function insertInactiveStagingExceptionRecordIntoTables (exceptionTime) {
+    try {
+      const query = `
+      declare @inactive_staging_exception uniqueidentifier
+        set @inactive_staging_exception = newid()
+      insert into 
+        fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
+      values 
+        (@inactive_staging_exception, 0, 'payload', 'this record has an associated inactive exception', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')
+      insert into 
+        fff_staging.inactive_staging_exception (staging_exception_id, deactivation_time)
+      values 
+        (@inactive_staging_exception, cast('${exceptionTime}' as datetimeoffset))`
+      query.replace(/"/g, "'")
+
+      await request.query(query)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  async function insertStagingExceptionRecordIntoTables (exceptionTime) {
+    const query = `
+      declare @active_staging_exception uniqueidentifier
+        set @active_staging_exception = newid()
+      insert into 
+        fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
+      values 
+        (@active_staging_exception, 0, 'payload', 'this record has no associated inactive exception', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -385,8 +474,10 @@ module.exports = describe('Timeseries data deletion tests', () => {
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
-      insert into fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
-        values (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
+      insert into 
+        fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+      values 
+        (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -410,6 +501,24 @@ module.exports = describe('Timeseries data deletion tests', () => {
     expect(result.recordset.length).toBe(expectedLength)
   }
 
+  async function checkStagingExceptionDeletionStatus (expectedLength, expectedDescription) {
+    const result = await request.query(`
+    select
+        se.id,
+        se.description,
+        ise.id
+    from
+      fff_staging.staging_exception se
+      full outer join fff_staging.inactive_staging_exception ise on ise.staging_exception_id = se.id
+    order by
+      se.exception_time desc
+    `)
+
+    expect(result.recordset.length).toBe(expectedLength)
+    if (expectedDescription) {
+      expect(result.recordset[0].description).toBe(expectedDescription)
+    }
+  }
   async function checkDescription (testDescription) {
     const result = await request.query(`
     select r.description

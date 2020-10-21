@@ -1,4 +1,5 @@
 const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const deleteStagingExceptions = require('./deleteStagingExceptions')
 const insertDataIntoTemp = require('./insertDataIntoTempTable')
 const moment = require('moment')
 const sql = require('mssql')
@@ -48,9 +49,12 @@ module.exports = async function (context, myTimer) {
 
     await createTempTable(transaction, context)
 
-    await insertDataIntoTemp(context, transaction, hardDate, false)
+    let deleteRowBatchSize
+    process.env['TIMESERIES_DELETE_BATCH_SIZE'] ? deleteRowBatchSize = process.env['TIMESERIES_DELETE_BATCH_SIZE'] : deleteRowBatchSize = 1000
+
+    await insertDataIntoTemp(context, transaction, hardDate, false, deleteRowBatchSize)
     // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
-    await insertDataIntoTemp(context, transaction, softDate, true)
+    await insertDataIntoTemp(context, transaction, softDate, true, deleteRowBatchSize)
 
     context.log.info(`Data delete starting.`)
     // The order of deletion is sentiive to referential integrity
@@ -59,8 +63,8 @@ module.exports = async function (context, myTimer) {
     await executePreparedStatementInTransaction(deleteTimeseriesStagingExceptionRows, context, transaction)
     await executePreparedStatementInTransaction(deleteTimeseriesRows, context, transaction)
     await executePreparedStatementInTransaction(deleteHeaderRows, context, transaction)
-
-    context.log('JavaScript timer trigger function ran!', timeStamp)
+    await deleteStagingExceptions(context, transaction, hardDate, deleteRowBatchSize)
+    context.log.info('The DeleteExpiredTimeseries function ran!', timeStamp)
   }
   // context.done() is not requried as there is no output binding to be activated.
 }
@@ -96,7 +100,7 @@ async function deleteReportingRows (context, preparedStatement) {
       select @@rowcount as deleted`
   )
   let result = await preparedStatement.execute()
-  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Reporting' table.`)
+  context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Reporting' table.`)
 }
 
 async function deleteTimeseriesRows (context, preparedStatement) {
@@ -107,7 +111,7 @@ async function deleteTimeseriesRows (context, preparedStatement) {
       select @@rowcount as deleted`
   )
   let result = await preparedStatement.execute()
-  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Timeseries' table.`)
+  context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Timeseries' table.`)
 }
 
 async function deleteTimeseriesStagingExceptionRows (context, preparedStatement) {
@@ -118,7 +122,7 @@ async function deleteTimeseriesStagingExceptionRows (context, preparedStatement)
       select @@rowcount as deleted`
   )
   let result = await preparedStatement.execute()
-  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'TimeseriesStagingException' table.`)
+  context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'TimeseriesStagingException' table.`)
 }
 
 async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedStatement) {
@@ -131,7 +135,7 @@ async function deleteInactiveTimeseriesStagingExceptionRows (context, preparedSt
       select @@rowcount as deleted`
   )
   let result = await preparedStatement.execute()
-  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'InactiveTimeseriesStagingException' table.`)
+  context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'InactiveTimeseriesStagingException' table.`)
 }
 
 async function deleteHeaderRows (context, preparedStatement) {
@@ -142,5 +146,5 @@ async function deleteHeaderRows (context, preparedStatement) {
       select @@rowcount as deleted`
   )
   let result = await preparedStatement.execute()
-  context.log(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Header' table.`)
+  context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'Header' table.`)
 }
