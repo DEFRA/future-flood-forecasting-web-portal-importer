@@ -3,12 +3,12 @@ language: node_js
 dist: bionic
 
 node_js:
-  - "12"
+  - "10"
 
-jdk: openjdk11
+jdk: openjdk8
 
 env:
- - DOCKER_COMPOSE_VERSION=1.27.4
+ - DOCKER_COMPOSE_VERSION=1.24.1
 
 sudo: false
 
