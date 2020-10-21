@@ -18,7 +18,6 @@ steps:
   - script: |
     echo "##vso[task.setvariable variable=JAVA_HOME]$(JAVA_HOME_11_X64)"
     echo "##vso[task.setvariable variable=PATH]$(JAVA_HOME_11_X64)/bin:$(PATH)"
-  displayName: "Set java version"
   - script: npm ci
   - script: npm run build
   - script: npx markdownlint $PWD --ignore node_modules
