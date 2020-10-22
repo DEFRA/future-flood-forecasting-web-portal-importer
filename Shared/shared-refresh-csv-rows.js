@@ -1,3 +1,4 @@
+const deleteCSVStagingExceptions = require('../Shared/failed-csv-load-handler/delete-csv-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('./transaction-helper')
 const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
 const fetch = require('node-fetch')
@@ -29,12 +30,15 @@ async function refreshInTransaction (transaction, context, refreshData) {
 
   await executePreparedStatementInTransaction(refreshInternal, context, transaction, refreshData)
 
-  if (refreshData.postOperation) {
-    await refreshData.postOperation(transaction, context)
-  }
-
-  if (refreshData.workflowRefreshCsvType && !transaction._rollbackRequested) {
-    await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+  if (!transaction._rollbackRequested) {
+    if (refreshData.postOperation) {
+      await refreshData.postOperation(transaction, context)
+    }
+    // remove the outdated csv staging exceptions for this csv type
+    await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.type)
+    if (refreshData.workflowRefreshCsvType) {
+      await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+    }
   }
 }
 
