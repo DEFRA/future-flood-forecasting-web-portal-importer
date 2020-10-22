@@ -292,7 +292,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       // we cannot check for null columns with comparison operators, such as =, <, or <>. Simply check the row count is correct.
       await checkResultCount(expectedMVTData.length)
     })
-    it('should ignore a csv that has a misspelled header row, load exceptions and then remove all the old exceptions for that csv type following a successful load', async () => {
+    it('should ignore an invalid csv and load the rows as exceptions. Following a successful csv load, all the old exceptions for that csv type should be removed', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'headers-misspelled.csv',
@@ -396,7 +396,7 @@ module.exports = describe('Refresh mvt data tests', () => {
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
-    // Check exceptions
+    // Check exceptions (including a potential expectation of no exceptions)
     if (expectedNumberOfExceptionRows !== null) {
       const exceptionCount = await request.query(`
       select 
