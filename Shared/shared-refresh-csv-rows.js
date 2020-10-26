@@ -66,14 +66,16 @@ async function updateWorkflowRefreshTable (context, preparedStatement, refreshDa
 async function refreshInternal (context, preparedStatement, refreshData) {
   try {
     const transaction = preparedStatement.parent
-    const configAuthorization = process.env['CONFIG_AUTHORIZATION']
+    let configAuthorization = process.env['CONFIG_AUTHORIZATION']
 
     const refreshDataConfig = {
       method: 'get',
-      headers: configAuthorization ? { 'Authorization': `'${configAuthorization}'` } : {}
+      headers: configAuthorization ? { Authorization: 'token ' + configAuthorization } : {}
     }
 
+    configAuthorization = ''
     const response = await fetch(refreshData.csvUrl, refreshDataConfig)
+
     if (response.status === 200 && response.url.includes('.csv')) {
       const csvRows = await neatCsv(response.body)
       const csvRowCount = csvRows.length
