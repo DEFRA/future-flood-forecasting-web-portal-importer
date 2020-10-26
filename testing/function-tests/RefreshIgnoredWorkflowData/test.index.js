@@ -115,24 +115,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows)
     })
     it('should refresh given a valid CSV file', async () => {
-      const mockResponseData = {
-        statusCode: STATUS_CODE_200,
-        filename: 'valid-ignored-workflows.csv',
-        statusText: STATUS_TEXT_OK,
-        contentType: TEXT_CSV
-      }
-
-      const expectedIgnoredWorkflowData = [{
-        WorkflowId: 'workflow1'
-      },
-      {
-        WorkflowId: 'workflow2'
-      },
-      {
-        WorkflowId: 'workflow3'
-      }]
-
-      await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData)
+      await loadValidCsvAndCheckExpectedResults()
     })
     it('should throw an exception when the csv server is unavailable', async () => {
       const expectedError = new Error(`connect ECONNREFUSED mockhost`)
@@ -201,6 +184,10 @@ module.exports = describe('Ignored workflow loader tests', () => {
 
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+    })
+    it('should allow optional use of a HTTP Authorization header ', async () => {
+      process.env['CONFIG_AUTHORIZATION'] = 'Mock token'
+      await loadValidCsvAndCheckExpectedResults()
     })
   })
 
@@ -309,5 +296,26 @@ module.exports = describe('Ignored workflow loader tests', () => {
       exception_time desc
   `)
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
+  }
+
+  async function loadValidCsvAndCheckExpectedResults () {
+    const mockResponseData = {
+      statusCode: STATUS_CODE_200,
+      filename: 'valid-ignored-workflows.csv',
+      statusText: STATUS_TEXT_OK,
+      contentType: TEXT_CSV
+    }
+
+    const expectedIgnoredWorkflowData = [{
+      WorkflowId: 'workflow1'
+    },
+    {
+      WorkflowId: 'workflow2'
+    },
+    {
+      WorkflowId: 'workflow3'
+    }]
+
+    await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData)
   }
 })
