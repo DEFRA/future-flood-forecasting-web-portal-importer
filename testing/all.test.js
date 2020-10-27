@@ -36,7 +36,6 @@ describe('Run all unit tests in sequence', () => {
     }
   })
 
-  require('./function-tests/RefreshMVTData/test.index')
   require('./function-tests/DeleteExpiredTimeseries/test.index')
   require('./function-tests/RefreshFluvialDisplayGroupData/test.index')
   require('./function-tests/RefreshCoastalDisplayGroupData/test.index')
@@ -46,6 +45,7 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/RefreshCoastalTidalForecastLocationData/test.index')
   require('./function-tests/RefreshCoastalTritonForecastLocationData/test.index')
   require('./function-tests/RefreshCoastalMVTForecastLocationData/test.index')
+  require('./function-tests/RefreshMVTData/test.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesNonDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesFluvialDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesCoastalDisplayGroup.index')

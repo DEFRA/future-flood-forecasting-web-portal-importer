@@ -373,9 +373,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
         values (@id3, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @id1, 'Error plot text')
       insert into fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
         values (@id2, compress('data'),'parameters', @id1)
-      insert into fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
-        values (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
-        (@id2, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
+      insert into fff_reporting.timeseries_job (timeseries_id, job_status, job_status_time, description)
+        values (@id2, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
+        (@id2, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')`
     query.replace(/"/g, "'")
 
     await request.query(query)
@@ -407,28 +407,28 @@ module.exports = describe('Timeseries data deletion tests', () => {
       declare @id2 uniqueidentifier
       set @id2 = newid()
 
-      insert into 
+      insert into
         fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
-      values 
+      values
         (@headerId, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')
-      insert into 
+      insert into
         fff_staging.timeseries (id, fews_data, fews_parameters, timeseries_header_id)
-      values 
+      values
         (@id1, compress('data'),'parameters', @headerId),
         (@id2, compress('data'),'parameters', @headerId)
-      insert into 
-        fff_reporting.timeseries_job (timeseries_id, job_id, job_status, job_status_time, description)
-      values 
-        (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
-        (@id1, 78787878, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')
-      insert into 
+      insert into
+        fff_reporting.timeseries_job (timeseries_id, job_status, job_status_time, description)
+      values
+        (@id1, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}'),
+        (@id1, ${statusCode}, cast('2017-01-28' as datetimeoffset), '${testDescription}')
+      insert into
         fff_staging.timeseries_staging_exception (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
-      values 
+      values
         (@id1, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @headerId, 'Error plot text'),
         (@id2, 'error_plot', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": 0, "plotId": "error_plot"}', @headerId, 'Error plot text')
-      insert into 
+      insert into
         fff_staging.inactive_timeseries_staging_exception (timeseries_staging_exception_id, deactivation_time)
-      values 
+      values
         (@id1, cast('2017-01-25' as datetimeoffset)),
         (@id2, cast('2017-01-25' as datetimeoffset))`
     query.replace(/"/g, "'")
@@ -441,13 +441,13 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const query = `
       declare @inactive_staging_exception uniqueidentifier
         set @inactive_staging_exception = newid()
-      insert into 
+      insert into
         fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
-      values 
+      values
         (@inactive_staging_exception, 0, 'payload', 'this record has an associated inactive exception', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')
-      insert into 
+      insert into
         fff_staging.inactive_staging_exception (staging_exception_id, deactivation_time)
-      values 
+      values
         (@inactive_staging_exception, cast('${exceptionTime}' as datetimeoffset))`
       query.replace(/"/g, "'")
 
@@ -461,9 +461,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
     const query = `
       declare @active_staging_exception uniqueidentifier
         set @active_staging_exception = newid()
-      insert into 
+      insert into
         fff_staging.staging_exception (id, task_run_id, payload, description, exception_time, source_function, workflow_id)
-      values 
+      values
         (@active_staging_exception, 0, 'payload', 'this record has no associated inactive exception', cast('${exceptionTime}' as datetimeoffset), 'P', 'workflow1')`
     query.replace(/"/g, "'")
 
@@ -474,9 +474,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
-      insert into 
+      insert into
         fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
-      values 
+      values
         (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
     query.replace(/"/g, "'")
 
@@ -555,9 +555,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest = new sql.Request(transaction)
 
       const query = `
-      select 
-        * 
-      from 
+      select
+        *
+      from
         fff_staging.timeseries_header`
       await newRequest.query(query)
 
@@ -580,9 +580,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest = new sql.Request(transaction)
       const query = `
       declare @id1 uniqueidentifier set @id1 = newid()
-      insert into 
+      insert into
         fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
-      values 
+      values
         (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
       query.replace(/"/g, "'")
       await newRequest.query(query)
