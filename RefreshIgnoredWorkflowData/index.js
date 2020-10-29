@@ -1,18 +1,21 @@
 const refresh = require('../Shared/shared-refresh-csv-rows')
 
-module.exports = async function (context, message) {
+module.exports = async function (context) {
   const refreshData = {
-    // Location of csv:
     csvUrl: process.env['IGNORED_WORKFLOW_URL'],
     workflowRefreshCsvType: 'I',
-    // Destination table in staging database
-    tableName: 'IGNORED_WORKFLOW',
-    partialTableUpdate: { flag: false },
+    tableName: 'ignored_workflow',
+    deleteStatement: 'delete from fff_staging.ignored_workflow',
+    countStatement: 'select count(*) as number from fff_staging.ignored_workflow',
+    insertPreparedStatement: `
+    insert into 
+      fff_staging.ignored_workflow (workflow_id)
+    values 
+      (@workflow_id)`,
     // Column information and correspoding csv information
     functionSpecificData: [
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' }
-    ],
-    type: 'ignored workflow refresh'
+    ]
   }
 
   await refresh(context, refreshData)

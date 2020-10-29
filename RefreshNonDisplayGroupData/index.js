@@ -1,14 +1,18 @@
 const refresh = require('../Shared/shared-refresh-csv-rows')
 const { isBoolean } = require('../Shared/utils')
 
-module.exports = async function (context, message) {
+module.exports = async function (context) {
   const refreshData = {
-    // Location of csv:
     csvUrl: process.env['NON_DISPLAY_GROUP_WORKFLOW_URL'],
     workflowRefreshCsvType: 'N',
-    // Destination table in staging database
-    tableName: 'NON_DISPLAY_GROUP_WORKFLOW',
-    partialTableUpdate: { flag: false },
+    tableName: 'non_display_group_workflow',
+    deleteStatement: 'delete from fff_staging.non_display_group_workflow',
+    countStatement: 'select count(*) as number from fff_staging.non_display_group_workflow',
+    insertPreparedStatement: `
+      insert into 
+        fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)  
+      values 
+        (@workflow_id, @filter_id, @approved, @start_time_offset_hours, @end_time_offset_hours, @timeseries_type)`,
     // Column information and correspoding csv information
     functionSpecificData: [
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
@@ -19,7 +23,6 @@ module.exports = async function (context, message) {
       { tableColumnName: 'TIMESERIES_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'TimeSeriesType' }
 
     ],
-    type: 'non display group refresh',
     keyInteregator
   }
 
