@@ -1,5 +1,6 @@
 const MVTRefreshFunction = require('../../../RefreshMVTData/index')
 const ConnectionPool = require('../../../Shared/connection-pool')
+const Util = require('../shared/common-csv-refresh-utils')
 const Context = require('../mocks/defaultContext')
 const message = require('../mocks/defaultMessage')
 const fetch = require('node-fetch')
@@ -16,6 +17,7 @@ module.exports = describe('Refresh mvt data tests', () => {
 
   let context
   let dummyData
+  let commonCSVTestUtils
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
@@ -30,6 +32,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      commonCSVTestUtils = new Util(context)
       dummyData = {
         CENTRE: 'dummy',
         CRITICAL_CONDITION_ID: 'dummy',
@@ -289,6 +292,57 @@ module.exports = describe('Refresh mvt data tests', () => {
       // we cannot check for null columns with comparison operators, such as =, <, or <>. Simply check the row count is correct.
       await checkResultCount(expectedMVTData.length)
     })
+    it('should ignore an invalid csv and load the rows as exceptions. Following a successful csv load, all the old exceptions for that csv type should be removed', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'headers-misspelled.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedIgnoredWorkflowData = [dummyData]
+      const expectedNumberOfExceptionRows = 3
+      const expectedErrorDescription = 'row is missing data'
+      const mockResponseData2 = {
+        statusCode: STATUS_CODE_200,
+        filename: 'valid.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedMVTData = [
+        {
+          CENTRE: 'CENTRE1',
+          CRITICAL_CONDITION_ID: 'dummy',
+          INPUT_LOCATION_ID: 'dummy',
+          OUTPUT_LOCATION_ID: 'dummy',
+          TARGET_AREA_CODE: 'dummy',
+          INPUT_PARAMETER_ID: 'dummy',
+          LOWER_BOUND: 0.1,
+          UPPER_BOUND: 0.2,
+          LOWER_BOUND_INCLUSIVE: 0,
+          UPPER_BOUND_INCLUSIVE: 1,
+          PRIORITY: 9
+        },
+        {
+          CENTRE: 'CENTRE2',
+          CRITICAL_CONDITION_ID: 'dummy',
+          INPUT_LOCATION_ID: 'dummy',
+          OUTPUT_LOCATION_ID: 'dummy',
+          TARGET_AREA_CODE: 'dummy',
+          INPUT_PARAMETER_ID: 'dummy',
+          LOWER_BOUND: 0,
+          UPPER_BOUND: 0,
+          LOWER_BOUND_INCLUSIVE: 0,
+          UPPER_BOUND_INCLUSIVE: 0,
+          PRIORITY: 1
+        }]
+      const expectedNumberOfExceptionRows2 = 1
+      const expectedErrorDescription2 = 'test data'
+      await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription)
+      await commonCSVTestUtils.insertCSVStagingException()
+      await refreshMVTDataAndCheckExpectedResults(mockResponseData2, expectedMVTData, expectedNumberOfExceptionRows2, expectedErrorDescription2)
+    })
   })
 
   async function refreshMVTDataAndCheckExpectedResults (mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription) {
@@ -342,8 +396,8 @@ module.exports = describe('Refresh mvt data tests', () => {
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
-    // Check exceptions
-    if (expectedNumberOfExceptionRows) {
+    // Check exceptions (including a potential expectation of no exceptions)
+    if (expectedNumberOfExceptionRows !== null) {
       const exceptionCount = await request.query(`
       select 
         count(*) 
@@ -352,7 +406,9 @@ module.exports = describe('Refresh mvt data tests', () => {
       from 
         fff_staging.csv_staging_exception`)
       expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
-      await checkExceptionIsCorrect(expectedErrorDescription)
+      if (expectedNumberOfExceptionRows > 0 && expectedErrorDescription) {
+        await checkExceptionIsCorrect(expectedErrorDescription)
+      }
     }
   }
 
