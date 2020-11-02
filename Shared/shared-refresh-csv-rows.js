@@ -12,11 +12,11 @@ module.exports = async function (context, refreshData) {
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refreshInTransaction, context, `The ${refreshData.tableName} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
 
   // Transaction 2
   if (refreshData.failedRows.length > 0) {
-    await doInTransaction(loadExceptions, context, `The ${refreshData.tableName} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.tableName, refreshData.failedRows)
+    await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedRows)
   } else {
     context.log.info(`There were no csv exceptions during load.`)
   }
@@ -34,8 +34,8 @@ async function refreshInTransaction (transaction, context, refreshData) {
     if (refreshData.postOperation) {
       await refreshData.postOperation(transaction, context)
     }
-    // remove the outdated csv staging exceptions for this csv type
-    await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.type)
+    // remove the outdated csv staging exceptions for this csv csvSourceFile
+    await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.csvSourceFile)
     if (refreshData.workflowRefreshCsvType) {
       await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
     }
@@ -145,7 +145,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         await preparedStatement.unprepare()
 
         const result = await new sql.Request(transaction).query(refreshData.countStatement)
-        context.log.info(`The ${refreshData.tableName} table now contains ${result.recordset[0].number} new/updated records`)
+        context.log.info(`The ${refreshData.csvSourceFile} table now contains ${result.recordset[0].number} new/updated records`)
         if (result.recordset[0].number === 0) {
           // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
           context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back refresh.')
@@ -154,17 +154,17 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         }
       } else {
         // If the csv is empty then the file is essentially ignored
-        context.log.warn(`No records detected - Aborting ${refreshData.tableName} refresh.`)
+        context.log.warn(`No records detected - Aborting ${refreshData.csvSourceFile} refresh.`)
       }
 
       // Regardless of whether a rollback took place, all the failed csv rows are captured for loading into exceptions.
-      context.log.warn(`The ${refreshData.tableName} csv loader failed to load ${failedCsvRows.length} csvRows.`)
+      context.log.warn(`The ${refreshData.csvSourceFile} csv loader failed to load ${failedCsvRows.length} csvRows.`)
       refreshData.failedRows = failedCsvRows
     } else {
       throw new Error(`No csv file detected`)
     }
   } catch (err) {
-    context.log.error(`Refresh ${refreshData.tableName} data failed: ${err}`)
+    context.log.error(`Refresh ${refreshData.csvSourceFile} data failed: ${err}`)
     throw err
   }
 }

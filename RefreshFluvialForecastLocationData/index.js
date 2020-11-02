@@ -5,6 +5,7 @@ module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env['FLUVIAL_FORECAST_LOCATION_URL'],
     tableName: 'fluvial_forecast_location',
+    csvSourceFile: 'fluvial forecast location refresh',
     deleteStatement: 'delete from fff_staging.fluvial_forecast_location',
     countStatement: 'select count(*) as number from fff_staging.fluvial_forecast_location',
     insertPreparedStatement: `

@@ -6,6 +6,7 @@ module.exports = async function (context) {
     csvUrl: process.env['COASTAL_DISPLAY_GROUP_WORKFLOW_URL'],
     workflowRefreshCsvType: 'C',
     tableName: '#coastal_display_group_workflow_temp',
+    csvSourceFile: 'coastal display group',
     deleteStatement: 'delete from fff_staging.#coastal_display_group_workflow_temp',
     countStatement: 'select count(*) as number from fff_staging.#coastal_display_group_workflow_temp',
     insertPreparedStatement: `

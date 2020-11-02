@@ -5,6 +5,7 @@ module.exports = async function (context) {
     csvUrl: process.env['IGNORED_WORKFLOW_URL'],
     workflowRefreshCsvType: 'I',
     tableName: 'ignored_workflow',
+    csvSourceFile: 'ignored workflow refresh',
     deleteStatement: 'delete from fff_staging.ignored_workflow',
     countStatement: 'select count(*) as number from fff_staging.ignored_workflow',
     insertPreparedStatement: `
