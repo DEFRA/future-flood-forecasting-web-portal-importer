@@ -12,11 +12,11 @@ module.exports = async function (context, refreshData) {
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refreshInTransaction, context, `The ${refreshData.type} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
 
   // Transaction 2
   if (refreshData.failedRows.length > 0) {
-    await doInTransaction(loadExceptions, context, `The ${refreshData.type} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.type, refreshData.failedRows)
+    await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedRows)
   } else {
     context.log.info(`There were no csv exceptions during load.`)
   }
@@ -34,8 +34,8 @@ async function refreshInTransaction (transaction, context, refreshData) {
     if (refreshData.postOperation) {
       await refreshData.postOperation(transaction, context)
     }
-    // remove the outdated csv staging exceptions for this csv type
-    await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.type)
+    // remove the outdated csv staging exceptions for this csv csvSourceFile
+    await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.csvSourceFile)
     if (refreshData.workflowRefreshCsvType) {
       await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
     }
@@ -83,37 +83,17 @@ async function refreshInternal (context, preparedStatement, refreshData) {
 
       // do not refresh the table if the csv is empty.
       if (csvRowCount > 0) {
-        if (refreshData.partialTableUpdate.flag) {
-          await new sql.Request(transaction).query(`
-          delete 
-          from
-            fff_staging.${refreshData.tableName} ${refreshData.partialTableUpdate.whereClause}`)
-        } else {
-          await new sql.Request(transaction).query(`
-          delete
-          from 
-            fff_staging.${refreshData.tableName}`)
-        }
-        let columnNames = ''
-        let preparedStatementValues = ''
+        await new sql.Request(transaction).query(refreshData.deleteStatement)
+
         for (const columnObject of refreshData.functionSpecificData) {
-          // preparedStatement inputs
-          columnNames = columnNames + `${columnObject.tableColumnName}, `
-          preparedStatementValues = preparedStatementValues + `@${columnObject.tableColumnName}, ` // '@' values are input at execution.
           if (columnObject.tableColumnType === 'Decimal') {
             await preparedStatement.input(columnObject.tableColumnName, sql.Decimal(columnObject.precision, columnObject.scale))
           } else {
             await preparedStatement.input(columnObject.tableColumnName, sql[`${columnObject.tableColumnType}`])
           }
         }
-        columnNames = columnNames.slice(0, -2)
-        preparedStatementValues = preparedStatementValues.slice(0, -2)
 
-        await preparedStatement.prepare(`
-        insert into 
-          fff_staging.${refreshData.tableName} (${columnNames})
-        values 
-          (${preparedStatementValues})`)
+        await preparedStatement.prepare(refreshData.insertPreparedStatement)
 
         for (const row of csvRows) {
           const preparedStatementExecuteObject = {}
@@ -164,15 +144,8 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         // Future requests will fail until the prepared statement is unprepared.
         await preparedStatement.unprepare()
 
-        // Check updated table row count
-        const result = await new sql.Request(transaction).query(`
-        select 
-          count(*) 
-        as 
-          number 
-        from 
-          fff_staging.${refreshData.tableName} ${refreshData.partialTableUpdate.whereClause}`)
-        context.log.info(`The ${refreshData.tableName} table now contains ${result.recordset[0].number} new/updated records`)
+        const result = await new sql.Request(transaction).query(refreshData.countStatement)
+        context.log.info(`The ${refreshData.csvSourceFile} table now contains ${result.recordset[0].number} new/updated records`)
         if (result.recordset[0].number === 0) {
           // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
           context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back refresh.')
@@ -181,17 +154,17 @@ async function refreshInternal (context, preparedStatement, refreshData) {
         }
       } else {
         // If the csv is empty then the file is essentially ignored
-        context.log.warn(`No records detected - Aborting ${refreshData.tableName} refresh.`)
+        context.log.warn(`No records detected - Aborting ${refreshData.csvSourceFile} refresh.`)
       }
 
       // Regardless of whether a rollback took place, all the failed csv rows are captured for loading into exceptions.
-      context.log.warn(`The ${refreshData.tableName} csv loader failed to load ${failedCsvRows.length} csvRows.`)
+      context.log.warn(`The ${refreshData.csvSourceFile} csv loader failed to load ${failedCsvRows.length} csvRows.`)
       refreshData.failedRows = failedCsvRows
     } else {
       throw new Error(`No csv file detected`)
     }
   } catch (err) {
-    context.log.error(`Refresh ${refreshData.tableName} data failed: ${err}`)
+    context.log.error(`Refresh ${refreshData.csvSourceFile} data failed: ${err}`)
     throw err
   }
 }

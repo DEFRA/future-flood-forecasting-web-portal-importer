@@ -1,13 +1,18 @@
 
 const refresh = require('../Shared/shared-refresh-csv-rows')
 
-module.exports = async function (context, message) {
+module.exports = async function (context) {
   const refreshData = {
-    // Location of csv:
     csvUrl: process.env['FLUVIAL_FORECAST_LOCATION_URL'],
-    // Destination table in staging database
-    tableName: 'FLUVIAL_FORECAST_LOCATION',
-    partialTableUpdate: { flag: false },
+    tableName: 'fluvial_forecast_location',
+    csvSourceFile: 'fluvial forecast location refresh',
+    deleteStatement: 'delete from fff_staging.fluvial_forecast_location',
+    countStatement: 'select count(*) as number from fff_staging.fluvial_forecast_location',
+    insertPreparedStatement: `
+      insert into 
+        fff_staging.fluvial_forecast_location (fffs_location_id, fffs_location_name, drn_order, datum, display_order, centre, plot_id, catchment, catchment_order, mfdo_area)       
+      values 
+        (@fffs_location_id, @fffs_location_name, @drn_order, @datum, @display_order, @centre, @plot_id, @catchment, @catchment_order, @mfdo_area)`,
     // Column information and correspoding csv information
     functionSpecificData: [
       { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
@@ -20,8 +25,7 @@ module.exports = async function (context, message) {
       { tableColumnName: 'CATCHMENT', tableColumnType: 'NVarChar', expectedCSVKey: 'Catchment' },
       { tableColumnName: 'CATCHMENT_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CatchmentOrder' },
       { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' }
-    ],
-    type: 'fluvial forecast location refresh'
+    ]
   }
   await refresh(context, refreshData)
 }

@@ -1,13 +1,18 @@
 const refresh = require('../Shared/shared-refresh-csv-rows')
 
-module.exports = async function (context, message) {
+module.exports = async function (context) {
   const refreshData = {
-    // Location of csv:
     csvUrl: process.env['MVT_URL'],
-    // Destination table in staging database
-    tableName: 'MULTIVARIATE_THRESHOLDS',
-    partialTableUpdate: { flag: false },
-    // Column information and corresponding csv information
+    tableName: 'multivariate_thresholds',
+    csvSourceFile: 'mvt',
+    deleteStatement: 'delete from fff_staging.multivariate_thresholds',
+    countStatement: 'select count(*) as number from fff_staging.multivariate_thresholds',
+    insertPreparedStatement: `
+      insert into 
+        fff_staging.multivariate_thresholds (centre, critical_condition_id, input_location_id, output_location_id, target_area_code,  input_parameter_id, lower_bound, upper_bound, lower_bound_inclusive, upper_bound_inclusive, priority) 
+      values 
+        (@centre, @critical_condition_id, @input_location_id, @output_location_id, @target_area_code, @input_parameter_id, @lower_bound,  @upper_bound, @lower_bound_inclusive, @upper_bound_inclusive, @priority)`,
+    // Column information, and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'CENTRE', tableColumnType: 'NVarChar', expectedCSVKey: 'Centre', nullValueOverride: true },
       { tableColumnName: 'CRITICAL_CONDITION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'criticalConditionID', nullValueOverride: true },
@@ -20,8 +25,7 @@ module.exports = async function (context, message) {
       { tableColumnName: 'LOWER_BOUND_INCLUSIVE', tableColumnType: 'Bit', expectedCSVKey: 'lowerBoundInclusive', preprocessor: parseBooleanString, nullValueOverride: true },
       { tableColumnName: 'UPPER_BOUND_INCLUSIVE', tableColumnType: 'Bit', expectedCSVKey: 'upperBoundInclusive', preprocessor: parseBooleanString, nullValueOverride: true },
       { tableColumnName: 'PRIORITY', tableColumnType: 'Int', expectedCSVKey: 'Priority', nullValueOverride: true }
-    ],
-    type: 'mvt'
+    ]
   }
   await refresh(context, refreshData)
 }

@@ -1,21 +1,25 @@
 const refresh = require('../Shared/shared-refresh-csv-rows')
 const sql = require('mssql')
 
-module.exports = async function (context, message) {
+module.exports = async function (context) {
   const refreshData = {
-    // Location of csv:
     csvUrl: process.env['COASTAL_DISPLAY_GROUP_WORKFLOW_URL'],
     workflowRefreshCsvType: 'C',
-    // Destination table in staging database
     tableName: '#coastal_display_group_workflow_temp',
-    partialTableUpdate: { flag: false },
+    csvSourceFile: 'coastal display group',
+    deleteStatement: 'delete from fff_staging.#coastal_display_group_workflow_temp',
+    countStatement: 'select count(*) as number from fff_staging.#coastal_display_group_workflow_temp',
+    insertPreparedStatement: `
+      insert into 
+        fff_staging.#coastal_display_group_workflow_temp (workflow_id, plot_id, location_id)
+      values 
+        (@workflow_id, @plot_id, @location_id)`,
     // Column information and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'workflow_id', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
       { tableColumnName: 'plot_id', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
       { tableColumnName: 'location_id', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' }
     ],
-    type: 'coastal display group',
     preOperation: createDisplayGroupTemporaryTable,
     postOperation: refreshDisplayGroupTable
   }
