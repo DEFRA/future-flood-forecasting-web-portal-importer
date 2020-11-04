@@ -15,8 +15,8 @@ module.exports = async function (context, refreshData) {
   await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
 
   // Transaction 2
-  if (refreshData.failedRows.length > 0) {
-    await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedRows)
+  if (refreshData.failedCsvRows.length > 0) {
+    await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedCsvRows)
   } else {
     context.log.info(`There were no csv exceptions during load.`)
   }
@@ -63,106 +63,112 @@ async function updateWorkflowRefreshTable (context, preparedStatement, refreshDa
   await preparedStatement.execute(parameters)
 }
 
+async function getCsvData (context, refreshData) {
+  let configAuthorization = process.env['CONFIG_AUTHORIZATION']
+
+  const refreshDataConfig = {
+    method: 'get',
+    headers: configAuthorization ? { Authorization: 'token ' + configAuthorization } : {}
+  }
+
+  configAuthorization = ''
+  refreshData.csvResponse = await fetch(refreshData.csvUrl, refreshDataConfig)
+  if (refreshData.csvResponse.status === 200 && refreshData.csvResponse.url.includes('.csv')) {
+    return refreshData
+  } else {
+    throw new Error(`No csv file detected`)
+  }
+}
+
+async function buildPrepareStatementParameters (context, row, refreshData) {
+  const preparedStatementExecuteObject = {}
+  // check all the expected values are present in the csv row and exclude incomplete csvRows.
+  for (const columnObject of refreshData.functionSpecificData) {
+    if (refreshData.keyInteregator) {
+      const keyPass = await refreshData.keyInteregator(columnObject.expectedCSVKey, row[`${columnObject.expectedCSVKey}`])
+      if (keyPass === false) {
+        return { rowError: true }
+      }
+    }
+    // If the row-key contains data OR there is an override set to continue with row-key null value.
+    if (row[`${columnObject.expectedCSVKey}`] || columnObject.nullValueOverride === true) {
+      if (columnObject.preprocessor) {
+        preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = columnObject.preprocessor(row[`${columnObject.expectedCSVKey}`])
+      } else {
+        preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+      }
+    } else {
+      return { rowError: true }
+    }
+  }
+  return preparedStatementExecuteObject
+}
+
+async function processCsvRow (context, preparedStatement, row, refreshData) {
+  try {
+    let result = await buildPrepareStatementParameters(context, row, refreshData)
+    if (result.rowError) {
+      context.log.warn(`row is missing data.`)
+      const failedRowInfo = {
+        rowData: row,
+        errorMessage: `row is missing data.`,
+        errorCode: `NA`
+      }
+      refreshData.failedCsvRows.push(failedRowInfo)
+    } else {
+      await preparedStatement.execute(result)
+    }
+  } catch (err) {
+    context.log.warn(`An error has been found in a row.\nError : ${err}`)
+    const failedRowInfo = {
+      rowData: row,
+      errorMessage: err.message,
+      errorCode: err.code
+    }
+    refreshData.failedCsvRows.push(failedRowInfo)
+  }
+}
+
+async function processCSVRows (context, transaction, preparedStatement, refreshData) {
+  await new sql.Request(transaction).query(refreshData.deleteStatement)
+  for (const columnObject of refreshData.functionSpecificData) {
+    if (columnObject.tableColumnType === 'Decimal') {
+      await preparedStatement.input(columnObject.tableColumnName, sql.Decimal(columnObject.precision, columnObject.scale))
+    } else {
+      await preparedStatement.input(columnObject.tableColumnName, sql[`${columnObject.tableColumnType}`])
+    }
+  }
+  await preparedStatement.prepare(refreshData.insertPreparedStatement)
+  for (const row of refreshData.csvRows) {
+    await processCsvRow(context, preparedStatement, row, refreshData)
+  }
+  // Future requests will fail until the prepared statement is unprepared.
+  await preparedStatement.unprepare()
+
+  const result = await new sql.Request(transaction).query(refreshData.countStatement)
+  context.log.info(`The ${refreshData.csvSourceFile} table now contains ${result.recordset[0].number} new/updated records`)
+  if (result.recordset[0].number === 0) {
+    // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
+    context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back refresh.')
+    await transaction.rollback()
+    context.log.warn('Transaction rolled back.')
+  }
+}
+
 async function refreshInternal (context, preparedStatement, refreshData) {
   try {
     const transaction = preparedStatement.parent
-    let configAuthorization = process.env['CONFIG_AUTHORIZATION']
-
-    const refreshDataConfig = {
-      method: 'get',
-      headers: configAuthorization ? { Authorization: 'token ' + configAuthorization } : {}
-    }
-
-    configAuthorization = ''
-    const response = await fetch(refreshData.csvUrl, refreshDataConfig)
-
-    if (response.status === 200 && response.url.includes('.csv')) {
-      const csvRows = await neatCsv(response.body)
-      const csvRowCount = csvRows.length
-      const failedCsvRows = []
-
-      // do not refresh the table if the csv is empty.
-      if (csvRowCount > 0) {
-        await new sql.Request(transaction).query(refreshData.deleteStatement)
-
-        for (const columnObject of refreshData.functionSpecificData) {
-          if (columnObject.tableColumnType === 'Decimal') {
-            await preparedStatement.input(columnObject.tableColumnName, sql.Decimal(columnObject.precision, columnObject.scale))
-          } else {
-            await preparedStatement.input(columnObject.tableColumnName, sql[`${columnObject.tableColumnType}`])
-          }
-        }
-
-        await preparedStatement.prepare(refreshData.insertPreparedStatement)
-
-        for (const row of csvRows) {
-          const preparedStatementExecuteObject = {}
-          try {
-            // check all the expected values are present in the csv row and exclude incomplete csvRows.
-            let rowError = false
-            for (const columnObject of refreshData.functionSpecificData) {
-              if (refreshData.keyInteregator) {
-                const keyPass = await refreshData.keyInteregator(columnObject.expectedCSVKey, row[`${columnObject.expectedCSVKey}`])
-                if (keyPass === false) {
-                  rowError = true
-                  break
-                }
-              }
-              // If the row-key contains data OR there is an override set to continue with row-key null value.
-              if (row[`${columnObject.expectedCSVKey}`] || columnObject.nullValueOverride === true) {
-                if (columnObject.preprocessor) {
-                  preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = columnObject.preprocessor(row[`${columnObject.expectedCSVKey}`])
-                } else {
-                  preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
-                }
-              } else {
-                rowError = true
-                break
-              }
-            }
-            if (rowError) {
-              context.log.warn(`row is missing data.`)
-              const failedRowInfo = {
-                rowData: row,
-                errorMessage: `row is missing data.`,
-                errorCode: `NA`
-              }
-              failedCsvRows.push(failedRowInfo)
-            } else {
-              await preparedStatement.execute(preparedStatementExecuteObject)
-            }
-          } catch (err) {
-            context.log.warn(`An error has been found in a row.\nError : ${err}`)
-            const failedRowInfo = {
-              rowData: row,
-              errorMessage: err.message,
-              errorCode: err.code
-            }
-            failedCsvRows.push(failedRowInfo)
-          }
-        }
-        // Future requests will fail until the prepared statement is unprepared.
-        await preparedStatement.unprepare()
-
-        const result = await new sql.Request(transaction).query(refreshData.countStatement)
-        context.log.info(`The ${refreshData.csvSourceFile} table now contains ${result.recordset[0].number} new/updated records`)
-        if (result.recordset[0].number === 0) {
-          // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
-          context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back refresh.')
-          await transaction.rollback()
-          context.log.warn('Transaction rolled back.')
-        }
-      } else {
-        // If the csv is empty then the file is essentially ignored
-        context.log.warn(`No records detected - Aborting ${refreshData.csvSourceFile} refresh.`)
-      }
-
-      // Regardless of whether a rollback took place, all the failed csv rows are captured for loading into exceptions.
-      context.log.warn(`The ${refreshData.csvSourceFile} csv loader failed to load ${failedCsvRows.length} csvRows.`)
-      refreshData.failedRows = failedCsvRows
+    refreshData.failedCsvRows = []
+    refreshData = await getCsvData(context, refreshData)
+    refreshData.csvRows = await neatCsv(refreshData.csvResponse.body)
+    // Do not refresh the table if the csv is empty.
+    if (refreshData.csvRows.length > 0) {
+      await processCSVRows(context, transaction, preparedStatement, refreshData)
     } else {
-      throw new Error(`No csv file detected`)
+      context.log.warn(`No records detected - Aborting ${refreshData.csvSourceFile} refresh.`)
     }
+    // Regardless of whether a rollback took place (e.g in the case of zero rows passing verification), all the failed csv rows are captured for loading into exceptions.
+    context.log.warn(`The ${refreshData.csvSourceFile} csv loader failed to load ${refreshData.failedCsvRows.length} csvRows.`)
   } catch (err) {
     context.log.error(`Refresh ${refreshData.csvSourceFile} data failed: ${err}`)
     throw err
