@@ -30,15 +30,16 @@ async function refreshInTransaction (transaction, context, refreshData) {
 
   await executePreparedStatementInTransaction(refreshInternal, context, transaction, refreshData)
 
-  if (!transaction._rollbackRequested) {
-    if (refreshData.postOperation) {
-      await refreshData.postOperation(transaction, context)
-    }
-    // remove the outdated csv staging exceptions for this csv csvSourceFile
-    await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.csvSourceFile)
-    if (refreshData.workflowRefreshCsvType) {
-      await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
-    }
+  if (transaction._rollbackRequested) {
+    return
+  }
+  if (refreshData.postOperation) {
+    await refreshData.postOperation(transaction, context)
+  }
+  // remove the outdated csv staging exceptions for this csv csvSourceFile
+  await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.csvSourceFile)
+  if (refreshData.workflowRefreshCsvType) {
+    await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
   }
 }
 
@@ -140,15 +141,6 @@ async function processCSVRows (context, transaction, preparedStatement, refreshD
   }
   // Future requests will fail until the prepared statement is unprepared.
   await preparedStatement.unprepare()
-
-  const result = await new sql.Request(transaction).query(refreshData.countStatement)
-  context.log.info(`The ${refreshData.csvSourceFile} table now contains ${result.recordset[0].number} new/updated records`)
-  if (result.recordset[0].number === 0) {
-    // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
-    context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Rolling back refresh.')
-    await transaction.rollback()
-    context.log.warn('Transaction rolled back.')
-  }
 }
 
 async function refreshInternal (context, preparedStatement, refreshData) {
@@ -162,6 +154,14 @@ async function refreshInternal (context, preparedStatement, refreshData) {
       await processCSVRows(context, transaction, preparedStatement, refreshData)
     } else {
       context.log.warn(`No records detected - Aborting ${refreshData.csvSourceFile} refresh.`)
+    }
+
+    let csvLoadResult = await new sql.Request(transaction).query(refreshData.countStatement)
+    context.log.info(`The ${refreshData.csvSourceFile} table now contains ${csvLoadResult.recordset[0].number} new/updated records`)
+    if (csvLoadResult.recordset[0].number === 0) {
+      // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
+      await transaction.rollback()
+      context.log.warn('There were 0 new records to insert, a null database overwrite is not allowed. Transaction rolled back.')
     }
     // Regardless of whether a rollback took place (e.g in the case of zero rows passing verification), all the failed csv rows are captured for loading into exceptions.
     context.log.warn(`The ${refreshData.csvSourceFile} csv loader failed to load ${refreshData.failedCsvRows.length} csvRows.`)
