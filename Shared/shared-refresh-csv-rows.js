@@ -84,18 +84,14 @@ async function buildPrepareStatementParameters (context, row, refreshData) {
   const preparedStatementExecuteObject = {}
   // check all the expected values are present in the csv row and exclude incomplete csvRows.
   for (const columnObject of refreshData.functionSpecificData) {
-    if (refreshData.keyInteregator) {
-      const keyPass = await refreshData.keyInteregator(columnObject.expectedCSVKey, row[`${columnObject.expectedCSVKey}`])
-      if (keyPass === false) {
-        return { rowError: true }
-      }
-    }
-    // If the row-key contains data OR there is an override set to continue with row-key null value.
-    if (row[`${columnObject.expectedCSVKey}`] || columnObject.nullValueOverride === true) {
+    let columnName = columnObject.tableColumnName
+    let expectedCsvKey = columnObject.expectedCSVKey
+
+    if (row[expectedCsvKey] || columnObject.nullValueOverride === true) {
       if (columnObject.preprocessor) {
-        preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = columnObject.preprocessor(row[`${columnObject.expectedCSVKey}`])
+        preparedStatementExecuteObject[columnName] = columnObject.preprocessor(row[expectedCsvKey], columnName)
       } else {
-        preparedStatementExecuteObject[`${columnObject.tableColumnName}`] = row[`${columnObject.expectedCSVKey}`]
+        preparedStatementExecuteObject[columnName] = row[expectedCsvKey]
       }
     } else {
       return { rowError: true }
@@ -119,7 +115,7 @@ async function processCsvRow (context, preparedStatement, row, refreshData) {
       await preparedStatement.execute(result)
     }
   } catch (err) {
-    context.log.warn(`An error has been found in a row.\nError : ${err}`)
+    context.log.warn(`An error has been found in a row.\nError : ${err}.`)
     const failedRowInfo = {
       rowData: row,
       errorMessage: err.message,
@@ -159,7 +155,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
   try {
     const transaction = preparedStatement.parent
     refreshData.failedCsvRows = []
-    refreshData = await getCsvData(context, refreshData)
+    await getCsvData(context, refreshData)
     refreshData.csvRows = await neatCsv(refreshData.csvResponse.body)
     // Do not refresh the table if the csv is empty.
     if (refreshData.csvRows.length > 0) {

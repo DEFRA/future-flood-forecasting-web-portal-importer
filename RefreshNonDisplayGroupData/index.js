@@ -22,24 +22,17 @@ module.exports = async function (context) {
       { tableColumnName: 'START_TIME_OFFSET_HOURS', tableColumnType: 'Int', expectedCSVKey: 'StartTimeOffsetHours', nullValueOverride: true },
       { tableColumnName: 'END_TIME_OFFSET_HOURS', tableColumnType: 'Int', expectedCSVKey: 'EndTimeOffsetHours', nullValueOverride: true },
       { tableColumnName: 'TIMESERIES_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'TimeSeriesType' }
-
-    ],
-    keyInteregator
+    ]
   }
 
   await refresh(context, refreshData)
 }
 
-async function keyInteregator (rowKey, rowValue) {
-  if (rowKey !== 'Approved' && rowKey !== 'Forecast') {
-    return true
-  } else if (typeof (rowValue) === 'string' && isBoolean(rowValue)) {
-    return true
+function parseBooleanString (booleanString, columnName) {
+  if (typeof (booleanString) === 'string' && isBoolean(booleanString)) {
+    return JSON.parse(booleanString.toLowerCase())
   } else {
-    return false
+    // throw an error to create a csv exception for this csv row
+    throw new Error(`Csv data: '${booleanString}', for column: '${columnName}' is not of type Boolean.`)
   }
-}
-
-function parseBooleanString (booleanString) {
-  return JSON.parse(booleanString.toLowerCase())
 }
