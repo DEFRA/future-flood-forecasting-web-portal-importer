@@ -6,6 +6,20 @@
       "direction": "in",
       "queueName": "fews-fluvial-display-group-queue",
       "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "processFewsEventCode",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-eventcode-queue",
+      "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "importFromFews",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-import-queue",
+      "connection": "AzureWebJobsServiceBus"
     }
   ]
 }
