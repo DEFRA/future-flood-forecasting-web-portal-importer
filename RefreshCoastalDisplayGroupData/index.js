@@ -1,5 +1,4 @@
-const transferAggregatedRecords = require('../Shared/transfer-aggregated-records')
-const countTableRecords = require('../Shared/count-table-records')
+const refreshDisplayGroupTable = require('../Shared/csv-load/display-group-helpers/refresh-display-group-data')
 const refresh = require('../Shared/shared-refresh-csv-rows')
 const sql = require('mssql')
 
@@ -23,7 +22,7 @@ module.exports = async function (context) {
       { tableColumnName: 'location_id', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' }
     ],
     preOperation: createDisplayGroupTemporaryTable,
-    postOperation: refreshDisplayGroupTable
+    postOperation: refreshFromTempTable
   }
 
   await refresh(context, refreshData)
@@ -42,27 +41,8 @@ async function createDisplayGroupTemporaryTable (transaction, context) {
   `)
 }
 
-async function refreshDisplayGroupTable (transaction, context) {
-  try {
-    let tempRecordCount = await countTableRecords(context, transaction, '#coastal_display_group_workflow_temp')
-    // Do not refresh the coastal_display_group_workflow table if the local temporary table is empty.
-    if (tempRecordCount > 0) {
-      await transferAggregatedRecords(context, transaction, '#coastal_display_group_workflow_temp', 'fff_staging.coastal_display_group_workflow')
-    } else {
-      // If the csv is empty then the file is essentially ignored
-      context.log.warn('#coastal_display_group_workflow_temp contains no records - Aborting coastal_display_group_workflow refresh')
-    }
-
-    let recordCount = await countTableRecords(context, transaction, 'fff_staging.coastal_display_group_workflow')
-    if (recordCount === 0) {
-      // If all the records in the csv (inserted into the temp table) are invalid, the function will overwrite records in the table with no new records
-      // after the table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
-      // # The temporary table protects this from happening greatly reducing the likelihood of occurance.
-      context.log.warn('There are no new records to insert into coastal_display_group_workflow_temp, rolling back refresh')
-      throw new Error('A null database overwrite is not allowed')
-    }
-  } catch (err) {
-    context.log.error(`Refresh coastal_display_group_workflow data failed: ${err}`)
-    throw err
-  }
+async function refreshFromTempTable (transaction, context) {
+  const tempTableName = '#coastal_display_group_workflow_temp'
+  const tableName = 'coastal_display_group_workflow'
+  await refreshDisplayGroupTable(transaction, context, tempTableName, tableName)
 }

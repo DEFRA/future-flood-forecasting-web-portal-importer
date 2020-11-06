@@ -21,4 +21,3 @@ module.exports = async function transferAggregatedRecords (context, transaction,
   )
   `)
 }
-
