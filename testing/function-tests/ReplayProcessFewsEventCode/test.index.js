@@ -26,9 +26,17 @@ module.exports = describe('Tests for replaying messages on the ProcessFewsEventC
       await commonTimeseriesTestUtils.afterAll(pool)
     })
 
-    it('should transfer messages to the fews-eventcode-queue', async () => {
+    it('should transfer messages containing valid JSON to the fews-eventcode-queue', async () => {
       await replayProcessFewsEventCode(context, messages['singlePlotApprovedForecast'])
       expect(context.bindings.processFewsEventCode).toBe(messages['singlePlotApprovedForecast'])
+    })
+
+    it('should transfer messages containing invalid JSON to the fews-eventcode-queue', async () => {
+      // Ensure the message contains invalid JSON.
+      const message = '{ "message": "A:\\\Path"}' // eslint-disable-line
+      const stringifiedMessage = JSON.stringify(message)
+      await replayProcessFewsEventCode(context, message)
+      expect(context.bindings.processFewsEventCode).toBe(stringifiedMessage)
     })
   })
 })
