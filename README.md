@@ -3,18 +3,19 @@
 Node.js Microsoft Azure functions responsible for extracting data from the core forecasting engine and importing it into a staging database prior to transformation for reporting and visualisation purposes.
 
 * Message based triggering is used when:
-  * Importing multivariate threshold data
   * Importing data for frequently updated locations that are not associated with a core forecasting engine display group.
   * Importing data for multiple locations associated with a core forecasting engine fluvial display group.
   * Importing data for multiple locations associated with a core forecasting engine coastal display group.
+  * Replaying data imports following an outage.
   * Refreshing the list of fluvial forecast locations.
   * Refreshing the list of coastal forecast locations. One message trigger for each of the three coastal location types.
+  * Refreshing multivariate threshold data.
   * Refreshing the set of fluvial locations associated with each core forecasting engine display group.
   * Refreshing the set of coastal locations associated with each core forecasting engine display group.
   * Refreshing the set of core forecasting engine filters associated with each workflow.
   * Refreshing the set of core forecasting engine ignored workflows.
-* Messages containing the primary keys of staging database records holding data extracted from the core forecasting engine
-  are used to trigger reporting and visualisation activities.
+  * **Optional** - Messages containing the primary keys of staging database records holding data extracted from the core forecasting engine
+  can be used to trigger reporting and visualisation activities (see [Prerequisites](docs/Prerequisites.md) and [Non-test related function app settings and environment variables](docs/Non-test-settings-and-environment-variables.md) for further details).
 * CRON expression based triggering is used to periodically remove stale timeseries data from the staging database.
 
 ## Contents

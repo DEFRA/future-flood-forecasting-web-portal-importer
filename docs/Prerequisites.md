@@ -33,9 +33,12 @@
 * Microsoft Azure service bus queue named **fews-eventcode-queue**  
   * Messages are placed on this queue when a task run has completed within the core forecasting engine. Messages placed on this queue provide information on the completed task run to be processed by the **ProcessFewsEventCode** function.  The **ProcessFewsEventCode** function places a message for each
   plot and filter associated with the task run on a Microsoft Azure service bus queue named **fews-import-queue**.
-* Microsoft Azure service bus queue named **fews-import-queue**
+  * Following an outage, the **ReplayProcessFewsEventCode** function can be enabled temporarily to allow messages on the dead letter queue for **fews-eventcode-queue** to be placed back on **fews-eventcode-queue** (see [Replaying Messages From Dead Letter Queues After An Outage](./Replaying-dead-letter-messages.md))
+* Microsoft Azure service bus queue named **fews-import-queue**.
   * A message is placed on this queue for each plot and filter associated with a completed task run within the core forecasting engine. Messages are
   processed by the **ImportFromFews** function. Message processing extracts timeseries associated with a plot or filter from the core forecasting engine and loads the data into the staging database.
+* Microsoft Azure service bus queue named **fews-import-queue**.
+  * Following an outage, the **ReplayImportFromFews** function can be enabled temporarily to allow messages on the dead letter queue for **fews-import-queue** to be placed back on **fews-import-queue** (see [Replaying Messages From Dead Letter Queues After An Outage](./Replaying-dead-letter-messages.md))
 * Microsoft Azure service bus queue named **fews-fluvial-forecast-location-queue**  
   * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshFluvialForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
 * Microsoft Azure service bus queue named **fews-coastal-tidal-forecast-location-queue**  
@@ -55,7 +58,7 @@
 * Microsoft Azure service bus queue named **fews-mvt-queue**  
   * Messages are placed on this queue when the set of multivariate thresholds mapping data is updated. Messages are processed by the **RefreshMVTData** function. Message processing retrieves the updated data and uses it to replace the content of the **MULTIVARIATE_THRESHOLDS** table.
 * Optional Microsoft Azure service bus queue named **fews-staged-timeseries-queue**  
-  * This queue is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function. Messages are placed on this queue when the **ImportFromFews** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
+  * This queue is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function. The output binding is activated by setting the optional build time environment variable **IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED** to a value of **true** (see [Non-test related function app settings and environment variables](./Non-test-settings-and-environment-variables.md)). Messages are placed on this queue when the **ImportFromFews** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
 
 ### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
 
