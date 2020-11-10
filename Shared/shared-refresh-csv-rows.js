@@ -25,6 +25,7 @@ module.exports = async function (context, refreshData) {
 
 async function refreshInTransaction (transaction, context, refreshData) {
   if (refreshData.preOperation) {
+    // A post operation involves further processing of the csv data after inital loading into the SQL database
     await refreshData.preOperation(transaction, context)
   }
 
