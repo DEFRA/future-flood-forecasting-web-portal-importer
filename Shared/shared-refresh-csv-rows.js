@@ -1,4 +1,4 @@
-const deleteCSVStagingExceptions = require('../Shared/failed-csv-load-handler/delete-csv-staging-exception')
+const deleteCsvStagingExceptions = require('../Shared/failed-csv-load-handler/delete-csv-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('./transaction-helper')
 const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
 const fetch = require('node-fetch')
@@ -37,7 +37,7 @@ async function refreshInTransaction (transaction, context, refreshData) {
     await refreshData.postOperation(transaction, context)
   }
   // remove the outdated csv staging exceptions for this csv csvSourceFile
-  await executePreparedStatementInTransaction(deleteCSVStagingExceptions, context, transaction, refreshData.csvSourceFile)
+  await executePreparedStatementInTransaction(deleteCsvStagingExceptions, context, transaction, refreshData.csvSourceFile)
   if (refreshData.workflowRefreshCsvType) {
     await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
   }
@@ -126,7 +126,7 @@ async function processCsvRow (context, preparedStatement, row, refreshData) {
   }
 }
 
-async function processCSVRows (context, transaction, preparedStatement, refreshData) {
+async function processCsvRows (context, transaction, preparedStatement, refreshData) {
   await new sql.Request(transaction).query(refreshData.deleteStatement)
   for (const columnObject of refreshData.functionSpecificData) {
     if (columnObject.tableColumnType === 'Decimal') {
@@ -151,7 +151,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
     refreshData.csvRows = await neatCsv(refreshData.csvResponse.body)
     // Do not refresh the table if the csv is empty.
     if (refreshData.csvRows.length > 0) {
-      await processCSVRows(context, transaction, preparedStatement, refreshData)
+      await processCsvRows(context, transaction, preparedStatement, refreshData)
     } else {
       context.log.warn(`No records detected - Aborting ${refreshData.csvSourceFile} refresh.`)
     }
