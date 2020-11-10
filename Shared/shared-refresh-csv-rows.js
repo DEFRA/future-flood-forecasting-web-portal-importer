@@ -30,16 +30,15 @@ async function refreshInTransaction (transaction, context, refreshData) {
 
   await executePreparedStatementInTransaction(refreshInternal, context, transaction, refreshData)
 
-  if (transaction._rollbackRequested) {
-    return
-  }
-  if (refreshData.postOperation) {
-    await refreshData.postOperation(transaction, context)
-  }
-  // remove the outdated csv staging exceptions for this csv csvSourceFile
-  await executePreparedStatementInTransaction(deleteCsvStagingExceptions, context, transaction, refreshData.csvSourceFile)
-  if (refreshData.workflowRefreshCsvType) {
-    await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+  if (!transaction._rollbackRequested) {
+    if (refreshData.postOperation) {
+      await refreshData.postOperation(transaction, context)
+    }
+    // remove the outdated csv staging exceptions for this csv csvSourceFile
+    await executePreparedStatementInTransaction(deleteCsvStagingExceptions, context, transaction, refreshData.csvSourceFile)
+    if (refreshData.workflowRefreshCsvType) {
+      await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+    }
   }
 }
 
@@ -81,7 +80,7 @@ async function getCsvData (context, refreshData) {
   }
 }
 
-async function buildPrepareStatementParameters (context, row, refreshData) {
+async function buildPreparedStatementParameters (context, row, refreshData) {
   const preparedStatementExecuteObject = {}
   // check all the expected values are present in the csv row and exclude incomplete csvRows.
   for (const columnObject of refreshData.functionSpecificData) {
@@ -103,7 +102,7 @@ async function buildPrepareStatementParameters (context, row, refreshData) {
 
 async function processCsvRow (context, preparedStatement, row, refreshData) {
   try {
-    let result = await buildPrepareStatementParameters(context, row, refreshData)
+    let result = await buildPreparedStatementParameters(context, row, refreshData)
     if (result.rowError) {
       context.log.warn(`row is missing data.`)
       const failedRowInfo = {
