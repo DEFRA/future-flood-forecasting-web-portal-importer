@@ -61,15 +61,15 @@ async function setDeletionDates (context) {
   if (hardLimit > 0 && hardLimit !== undefined && !isNaN(hardLimit)) {
     // This check is required to prevent zero subtraction, the downstream effect would be the removal of all data prior to the current date.
     hardDate = moment.utc().subtract(hardLimit, 'hours').toDate().toISOString()
-    if (softLimit <= hardLimit && !isNaN(softLimit)) { // if the soft limit is undefined it defaults to the hard limit.
-      softDate = moment.utc().subtract(softLimit, 'hours').toDate().toISOString()
-    } else {
-      context.log.error(`The soft-limit must be an integer and less than or equal to the hard-limit.`)
-      throw new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.')
-    }
   } else {
     context.log.error(`The hard-limit must be an integer greater than 0.`)
     throw new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.')
+  }
+  if (softLimit <= hardLimit && !isNaN(softLimit)) { // if the soft limit is undefined it defaults to the hard limit.
+    softDate = moment.utc().subtract(softLimit, 'hours').toDate().toISOString()
+  } else {
+    context.log.error(`The soft-limit must be an integer and less than or equal to the hard-limit.`)
+    throw new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.')
   }
   return [softDate, hardDate]
 }
