@@ -1,5 +1,5 @@
 const replayEligibleTimeseriesStagingExceptions = require('./message-replay/replay-eligible-timeseries-staging-exceptions')
-const deleteCsvStagingExceptions = require('../Shared/failed-csv-load-handler/delete-csv-staging-exception')
+const deleteCsvStagingExceptions = require('./csv-load/failed-csv-load-handler/delete-csv-staging-exception')
 const replayEligibleStagingExceptions = require('./message-replay/replay-eligible-staging-exceptions')
 const { doInTransaction, executePreparedStatementInTransaction } = require('./transaction-helper')
 const loadExceptions = require('./csv-load/failed-csv-load-handler/load-csv-exceptions')
