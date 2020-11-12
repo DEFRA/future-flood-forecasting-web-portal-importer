@@ -1,12 +1,12 @@
+const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
+const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
+const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const timeseriesTypeConstants = require('./timeseries-type-constants')
+const getFewsTimeParameter = require('./get-fews-time-parameter')
 const moment = require('moment')
 const sql = require('mssql')
-const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
-const getFewsTimeParameter = require('./get-fews-time-parameter')
-const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const timeseriesTypeConstants = require('./timeseries-type-constants')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 
 const getWorkflowFilterDataQuery = `
 select
@@ -90,17 +90,11 @@ async function buildStartAndEndTimes (context, taskRunData) {
   // timeseries. By default this period runs from twenty four hours before the start of the time period for which the timeseries were created
   // in the core engine (either previous task run end time or current task run start time as defined above) through to the completion time
   // of the current task run. This time period can be overridden by the FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS environment variable.
-  let truncationOffsetHoursBackward = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-  let truncationOffsetHoursForward = 0
   let baseStartTime
   let baseEndTime
 
-  if (taskRunData.filterData.startTimeOffset && taskRunData.filterData.startTimeOffset !== 0) {
-    truncationOffsetHoursBackward = getOffsetAsAbsoluteInteger(taskRunData.filterData.startTimeOffset, taskRunData)
-  }
-  if (taskRunData.filterData.endTimeOffset && taskRunData.filterData.endTimeOffset !== 0) {
-    truncationOffsetHoursForward = getOffsetAsAbsoluteInteger(taskRunData.filterData.endTimeOffset, taskRunData)
-  }
+  let truncationOffsetHoursBackward = getAbsoluteIntegerForNonZeroOffset(taskRunData.filterData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+  let truncationOffsetHoursForward = getAbsoluteIntegerForNonZeroOffset(taskRunData.filterData.endTimeOffset, taskRunData) || 0
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     // the time frame search period base time is the current end time for forecast data

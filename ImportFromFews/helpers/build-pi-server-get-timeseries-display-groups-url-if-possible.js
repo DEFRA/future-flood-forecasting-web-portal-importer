@@ -1,7 +1,7 @@
 const moment = require('moment')
 const getLocationsToImportForTaskRunPlot = require('../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
+const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const getCustomOffsets = require('./get-workflow-offset-data')
 
@@ -23,18 +23,9 @@ async function buildStartAndEndTimes (context, taskRunData) {
   if (taskRunData.spanWorkflow && taskRunData.spanWorkflow === true) {
     // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
-    let startTimeOffsetHours
-    let endTimeOffsetHours
-    if (taskRunData.offsetData.startTimeOffset && taskRunData.offsetData.startTimeOffset !== 0) {
-      startTimeOffsetHours = getOffsetAsAbsoluteInteger(taskRunData.offsetData.startTimeOffset, taskRunData)
-    } else {
-      startTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-    }
-    if (taskRunData.offsetData.endTimeOffset && taskRunData.offsetData.endTimeOffset !== 0) {
-      endTimeOffsetHours = getOffsetAsAbsoluteInteger(taskRunData.offsetData.endTimeOffset, taskRunData)
-    } else {
-      endTimeOffsetHours = 0 // the non display group default
-    }
+
+    let startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+    let endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(taskRunData.offsetData.endTimeOffset, taskRunData) || 0
     taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   } else {
