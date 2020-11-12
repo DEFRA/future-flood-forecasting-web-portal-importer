@@ -590,7 +590,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // each expected mock timeseries.
       // To check if messages containing the primary keys of the timeseries records will be
       // sent to a queue/topic for reporting and visualisation purposes, copy the primary
-      // keys retrieved from the database to an array and check that the ouput binding for
+      // keys retrieved from the database to an array and check that the output binding for
       // staged timeseries contains each expected primary key.
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
       receivedPrimaryKeys.push(result.recordset[index].id)
@@ -600,7 +600,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
-        // the task run completion time taking into acccount that the default values can be overridden by environment variables.
+        // the task run completion time taking into account that the default values can be overridden by environment variables.
         let expectedStartTime
         // expected start and end time are used as creation times for those queries utilising creation times.
         // The actual query start and end times use these times as a basis for the offsets.

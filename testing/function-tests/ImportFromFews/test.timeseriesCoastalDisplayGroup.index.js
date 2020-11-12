@@ -268,7 +268,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }
 
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
-      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
+      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'serviceBus' }]
 
       const config = {
         messageKey: 'singlePlotApprovedForecast',
