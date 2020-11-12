@@ -136,19 +136,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
   } else {
     // FEWS parameters must be specified otherwise the data return is likely to be very large
     const errorDescription = `There is no recognizable timeseries type specified for the filter ${taskRunData.filterId} in the non-display group CSV`
-    const errorData = {
-      transaction: taskRunData.transaction,
-      sourceId: taskRunData.sourceId,
-      sourceType: taskRunData.sourceType,
-      csvError: true,
-      csvType: 'N',
-      fewsParameters: null,
-      payload: taskRunData.message,
-      errorData: taskRunData.message,
-      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-      description: errorDescription
-    }
-    throw new TimeseriesStagingError(errorData, errorDescription)
+    await throwError(taskRunData, errorDescription, true, 'N', null)
   }
 }
 
@@ -174,18 +162,7 @@ async function getWorkflowFilterData (context, preparedStatement, taskRunData) {
     }
   } else {
     const errorDescription = `Unable to find data for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} in the non-display group CSV`
-    const errorData = {
-      transaction: taskRunData.transaction,
-      sourceId: taskRunData.sourceId,
-      sourceType: taskRunData.sourceType,
-      csvError: true,
-      csvType: 'N',
-      fewsParameters: null,
-      payload: taskRunData.message,
-      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-      description: errorDescription
-    }
-    throw new TimeseriesStagingError(errorData, errorDescription)
+    await throwError(taskRunData, errorDescription, true, 'N', null)
   }
 }
 
@@ -215,4 +192,19 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
 
 function isForecast (context, taskRunData) {
   return taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING
+}
+
+async function throwError (taskRunData, errorDescription, csvError, csvType, fewsParameters) {
+  const errorData = {
+    transaction: taskRunData.transaction,
+    sourceId: taskRunData.sourceId,
+    sourceType: taskRunData.sourceType,
+    csvError: csvError,
+    csvType: csvType,
+    fewsParameters: fewsParameters,
+    payload: taskRunData.message,
+    timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+    description: errorDescription
+  }
+  throw new TimeseriesStagingError(errorData, errorDescription)
 }
