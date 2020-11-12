@@ -92,6 +92,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
   // of the current task run. This time period can be overridden by the FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS environment variable.
   let truncationOffsetHoursBackward = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
   let truncationOffsetHoursForward = 0
+  let baseStartTime
+  let baseEndTime
 
   if (taskRunData.filterData.startTimeOffset && taskRunData.filterData.startTimeOffset !== 0) {
     truncationOffsetHoursBackward = getOffsetAsAbsoluteInteger(taskRunData.filterData.startTimeOffset, taskRunData)
@@ -101,14 +103,16 @@ async function buildStartAndEndTimes (context, taskRunData) {
   }
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
-    // time frame search period basis is the current end time for forecast data
-    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+    // the time frame search period base time is the current end time for forecast data
+    baseStartTime = moment(taskRunData.taskRunCompletionTime)
+    baseEndTime = moment(taskRunData.taskRunCompletionTime)
   } else {
     // time frame search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
-    taskRunData.startTime = moment(taskRunData.startCreationTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-    taskRunData.endTime = moment(taskRunData.endCreationTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+    baseStartTime = moment(taskRunData.startCreationTime)
+    baseEndTime = moment(taskRunData.endCreationTime)
   }
+  taskRunData.startTime = baseStartTime.subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+  taskRunData.endTime = baseEndTime.add(truncationOffsetHoursForward, 'hours').toISOString()
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
