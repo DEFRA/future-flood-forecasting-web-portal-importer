@@ -5,6 +5,9 @@ module.exports = function (context) {
   this.insertCSVStagingException = async function () {
     await doInTransaction(insertCSVStagingException, context, 'Unable to insert csv staging exception data', null)
   }
+  this.checkReplayedStagingExceptionMessages = async function (expectedReplayedStagingExceptionMessages) {
+    await doInTransaction(checkReplayedStagingExceptionMessages, context, 'Unable to check replayed staging exception data', null, expectedReplayedStagingExceptionMessages)
+  }
 }
 
 async function insertCSVStagingException (transaction, context) {
@@ -14,4 +17,10 @@ async function insertCSVStagingException (transaction, context) {
   values  
     ('other', 'data', 'test data', getutcdate(), 'workflow')`
   )
+}
+
+async function checkReplayedStagingExceptionMessages (transaction, context, expectedStagingExceptionMessages) {
+  for (const expectedStagingExceptionMessage of context.bindings.processFewsEventCode) {
+    expect(expectedStagingExceptionMessages).toContainEqual(expectedStagingExceptionMessage)
+  }
 }

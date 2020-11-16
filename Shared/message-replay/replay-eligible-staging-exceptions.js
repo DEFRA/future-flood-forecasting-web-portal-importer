@@ -6,7 +6,7 @@ module.exports = async function (context, replayData) {
 }
 
 async function getCoreForecastingEngineMessagesForKnownWorkflows (context, preparedStatement, replayData) {
-  await preparedStatement.input('@csvType', sql.NVarChar)
+  await preparedStatement.input('csvType', sql.NVarChar)
 
   // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
   // guard against a workflow table refresh during processing.
@@ -30,6 +30,6 @@ async function getCoreForecastingEngineMessagesForKnownWorkflows (context, prepa
   const result = await preparedStatement.execute(parameters)
 
   for (const record of result.recordset) {
-    replayData.coreForecastingEngineMessages.push(record.payload)
+    context.bindings.processFewsEventCode.push(record.payload)
   }
 }

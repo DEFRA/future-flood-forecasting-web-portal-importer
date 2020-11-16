@@ -6,7 +6,7 @@ module.exports = async function (context, replayData) {
 }
 
 async function getMessagesForCsvRelatedTimeseriesStagingExceptions (context, preparedStatement, replayData) {
-  await preparedStatement.input('@csvType', sql.NVarChar)
+  await preparedStatement.input('csvType', sql.NVarChar)
 
   await preparedStatement.prepare(`
     select
@@ -25,6 +25,6 @@ async function getMessagesForCsvRelatedTimeseriesStagingExceptions (context, pre
   const result = await preparedStatement.execute(parameters)
 
   for (const record of result.recordset) {
-    replayData.coreForecastingEngineMessages.push(record.payload)
+    context.bindings.importFromFews.push(record.payload)
   }
 }
