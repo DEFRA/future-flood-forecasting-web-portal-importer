@@ -416,6 +416,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
   async function insertExceptions (transaction, context) {
     await new sql.Request(transaction).batch(`
+      declare @id1 uniqueidentifier;
+      set @id1 = newid();
+      declare @id2 uniqueidentifier;
+      set @id2 = newid();
+      declare @id3 uniqueidentifier;
+      set @id3 = newid();
+
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
@@ -425,6 +432,21 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
         ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'BE', 'message');
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id2, 'TRITON_outputs_Other', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
     `)
   }
 })
