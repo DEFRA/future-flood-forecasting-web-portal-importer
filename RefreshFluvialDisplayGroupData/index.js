@@ -42,7 +42,7 @@ async function createDisplayGroupTemporaryTable (transaction, context) {
 }
 
 async function refreshFromTempTable (transaction, context) {
-  const tempTableName = '#fluvial_display_group_workflow_temp'
+  const tempTableName = 'fluvial_display_group_workflow_temp'
   const tableName = 'fluvial_display_group_workflow'
   await refreshDisplayGroupTable(transaction, context, tempTableName, tableName)
 }
