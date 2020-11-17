@@ -4,6 +4,39 @@ const insertDataIntoTemp = require('./insertDataIntoTempTable')
 const moment = require('moment')
 const sql = require('mssql')
 
+const deleteQueries = {
+  reporting_tj: `
+    delete r 
+    from fff_reporting.timeseries_job r
+    inner join #deletion_job_temp te
+      on te.reporting_id = r.id
+    `,
+  staging_itse: `
+    delete itse 
+    from fff_staging.inactive_timeseries_staging_exception itse
+    inner join #deletion_job_temp te
+      on itse.timeseries_staging_exception_id = te.exceptions_id
+    `,
+  staging_tse: `
+    delete tse 
+    from fff_staging.timeseries_staging_exception tse
+    inner join #deletion_job_temp te
+      on te.exceptions_id = tse.id
+    `,
+  staging_t: `
+    delete t 
+    from fff_staging.timeseries t
+    inner join #deletion_job_temp te
+      on te.timeseries_id = t.id
+    `,
+  staging_th: `
+    delete th 
+    from fff_staging.timeseries_header th
+    inner join #deletion_job_temp te
+      on te.timeseries_header_id = th.id
+    `
+}
+
 module.exports = async function (context, myTimer) {
   // current time
   const timeStamp = moment().format()
@@ -40,11 +73,11 @@ async function removeExpiredTimeseries (transaction, context) {
 
   context.log.info(`Data delete starting.`)
   // The order of deletion is sensitive to referential integrity
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_reporting.timeseries_job', 't.id', 'te.reporting_id')
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.inactive_timeseries_staging_exception', 't.timeseries_staging_exception_id ', 'te.exceptions_id')
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_staging_exception', 't.id', 'te.exceptions_id')
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries', 't.id', 'te.timeseries_id')
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_header', 't.id', 'te.timeseries_header_id')
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_reporting.timeseries_job', deleteQueries['reporting_tj'])
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.inactive_timeseries_staging_exception', deleteQueries['staging_itse'])
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_staging_exception', deleteQueries['staging_tse'])
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries', deleteQueries['staging_t'])
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_header', deleteQueries['staging_th'])
   await deleteStagingExceptions(context, transaction, hardDate, deleteRowBatchSize)
 }
 
@@ -97,25 +130,9 @@ async function createTempTable (transaction, context) {
     `)
 }
 
-async function deleteRecords (context, preparedStatement, tableName, columnName, tempColumnName) {
+async function deleteRecords (context, preparedStatement, tableName, deleteQuery) {
   let result
-  await preparedStatement.input('table', sql.NVarChar)
-  await preparedStatement.input('column', sql.NVarChar)
-  await preparedStatement.input('tempColumn', sql.NVarChar)
-  await preparedStatement.prepare(`
-    EXEC('
-    delete t from '+ @table + ' t ' +
-    'inner join #deletion_job_temp te
-    on ' + @tempColumn + ' = ' + @column +
-    ' select @@rowcount as deleted')
-    `)
-
-  const parameters = {
-    table: tableName,
-    column: columnName,
-    tempColumn: tempColumnName
-  }
-
-  result = await preparedStatement.execute(parameters)
+  await preparedStatement.prepare(deleteQuery + 'select @@rowcount as deleted')
+  result = await preparedStatement.execute()
   context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the ${tableName} table.`)
 }
