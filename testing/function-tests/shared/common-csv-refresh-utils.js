@@ -20,7 +20,7 @@ async function insertCSVStagingException (transaction, context) {
 }
 
 async function checkReplayedStagingExceptionMessages (transaction, context, expectedStagingExceptionMessages) {
-  for (const expectedStagingExceptionMessage of context.bindings.processFewsEventCode) {
-    expect(expectedStagingExceptionMessages).toContainEqual(expectedStagingExceptionMessage)
+  for (const stagingExceptionMessage of context.bindings.processFewsEventCode) {
+    expect(expectedStagingExceptionMessages).toContainEqual(stagingExceptionMessage)
   }
 }

@@ -2,8 +2,8 @@ const CommonCsvRefreshUtils = require('../shared/common-csv-refresh-utils')
 const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
-const message = require('../mocks/defaultMessage')
 const { doInTransaction } = require('../../../Shared/transaction-helper')
+const message = require('../mocks/defaultMessage')
 const messageFunction = require('../../../RefreshCoastalDisplayGroupData/index')
 const fetch = require('node-fetch')
 const sql = require('mssql')
@@ -82,8 +82,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
       await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
-    it('should refresh given a valid CSV file (even with extra csv fields) and replay eligible staging exceptions', async () => {
-      // Ensure eligible staging exceptions are replayed.
+    it('should refresh given a valid CSV file (even with extra csv fields) and replay eligible failed messages', async () => {
+      // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
       await doInTransaction(insertExceptions, context, 'Error')
 
       const mockResponseData = {
@@ -371,7 +371,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       from 
         fff_staging.csv_staging_exception`)
 
-    expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows)
+    expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
 
     // Check messages to be replayed
     await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
@@ -386,7 +386,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       const request = new sql.Request(transaction)
       await request.query(`
         insert into 
-        fff_staging.${tableName} (workflow_id, plot_id, location_ids)
+          fff_staging.${tableName} (workflow_id, plot_id, location_ids)
         values 
           ('workflow_id', 'plot_id', 'loc_id')
       `)
@@ -446,7 +446,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
     `)
   }
 })
