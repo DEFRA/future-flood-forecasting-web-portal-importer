@@ -391,7 +391,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
 
     // Check messages to be replayed
-    await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
   }
 
   async function lockWorkflowTableAndCheckMessageCannotBeProcessed (mockResponseData) {
