@@ -9,37 +9,37 @@ const moment = require('moment')
 const sql = require('mssql')
 
 const getWorkflowFilterDataQuery = `
-select
-  approved,
-  timeseries_type,
-  start_time_offset_hours,
-  end_time_offset_hours
-from
-  fff_staging.non_display_group_workflow
-with
-  (tablock holdlock)
-where
-  workflow_id = @nonDisplayGroupWorkflowId and
-  filter_id = @filterId`
+  select
+    approved,
+    timeseries_type,
+    start_time_offset_hours,
+    end_time_offset_hours
+  from
+    fff_staging.non_display_group_workflow
+  with
+    (tablock holdlock)
+  where
+    workflow_id = @nonDisplayGroupWorkflowId and
+    filter_id = @filterId`
 
 const getLatestTaskRunEndTimeQuery = `
-select top(1)
-  task_run_id as previous_staged_task_run_id,
-  task_completion_time as previous_staged_task_completion_time
-from
-  fff_staging.timeseries_header
-where
-  workflow_id = @workflowId and
-  task_completion_time < (
-    select
-      task_completion_time
-    from
-      fff_staging.timeseries_header
-    where
-      task_run_id = @taskRunId
-  )
-order by 
-  task_completion_time desc`
+  select top(1)
+    task_run_id as previous_staged_task_run_id,
+    task_completion_time as previous_staged_task_completion_time
+  from
+    fff_staging.timeseries_header
+  where
+    workflow_id = @workflowId and
+    task_completion_time < (
+      select
+        task_completion_time
+      from
+        fff_staging.timeseries_header
+      where
+        task_run_id = @taskRunId
+    )
+  order by 
+    task_completion_time desc`
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)

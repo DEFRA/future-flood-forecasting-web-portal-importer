@@ -91,7 +91,7 @@ async function setDeletionDates (context) {
   const softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
   // Dates need to be specified as UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
   // Not using toUTCString() as toISOString() supports ms.
-  if (hardLimit > 0 && hardLimit !== undefined && !isNaN(hardLimit)) {
+  if ((typeof hardLimit !== 'undefined') && Number.isInteger(hardLimit) && hardLimit > 0) {
     // This check is required to prevent zero subtraction, the downstream effect would be the removal of all data prior to the current date.
     hardDate = moment.utc().subtract(hardLimit, 'hours').toDate().toISOString()
   } else {
@@ -131,8 +131,7 @@ async function createTempTable (transaction, context) {
 }
 
 async function deleteRecords (context, preparedStatement, tableName, deleteQuery) {
-  let result
   await preparedStatement.prepare(deleteQuery + 'select @@rowcount as deleted')
-  result = await preparedStatement.execute()
+  const result = await preparedStatement.execute()
   context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the ${tableName} table.`)
 }
