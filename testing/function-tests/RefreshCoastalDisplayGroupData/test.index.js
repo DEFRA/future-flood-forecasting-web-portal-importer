@@ -333,7 +333,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
     // Query the database and check that the locations associated with each grouping of workflow ID and plot ID are as expected.
     expect(tableCountResult.recordset[0].number).toBe(expectedNumberOfRows)
-    context.log(`databse row count: ${tableCountResult.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
+    context.log(`database row count: ${tableCountResult.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
       for (const workflowId in expectedData.coastalDisplayGroupData) { // ident single workflowId within expected data
