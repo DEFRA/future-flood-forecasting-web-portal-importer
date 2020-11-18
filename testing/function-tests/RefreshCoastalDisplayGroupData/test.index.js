@@ -374,7 +374,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
 
     // Check messages to be replayed
-    commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    // await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
   }
 
   async function lockCoastalDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
