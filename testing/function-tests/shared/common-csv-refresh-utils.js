@@ -6,10 +6,16 @@ module.exports = function (context) {
     await doInTransaction(insertCSVStagingException, context, 'Unable to insert csv staging exception data', null)
   }
   this.checkReplayedStagingExceptionMessages = async function (expectedReplayedStagingExceptionMessages) {
-    expect(context.bindings.processFewsEventCode).toEqual(expect.arrayContaining(expectedReplayedStagingExceptionMessages || []))
+    expect(context.bindings.processFewsEventCode.length).toBe((expectedReplayedStagingExceptionMessages || []).length)
+    for (const stagingExceptionMessage of expectedReplayedStagingExceptionMessages || []) {
+      expect(context.bindings.processFewsEventCode).toContainEqual(stagingExceptionMessage)
+    }
   }
   this.checkReplayedTimeseriesStagingExceptionMessages = async function (expectedReplayedTimeseriesStagingExceptionMessages) {
-    expect(context.bindings.importFromFews).toEqual(expect.arrayContaining(expectedReplayedTimeseriesStagingExceptionMessages || []))
+    expect(context.bindings.importFromFews.length).toBe((expectedReplayedTimeseriesStagingExceptionMessages || []).length)
+    for (const timeseriesStagingExceptionMessage of expectedReplayedTimeseriesStagingExceptionMessages || []) {
+      expect(context.bindings.importFromFews).toContainEqual(timeseriesStagingExceptionMessage)
+    }
   }
 }
 

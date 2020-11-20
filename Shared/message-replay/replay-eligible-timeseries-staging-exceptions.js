@@ -25,6 +25,6 @@ async function getMessagesForCsvRelatedTimeseriesStagingExceptions (context, pre
   const result = await preparedStatement.execute(parameters)
 
   for (const record of result.recordset) {
-    context.bindings.importFromFews.push(record.payload)
+    context.bindings.importFromFews.push(JSON.parse(record.payload))
   }
 }

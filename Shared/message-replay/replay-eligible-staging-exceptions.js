@@ -11,7 +11,7 @@ async function getCoreForecastingEngineMessagesForKnownWorkflows (context, prepa
   // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
   // guard against a workflow table refresh during processing.
   await preparedStatement.prepare(`
-    select
+    select distinct
       se.payload
     from
       fff_staging.staging_exception se

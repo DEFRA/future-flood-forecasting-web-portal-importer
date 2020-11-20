@@ -104,7 +104,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
           }
         },
         numberOfExceptionRows: 0,
-        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message']
+        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
+        replayedTimeseriesStagingExceptionMessages: [ JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}') ]
       }
 
       await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
@@ -375,7 +376,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
     // Check messages to be replayed
     await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
-    // await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonCsvRefreshUtils.checkReplayedTimeseriesStagingExceptionMessages(expectedData.replayedTimeseriesStagingExceptionMessages)
   }
 
   async function lockCoastalDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {

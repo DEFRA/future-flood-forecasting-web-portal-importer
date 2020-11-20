@@ -134,7 +134,11 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
             plot1: ['location1']
           }
         },
-        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message']
+        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
+        replayedTimeseriesStagingExceptionMessages: [
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}'),
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}')
+        ]
       }
 
       await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
@@ -391,7 +395,8 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
 
     // Check messages to be replayed
-    commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonCsvRefreshUtils.checkReplayedTimeseriesStagingExceptionMessages(expectedData.replayedTimeseriesStagingExceptionMessages)
   }
 
   async function lockWorkflowTableAndCheckMessageCannotBeProcessed (mockResponseData) {
@@ -441,6 +446,8 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
       set @id2 = newid();
       declare @id3 uniqueidentifier;
       set @id3 = newid();
+      declare @id4 uniqueidentifier;
+      set @id4 = newid();
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
@@ -460,12 +467,17 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'plot1', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id2, 'plot1', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'plot2', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id3, 'plot2', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id4, 'plot1', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
     `)
   }
 }
