@@ -1,6 +1,8 @@
+const CommonCsvRefreshUtils = require('../shared/common-csv-refresh-utils')
 const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
+const { doInTransaction } = require('../../../Shared/transaction-helper')
 const message = require('../mocks/defaultMessage')
 const messageFunction = require('../../../RefreshNonDisplayGroupData/index')
 const fetch = require('node-fetch')
@@ -16,6 +18,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
 
+  let commonCsvRefreshUtils
   let commonWorkflowCsvTestUtils
   let context
   let dummyData
@@ -38,11 +41,14 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       const config = {
         csvType: 'N'
       }
+      commonCsvRefreshUtils = new CommonCsvRefreshUtils(context)
       commonWorkflowCsvTestUtils = new CommonWorkflowCsvTestUtils(context, pool, config)
       dummyData = {
         dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
       await request.batch(`delete from fff_staging.csv_staging_exception`)
+      await request.batch(`delete from fff_staging.staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
       await request.batch(`delete from fff_staging.non_display_group_workflow`)
       await request.batch(`delete from fff_staging.workflow_refresh`)
       await request.batch(`
@@ -67,9 +73,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: TEXT_CSV
       }
 
-      const expectedNonDisplayGroupData = dummyData
-      const expectedNumberOfExceptionRows = 0
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should load a valid csv correctly - single filter per workflow', async () => {
       const mockResponseData = {
@@ -85,10 +94,14 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 0
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
-    it('should load a valid csv correctly - multiple filters per workflow', async () => {
+    it('should load a valid csv correctly - multiple filters per workflow and replay eligible failed messages', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'multiple-filters-per-workflow.csv',
@@ -102,8 +115,20 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 0,
+        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
+        replayedTimeseriesStagingExceptionMessages: [
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}'),
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}')
+        ]
+      }
+
+      // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
+      await doInTransaction(insertExceptions, context, 'Error')
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should not load duplicate rows in a csv', async () => {
       const mockResponseData = {
@@ -119,8 +144,13 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 5, endTimeOffset: 10, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
       const expectedErrorDescription = 'Violation of UNIQUE KEY constraint'
-      const expectedNumberOfExceptionRows = 1
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 1
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should ignore a CSV file with misspelled headers', async () => {
@@ -131,10 +161,13 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: TEXT_CSV
       }
 
-      const expectedNonDisplayGroupData = dummyData
       const expectedErrorDescription = 'row is missing data.'
-      const expectedNumberOfExceptionRows = 3
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: dummyData,
+        numberOfExceptionRows: 3
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should load WorkflowId and filterId correctly into the db correctly, even with extra CSV fields present', async () => {
@@ -150,8 +183,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 0, startTimeOffset: 3, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 0
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should not refresh with valid header row but no data rows', async () => {
       const mockResponseData = {
@@ -161,10 +198,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: TEXT_CSV
       }
 
-      const expectedNonDisplayGroupData = dummyData
+      const expectedData = {
+        nonDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should reject insert if there is no header row, expect the first row to be treated as the header', async () => {
       const mockResponseData = {
@@ -174,11 +213,14 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: TEXT_CSV
       }
 
-      const expectedNonDisplayGroupData = dummyData
+      const expectedData = {
+        nonDisplayGroupData: dummyData,
+        numberOfExceptionRows: 2
+      }
 
       const expectedErrorDescription = 'row is missing data.'
-      const expectedNumberOfExceptionRows = 2
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should omit rows with missing values', async () => {
@@ -189,13 +231,18 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: TEXT_CSV
       }
 
+      const expectedErrorDescription = 'row is missing data.'
+
       const expectedNonDisplayGroupData = {
         test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
-      const expectedErrorDescription = 'row is missing data.'
-      const expectedNumberOfExceptionRows = 1
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 1
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should omit all rows as there is missing values for the entire column', async () => {
@@ -207,9 +254,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       }
 
       const expectedErrorDescription = 'row is missing data.'
-      const expectedNonDisplayGroupData = dummyData
-      const expectedNumberOfExceptionRows = 3
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: dummyData,
+        numberOfExceptionRows: 3
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should not refresh when a non-csv file (JSON) is provided', async () => {
@@ -220,26 +270,30 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: JSONFILE
       }
 
-      const expectedNonDisplayGroupData = dummyData
+      const expectedData = {
+        nonDisplayGroupData: dummyData
+      }
 
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData)
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
-      const mockResponse = {
+      const mockResponseData = {
         status: 404,
         body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      await fetch.mockResolvedValue(mockResponseData)
 
-      const expectedData = dummyData
-      const expectedNumberOfExceptionRows = 0
       const expectedError = new Error(`No csv file detected`)
+      const expectedData = {
+        nonDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
 
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
-      await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+      await checkExpectedResults(expectedData)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
       const expectedError = new Error(`connect ECONNREFUSED mockhost`)
@@ -272,8 +326,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
       const expectedErrorDescription = 'row is missing data.'
-      const expectedNumberOfExceptionRows = 1
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 1
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should only load valid rows within a csv correctly. bit instead of boolean row loaded into exceptions', async () => {
@@ -289,8 +347,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
-      const expectedNumberOfExceptionRows = 1
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+      const expectedData = {
+        nonDisplayGroupData: expectedNonDisplayGroupData,
+        numberOfExceptionRows: 1
+      }
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
   })
 
@@ -313,7 +375,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedNonDisplayGroupData, expectedNumberOfExceptionRows) {
+  async function checkExpectedResults (expectedData) {
     const result = await request.query(`
       select 
         count(*) 
@@ -321,12 +383,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         number 
       from 
         fff_staging.non_display_group_workflow`)
-    const workflowIds = Object.keys(expectedNonDisplayGroupData)
+    const workflowIds = Object.keys(expectedData.nonDisplayGroupData)
     let expectedNumberOfRows = 0
 
     // The number of rows returned from the database should be equal to the sum of the elements nested within the expected non_display_group_workflow expected data.
     for (const workflowId of workflowIds) {
-      expectedNumberOfRows += Object.keys(expectedNonDisplayGroupData[workflowId]).length
+      expectedNumberOfRows += Object.keys(expectedData.nonDisplayGroupData[workflowId]).length
     }
 
     // Query the database and check that the filter IDs associated with each workflow ID are as expected.
@@ -334,9 +396,9 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     context.log(`databse row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
-      const workflowIds = Object.keys(expectedNonDisplayGroupData)
+      const workflowIds = Object.keys(expectedData.nonDisplayGroupData)
       for (const workflowId of workflowIds) { // ident single workflowId within expected data
-        const expectedData = expectedNonDisplayGroupData[`${workflowId}`]
+        const expectedWorkflowData = expectedData.nonDisplayGroupData[`${workflowId}`]
 
         // actual db data
         const filterQuery = await request.query(`
@@ -358,9 +420,9 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         rows.forEach(row =>
           dbData.push({ filterId: row.filter_id, approved: row.approved, startTimeOffset: row.startTimeOffset, endTimeOffset: row.endTimeOffset, timeSeriesType: row.timeSeriesType })
         )
-        const expectedDataSorted = expectedData.sort()
+        const expectedWorkflowDataSorted = expectedWorkflowData.sort()
         // get an array of filter ids for a given workflow id from the database
-        expect(dbData).toEqual(expectedDataSorted)
+        expect(dbData).toEqual(expectedWorkflowDataSorted)
       }
 
       if (expectedNumberOfRows > 1) {
@@ -370,16 +432,20 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       }
     }
     // Check exceptions
-    if (expectedNumberOfExceptionRows) {
-      const exceptionCount = await request.query(`
-        select 
-          count(*) 
-        as 
-          number 
-        from 
-          fff_staging.csv_staging_exception`)
-      expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
-    }
+    const exceptionCount = await request.query(`
+      select
+        count(*)
+      as
+        number
+      from
+        fff_staging.csv_staging_exception
+    `)
+
+    expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
+
+    // Check messages to be replayed
+    await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonCsvRefreshUtils.checkReplayedTimeseriesStagingExceptionMessages(expectedData.replayedTimeseriesStagingExceptionMessages)
   }
   async function lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
     let transaction
@@ -415,5 +481,48 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         exception_time desc
     `)
     expect(result.recordset[0].description).toContain(expectedErrorDescription)
+  }
+
+  async function insertExceptions (transaction, context) {
+    await new sql.Request(transaction).batch(`
+      declare @id1 uniqueidentifier;
+      set @id1 = newid();
+      declare @id2 uniqueidentifier;
+      set @id2 = newid();
+      declare @id3 uniqueidentifier;
+      set @id3 = newid();
+      declare @id4 uniqueidentifier;
+      set @id4 = newid();
+
+      insert into
+        fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+      values
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for test_non_display_workflow_2', 'ukeafffsmc00:000000001', 'P', 'test_non_display_workflow_2', getutcdate());
+
+      insert into
+        fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+      values
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'test_non_display_workflow_1', 'message');
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id2, 'test_filter_1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id3, 'test_filter_1a', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id4, 'test_filter_1', 'F', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "filterId": "test_filter_3"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+    `)
   }
 })
