@@ -1,9 +1,9 @@
-const refresh = require('../Shared/shared-refresh-csv-rows')
+const commonCoastalLocationRefreshData = require('../Shared/csv-load-handler/coastal-location-configuration')
+const refresh = require('../Shared/csv-load-handler/shared-refresh-csv-rows')
 
 module.exports = async function (context) {
-  const refreshData = {
+  const localRefreshData = {
     csvUrl: process.env.COASTAL_MVT_FORECAST_LOCATION_URL,
-    tableName: 'coastal_forecast_location',
     csvSourceFile: 'mvt coastal location',
     deleteStatement: 'delete from fff_staging.coastal_forecast_location where coastal_type = \'Multivariate Thresholds\'',
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'Multivariate Thresholds\'',
@@ -22,6 +22,6 @@ module.exports = async function (context) {
       { tableColumnName: 'COASTAL_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'Type' }
     ]
   }
-
+  const refreshData = Object.assign(localRefreshData, commonCoastalLocationRefreshData)
   await refresh(context, refreshData)
 }

@@ -1,4 +1,4 @@
-const refresh = require('../Shared/shared-refresh-csv-rows')
+const refresh = require('../Shared/csv-load-handler/shared-refresh-csv-rows')
 
 module.exports = async function (context) {
   const refreshData = {

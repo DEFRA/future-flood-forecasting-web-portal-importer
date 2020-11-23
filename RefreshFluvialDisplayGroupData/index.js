@@ -1,5 +1,5 @@
 const refreshDisplayGroupTable = require('../Shared/csv-load/display-group-helpers/refresh-display-group-data')
-const refresh = require('../Shared/shared-refresh-csv-rows')
+const refresh = require('../Shared/csv-load-handler/shared-refresh-csv-rows')
 const sql = require('mssql')
 
 module.exports = async function (context) {
