@@ -1,10 +1,5 @@
-const commonCoastalLocationRefreshData = require('../Shared/csv-load-handler/coastal-location-configuration')
+const commonCoastalLocationRefreshData = require('../Shared/csv-load-handler/common-refresh-data')
 const refresh = require('../Shared/csv-load-handler/shared-refresh-csv-rows')
-
-// Column information and corresponding csv information
-const functionSpecificData = [
-  { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' }
-]
 
 module.exports = async function (context) {
   const localRefreshData = {
@@ -16,9 +11,12 @@ module.exports = async function (context) {
       insert into 
         fff_staging.coastal_forecast_location (fffs_loc_id, fffs_loc_name, coastal_order, centre, coastal_type)
       values 
-        (@fffs_loc_id, @fffs_loc_name, @coastal_order, @centre, @coastal_type)`
+        (@fffs_loc_id, @fffs_loc_name, @coastal_order, @centre, @coastal_type)`,
+    functionSpecificData: [
+      { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' }
+    ]
   }
   const refreshData = Object.assign(localRefreshData, commonCoastalLocationRefreshData.commonRefreshData)
-  refreshData.functionSpecificData = functionSpecificData.concat(commonCoastalLocationRefreshData.commonFunctionSpecificData)
+  refreshData.functionSpecificData.push(...commonCoastalLocationRefreshData.commonCoastalLocationFunctionSpecificData)
   await refresh(context, refreshData)
 }
