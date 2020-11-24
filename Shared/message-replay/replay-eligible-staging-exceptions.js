@@ -14,7 +14,7 @@ async function getCoreForecastingEngineMessagesForKnownWorkflows (context, prepa
     select distinct
       se.payload
     from
-      fff_staging.staging_exception se
+      fff_staging.v_active_staging_exception se
       inner join fff_staging.v_workflow vw
         on se.workflow_id = vw.workflow_id
     where

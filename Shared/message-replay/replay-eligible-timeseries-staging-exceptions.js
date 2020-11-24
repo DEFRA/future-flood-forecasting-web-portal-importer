@@ -12,7 +12,7 @@ async function getMessagesForCsvRelatedTimeseriesStagingExceptions (context, pre
     select
       tse.payload
     from
-      fff_staging.timeseries_staging_exception tse
+      fff_staging.v_active_timeseries_staging_exception tse
     where
       tse.csv_error = 1 and
       tse.csv_type = @csvType
