@@ -32,6 +32,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       forecast: true,
       approved: true,
       outgoingPlotIds: ['Test Fluvial Plot1']
+    },
+    approvedPartialTaskRunForecast: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Test_Partial_Taskrun_Plot']
     }
   }
 
@@ -101,6 +106,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         status: 404
       }
       await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
+    })
+    it('should import data (with no staging exceptions present) for an approved forecast task run following the occlusion of numerous unapproved partial run messages for the same task run', async () => {
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunForecast', expectedData['approvedPartialTaskRunForecast'])
     })
   })
 })

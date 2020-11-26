@@ -46,7 +46,6 @@ async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, taskR
   for (const itemToBeProcessed of taskRunData.itemsToBeProcessed) {
     if (itemToBeProcessed.sourceType === 'P' && taskRunData.forecast && !taskRunData.approved) {
       context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
-      taskRunData.ignoredPlots = taskRunData.ignoredPlots + 1
     } else {
       const message = {
         taskRunId: taskRunData.taskRunId

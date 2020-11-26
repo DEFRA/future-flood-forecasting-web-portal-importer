@@ -65,5 +65,23 @@
       "source": "ukeafffsmc00:000000001",
       "level": "INFO"
     }
+  },
+  "unapprovedPartialTaskRunForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task  Test_Partial_Taskrun_Workflow with ID ukeafffsmc00:000000009 completed in 5s Forecast: True Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000009",
+      "level": "INFO"
+    }
+  },
+  "approvedPartialTaskRunForecast": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task  Test_Partial_Taskrun_Workflow with ID ukeafffsmc00:000000009 completed in 5s Forecast: True Approved: True Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000009",
+      "level": "INFO"
+    }
   }
 }

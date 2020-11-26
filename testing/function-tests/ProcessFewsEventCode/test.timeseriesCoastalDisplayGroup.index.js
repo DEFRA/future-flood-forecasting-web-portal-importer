@@ -58,6 +58,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         sourceId: 'Test Coastal Plot 5a',
         sourceType: 'P'
       }]
+    },
+    taskRunWithUnresolvedTimeseriesStagingExceptions: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Test Coastal Plot 5b', 'Test Coastal Plot 5c'],
+      remainingTimeseriesStagingExceptions: [{
+        sourceId: 'Test Coastal Plot 5a',
+        sourceType: 'P'
+      }]
     }
   }
 
@@ -108,10 +117,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderAndTimeseries(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
     })
+    it('should prevent replay of a task run plot following NO resolution of invalid configuration. The timeseries staging exception should still be active', async () => {
+      const messageKey = 'taskRunWithTimeseriesStagingExceptions'
+      await insertTimeseriesHeaderAndTimeseriesStagingException(pool, 1) // timeseries staging exception inserted after workflow refresh date
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithUnresolvedTimeseriesStagingExceptions'])
+    })
     it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration. The timeseries staging exception should be deactivated', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
-      await insertTimeseriesHeaderAndTimeseriesStagingException(pool)
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      await insertTimeseriesHeaderAndTimeseriesStagingException(pool, -1) // timeseries staging exception inserted before workflow refresh date
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithTimeseriesStagingExceptions'])
     })
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
@@ -155,7 +169,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await request.query(query)
   }
 
-  async function insertTimeseriesHeaderAndTimeseriesStagingException (pool) {
+  async function insertTimeseriesHeaderAndTimeseriesStagingException (pool, exceptionTimeOffset) {
+    // the workflow (reference data) refresh table updates at the start of this test file
+    const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
     const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingExceptions'])
     const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
@@ -174,11 +190,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'error_plot', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "error_plot"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
+        (@id2, 'error_plot', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "error_plot"}', @id1, 'Error text', ${exceptionTime})
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'Test Coastal Plot 5a', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 5a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
+        (@id3, 'Test Coastal Plot 5a', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 5a"}', @id1, 'Error text', ${exceptionTime})
     `
     query.replace(/"/g, "'")
     await request.query(query)
