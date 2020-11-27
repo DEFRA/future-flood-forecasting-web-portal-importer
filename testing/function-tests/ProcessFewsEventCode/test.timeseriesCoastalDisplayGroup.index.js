@@ -99,7 +99,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should ignore an approved out of date forecast task run', async () => {
       const messageKey = 'laterSinglePlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', 1, 1)
+      context.bindings.importFromFews = [] // reset the context bindings as it stays in test memory
+      const expectedNumberOfHeaderRecords = 1
+      const expectedNumberOfNewOutgoingMessages = 0
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages)
     })
     it('should create a timeseries header and create a message for a single plot associated with a forecast task run approved manually', async () => {
       const messageKey = 'forecastApprovedManually'
@@ -115,7 +118,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should prevent replay of a task run when all plots/filers have been processed', async () => {
       const messageKey = 'singlePlotApprovedForecast'
       await insertTimeseriesHeaderAndTimeseries(pool)
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, 1)
+      const expectedNumberOfHeaderRecords = 1
+      const expectedNumberOfNewOutgoingMessages = 0
+      const expectedNumberOfStagingExceptions = 0
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages, expectedNumberOfStagingExceptions)
     })
     it('should prevent replay of a task run plot following NO resolution of invalid configuration. The timeseries staging exception should still be active', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'

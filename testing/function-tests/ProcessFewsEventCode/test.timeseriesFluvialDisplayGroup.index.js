@@ -3,6 +3,7 @@ const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-times
 const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
+const sql = require('mssql')
 
 module.exports = describe('Tests for import timeseries display groups', () => {
   let context
@@ -73,7 +74,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should not import data for an out-of-date forecast approved task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', 1, 1)
+      context.bindings.importFromFews = [] // reset the context bindings as it stays in test memory
+      const expectedNumberOfHeaderRecords = 1
+      const expectedNumberOfNewOutgoingMessages = 0
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages)
     })
     it('should import data for a forecast manually approved task run', async () => {
       const messageKey = 'forecastApprovedManually'
@@ -107,10 +111,50 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       }
       await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown('singlePlotApprovedForecast', mockResponse)
     })
-    it('should import data (with no staging exceptions present) for an approved forecast task run following the occlusion of numerous unapproved partial run messages for the same task run', async () => {
+    it('should import data (with no staging exceptions present) for an approved forecast task run following the earlier rejection of numerous unapproved partial taskrun messages for the same task run', async () => {
+      // in the core engine a forecast taskrun can run multiple times in what are called 'partial taskruns'
+      // only one partial taskrun is approved and this should come after all the preceding unapproved partial taskruns
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunForecast', expectedData['approvedPartialTaskRunForecast'])
     })
+    it('should import data (with no staging exceptions present) for an approved forecast task run following the earlier dismissal of numerous unapproved partial taskrun messages for the same task run', async () => {
+      // this test simulates a situation where an unapproved partial taskrun message is received after the approved partial taskrun message
+
+      // a taskrun partial linked to an unapproved forecast should be rejected
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
+
+      // simulate a successful load for the taskRun partial linked to the approved forecast
+      await insertTimeseriesHeaderAndTimeseries(pool)
+      const expectedNumberOfHeaderRecords = 1 // now pre-existing for taskrun
+      const expectedNumberOfNewOutgoingMessages = 0
+      const expectedNumberOfStagingExceptions = 0
+
+      // another unapproved taskrun partial linked to the forecast should be rejected (no longer the expected message sequence from core)
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages, expectedNumberOfStagingExceptions)
+
+      // another approved taskrun partial linked to the forecast should not create any new outgoing messages or staging exceptions
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('approvedPartialTaskRunForecast', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages, expectedNumberOfStagingExceptions)
+    })
   })
+
+  async function insertTimeseriesHeaderAndTimeseries (pool) {
+    const request = new sql.Request(pool)
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      insert into fff_staging.timeseries_header
+        (id, task_completion_time, task_run_id, workflow_id, message)
+      values
+        (@id1, getutcdate(),'ukeafffsmc00:000000009','Test_Partial_Taskrun_Workflow', '{"key": "value"}')
+      insert into fff_staging.timeseries
+        (id, fews_data, fews_parameters, timeseries_header_id, import_time)
+      values
+        (@id2, compress('fews_data'), '&plotId=Test_Partial_Taskrun_Plot&more parameters', @id1, getutcdate())
+    `
+    query.replace(/"/g, "'")
+    await request.query(query)
+  }
 })

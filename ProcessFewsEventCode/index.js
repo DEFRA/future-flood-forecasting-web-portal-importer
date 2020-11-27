@@ -87,7 +87,7 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     context.bindings.importFromFews = taskRunData.outgoingMessages
   } else if (taskRunData.timeseriesHeaderExistsForTaskRun) {
     // If there is a taskRun header, this taskRun has partially/successfully run at least once before
-    // If there are no messages to send but this means:
+    // If there are no messages to send out this means:
     // - all the plots/filters for the workflow taskRun have already been loaded successfully into timeseries
     // - there was a partial/failed previous load AND the workflow reference data associated with the missing timeseries (t-s-exceptions) has not yet been refreshed
     context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
@@ -95,10 +95,10 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     // If there is no header this means this taskRun has not partially/successfully run before.
     // In this case (no header) the function app will find and store all corresponding plots/filters as items to be processed for a taskRun.
     // If there are itemsToBeProcessed then there IS reference data in staging for the taskRun/workflow.
-    // No messages at this point means the items to process are unapproved forecast plots and so should not be forwarded.
+    // No messages at this point means the items to process are plots linked to an unapproved forecast and so should not be forwarded
     context.log(`All plots in the taskRun: ${taskRunData.taskRunId} (for workflowId: ${taskRunData.workflowId}) are unapproved.`)
   } else {
-    // There is no items to process, header row or messages to forward meaning:
+    // There are no items to process, messages to forward or header row meaning:
     // - this taskRun has not partially/successfully run before.
     // - staging has no reference data listed for the taskRun workflowId
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
