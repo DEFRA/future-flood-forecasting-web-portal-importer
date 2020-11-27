@@ -74,13 +74,15 @@ module.exports = function (pool) {
         ('Test_Ignored_Workflow_1'),
         ('Test_Ignored_Workflow_2')
     `)
+
     await request.batch(`
       insert into
         fff_staging.workflow_refresh (csv_type)
       values
         ('C'),
         ('F'),
-        ('N')
+        ('N'),
+        ('I')
     `)
   }
   this.beforeEach = async function () {

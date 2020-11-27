@@ -105,9 +105,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         },
         numberOfExceptionRows: 0,
         replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
-        replayedTimeseriesStagingExceptionMessages: [ JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}') ]
+        replayedTimeseriesStagingExceptionMessages: [
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}'),
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}')
+        ]
       }
 
+      await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords()
       await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should ignore a  CSV file with misspelled headers', async () => {

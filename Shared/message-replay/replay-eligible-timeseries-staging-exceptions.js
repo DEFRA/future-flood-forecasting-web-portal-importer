@@ -17,11 +17,17 @@ const serviceConfigUpdatedQuery = `
     fff_staging.v_active_timeseries_staging_exception tse
   where
     tse.csv_error = 0 and
+    0 <> (
+      select
+        count(id)
+      from
+        fff_staging.workflow_refresh
+    ) and
     @secondsSinceCsvRefreshed >= all (
       select
         datediff(second, refresh_time, getutcdate())
-    from
-      fff_staging.workflow_refresh
+      from
+        fff_staging.workflow_refresh
    )
  `
 module.exports = async function (context, replayData) {
@@ -33,11 +39,11 @@ async function replayMessagesForTimeseriesStagingExceptionsIfServiceConfigUpdate
   await preparedStatement.input('secondsSinceCsvRefreshed', sql.Int)
   await preparedStatement.prepare(serviceConfigUpdatedQuery)
 
-  // const parameters = {
-  //   secondsSinceCsvRefreshed: process.env['SERVICE_CONFIG_UPDATE_DETECTION_LIMIT'] || 300
-  // }
+  const parameters = {
+    secondsSinceCsvRefreshed: process.env['SERVICE_CONFIG_UPDATE_DETECTION_LIMIT'] || 300
+  }
 
-  // await replayMessagesForTimeseriesStagingExceptions(context, preparedStatement, parameters)
+  await replayMessagesForTimeseriesStagingExceptions(context, preparedStatement, parameters)
 }
 
 async function replayMessagesForCsvRelatedTimeseriesStagingExceptions (context, preparedStatement, replayData) {

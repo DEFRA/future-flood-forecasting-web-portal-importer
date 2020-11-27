@@ -121,9 +121,12 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
         replayedTimeseriesStagingExceptionMessages: [
           JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}'),
-          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}')
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}'),
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000004", "filterId": "test_filter_3"}')
         ]
       }
+
+      await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords(-60)
 
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
       await doInTransaction(insertExceptions, context, 'Error')

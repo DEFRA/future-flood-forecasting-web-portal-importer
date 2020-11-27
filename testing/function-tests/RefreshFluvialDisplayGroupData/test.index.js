@@ -114,6 +114,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     })
 
     it('should group locations by plot ID and workflow ID given single location per workflowId/plotId and replay eligible failed messages', async () => {
+      await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords(-600)
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
       await doInTransaction(insertExceptions, context, 'Error')
 
