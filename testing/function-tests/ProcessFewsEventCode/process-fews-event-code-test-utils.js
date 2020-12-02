@@ -119,19 +119,16 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         expect(outgoingMessage.taskRunId).toBe(expectedTaskRunId)
       }
 
-      const expectedNumberOfPlotIds = expectedData.outgoingPlotIds ? expectedData.outgoingPlotIds.length : 0
-      expect(expectedNumberOfPlotIds).toEqual(outgoingPlotIds.length)
-      if (expectedData.outgoingPlotIds) {
-        for (const outgoingPlotId of outgoingPlotIds) {
-          expect(expectedData.outgoingPlotIds).toContainEqual(outgoingPlotId)
-        }
+      expect(outgoingPlotIds.length).toBe((expectedData.outgoingPlotIds || []).length)
+
+      for (const expectedOutgoingPlotId of expectedData.outgoingPlotIds || []) {
+        expect(outgoingPlotIds).toContainEqual(expectedOutgoingPlotId)
       }
-      const expectedNumberOfFilterIds = expectedData.outgoingFilterIds ? expectedData.outgoingFilterIds.length : 0
-      expect(expectedNumberOfFilterIds).toEqual(outgoingFilterIds.length)
-      if (expectedData.outgoingFilterIds) {
-        for (const outgoingFilterId of outgoingFilterIds) {
-          expect(expectedData.outgoingFilterIds).toContainEqual(outgoingFilterId)
-        }
+
+      expect(outgoingFilterIds.length).toBe((expectedData.outgoingFilterIds || []).length)
+
+      for (const expectedOutgoingFilterId of expectedData.outgoingFilterIds || []) {
+        expect(outgoingFilterIds).toContainEqual(expectedOutgoingFilterId)
       }
 
       const stagingExceptionConfig = {
