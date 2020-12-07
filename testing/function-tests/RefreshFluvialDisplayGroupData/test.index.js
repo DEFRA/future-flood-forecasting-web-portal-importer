@@ -135,7 +135,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
             plot1: ['location1']
           }
         },
-        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
+        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message', 'ukeafffsmc00:000000004 message'],
         replayedTimeseriesStagingExceptionMessages: [
           JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}'),
           JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}')
@@ -449,6 +449,14 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
       set @id3 = newid();
       declare @id4 uniqueidentifier;
       set @id4 = newid();
+      declare @id5 uniqueidentifier;
+      set @id5 = newid();
+      declare @id6 uniqueidentifier;
+      set @id6 = newid();
+      declare @id7 uniqueidentifier;
+      set @id7 = newid();
+      declare @id8 uniqueidentifier;
+      set @id8 = newid();
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
@@ -463,23 +471,42 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'workflow2', 'message');
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'workflow1', 'ukeafffsmc00:000000003 message');
+
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id2, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000004', 'workflow1', 'ukeafffsmc00:000000004 message');
+
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id3, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000005', 'workflow2', 'ukeafffsmc00:000000005 message');
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'plot1', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id4, 'plot1', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'plot2', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id5, 'plot2', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id4, 'plot1', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id6, 'plot1 with typo', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot1 with typo"}', @id2, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id7, 'plot2 with typo', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot2 with typo"}', @id2, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id8, 'plot1', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000005", "plotId": "plot1"}', @id3, 'Error text', dateadd(hour, -1, getutcdate()));
     `)
   }
-}
-)
+})
