@@ -1,4 +1,3 @@
-const CommonCsvRefreshUtils = require('../shared/common-csv-refresh-utils')
 const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
@@ -17,7 +16,6 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
   const TEXT_CSV = 'text/csv'
   const HTML = 'html'
 
-  let commonCsvRefreshUtils
   let commonWorkflowCsvTestUtils
   let context
   let dummyData
@@ -38,7 +36,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
       const config = {
         csvType: 'F'
       }
-      commonCsvRefreshUtils = new CommonCsvRefreshUtils(context)
+
       commonWorkflowCsvTestUtils = new CommonWorkflowCsvTestUtils(context, pool, config)
       dummyData = {
         dummyWorkflow: {
@@ -396,8 +394,8 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
 
     // Check messages to be replayed
-    await commonCsvRefreshUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
-    await commonCsvRefreshUtils.checkReplayedTimeseriesStagingExceptionMessages(expectedData.replayedTimeseriesStagingExceptionMessages)
+    await commonWorkflowCsvTestUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonWorkflowCsvTestUtils.checkReplayedTimeseriesStagingExceptionMessages(expectedData.replayedTimeseriesStagingExceptionMessages)
   }
 
   async function lockWorkflowTableAndCheckMessageCannotBeProcessed (mockResponseData) {

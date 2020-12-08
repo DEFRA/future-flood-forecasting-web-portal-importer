@@ -31,6 +31,19 @@ module.exports = function (context, pool, config) {
   this.checkWorkflowRefreshData = async function () {
     await doInTransaction(checkWorkflowRefreshDataInTransaction, context, 'Unable to check workflow refresh data', null, config)
   }
+
+  this.checkReplayedStagingExceptionMessages = async function (expectedReplayedStagingExceptionMessages) {
+    expect(context.bindings.processFewsEventCode.length).toBe((expectedReplayedStagingExceptionMessages || []).length)
+    for (const stagingExceptionMessage of expectedReplayedStagingExceptionMessages || []) {
+      expect(context.bindings.processFewsEventCode).toContainEqual(stagingExceptionMessage)
+    }
+  }
+  this.checkReplayedTimeseriesStagingExceptionMessages = async function (expectedReplayedTimeseriesStagingExceptionMessages) {
+    expect(context.bindings.importFromFews.length).toBe((expectedReplayedTimeseriesStagingExceptionMessages || []).length)
+    for (const timeseriesStagingExceptionMessage of expectedReplayedTimeseriesStagingExceptionMessages || []) {
+      expect(context.bindings.importFromFews).toContainEqual(timeseriesStagingExceptionMessage)
+    }
+  }
 }
 
 async function checkWorkflowRefreshDataInTransaction (transaction, context, config) {
