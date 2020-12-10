@@ -40,6 +40,7 @@ async function processMessage (transaction, context, message) {
   taskRunData.transaction = transaction
   taskRunData.message = message
   taskRunData.sourceFunction = 'I'
+  taskRunData.getAllLocationsForWorkflowPlotWhenNoTimeseriesExist = true
 
   if (message.taskRunId) {
     await getTimeseriesHeaderData(context, taskRunData)

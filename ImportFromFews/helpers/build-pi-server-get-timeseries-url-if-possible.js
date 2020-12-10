@@ -6,7 +6,7 @@ const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = 
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const timeseriesTypeConstants = require('./timeseries-type-constants')
-const TimeseriesStagingError = require('./timeseries-staging-error')
+const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)

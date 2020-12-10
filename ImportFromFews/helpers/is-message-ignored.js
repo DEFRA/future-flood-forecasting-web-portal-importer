@@ -1,4 +1,4 @@
-const doTimeseriesExistForTaskRunPlotOrFilter = require('./do-timeseries-exist-for-task-run-plot-or-filter')
+const doTimeseriesExistForTaskRunPlotOrFilter = require('../../Shared/timeseries-functions/do-timeseries-exist-for-task-run-plot-or-filter')
 const doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter = require('./do-active-timeseries-staging-exceptions-exist-for-task-run-plot-or-filter')
 const isIgnoredWorkflow = require('../../Shared/timeseries-functions/is-ignored-workflow')
 

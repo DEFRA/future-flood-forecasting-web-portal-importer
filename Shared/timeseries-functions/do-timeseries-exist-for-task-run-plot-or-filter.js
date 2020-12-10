@@ -1,4 +1,4 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const { executePreparedStatementInTransaction } = require('../transaction-helper')
 const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
