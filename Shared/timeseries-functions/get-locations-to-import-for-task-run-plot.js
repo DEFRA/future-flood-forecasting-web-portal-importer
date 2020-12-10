@@ -75,6 +75,10 @@ const displayGroupWorkflowQueries = {
 }
 
 module.exports = async function (context, taskRunData) {
+  await buildLocationsToImportForTaskRunPlot(context, taskRunData)
+}
+
+async function buildLocationsToImportForTaskRunPlot (context, taskRunData) {
   await executePreparedStatementInTransaction(buildCsvTypeForWorkflowPlot, context, taskRunData.transaction, taskRunData)
   let locationsToImportForTaskRunPlotFunction
   if (await doTimeseriesExistForTaskRunPlotOrFilter(context, taskRunData)) {
