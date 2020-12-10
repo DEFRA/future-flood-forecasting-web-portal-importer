@@ -1,9 +1,10 @@
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const getLocationsToImportForTaskRunPlot = require('../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot')
 const sql = require('mssql')
 
 // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
 // guard against a workflow table refresh during processing.
-const query = `
+const taskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptionsQuery = `
   select 
     source_id,
     source_type
@@ -35,15 +36,25 @@ const query = `
       )    
     )    
 `
+const workflowPlotsQuery = `
+  select
+    source_id as plot_id
+  from
+    fff_staging.v_workflow
+  where
+    workflow_id = @workflowId and
+    source_type = 'P'
+`
 module.exports = async function (context, taskRunData) {
-  await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersEligibleForReplay, context, taskRunData.transaction, taskRunData)
+  await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptions, context, taskRunData.transaction, taskRunData)
+  await executePreparedStatementInTransaction(getWorkflowPlots, context, taskRunData.transaction, taskRunData)
+  await getUnimportedLocationsForTaskRunPlots(context, taskRunData)
 }
 
-async function getTaskRunPlotsAndFiltersEligibleForReplay (context, preparedStatement, taskRunData) {
+async function getTaskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptions (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
-
-  await preparedStatement.prepare(query)
+  await preparedStatement.prepare(taskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptionsQuery)
 
   const parameters = {
     taskRunId: taskRunData.taskRunId,
@@ -57,5 +68,42 @@ async function getTaskRunPlotsAndFiltersEligibleForReplay (context, preparedStat
       sourceId: record.source_id,
       sourceType: record.source_type
     })
+  }
+}
+
+async function getWorkflowPlots (context, preparedStatement, taskRunData) {
+  await preparedStatement.input('workflowId', sql.NVarChar)
+  await preparedStatement.prepare(workflowPlotsQuery)
+
+  const parameters = {
+    taskRunId: taskRunData.taskRunId,
+    workflowId: taskRunData.workflowId
+  }
+
+  const result = await preparedStatement.execute(parameters)
+  taskRunData.workflowPlots = []
+
+  for (const record of result.recordset) {
+    taskRunData.workflowPlots.push(record.plot_id)
+  }
+}
+
+async function getUnimportedLocationsForTaskRunPlots (context, taskRunData) {
+  for (const plotId of taskRunData.workflowPlots) {
+    taskRunData.plotId = plotId
+    await getUnimportedLocationsForTaskRunPlot(context, taskRunData)
+    delete taskRunData.plotId
+  }
+  delete taskRunData.workflowPlots
+}
+
+async function getUnimportedLocationsForTaskRunPlot (context, taskRunData) {
+  const unimportedLocationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
+
+  if (unimportedLocationIds) {
+    // taskRunData.itemsEligibleForReplay.push({
+    //   sourceId: taskRunData.plotId,
+    //   sourceType: 'P'
+    // })
   }
 }

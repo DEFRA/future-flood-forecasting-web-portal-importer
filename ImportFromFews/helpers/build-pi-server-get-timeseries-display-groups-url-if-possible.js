@@ -51,7 +51,7 @@ async function buildFewsTimeParameters (context, taskRunData) {
 }
 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
-  await getLocationsToImportForTaskRunPlot(context, taskRunData)
+  taskRunData.locationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
 
   if (taskRunData.locationIds) {
     const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]

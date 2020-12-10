@@ -75,7 +75,7 @@ const displayGroupWorkflowQueries = {
 }
 
 module.exports = async function (context, taskRunData) {
-  await buildLocationsToImportForTaskRunPlot(context, taskRunData)
+  return Promise.resolve(await buildLocationsToImportForTaskRunPlot(context, taskRunData))
 }
 
 async function buildLocationsToImportForTaskRunPlot (context, taskRunData) {
@@ -91,7 +91,7 @@ async function buildLocationsToImportForTaskRunPlot (context, taskRunData) {
     const result = await executePreparedStatementInTransaction(locationsToImportForTaskRunPlotFunction, context, taskRunData.transaction, taskRunData)
 
     if (result && result.recordset && result.recordset.length === 1) {
-      taskRunData.locationIds = result.recordset[0].location_ids
+      return result.recordset[0].location_ids
     }
   }
 }
