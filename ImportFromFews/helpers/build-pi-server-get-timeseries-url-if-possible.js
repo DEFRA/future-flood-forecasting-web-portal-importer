@@ -15,7 +15,6 @@ module.exports = async function (context, taskRunData) {
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
   if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
     if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
       if (!taskRunData.filterData.approvalRequired) {
         context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)

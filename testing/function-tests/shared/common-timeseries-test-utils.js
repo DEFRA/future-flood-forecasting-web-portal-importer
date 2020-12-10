@@ -120,7 +120,7 @@ module.exports = function (pool) {
     `)
     expect(result.recordset[0].number).toBe(config.expectedNumberOfStagingExceptions || 0)
   }
-  this.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun = async function (config) {
+  this.checkNumberOfActiveTimeseriesStagingExceptionsForWorkflowOfTaskRun = async function (config) {
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.NVarChar, config.taskRunId)
     const result = await request.query(`
@@ -131,7 +131,14 @@ module.exports = function (pool) {
         fff_staging.timeseries_header th
       where
         th.id = tse.timeseries_header_id and
-        th.task_run_id = @taskRunId
+        th.workflow_id = (
+          select
+            th2.workflow_id
+          from
+            fff_staging.timeseries_header th2
+          where
+            th2.task_run_id = @taskRunId
+        )
     `)
     expect(result.recordset[0].number).toBe(config.expectedNumberOfTimeseriesStagingExceptions || 0)
   }

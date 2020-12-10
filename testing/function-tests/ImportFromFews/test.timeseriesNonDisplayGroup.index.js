@@ -45,22 +45,36 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       const config = {
+        taskRunId: 'ukeafffsmc00:000000001',
         messageKey: 'singleFilterNonForecast',
         mockResponses: [mockResponse],
-        expectedNumberOfStagingExceptions: 1
+        expectedNumberOfStagingExceptions: 1,
+        expectedNumberOfTimeseriesStagingExceptions: 1
       }
       // Check that a staging exception associated with an earlier task run of the same workflow is not deactivated.
       const exceptionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(15, 'seconds')
-      const request = new sql.Request(pool)
-      await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
-      await request.query(`
+      const stagingExceptionRequest = new sql.Request(pool)
+      await stagingExceptionRequest.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
+      await stagingExceptionRequest.query(`
         insert into
           fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
         values
-          ('Invalid message', 'Error', 'ukeafffsmc00:0000000016', 'I', 'Test_Workflow1', @exceptionTime);
+          ('Invalid message', 'Error', 'ukeafffsmc00:000000016', 'I', 'Test_Workflow1', @exceptionTime);
+      `)
+
+      // Check that a timeseries staging exception associated with an earlier task run of the same workflow is not deactivated.
+      const timeseriesStagingExceptionRequest = new sql.Request(pool)
+      await timeseriesStagingExceptionRequest.batch(`
+        declare @id1 uniqueidentifier;
+        select @id1 = id from fff_staging.timeseries_header where task_run_id = 'ukeafffsmc00:000000016';
+
+        insert into fff_staging.timeseries_staging_exception
+          (source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+        values
+          ('Test Filter1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000016", @id1, "filterId": "Test Filter1"}', @id1, 'Error text', dateadd(second, -10, getutcdate()));
       `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
-    })
+    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 300000) + 5000)
     it('should not import duplicate timeseries', async () => {
       const messageKey = 'singleFilterNonForecast'
       const mockResponse = {
@@ -487,7 +501,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000013', 'Span_Workflow', 1, 1, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000014', 'External_Forecasting_Workflow2', 1, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}'),
-       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:0000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}'),
+       (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000017', 'Custom_Offset_Workflow', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000018', 'Custom_Offset_Workflow_Forecast', 0, 0, '{"input": "Test message"}')
     `)

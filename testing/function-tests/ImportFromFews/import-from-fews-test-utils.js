@@ -100,7 +100,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       }
 
       await commonTimeseriesTestUtils.checkNumberOfActiveStagingExceptionsForSourceFunctionOfWorkflow(stagingExceptionConfig)
-      await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun(config)
+      await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForWorkflowOfTaskRun(config)
     }
   }
 
@@ -111,7 +111,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     const config = {
       expectedNumberOfTimeseriesStagingExceptions: expectedNumberOfTimeseriesStagingExceptions || 0
     }
-    await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun(config)
+    await commonTimeseriesTestUtils.checkNumberOfActiveTimeseriesStagingExceptionsForWorkflowOfTaskRun(config)
   }
 
   this.processMessagesCheckStagingExceptionIsCreatedAndNoDataIsImported = async function (messageKey, expectedErrorDescription) {
