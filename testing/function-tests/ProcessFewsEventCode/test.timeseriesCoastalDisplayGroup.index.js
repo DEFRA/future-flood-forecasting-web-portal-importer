@@ -134,10 +134,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool, 1) // timeseries staging exception inserted after workflow refresh date
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithUnresolvedTimeseriesStagingExceptions'])
     })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration. The timeseries staging exception should be deactivated', async () => {
+    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in no timeseries data being loaded for a plot. The timeseries staging exception should be deactivated', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool, -1) // timeseries staging exception inserted before workflow refresh date
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithTimeseriesStagingExceptions'])
+    })
+    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should be deactivated', async () => {
+      const messageKey = 'multiplePlotApprovedForecast'
+      await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should create a staging exception for a message missing task run approval information', async () => {
       await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
@@ -174,15 +179,18 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderAndTimeseries (pool) {
     const request = new sql.Request(pool)
+    const message = JSON.stringify(taskRunCompleteMessages['singlePlotApprovedForecast'])
+    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
+    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
       declare @id2 uniqueidentifier
       set @id2 = newid()
       insert into fff_staging.timeseries_header
-        (id, task_completion_time, task_run_id, workflow_id, message)
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(),'ukeafffsmc00:000000001','Test_Coastal_Workflow', '{"key": "value"}')
+        (@id1, convert(datetime2, '${taskRunStartTime}', 126) at time zone 'utc', convert(datetime2, '${taskRunCompletionTime}', 126) at time zone 'utc', 1, 1, 'ukeafffsmc00:000000001','Test_Coastal_Workflow', '${message}')
       insert into fff_staging.timeseries
         (id, fews_data, fews_parameters, timeseries_header_id, import_time)
       values
@@ -192,9 +200,38 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await request.query(query)
   }
 
+  async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException (pool) {
+    const request = new sql.Request(pool)
+    const message = JSON.stringify(taskRunCompleteMessages['multiplePlotApprovedForecast'])
+    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
+    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id1, convert(datetime2, '${taskRunStartTime}', 126) at time zone 'utc', convert(datetime2, '${taskRunCompletionTime}', 126) at time zone 'utc', 1, 1, 'ukeafffsmc00:000000002','Test_Coastal_Workflow2', '${message}')
+      insert into fff_staging.timeseries
+        (id, fews_data, fews_parameters, timeseries_header_id, import_time)
+      values
+        (@id2, compress('fews_data'), '&plotId=Test Coastal Plot 2a&locationIds=Test Coastal Location 2a-1;&startTime=more data', @id1, getutcdate())
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id3, 'Test Coastal Plot 2a typo', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000002", "plotId": "Test Coastal Plot 2a typo"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
+    `
+    query.replace(/"/g, "'")
+    await request.query(query)
+  }
+
   async function insertTimeseriesHeaderAndTimeseriesStagingException (pool, exceptionTimeOffset) {
     // the workflow (reference data) refresh table updates at the start of this test file
-    const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
+    const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`  
     const request = new sql.Request(pool)
     const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingExceptions'])
     const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime

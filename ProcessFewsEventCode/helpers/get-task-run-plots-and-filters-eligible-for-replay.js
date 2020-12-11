@@ -47,6 +47,11 @@ const workflowPlotsQuery = `
 `
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptions, context, taskRunData.transaction, taskRunData)
+
+  // If individual lines of a plot based CSV loaded previously contained a typo in the plot name, it is possible
+  // that task runs will have timeseries loaded for a subset of plot locations. Following typo corrections, data for
+  // missing locations needs to be loaded.
+  // To achieve this, prepare to send a message for each plot of the workflow with unimported location data.
   await executePreparedStatementInTransaction(getWorkflowPlots, context, taskRunData.transaction, taskRunData)
   await getUnimportedLocationsForTaskRunPlots(context, taskRunData)
 }
