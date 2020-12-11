@@ -6,7 +6,10 @@ module.exports = async function (context, taskRunData) {
   let ignoreMessage = false
   if (await isIgnoredWorkflow(context, taskRunData)) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
-  } else {
+  } else if (taskRunData.filterId) {
+    // Ignore filters based messages with associated timeseries and no associated timeseries staging exceptions.
+    // For plot based messages, additional code will ignore the message if timeseries exist
+    // for all plot locations.
     const timeseriesExistForTaskRunPlotOrFilter =
       await doTimeseriesExistForTaskRunPlotOrFilter(context, taskRunData)
 

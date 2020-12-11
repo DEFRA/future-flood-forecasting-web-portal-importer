@@ -51,6 +51,7 @@ async function buildFewsTimeParameters (context, taskRunData) {
 }
 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
+  taskRunData.throwTimeseriesStagingErrorForUknownWorkflow = true
   taskRunData.locationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
 
   if (taskRunData.locationIds) {

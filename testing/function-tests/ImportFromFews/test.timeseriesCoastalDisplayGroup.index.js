@@ -53,6 +53,20 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
+    it('should not import duplicate timeseries', async () => {
+      const messageKey = 'singlePlotApprovedForecast'
+      const mockResponse = {
+        data: {
+          key: 'Timeseries display groups data'
+        }
+      }
+      const config = {
+        messageKey: messageKey,
+        mockResponses: [mockResponse]
+      }
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+      await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(messageKey, 1)
+    })
     it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const mockResponses = [{
         data: {
