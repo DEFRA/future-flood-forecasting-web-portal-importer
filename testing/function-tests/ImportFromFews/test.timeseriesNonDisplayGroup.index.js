@@ -74,7 +74,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           ('Test Filter1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000016", @id1, "filterId": "Test Filter1"}', @id1, 'Error text', dateadd(second, -10, getutcdate()));
       `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 300000) + 5000)
+    })
     it('should not import duplicate timeseries', async () => {
       const messageKey = 'singleFilterNonForecast'
       const mockResponse = {

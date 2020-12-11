@@ -101,9 +101,9 @@ async function getUnimportedLocationsForTaskRunPlot (context, taskRunData) {
   const unimportedLocationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
 
   if (unimportedLocationIds) {
-    // taskRunData.itemsEligibleForReplay.push({
-    //   sourceId: taskRunData.plotId,
-    //   sourceType: 'P'
-    // })
+    taskRunData.itemsEligibleForReplay.push({
+      sourceId: taskRunData.plotId,
+      sourceType: 'P'
+    })
   }
 }
