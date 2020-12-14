@@ -1,11 +1,12 @@
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const getLocationsToImportForTaskRunPlot = require('../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot')
+const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 const sql = require('mssql')
 
 // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
 // guard against a workflow table refresh during processing.
 const taskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptionsQuery = `
-  select 
+  select distinct
     source_id,
     source_type
   from
@@ -13,31 +14,52 @@ const taskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptionsQuery = `
   where
     workflow_id = @workflowId
   intersect
-  select
-    tse.source_id,
-    tse.source_type
-  from
-    fff_staging.timeseries_header th,
-    fff_staging.v_active_timeseries_staging_exception tse
-  where
-    th.id = tse.timeseries_header_id and
-    th.task_run_id = @taskRunId and
-    (
-      tse.csv_error = 0 or
-      (
-        tse.exception_time < (
-          select
-            wr.refresh_time
-          from
-            fff_staging.workflow_refresh wr
-          where
-            tse.csv_type = wr.csv_type
-        )    
-      )    
-    )    
+  (
+    select distinct
+      tse.source_id,
+      tse.source_type
+    from
+      fff_staging.timeseries_header th,
+      fff_staging.v_active_timeseries_staging_exception tse
+    where
+      th.id = tse.timeseries_header_id and
+      th.task_run_id = @taskRunId and
+      tse.csv_error = 0
+    union
+    select distinct
+      tse.source_id,
+      tse.source_type
+    from
+      fff_staging.timeseries_header th,
+      fff_staging.v_active_timeseries_staging_exception tse
+    where
+      th.id = tse.timeseries_header_id and
+      th.task_run_id = @taskRunId and
+      tse.csv_error = 1 and
+      tse.csv_type = 'U'
+    union
+    select distinct
+      tse.source_id,
+      tse.source_type
+    from
+      fff_staging.timeseries_header th,
+      fff_staging.v_active_timeseries_staging_exception tse
+    where
+      th.id = tse.timeseries_header_id and
+      th.task_run_id = @taskRunId and
+      tse.csv_error = 1 and
+      tse.exception_time < (
+        select
+          wr.refresh_time
+        from
+          fff_staging.workflow_refresh wr
+        where
+          tse.csv_type = wr.csv_type
+      )
+  )
 `
 const workflowPlotsQuery = `
-  select
+  select distinct
     source_id as plot_id
   from
     fff_staging.v_workflow
@@ -103,12 +125,26 @@ async function getUnimportedLocationsForTaskRunPlots (context, taskRunData) {
 }
 
 async function getUnimportedLocationsForTaskRunPlot (context, taskRunData) {
-  const unimportedLocationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
-
-  if (unimportedLocationIds) {
-    taskRunData.itemsEligibleForReplay.push({
-      sourceId: taskRunData.plotId,
-      sourceType: 'P'
-    })
+  try {
+    const unimportedLocationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
+    if (unimportedLocationIds) {
+      await addItemForReplay(context, taskRunData)
+    }
+  } catch (err) {
+    if (err instanceof TimeseriesStagingError) {
+      // The workflow exists in neither or both of the coastal and fluvial CSVs. Add the plot to the list of items
+      // to be replayed so that it is still processed by the ImportFromFews function (causing a TimeseriesStagingException
+      // to be created).
+      await addItemForReplay(context, taskRunData)
+    } else {
+      throw err
+    }
   }
+}
+
+async function addItemForReplay (context, taskRunData) {
+  taskRunData.itemsEligibleForReplay.push({
+    sourceId: taskRunData.plotId,
+    sourceType: 'P'
+  })
 }

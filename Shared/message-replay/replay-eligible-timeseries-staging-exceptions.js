@@ -2,7 +2,7 @@ const { executePreparedStatementInTransaction } = require('../transaction-helper
 const sql = require('mssql')
 
 const activeTimeseriesStagingExceptionMessagesByCsvTypeForExistingWorkflowsQuery = `
-  select
+  select distinct
     tse.payload as message
   from
     fff_staging.v_active_timeseries_staging_exception tse
@@ -16,6 +16,16 @@ const activeTimeseriesStagingExceptionMessagesByCsvTypeForExistingWorkflowsQuery
   where
     tse.csv_error = 1 and
     tse.csv_type = @csvType
+  union
+  select distinct
+    tse.payload as message
+  from
+    fff_staging.v_active_timeseries_staging_exception tse
+    inner join fff_staging.timeseries_header th
+      on tse.timeseries_header_id = th.id
+  where
+    tse.csv_error = 1 and
+    tse.csv_type = 'U'
 `
 const timeseriesHeaderMessagesForActiveTimeseriesStagingExceptionsByCsvTypeForMissingWorkflowsQuery = `
   select distinct

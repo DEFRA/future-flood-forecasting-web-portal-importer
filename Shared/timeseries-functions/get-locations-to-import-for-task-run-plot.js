@@ -122,7 +122,7 @@ async function buildCsvTypeForWorkflowPlot (context, preparedStatement, taskRunD
 async function processBuildCsvTypeForWorkflowPlotResult (context, taskRunData, result) {
   if (result && result.recordset && result.recordset.length === 1) {
     taskRunData.csvType = result.recordset[0].csv_type
-  } else if (taskRunData.throwTimeseriesStagingErrorForUknownWorkflow) {
+  } else {
     const errorDescription = result.recordset.length === 0
       ? `Unable to find locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} in any display group CSV`
       : `Found locations for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} in coastal and fluvial display group CSVs`

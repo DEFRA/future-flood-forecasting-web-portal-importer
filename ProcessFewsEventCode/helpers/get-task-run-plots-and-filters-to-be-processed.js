@@ -6,7 +6,7 @@ const getTaskRunPlotsAndFiltersEligibleForReplay = require('./get-task-run-plots
 // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
 // guard against a workflow table refresh during processing.
 const query = `
-  select
+  select distinct
     source_id,
     source_type
   from

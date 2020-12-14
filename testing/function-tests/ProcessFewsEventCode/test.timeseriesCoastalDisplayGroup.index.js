@@ -134,6 +134,18 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool, 1) // timeseries staging exception inserted after workflow refresh date
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithUnresolvedTimeseriesStagingExceptions'])
     })
+    it('should allow replay of a task run following invalid resolution of a partial load failure. Invalid resolution is caused by a workflow plot being defined in multiple display group CSV files. The original timeseries staging exception should be deactivated', async () => {
+      const messageKey = 'multiplePlotApprovedForecast'
+      const request = new sql.Request(pool)
+      await request.batch(`
+        insert into
+          fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
+        values
+          ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a-1')
+      `)
+      await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+    })
     it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in no timeseries data being loaded for a plot. The timeseries staging exception should be deactivated', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool, -1) // timeseries staging exception inserted before workflow refresh date
