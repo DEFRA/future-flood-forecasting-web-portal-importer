@@ -219,7 +219,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
           sourceType: 'P',
           csvError: false,
           csvType: null,
-          description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Coastal_Workflow): Request failed with status code 404 (${mockResponse.response.data})`
+          description: `An error occurred while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Coastal_Workflow): Request failed with status code 404 (${mockResponse.response.data})`
         }
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
@@ -307,7 +307,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
             sourceType: 'P',
             csvError: true,
             csvType: 'C',
-            description: `An error occured while processing data for plot ${importFromFewsMessages[partOneMessageKey][0].plotId} of task run ${importFromFewsMessages[partOneMessageKey][0].taskRunId} (workflow Partial_Load_Span_Workflow): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+            description: `An error occurred while processing data for plot ${importFromFewsMessages[partOneMessageKey][0].plotId} of task run ${importFromFewsMessages[partOneMessageKey][0].taskRunId} (workflow Partial_Load_Span_Workflow): Request failed with status code 400 (${badRequestMockResponse.response.data})`
           }
         },
         {
@@ -340,7 +340,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
             sourceType: 'F',
             csvError: false,
             csvType: null,
-            description: `An error occured while processing data for filter ${importFromFewsMessages[partThreeMessageKey][0].filterId} of task run ${importFromFewsMessages[partOneMessageKey][0].taskRunId} (workflow Partial_Load_Span_Workflow): Request failed with status code ${internalServerErrorMockResponse.response.status} (${internalServerErrorMockResponse.response.data})`
+            description: `An error occurred while processing data for filter ${importFromFewsMessages[partThreeMessageKey][0].filterId} of task run ${importFromFewsMessages[partOneMessageKey][0].taskRunId} (workflow Partial_Load_Span_Workflow): Request failed with status code ${internalServerErrorMockResponse.response.status} (${internalServerErrorMockResponse.response.data})`
           },
           expectedNumberOfRecords: 3,
           expectedNumberOfTimeseriesStagingExceptionRecords: 2

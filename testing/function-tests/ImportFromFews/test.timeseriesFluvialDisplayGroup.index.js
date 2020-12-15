@@ -115,7 +115,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
           csvError: false,
           csvType: null,
           payload: importFromFewsMessages[messageKey][0],
-          description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
+          description: `An error occurred while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
         }
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
@@ -149,7 +149,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
             sourceType: 'P',
             csvError: true,
             csvType: 'F',
-            description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow5): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+            description: `An error occurred while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow5): Request failed with status code 400 (${badRequestMockResponse.response.data})`
           },
           expectedLocationData: [initialLocationData],
           expectedNumberOfImportedRecords: 1
@@ -205,7 +205,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
             sourceType: 'P',
             csvError: true,
             csvType: 'F',
-            description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow3): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+            description: `An error occurred while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow3): Request failed with status code 400 (${badRequestMockResponse.response.data})`
           },
           expectedLocationData: [initialLocationData],
           expectedNumberOfImportedRecords: 1
@@ -248,7 +248,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
           sourceType: 'P',
           csvError: true,
           csvType: 'F',
-          description: `An error occured while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow4): Request failed with status code 400 (${badRequestMockResponse.response.data})`
+          description: `An error occurred while processing data for plot ${importFromFewsMessages[messageKey][0].plotId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Fluvial_Workflow4): Request failed with status code 400 (${badRequestMockResponse.response.data})`
         }
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
