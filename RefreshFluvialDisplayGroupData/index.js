@@ -14,7 +14,7 @@ module.exports = async function (context) {
         fff_staging.#fluvial_display_group_workflow_temp (workflow_id, plot_id, location_id)   
       values
         (@workflow_id, @plot_id, @location_id)`,
-    // Column information and correspoding csv information
+    // Column information and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'workflow_id', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
       { tableColumnName: 'plot_id', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
@@ -80,7 +80,7 @@ async function refreshDisplayGroupTable (transaction, context) {
     if (result.recordset[0].number === 0) {
       // If all the records in the csv (inserted into the temp table) are invalid, the function will overwrite records in the table with no new records
       // after the table has already been truncated. This function needs rolling back to avoid a blank database overwrite.
-      // # The temporary table protects this from happening greatly reducing the likelihood of occurance.
+      // # The temporary table protects this from happening greatly reducing the likelihood of occurrence.
       context.log.warn('There are no new records to insert, rolling back fluvial_display_group_workflow refresh')
       throw new Error('A null database overwrite is not allowed')
     }

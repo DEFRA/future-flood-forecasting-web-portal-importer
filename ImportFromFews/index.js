@@ -110,7 +110,7 @@ async function processImportError (context, taskRunData, err) {
       const csvError = (err.response && err.response.status === 400) || false
       const csvType = csvError ? taskRunData.csvType : null
       const piServerErrorMessage = await getPiServerErrorMessage(context, err)
-      const errorDescription = `An error occured while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
+      const errorDescription = `An error occurred while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
       errorData = {
         transaction: taskRunData.transaction,
         sourceId: taskRunData.sourceId,

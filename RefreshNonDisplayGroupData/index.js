@@ -14,7 +14,7 @@ module.exports = async function (context) {
         fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)  
       values 
         (@workflow_id, @filter_id, @approved, @start_time_offset_hours, @end_time_offset_hours, @timeseries_type)`,
-    // Column information and correspoding csv information
+    // Column information and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' },
       { tableColumnName: 'FILTER_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FilterID' },

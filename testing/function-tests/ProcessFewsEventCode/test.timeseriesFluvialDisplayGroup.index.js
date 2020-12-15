@@ -118,7 +118,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunForecast', expectedData['approvedPartialTaskRunForecast'])
     })
-    it('should import data (with no staging exceptions present) for an approved forecast task run following the earlier dismissal of numerous unapproved partial taskrun messages for the same task run', async () => {
+    it('should dismiss (for the same taskRun) messages for an approved forecast run and unapproved forecast run following the earlier load of the approved partial taskrun message', async () => {
       // this test simulates a situation where an unapproved partial taskrun message is received after the approved partial taskrun message
 
       // a taskrun partial linked to an unapproved forecast should be rejected
