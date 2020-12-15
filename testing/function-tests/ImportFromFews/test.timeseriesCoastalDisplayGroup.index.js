@@ -51,6 +51,28 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         messageKey: 'singlePlotApprovedForecast',
         mockResponses: [mockResponse]
       }
+
+      // Add a timeseries staging exception associated with the workflow being defined in the coastal and fluvial
+      // display group CSV files to ensure it is deactivated.
+      const exceptionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(15, 'seconds')
+      const request = new sql.Request(pool)
+      await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
+
+      await request.batch(`
+        declare @id1 uniqueidentifier;
+        select
+          @id1 = id
+        from
+          fff_staging.timeseries_header
+        where
+          task_run_id = 'ukeafffsmc00:000000001';
+
+        insert into
+          fff_staging.timeseries_staging_exception
+            (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+          values
+            (@id1, 'Test Coastal Plot', 'P', 1, 'U', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000001", "plotId": "Test Coastal Plot"}', @id1, 'Error plot text');
+     `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should not import duplicate timeseries', async () => {

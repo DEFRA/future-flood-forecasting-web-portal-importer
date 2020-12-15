@@ -146,10 +146,20 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in no timeseries data being loaded for a plot. The timeseries staging exception should be deactivated', async () => {
+    it('should allow replay of a task run following resolution of a partial load failure caused by a workflow plot being defined in multiple display group CSV files. The timeseries staging exception should NOT be deactivated', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
+<<<<<<< HEAD
       await insertTimeseriesHeaderAndTimeseriesStagingException(pool, -1) // timeseries staging exception inserted before workflow refresh date
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithTimeseriesStagingExceptions'])
+=======
+      await insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv(pool)
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+    })
+    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in no timeseries data being loaded for a plot. The associated timeseries staging exception should be deactivated. Other timeseries staging exceptions should remain active', async () => {
+      const messageKey = 'taskRunWithTimeseriesStagingExceptions'
+      await insertTimeseriesHeaderAndTimeseriesStagingExceptions(pool)
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+>>>>>>> Add unit tests
     })
     it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should be deactivated', async () => {
       const messageKey = 'multiplePlotApprovedForecast'
@@ -241,9 +251,34 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     await request.query(query)
   }
 
+  async function insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv (pool) {
+    const request = new sql.Request(pool)
+    const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingExceptions'])
+    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
+    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id1, convert(datetime2, '${taskRunStartTime}', 126) at time zone 'utc', convert(datetime2, '${taskRunCompletionTime}', 126) at time zone 'utc', 1, 1, 'ukeafffsmc00:000000003', 'Test_Coastal_Workflow5', '${message}')
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id3, 'Test Coastal Plot 5a', 'P', 1, 'U', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 5a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
+    `
+    query.replace(/"/g, "'")
+    await request.query(query)
+  }
+
   async function insertTimeseriesHeaderAndTimeseriesStagingException (pool, exceptionTimeOffset) {
     // the workflow (reference data) refresh table updates at the start of this test file
-    const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`  
+    const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())  
     const request = new sql.Request(pool)
     const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingExceptions'])
     const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
