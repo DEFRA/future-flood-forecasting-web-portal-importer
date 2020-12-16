@@ -15,7 +15,7 @@ const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
 const { minifyAndGzip } = require('../Shared/utils')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const isMessageIgnored = require('./helpers/is-message-ignored')
-const isSpanWorkflow = require('../ImportFromFews/helpers/check-spanning-workflow')
+const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
 const TimeseriesStagingError = require('./helpers/timeseries-staging-error')
 
 module.exports = async function (context, message) {
@@ -110,7 +110,7 @@ async function processImportError (context, taskRunData, err) {
       const csvError = (err.response && err.response.status === 400) || false
       const csvType = csvError ? taskRunData.csvType : null
       const piServerErrorMessage = await getPiServerErrorMessage(context, err)
-      const errorDescription = `An error occured while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
+      const errorDescription = `An error occurred while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
       errorData = {
         transaction: taskRunData.transaction,
         sourceId: taskRunData.sourceId,

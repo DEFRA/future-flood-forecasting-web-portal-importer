@@ -20,12 +20,12 @@ module.exports = async function (context, refreshData) {
   } else {
     context.log.info(`There were no csv exceptions during load.`)
   }
-  // context.done() not requried as the async function returns the desired result, there is no output binding to be activated.
+  // context.done() not required as the async function returns the desired result, there is no output binding to be activated.
 }
 
 async function refreshInTransaction (transaction, context, refreshData) {
   if (refreshData.preOperation) {
-    // A post operation involves further processing of the csv data after inital loading into the SQL database
+    // A post operation involves further processing of the csv data after initial loading into the SQL database
     await refreshData.preOperation(transaction, context)
   }
 

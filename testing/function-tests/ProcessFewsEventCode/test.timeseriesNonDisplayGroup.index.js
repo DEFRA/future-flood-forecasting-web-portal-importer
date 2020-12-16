@@ -103,7 +103,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should ignore an approved out of date forecast task run', async () => {
       const messageKey = 'singleFilterTaskRun'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSingleFilterTaskRun', 1, 1)
+      context.bindings.importFromFews = [] // reset the context bindings as it stays in test memory
+      const expectedNumberOfHeaderRecords = 1
+      const expectedNumberOfNewOutgoingMessages = 0
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSingleFilterTaskRun', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages)
     })
     it('should create a staging exception for an unknown workflow', async () => {
       const unknownWorkflow = 'unknownWorkflow'

@@ -13,7 +13,7 @@ module.exports = async function (context) {
         fff_staging.fluvial_forecast_location (fffs_location_id, fffs_location_name, drn_order, datum, display_order, centre, plot_id, catchment, catchment_order, mfdo_area)       
       values 
         (@fffs_location_id, @fffs_location_name, @drn_order, @datum, @display_order, @centre, @plot_id, @catchment, @catchment_order, @mfdo_area)`,
-    // Column information and correspoding csv information
+    // Column information and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
       { tableColumnName: 'FFFS_LOCATION_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' },

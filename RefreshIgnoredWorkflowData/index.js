@@ -13,7 +13,7 @@ module.exports = async function (context) {
       fff_staging.ignored_workflow (workflow_id)
     values 
       (@workflow_id)`,
-    // Column information and correspoding csv information
+    // Column information and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'WORKFLOW_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'WorkflowID' }
     ]

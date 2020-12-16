@@ -59,6 +59,18 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     }
   }
 
+  const checkExpectedActiveStagingExceptionsForTaskRun = async function (taskRunId, expectedNumberOfStagingExceptions) {
+    const request = new sql.Request(pool)
+    await request.input('taskRunId', sql.NVarChar, taskRunId)
+    const result = await request.query(`
+      select 
+        count(*) as count
+      from
+        fff_staging.v_active_staging_exception tse
+    `)
+    expect(result.recordset[0].count).toBe(expectedNumberOfStagingExceptions)
+  }
+
   this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
     await processMessage(messageKey, sendMessageAsString)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
@@ -107,12 +119,19 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
         expect(outgoingMessage.taskRunId).toBe(expectedTaskRunId)
       }
 
-      for (const outgoingPlotId of outgoingPlotIds) {
-        expect(expectedData.outgoingPlotIds).toContainEqual(outgoingPlotId)
+      const expectedNumberOfPlotIds = expectedData.outgoingPlotIds ? expectedData.outgoingPlotIds.length : 0
+      expect(expectedNumberOfPlotIds).toEqual(outgoingPlotIds.length)
+      if (expectedData.outgoingPlotIds) {
+        for (const outgoingPlotId of outgoingPlotIds) {
+          expect(expectedData.outgoingPlotIds).toContainEqual(outgoingPlotId)
+        }
       }
-
-      for (const outgoingFilterId of outgoingFilterIds) {
-        expect(expectedData.outgoingFilterIds).toContainEqual(outgoingFilterId)
+      const expectedNumberOfFilterIds = expectedData.outgoingFilterIds ? expectedData.outgoingFilterIds.length : 0
+      expect(expectedNumberOfFilterIds).toEqual(outgoingFilterIds.length)
+      if (expectedData.outgoingFilterIds) {
+        for (const outgoingFilterId of outgoingFilterIds) {
+          expect(expectedData.outgoingFilterIds).toContainEqual(outgoingFilterId)
+        }
       }
 
       const stagingExceptionConfig = {
@@ -128,11 +147,18 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     }
   }
 
-  this.processMessageAndCheckNoDataIsCreated = async function (messageKey, expectedNumberOfTimeseriesHeaderRecords, expectedNumberOfOutgoingMessages) {
+  this.processMessageAndCheckNoDataIsCreated = async function (messageKey, expectedNumberOfTimeseriesHeaderRecords, expectedNumberOfOutgoingMessages, expectedNumberOfStagingExceptions) {
     await processMessage(messageKey)
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(
       expectedNumberOfTimeseriesHeaderRecords || 0, expectedNumberOfOutgoingMessages || 0
     )
+    let taskRunId
+    if (taskRunCompleteMessages[messageKey] && taskRunCompleteMessages[messageKey].input) {
+      taskRunId = taskRunCompleteMessages[messageKey].input.source
+    } else {
+      taskRunId = null
+    }
+    await checkExpectedActiveStagingExceptionsForTaskRun(taskRunId, expectedNumberOfStagingExceptions || 0)
   }
 
   this.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated = async function (messageKey, expectedErrorDescription) {

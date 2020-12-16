@@ -202,7 +202,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           sourceType: 'F',
           csvError: false,
           csvType: null,
-          description: `An error occured while processing data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
+          description: `An error occurred while processing data for filter ${importFromFewsMessages[messageKey][0].filterId} of task run ${importFromFewsMessages[messageKey][0].taskRunId} (workflow Test_Workflow1): Request failed with status code 404 (${mockResponse.response.data})`
         }
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
