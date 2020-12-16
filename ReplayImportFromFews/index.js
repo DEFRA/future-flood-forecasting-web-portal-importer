@@ -1,4 +1,6 @@
 module.exports = async function (context, message) {
-  context.log(`Replaying ${message}`)
+  if (message.constructor.name === 'Object') {
+    context.log(`Replaying ${JSON.stringify(message)}`)
+  }
   context.bindings.importFromFews = message
 }
