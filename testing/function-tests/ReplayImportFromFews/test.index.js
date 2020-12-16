@@ -26,9 +26,13 @@ module.exports = describe('Tests for replaying messages on the ImportFromFews de
       await commonTimeseriesTestUtils.afterAll(pool)
     })
 
-    it('should transfer messages to the fews-import-queue', async () => {
-      await replayImportFromFews(context, messages['singlePlotApprovedForecast'])
-      expect(context.bindings.importFromFews).toBe(messages['singlePlotApprovedForecast'])
+    it('should transfer object messages to the fews-import-queue', async () => {
+      await replayImportFromFews(context, messages['singlePlotApprovedForecast'][0])
+      expect(context.bindings.importFromFews).toBe(messages['singlePlotApprovedForecast'][0])
+    })
+    it('should transfer non-object messages to the fews-import-queue', async () => {
+      await replayImportFromFews(context, JSON.stringify(messages['singlePlotApprovedForecast'][0]))
+      expect(context.bindings.importFromFews).toBe(JSON.stringify(messages['singlePlotApprovedForecast'][0]))
     })
   })
 })
