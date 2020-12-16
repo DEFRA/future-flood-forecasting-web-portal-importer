@@ -1,23 +1,24 @@
-const moment = require('moment')
-const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
-const createTimeseriesHeader = require('./helpers/create-timeseries-header')
 const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
-const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id')
 const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/deactivate-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
-const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
-const { doInTransaction } = require('../Shared/transaction-helper')
-const isForecast = require('./helpers/is-forecast')
-const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
-const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
-const isTaskRunApproved = require('./helpers/is-task-run-approved')
-const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
-const getTaskRunId = require('./helpers/get-task-run-id')
+const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id')
 const getTaskRunPlotsAndFiltersToBeProcessed = require('./helpers/get-task-run-plots-and-filters-to-be-processed')
-const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
-const getWorkflowId = require('./helpers/get-workflow-id')
-const preprocessMessage = require('./helpers/preprocess-message')
+const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
+const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
+const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
+const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
+const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
+const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
+const createTimeseriesHeader = require('./helpers/create-timeseries-header')
+const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
+const isTaskRunApproved = require('./helpers/is-task-run-approved')
+const preprocessMessage = require('./helpers/preprocess-message')
+const getWorkflowId = require('./helpers/get-workflow-id')
+const getTaskRunId = require('./helpers/get-task-run-id')
+const isForecast = require('./helpers/is-forecast')
+const moment = require('moment')
 
 const sourceTypeLookup = {
   F: {
@@ -38,13 +39,13 @@ module.exports = async function (context, message) {
   // context.done() not required in async functions
 }
 
-async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, taskRunData) {
+async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, transaction, taskRunData) {
   // Process data for each CSV file associated with the workflow.
   await getTaskRunPlotsAndFiltersToBeProcessed(context, taskRunData)
   taskRunData.itemsToBeProcessed = taskRunData.unprocessedItems.concat(taskRunData.itemsEligibleForReplay)
   // Create a message for each plot/filter to be processed for the task run.
   for (const itemToBeProcessed of taskRunData.itemsToBeProcessed) {
-    if (itemToBeProcessed.sourceType === 'P' && taskRunData.forecast && !taskRunData.approved) {
+    if ((itemToBeProcessed.sourceType === 'P' || taskRunData.spanWorkflow) && taskRunData.forecast && !taskRunData.approved) {
       context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
     } else {
       const message = {
@@ -58,14 +59,15 @@ async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, taskR
   await processOutgoingMessagesIfPossible(context, taskRunData)
 }
 
-async function processTaskRunData (context, taskRunData) {
+async function processTaskRunData (context, transaction, taskRunData) {
   const ignoredWorkflow =
     await isIgnoredWorkflow(context, taskRunData)
 
   if (ignoredWorkflow) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)
   } else {
-    await buildAndProcessOutgoingWorkflowMessagesIfPossible(context, taskRunData)
+    await executePreparedStatementInTransaction(isSpanWorkflow, context, transaction, taskRunData)
+    await buildAndProcessOutgoingWorkflowMessagesIfPossible(context, transaction, taskRunData)
   }
 }
 
@@ -142,7 +144,7 @@ async function processMessage (transaction, context, message) {
         typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
         // Do not import out of date forecast data.
         if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-          await processTaskRunData(context, taskRunData)
+          await processTaskRunData(context, transaction, taskRunData)
         } else {
           context.log.warn(`Ignoring message for task run ${taskRunData.taskRunId} completed on ${taskRunData.taskRunCompletionTime}` +
             ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)

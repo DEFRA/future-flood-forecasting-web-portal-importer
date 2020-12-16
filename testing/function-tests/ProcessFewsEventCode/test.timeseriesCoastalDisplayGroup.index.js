@@ -67,6 +67,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         sourceId: 'Test Coastal Plot 5a',
         sourceType: 'P'
       }]
+    },
+    approvedPartialTaskRunSpan: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Test_Partial_Taskrun_Span_Plot'],
+      outgoingFilterIds: ['Span_Filter']
     }
   }
 
@@ -153,6 +159,17 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast')
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    it('should not import data (with no staging exceptions present) for an unapproved forecast spanning task run until approved', async () => {
+      const request = new sql.Request(pool)
+      await request.batch(`
+        insert into
+          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+        values
+          ('Test_Partial_Taskrun_Span_Workflow', 'Span_Filter', 1, 0, 0, 'external_historical')
+      `)
+      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunSpan')
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunSpan', expectedData['approvedPartialTaskRunSpan'])
+    })
   })
 
   async function insertTimeseriesHeaderAndTimeseries (pool) {
