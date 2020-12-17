@@ -146,7 +146,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should allow replay of a task run following resolution of a partial load failure caused by a workflow plot being defined in multiple display group CSV files. The timeseries staging exception should NOT be deactivated', async () => {
+    it('should allow replay of a task run following resolution of a partial load failure caused by a workflow plot being defined in multiple display group CSV files. The timeseries staging exception should NOT be deactivated until the resolution is processed by the ImportFromFews function', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv(pool, -1)
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
