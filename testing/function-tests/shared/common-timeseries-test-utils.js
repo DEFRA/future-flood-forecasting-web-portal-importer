@@ -127,17 +127,22 @@ module.exports = function (pool) {
       select
         count(tse.id) as number
       from
-        fff_staging.v_active_timeseries_staging_exception tse,
-        fff_staging.timeseries_header th
+        fff_staging.v_active_timeseries_staging_exception tse
       where
-        th.id = tse.timeseries_header_id and
-        th.workflow_id = (
+        tse.timeseries_header_id in (
           select
-            th2.workflow_id
+            th.id
           from
-            fff_staging.timeseries_header th2
+            fff_staging.timeseries_header th
           where
-            th2.task_run_id = @taskRunId
+            workflow_id = (
+              select
+              th2.workflow_id
+              from
+                fff_staging.timeseries_header th2
+              where
+                th2.task_run_id = @taskRunId
+            )
         )
     `)
     expect(result.recordset[0].number).toBe(config.expectedNumberOfTimeseriesStagingExceptions || 0)
