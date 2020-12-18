@@ -1,6 +1,8 @@
 const deleteCsvStagingExceptions = require('../Shared/failed-csv-load-handler/delete-csv-staging-exception')
 const { doInTransaction, executePreparedStatementInTransaction } = require('./transaction-helper')
 const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
+const replayEligibleStagingExceptions = require('./message-replay/replay-eligible-staging-exceptions')
+const replayEligibleTimeseriesStagingExceptions = require('./message-replay/replay-eligible-timeseries-staging-exceptions')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -24,6 +26,9 @@ module.exports = async function (context, refreshData) {
 }
 
 async function refreshInTransaction (transaction, context, refreshData) {
+  context.bindings.processFewsEventCode = []
+  context.bindings.importFromFews = []
+
   if (refreshData.preOperation) {
     // A post operation involves further processing of the csv data after initial loading into the SQL database
     await refreshData.preOperation(transaction, context)
@@ -38,7 +43,17 @@ async function refreshInTransaction (transaction, context, refreshData) {
     // remove the outdated csv staging exceptions for this csv csvSourceFile
     await executePreparedStatementInTransaction(deleteCsvStagingExceptions, context, transaction, refreshData.csvSourceFile)
     if (refreshData.workflowRefreshCsvType) {
+      const replayData = {
+        csvType: refreshData.workflowRefreshCsvType,
+        transaction: transaction
+      }
       await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+
+      // Attempt to replay messages with a staging exception linked to the CSV type.
+      await replayEligibleStagingExceptions(context, replayData)
+
+      // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
+      await replayEligibleTimeseriesStagingExceptions(context, replayData)
     }
   }
 }

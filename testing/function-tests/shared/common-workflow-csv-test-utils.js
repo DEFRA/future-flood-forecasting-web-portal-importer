@@ -2,8 +2,47 @@ const { doInTransaction, executePreparedStatementInTransaction } = require('../.
 const sql = require('mssql')
 
 module.exports = function (context, pool, config) {
+  this.insertWorkflowRefreshRecords = async function (workflowRefreshOffset) {
+    const request = new sql.Request(pool)
+    if (workflowRefreshOffset && Number.isInteger(workflowRefreshOffset)) {
+      request.input('workflowRefreshOffset', sql.Int, workflowRefreshOffset)
+      await request.batch(`
+        insert into
+          fff_staging.workflow_refresh (csv_type, refresh_time)
+        values
+          ('C', dateadd(second, @workflowRefreshOffset, getutcdate())),
+          ('F', dateadd(second, @workflowRefreshOffset, getutcdate())),
+          ('N', dateadd(second, @workflowRefreshOffset, getutcdate())),
+          ('I', dateadd(second, @workflowRefreshOffset, getutcdate()))
+      `)
+    } else {
+      await request.batch(`
+        insert into
+          fff_staging.workflow_refresh (csv_type)
+        values
+          ('C'),
+          ('F'),
+          ('N'),
+          ('I')
+      `)
+    }
+  }
+
   this.checkWorkflowRefreshData = async function () {
     await doInTransaction(checkWorkflowRefreshDataInTransaction, context, 'Unable to check workflow refresh data', null, config)
+  }
+
+  this.checkReplayedStagingExceptionMessages = async function (expectedReplayedStagingExceptionMessages) {
+    expect(context.bindings.processFewsEventCode.length).toBe((expectedReplayedStagingExceptionMessages || []).length)
+    for (const stagingExceptionMessage of expectedReplayedStagingExceptionMessages || []) {
+      expect(context.bindings.processFewsEventCode).toContainEqual(stagingExceptionMessage)
+    }
+  }
+  this.checkReplayedTimeseriesStagingExceptionMessages = async function (expectedReplayedTimeseriesStagingExceptionMessages) {
+    expect(context.bindings.importFromFews.length).toBe((expectedReplayedTimeseriesStagingExceptionMessages || []).length)
+    for (const timeseriesStagingExceptionMessage of expectedReplayedTimeseriesStagingExceptionMessages || []) {
+      expect(context.bindings.importFromFews).toContainEqual(timeseriesStagingExceptionMessage)
+    }
   }
 }
 

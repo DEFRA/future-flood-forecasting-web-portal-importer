@@ -152,7 +152,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       insert into fff_staging.timeseries
         (id, fews_data, fews_parameters, timeseries_header_id, import_time)
       values
-        (@id2, compress('fews_data'), '&plotId=Test_Partial_Taskrun_Plot&more parameters', @id1, getutcdate())
+        (@id2, compress('fews_data'), '&plotId=Test_Partial_Taskrun_Plot&locationIds=Test_Partial_Taskrun_Location;&startTime=more data', @id1, getutcdate())
     `
     query.replace(/"/g, "'")
     await request.query(query)

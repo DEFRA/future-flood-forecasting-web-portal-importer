@@ -12,7 +12,7 @@ module.exports = function (pool, messages) {
       values
         ('Test_Coastal_Workflow', 'Test Coastal Plot', 'Test Coastal Location'),
         ('Test_Coastal_Workflow1', 'Test Coastal Plot 1', 'Test Coastal Location 1'),
-        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a'),
+        ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a-1;Test Coastal Location 2a-2;Test Coastal Location 2a-3'),
         ('Test_Coastal_Workflow2', 'Test Coastal Plot 2b', 'Test Coastal Location 2b'),
         ('Test_Coastal_Workflow3', 'Test Coastal Plot 3', 'Test Coastal Location 3'),
         ('Test_Coastal_Workflow4', 'Test Coastal Plot 4', 'Test Coastal Location 4'),
@@ -30,6 +30,8 @@ module.exports = function (pool, messages) {
   }
   this.beforeEach = async function () {
     await commonTimeseriesTestUtils.beforeEach(pool)
+    const request = new sql.Request(pool)
+    await request.query(`delete from fff_staging.fluvial_display_group_workflow`)
   }
   this.afterAll = async function () {
     await commonTimeseriesTestUtils.afterAll(pool)

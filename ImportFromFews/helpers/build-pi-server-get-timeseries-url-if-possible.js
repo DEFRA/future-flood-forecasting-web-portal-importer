@@ -6,7 +6,7 @@ const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = 
 const getFewsTimeParameter = require('./get-fews-time-parameter')
 const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const timeseriesTypeConstants = require('./timeseries-type-constants')
-const TimeseriesStagingError = require('./timeseries-staging-error')
+const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
@@ -15,7 +15,6 @@ module.exports = async function (context, taskRunData) {
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
   if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
     if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
       if (!taskRunData.filterData.approvalRequired) {
         context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)

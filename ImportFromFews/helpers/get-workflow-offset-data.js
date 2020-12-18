@@ -1,5 +1,5 @@
 const sql = require('mssql')
-const TimeseriesStagingError = require('./timeseries-staging-error')
+const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 
 const findOffsetQuery = `
   select distinct

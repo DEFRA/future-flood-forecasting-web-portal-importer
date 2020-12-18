@@ -12,7 +12,7 @@ async function getUnprocessedTaskRunPlotsAndFilters (context, preparedStatement,
   // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
   // guard against a workflow table refresh during processing.
   await preparedStatement.prepare(`
-    select 
+    select distinct
       source_id,
       source_type
     from

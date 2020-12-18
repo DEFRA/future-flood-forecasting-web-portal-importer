@@ -1,6 +1,7 @@
 const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
+const { doInTransaction } = require('../../../Shared/transaction-helper')
 const message = require('../mocks/defaultMessage')
 const messageFunction = require('../../../RefreshCoastalDisplayGroupData/index')
 const fetch = require('node-fetch')
@@ -42,15 +43,19 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         }
       }
       await request.batch(`delete from fff_staging.csv_staging_exception`)
+      await request.batch(`delete from fff_staging.staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
       await request.query(`delete from fff_staging.coastal_display_group_workflow`)
       await request.batch(`delete from fff_staging.workflow_refresh`)
       await request.query(`insert into fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
     })
 
-    afterEach(() => {
+    afterEach(async () => {
       // As the jestConnectionPool pool is only closed at the end of the test suite the global temporary table used by each function
       // invocation needs to be dropped manually between each test case.
-      return request.query(`drop table if exists #coastal_display_group_workflow_temp`)
+      await request.batch(`delete from fff_staging.staging_exception`)
+      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
+      await request.query(`drop table if exists #coastal_display_group_workflow_temp`)
     })
 
     afterAll(async () => {
@@ -67,12 +72,17 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
-    it('should refresh given a valid CSV file (even with extra csv fields)', async () => {
+    it('should refresh given a valid CSV file (even with extra csv fields) and replay eligible failed messages', async () => {
+      // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
+      await doInTransaction(insertExceptions, context, 'Error')
+
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid.csv',
@@ -80,20 +90,28 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = {
-        BE: {
-          StringTRITON_outputs_BER: ['St1', 'St2'],
-          TRITON_outputs_Other: ['St3']
+      const expectedData = {
+        coastalDisplayGroupData: {
+          BE: {
+            StringTRITON_outputs_BER: ['St1', 'St2'],
+            TRITON_outputs_Other: ['St3']
+          },
+          Workflow2: {
+            Plot3: ['St4']
+          }
         },
-        Workflow2: {
-          Plot3: ['St4']
-        }
+        numberOfExceptionRows: 0,
+        replayedStagingExceptionMessages: ['ukeafffsmc00:000000001 message'],
+        replayedTimeseriesStagingExceptionMessages: [
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}'),
+          JSON.parse('{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}')
+        ]
       }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords()
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
-    it('should ignore a CSV file with misspelled headers', async () => {
+    it('should ignore a  CSV file with misspelled headers', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'headers-misspelled.csv',
@@ -101,11 +119,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 2
+      }
 
-      const expectedNumberOfExceptionRows = 2
       const expectedErrorDescription = 'row is missing data'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should not refresh with valid header row but no data rows', async () => {
@@ -116,10 +136,12 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
 
-      const expectedNumberOfExceptionRows = 0
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should reject insert if there is no header row, expect the first row to be treated as the header', async () => {
       const mockResponseData = {
@@ -129,11 +151,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 3
+      }
 
-      const expectedNumberOfExceptionRows = 3
       const expectedErrorDescription = 'row is missing data'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should load rows with missing values in columns into exceptions', async () => {
@@ -144,22 +168,24 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = {
-        BE: {
-          StringTRITON_outputs_BER: ['St2'],
-          TRITON_outputs_Other: ['St3']
+      const expectedData = {
+        coastalDisplayGroupData: {
+          BE: {
+            StringTRITON_outputs_BER: ['St2'],
+            TRITON_outputs_Other: ['St3']
+          },
+          Workflow2: {
+            Plot3: ['St4']
+          }
         },
-        Workflow2: {
-          Plot3: ['St4']
-        }
+        numberOfExceptionRows: 1
       }
 
-      const expectedNumberOfExceptionRows = 1
       const expectedErrorDescription = 'row is missing data'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
-    it('should ommit all rows as there is missing values for the entire column', async () => {
+    it('should omit all rows as there is missing values for the entire column', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'missing-data-in-entire-column.csv',
@@ -167,11 +193,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 4
+      }
 
-      const expectedNumberOfExceptionRows = 4
       const expectedErrorDescription = 'row is missing data'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should load a row with fields exceeding data limits into exceptions', async () => {
@@ -182,11 +210,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 1
+      }
 
-      const expectedNumberOfExceptionRows = 1
       const expectedErrorDescription = 'data would be truncated.'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should load an incomplete row into exceptions', async () => {
@@ -197,11 +227,13 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         contentType: TEXT_CSV
       }
 
-      const expectedCoastalDisplayGroupData = dummyData
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 1
+      }
 
-      const expectedNumberOfExceptionRows = 1
       const expectedErrorDescription = 'row is missing data'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
@@ -234,12 +266,14 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       }
       await fetch.mockResolvedValue(mockResponse)
 
-      const expectedData = dummyData
-      const expectedNumberOfExceptionRows = 0
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
       const expectedError = new Error(`No csv file detected`)
 
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
-      await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+      await checkExpectedResults(expectedData)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponse = {
@@ -251,19 +285,22 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       }
       await fetch.mockResolvedValue(mockResponse)
 
-      const expectedData = dummyData
-      const expectedNumberOfExceptionRows = 0
+      const expectedData = {
+        coastalDisplayGroupData: dummyData,
+        numberOfExceptionRows: 0
+      }
+
       const expectedError = new Error(`No csv file detected`)
 
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
-      await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
+      await checkExpectedResults(expectedData)
     })
   })
 
-  async function refreshCoastalDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows) {
+  async function refreshCoastalDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedData) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message) // This is a call to the function index
-    await checkExpectedResults(expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows)
+    await checkExpectedResults(expectedData)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -279,7 +316,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedCoastalDisplayGroupData, expectedNumberOfExceptionRows) {
+  async function checkExpectedResults (expectedData) {
     const tableCountResult = await request.query(`
       select 
         count(*) 
@@ -290,8 +327,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     // The number of rows (each workflow - plot combination) returned from the database should be equal to the sum of plot ID elements nested within
     // all workflow ID elements of the expected coastal_display_group_workflow data.
     let expectedNumberOfRows = 0
-    for (const workflowId in expectedCoastalDisplayGroupData) {
-      expectedNumberOfRows += Object.keys(expectedCoastalDisplayGroupData[workflowId]).length
+    for (const workflowId in expectedData.coastalDisplayGroupData) {
+      expectedNumberOfRows += Object.keys(expectedData.coastalDisplayGroupData[workflowId]).length
     }
 
     // Query the database and check that the locations associated with each grouping of workflow ID and plot ID are as expected.
@@ -299,8 +336,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     context.log(`databse row count: ${tableCountResult.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
-      for (const workflowId in expectedCoastalDisplayGroupData) { // ident single workflowId within expected data
-        const plotIds = expectedCoastalDisplayGroupData[`${workflowId}`] // ident group of plot ids for workflowId
+      for (const workflowId in expectedData.coastalDisplayGroupData) { // ident single workflowId within expected data
+        const plotIds = expectedData.coastalDisplayGroupData[`${workflowId}`] // ident group of plot ids for workflowId
         for (const plotId in plotIds) {
           const locationIds = plotIds[`${plotId}`] // ident group of location ids for single plotid and single workflowid combination
           const expectedLocationsArray = locationIds.sort()
@@ -328,16 +365,19 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       }
     }
     // Check exceptions
-    if (expectedNumberOfExceptionRows) {
-      const exceptionCount = await request.query(`
-        select 
-          count(*)
-        as 
-          number 
-        from 
-          fff_staging.csv_staging_exception`)
-      expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
-    }
+    const exceptionCount = await request.query(`
+      select 
+        count(*)
+      as 
+        number 
+      from 
+        fff_staging.csv_staging_exception`)
+
+    expect(exceptionCount.recordset[0].number).toBe(expectedData.numberOfExceptionRows || 0)
+
+    // Check messages to be replayed
+    await commonWorkflowCsvTestUtils.checkReplayedStagingExceptionMessages(expectedData.replayedStagingExceptionMessages)
+    await commonWorkflowCsvTestUtils.checkReplayedTimeseriesStagingExceptionMessages(expectedData.replayedTimeseriesStagingExceptionMessages)
   }
 
   async function lockCoastalDisplayGroupTableAndCheckMessageCannotBeProcessed (mockResponseData) {
@@ -349,7 +389,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       const request = new sql.Request(transaction)
       await request.query(`
         insert into 
-        fff_staging.${tableName} (workflow_id, plot_id, location_ids)
+          fff_staging.${tableName} (workflow_id, plot_id, location_ids)
         values 
           ('workflow_id', 'plot_id', 'loc_id')
       `)
@@ -375,5 +415,41 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         exception_time desc
     `)
     expect(result.recordset[0].description).toContain(expectedErrorDescription)
+  }
+
+  async function insertExceptions (transaction, context) {
+    await new sql.Request(transaction).batch(`
+      declare @id1 uniqueidentifier;
+      set @id1 = newid();
+      declare @id2 uniqueidentifier;
+      set @id2 = newid();
+      declare @id3 uniqueidentifier;
+      set @id3 = newid();
+
+      insert into
+        fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+      values
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for Workflow2', 'ukeafffsmc00:000000001', 'P', 'Workflow2', getutcdate());
+
+      insert into
+        fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
+      values
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'BE', 'message');
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id2, 'TRITON_outputs_Other', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+    `)
   }
 })

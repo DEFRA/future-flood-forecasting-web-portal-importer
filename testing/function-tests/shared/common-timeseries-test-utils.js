@@ -74,13 +74,15 @@ module.exports = function (pool) {
         ('Test_Ignored_Workflow_1'),
         ('Test_Ignored_Workflow_2')
     `)
+
     await request.batch(`
       insert into
         fff_staging.workflow_refresh (csv_type)
       values
         ('C'),
         ('F'),
-        ('N')
+        ('N'),
+        ('I')
     `)
   }
   this.beforeEach = async function () {
@@ -118,18 +120,30 @@ module.exports = function (pool) {
     `)
     expect(result.recordset[0].number).toBe(config.expectedNumberOfStagingExceptions || 0)
   }
-  this.checkNumberOfActiveTimeseriesStagingExceptionsForTaskRun = async function (config) {
+  this.checkNumberOfActiveTimeseriesStagingExceptionsForWorkflowOfTaskRun = async function (config) {
     const request = new sql.Request(pool)
     await request.input('taskRunId', sql.NVarChar, config.taskRunId)
     const result = await request.query(`
       select
         count(tse.id) as number
       from
-        fff_staging.v_active_timeseries_staging_exception tse,
-        fff_staging.timeseries_header th
+        fff_staging.v_active_timeseries_staging_exception tse
       where
-        th.id = tse.timeseries_header_id and
-        th.task_run_id = @taskRunId
+        tse.timeseries_header_id in (
+          select
+            th.id
+          from
+            fff_staging.timeseries_header th
+          where
+            workflow_id = (
+              select
+              th2.workflow_id
+              from
+                fff_staging.timeseries_header th2
+              where
+                th2.task_run_id = @taskRunId
+            )
+        )
     `)
     expect(result.recordset[0].number).toBe(config.expectedNumberOfTimeseriesStagingExceptions || 0)
   }

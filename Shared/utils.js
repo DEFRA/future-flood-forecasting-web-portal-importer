@@ -1,4 +1,4 @@
-const TimeseriesStagingError = require('../ImportFromFews/helpers/timeseries-staging-error')
+const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
 const { pipeline, Transform } = require('stream')
 const JSONStream = require('jsonstream-next')
 const { createGzip } = require('zlib')
