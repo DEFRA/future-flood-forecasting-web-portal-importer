@@ -42,20 +42,20 @@ select
   @@rowcount as deleted`
 
 module.exports = async function (context, transaction, expiryDate, deleteRowBatchSize) {
-  const deleteSEData = {
+  const deleteStagingExceptionData = {
     expiryDate,
     deleteRowBatchSize,
     deleteQuery: deleteStagingExceptionsQuery,
     table: 'StagingException'
   }
-  const deleteISEData = {
+  const deleteInactiveStagingExceptionData = {
     expiryDate,
     deleteRowBatchSize,
     deleteQuery: deleteInactiveStagingExceptionsQuery,
     table: 'InactiveStagingException'
   }
-  await executePreparedStatementInTransaction(deleteExceptions, context, transaction, deleteISEData)
-  await executePreparedStatementInTransaction(deleteExceptions, context, transaction, deleteSEData)
+  await executePreparedStatementInTransaction(deleteExceptions, context, transaction, deleteInactiveStagingExceptionData)
+  await executePreparedStatementInTransaction(deleteExceptions, context, transaction, deleteStagingExceptionData)
 }
 
 async function deleteExceptions (context, preparedStatement, deleteContext) {

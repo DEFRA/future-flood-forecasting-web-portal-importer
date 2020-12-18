@@ -288,7 +288,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
 
       process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
-      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'servieBus' }]
+      context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'serviceBus' }]
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should import data for a single filter associated with custom time period offsets', async () => {

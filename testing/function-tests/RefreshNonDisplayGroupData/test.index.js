@@ -394,7 +394,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
 
     // Query the database and check that the filter IDs associated with each workflow ID are as expected.
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
-    context.log(`databse row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
+    context.log(`database row count: ${result.recordset[0].number}, input csv row count: ${expectedNumberOfRows}`)
 
     if (expectedNumberOfRows > 0) {
       const workflowIds = Object.keys(expectedData.nonDisplayGroupData)
