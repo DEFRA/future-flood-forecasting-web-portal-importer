@@ -93,8 +93,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
   let baseStartTime
   let baseEndTime
 
-  let truncationOffsetHoursBackward = getAbsoluteIntegerForNonZeroOffset(taskRunData.filterData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-  let truncationOffsetHoursForward = getAbsoluteIntegerForNonZeroOffset(taskRunData.filterData.endTimeOffset, taskRunData) || 0
+  let truncationOffsetHoursBackward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+  let truncationOffsetHoursForward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.endTimeOffset, taskRunData) || 0
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     // the time frame search period base time is the current end time for forecast data

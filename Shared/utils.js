@@ -59,7 +59,7 @@ module.exports = {
     }
     return environmentVariableAsInteger
   },
-  getAbsoluteIntegerForNonZeroOffset: function (offset, taskRunData) {
+  getAbsoluteIntegerForNonZeroOffset: function (context, offset, taskRunData) {
     if (offset && offset !== 0) {
       let offsetInteger
       if (Number.isInteger(offset)) {
@@ -81,7 +81,7 @@ module.exports = {
       }
       return offsetInteger
     } else {
-      console.log(`Non-zero offset required.`)
+      context.log(`Non-zero offset required.`)
       return null
     }
   }

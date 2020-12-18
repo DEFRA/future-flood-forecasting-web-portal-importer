@@ -24,8 +24,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
     // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
 
-    let startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-    let endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(taskRunData.offsetData.endTimeOffset, taskRunData) || 0
+    let startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+    let endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.endTimeOffset, taskRunData) || 0
     taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   } else {

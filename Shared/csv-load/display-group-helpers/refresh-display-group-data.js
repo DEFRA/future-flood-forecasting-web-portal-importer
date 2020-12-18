@@ -1,4 +1,3 @@
-const countTableRecords = require('../../../Shared/count-table-records')
 const sql = require('mssql')
 
 const countQueries = {
@@ -58,4 +57,11 @@ module.exports = async function refreshDisplayGroupTable (transaction, context, 
     context.log.error(`Refresh ${tableName} data failed: ${err}`)
     throw err
   }
+}
+
+async function countTableRecords (context, transaction, tableName, countQuery) {
+  const request = new sql.Request(transaction)
+  const result = await request.query(countQuery)
+  context.log.info(`The ${tableName} table contains ${result.recordset[0].number} records`)
+  return result.recordset[0].number
 }

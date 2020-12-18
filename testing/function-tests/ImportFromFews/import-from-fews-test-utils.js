@@ -186,7 +186,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
     // the util function 'getAbsoluteIntegerForNonZeroOffset' is anonymous, Jest requires a function within an expect statement
     async function assignVariableToFunction (offsetValue, taskRunData) {
-      await getAbsoluteIntegerForNonZeroOffset(offsetValue, taskRunData)
+      await getAbsoluteIntegerForNonZeroOffset(context, offsetValue, taskRunData)
     }
 
     await expect(assignVariableToFunction(offsetValue, taskRunData)).rejects.toThrow(expectedErrorDetails)

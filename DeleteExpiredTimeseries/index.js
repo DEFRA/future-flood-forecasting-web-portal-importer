@@ -131,7 +131,7 @@ async function createTempTable (transaction, context) {
 }
 
 async function deleteRecords (context, preparedStatement, tableName, deleteQuery) {
-  await preparedStatement.prepare(deleteQuery + 'select @@rowcount as deleted')
+  await preparedStatement.prepare(deleteQuery + ';select @@rowcount as deleted')
   const result = await preparedStatement.execute()
   context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the ${tableName} table.`)
 }
