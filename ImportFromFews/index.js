@@ -102,7 +102,7 @@ async function processImportError (context, taskRunData, err) {
     // If connection to the PI Server fails propagate the failure so that standard Azure message replay
     // functionality is used.
     throw err
-  } else if (err instanceof TimeseriesStagingError) {
+  } else {
     // For other errors create a timeseries staging exception to indicate that
     // manual intervention is required before replay of the task run is attempted.
     if (err instanceof TimeseriesStagingError) {
@@ -124,8 +124,8 @@ async function processImportError (context, taskRunData, err) {
         description: errorDescription
       }
     }
+    await createTimeseriesStagingException(context, errorData)
   }
-  await createTimeseriesStagingException(context, taskRunData.transaction, errorData)
 }
 
 async function importFromFews (context, taskRunData) {
