@@ -48,12 +48,7 @@ module.exports = async function (context, taskRunData) {
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
   if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
-      context.log.info(`The filter '${taskRunData.filterId}' requires approval: '${taskRunData.filterData.approvalRequired}', and has been approved '${taskRunData.approved}'.`)
-      await buildPiServerUrlIfPossible(context, taskRunData)
-    } else {
-      context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
-    }
+    await processTaskRunApprovalStatus(context, taskRunData)
   } else {
     context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
       ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
@@ -205,4 +200,17 @@ async function throwCsvError (taskRunData, errorDescription, csvType, fewsParame
     description: errorDescription
   }
   throw new TimeseriesStagingError(errorData, errorDescription)
+}
+
+async function processTaskRunApprovalStatus (context, taskRunData) {
+  if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
+    if (!taskRunData.filterData.approvalRequired) {
+      context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
+    } else {
+      context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
+    }
+    await buildPiServerUrlIfPossible(context, taskRunData)
+  } else {
+    context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
+  }
 }
