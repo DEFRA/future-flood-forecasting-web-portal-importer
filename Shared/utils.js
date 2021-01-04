@@ -59,25 +59,30 @@ module.exports = {
     }
     return environmentVariableAsInteger
   },
-  getOffsetAsAbsoluteInteger: function (offset, taskRunData) {
-    let offsetInteger
-    if (Number.isInteger(offset)) {
-      offsetInteger = Math.abs(Number(offset))
-    } else {
-      const errorDescription = `Unable to return an integer for an offset value: ${offset}`
+  getAbsoluteIntegerForNonZeroOffset: function (context, offset, taskRunData) {
+    if (offset && offset !== 0) {
+      let offsetInteger
+      if (Number.isInteger(offset)) {
+        offsetInteger = Math.abs(Number(offset))
+      } else {
+        const errorDescription = `Unable to return an integer for an offset value: ${offset}`
 
-      const errorData = {
-        sourceId: taskRunData.sourceId,
-        sourceType: taskRunData.sourceType,
-        csvError: true,
-        csvType: taskRunData.csvType || 'U',
-        fewsParameters: null,
-        timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-        payload: taskRunData.message,
-        description: errorDescription
+        const errorData = {
+          sourceId: taskRunData.sourceId,
+          sourceType: taskRunData.sourceType,
+          csvError: true,
+          csvType: taskRunData.csvType || 'U',
+          fewsParameters: null,
+          timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+          payload: taskRunData.message,
+          description: errorDescription
+        }
+        throw new TimeseriesStagingError(errorData, errorDescription)
       }
-      throw new TimeseriesStagingError(errorData, errorDescription)
+      return offsetInteger
+    } else {
+      context.log(`Non-zero offset required.`)
+      return null
     }
-    return offsetInteger
   }
 }

@@ -1,12 +1,45 @@
+const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
+const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
+const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
+const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const timeseriesTypeConstants = require('./timeseries-type-constants')
+const getFewsTimeParameter = require('./get-fews-time-parameter')
 const moment = require('moment')
 const sql = require('mssql')
-const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const { getEnvironmentVariableAsAbsoluteInteger, getOffsetAsAbsoluteInteger } = require('../../Shared/utils')
-const getFewsTimeParameter = require('./get-fews-time-parameter')
-const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const timeseriesTypeConstants = require('./timeseries-type-constants')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
+
+const getWorkflowFilterDataQuery = `
+  select
+    approved,
+    timeseries_type,
+    start_time_offset_hours,
+    end_time_offset_hours
+  from
+    fff_staging.non_display_group_workflow
+  with
+    (tablock holdlock)
+  where
+    workflow_id = @nonDisplayGroupWorkflowId and
+    filter_id = @filterId`
+
+const getLatestTaskRunEndTimeQuery = `
+  select top(1)
+    task_run_id as previous_staged_task_run_id,
+    task_completion_time as previous_staged_task_completion_time
+  from
+    fff_staging.timeseries_header
+  where
+    workflow_id = @workflowId and
+    task_completion_time < (
+      select
+        task_completion_time
+      from
+        fff_staging.timeseries_header
+      where
+        task_run_id = @taskRunId
+    )
+  order by 
+    task_completion_time desc`
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
@@ -15,16 +48,7 @@ module.exports = async function (context, taskRunData) {
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
   if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
-      if (!taskRunData.filterData.approvalRequired) {
-        context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
-      } else {
-        context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
-      }
-      await buildPiServerUrlIfPossible(context, taskRunData)
-    } else {
-      context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
-    }
+    await processTaskRunApprovalStatus(context, taskRunData)
   } else {
     context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
       ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
@@ -61,29 +85,23 @@ async function buildStartAndEndTimes (context, taskRunData) {
   // timeseries. By default this period runs from twenty four hours before the start of the time period for which the timeseries were created
   // in the core engine (either previous task run end time or current task run start time as defined above) through to the completion time
   // of the current task run. This time period can be overridden by the FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS environment variable.
-  let truncationOffsetHoursBackward
-  let truncationOffsetHoursForward
+  let baseStartTime
+  let baseEndTime
 
-  if (taskRunData.filterData.startTimeOffset && taskRunData.filterData.startTimeOffset !== 0) {
-    truncationOffsetHoursBackward = getOffsetAsAbsoluteInteger(taskRunData.filterData.startTimeOffset, taskRunData)
-  } else {
-    truncationOffsetHoursBackward = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-  }
-  if (taskRunData.filterData.endTimeOffset && taskRunData.filterData.endTimeOffset !== 0) {
-    truncationOffsetHoursForward = getOffsetAsAbsoluteInteger(taskRunData.filterData.endTimeOffset, taskRunData)
-  } else {
-    truncationOffsetHoursForward = 0
-  }
+  let truncationOffsetHoursBackward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+  let truncationOffsetHoursForward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.endTimeOffset, taskRunData) || 0
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
-    // timeframe search period basis is the current end time for forecast data
-    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+    // the time frame search period base time is the current end time for forecast data
+    baseStartTime = moment(taskRunData.taskRunCompletionTime)
+    baseEndTime = moment(taskRunData.taskRunCompletionTime)
   } else {
-    // timeframe search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
-    taskRunData.startTime = moment(taskRunData.startCreationTime).subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-    taskRunData.endTime = moment(taskRunData.endCreationTime).add(truncationOffsetHoursForward, 'hours').toISOString()
+    // time frame search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
+    baseStartTime = moment(taskRunData.startCreationTime)
+    baseEndTime = moment(taskRunData.endCreationTime)
   }
+  taskRunData.startTime = baseStartTime.subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+  taskRunData.endTime = baseEndTime.add(truncationOffsetHoursForward, 'hours').toISOString()
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
@@ -111,19 +129,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
   } else {
     // FEWS parameters must be specified otherwise the data return is likely to be very large
     const errorDescription = `There is no recognizable timeseries type specified for the filter ${taskRunData.filterId} in the non-display group CSV`
-    const errorData = {
-      transaction: taskRunData.transaction,
-      sourceId: taskRunData.sourceId,
-      sourceType: taskRunData.sourceType,
-      csvError: true,
-      csvType: 'N',
-      fewsParameters: null,
-      payload: taskRunData.message,
-      errorData: taskRunData.message,
-      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-      description: errorDescription
-    }
-    throw new TimeseriesStagingError(errorData, errorDescription)
+    await throwCsvError(taskRunData, errorDescription, 'N', null)
   }
 }
 
@@ -132,20 +138,7 @@ async function getWorkflowFilterData (context, preparedStatement, taskRunData) {
   await preparedStatement.input('nonDisplayGroupWorkflowId', sql.NVarChar)
   // Run the query within a transaction with a table lock held for the duration of the transaction to guard
   // against a non display group data refresh during data retrieval.
-  await preparedStatement.prepare(`
-    select
-      approved,
-      timeseries_type,
-      start_time_offset_hours,
-      end_time_offset_hours
-    from
-      fff_staging.non_display_group_workflow
-    with
-      (tablock holdlock)
-    where
-      workflow_id = @nonDisplayGroupWorkflowId and
-      filter_id = @filterId
-  `)
+  await preparedStatement.prepare(getWorkflowFilterDataQuery)
   const parameters = {
     nonDisplayGroupWorkflowId: taskRunData.workflowId,
     filterId: taskRunData.filterId
@@ -162,18 +155,7 @@ async function getWorkflowFilterData (context, preparedStatement, taskRunData) {
     }
   } else {
     const errorDescription = `Unable to find data for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} in the non-display group CSV`
-    const errorData = {
-      transaction: taskRunData.transaction,
-      sourceId: taskRunData.sourceId,
-      sourceType: taskRunData.sourceType,
-      csvError: true,
-      csvType: 'N',
-      fewsParameters: null,
-      payload: taskRunData.message,
-      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-      description: errorDescription
-    }
-    throw new TimeseriesStagingError(errorData, errorDescription)
+    await throwCsvError(taskRunData, errorDescription, 'N', null)
   }
 }
 
@@ -181,25 +163,7 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
   await preparedStatement.input('taskRunId', sql.NVarChar)
   await preparedStatement.input('workflowId', sql.NVarChar)
 
-  await preparedStatement.prepare(`
-    select top(1)
-      task_run_id as previous_staged_task_run_id,
-      task_completion_time as previous_staged_task_completion_time
-    from
-      fff_staging.timeseries_header
-    where
-      workflow_id = @workflowId and
-      task_completion_time < (
-        select
-          task_completion_time
-        from
-          fff_staging.timeseries_header
-        where
-          task_run_id = @taskRunId
-      )
-    order by 
-      task_completion_time desc
-  `)
+  await preparedStatement.prepare(getLatestTaskRunEndTimeQuery)
 
   const parameters = {
     taskRunId: taskRunData.taskRunId,
@@ -221,4 +185,32 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
 
 function isForecast (context, taskRunData) {
   return taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING
+}
+
+async function throwCsvError (taskRunData, errorDescription, csvType, fewsParameters) {
+  const errorData = {
+    transaction: taskRunData.transaction,
+    sourceId: taskRunData.sourceId,
+    sourceType: taskRunData.sourceType,
+    csvError: true,
+    csvType: csvType,
+    fewsParameters: fewsParameters,
+    payload: taskRunData.message,
+    timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+    description: errorDescription
+  }
+  throw new TimeseriesStagingError(errorData, errorDescription)
+}
+
+async function processTaskRunApprovalStatus (context, taskRunData) {
+  if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
+    if (!taskRunData.filterData.approvalRequired) {
+      context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
+    } else {
+      context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
+    }
+    await buildPiServerUrlIfPossible(context, taskRunData)
+  } else {
+    context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
+  }
 }
