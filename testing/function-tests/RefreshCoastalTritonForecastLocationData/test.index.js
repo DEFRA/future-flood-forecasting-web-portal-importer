@@ -39,14 +39,14 @@ module.exports = describe('Refresh coastal location data tests', () => {
         TA_NAME: 'dummy',
         COASTAL_TYPE: 'Triton'
       }
-      await request.query(`delete from fff_staging.csv_staging_exception`)
-      await request.query(`delete from fff_staging.coastal_forecast_location`)
+      await request.query('delete from fff_staging.csv_staging_exception')
+      await request.query('delete from fff_staging.coastal_forecast_location')
       await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
     })
 
     afterAll(async () => {
-      await request.query(`delete from fff_staging.coastal_forecast_location`)
-      await request.query(`delete from fff_staging.csv_staging_exception`)
+      await request.query('delete from fff_staging.coastal_forecast_location')
+      await request.query('delete from fff_staging.csv_staging_exception')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -186,7 +186,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await checkExceptionIsCorrect(expectedExceptionDescription)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
-      const expectedError = new Error(`connect ECONNREFUSED mockhost`)
+      const expectedError = new Error('connect ECONNREFUSED mockhost')
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
@@ -205,11 +205,11 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
       await lockCoastalLocationTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should not refresh when a non-csv file (JSON) is provided', async () => {
       const mockResponse = {
         status: STATUS_CODE_200,
-        body: fs.createReadStream(`testing/function-tests/general-files/json.json`),
+        body: fs.createReadStream('testing/function-tests/general-files/json.json'),
         statusText: STATUS_TEXT_OK,
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
@@ -218,7 +218,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
       const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
 
       await expect(coastalRefreshFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
@@ -226,7 +226,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponse = {
         status: 404,
-        body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
+        body: fs.createReadStream('testing/function-tests/general-files/404.html'),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
@@ -235,7 +235,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
       const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
 
       await expect(coastalRefreshFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)

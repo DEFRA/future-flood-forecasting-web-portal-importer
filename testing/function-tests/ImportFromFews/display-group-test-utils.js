@@ -58,11 +58,11 @@ module.exports = {
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into acccount that the default values can be overridden by environment variables.
         if (config.spanWorkflowId) {
-          let offsetData = await getWorkflowOffsetData(context, pool, config.spanWorkflowId)
+          const offsetData = await getWorkflowOffsetData(context, pool, config.spanWorkflowId)
           if (offsetData && offsetData.startTimeOffset && offsetData.startTimeOffset !== 0) {
             startTimeDisplayGroupOffsetHours = offsetData.startTimeOffset
           } else {
-            startTimeDisplayGroupOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+            startTimeDisplayGroupOffsetHours = process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS ? parseInt(process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS) : 24
           }
           if (offsetData && offsetData.endTimeOffset && offsetData.endTimeOffset !== 0) {
             endTimeDisplayGroupOffsetHours = offsetData.endTimeOffset
@@ -70,8 +70,8 @@ module.exports = {
             endTimeDisplayGroupOffsetHours = 0
           }
         } else {
-          startTimeDisplayGroupOffsetHours = process.env['FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS']) : 14
-          endTimeDisplayGroupOffsetHours = process.env['FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS'] ? parseInt(process.env['FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS']) : 120
+          startTimeDisplayGroupOffsetHours = process.env.FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS ? parseInt(process.env.FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS) : 14
+          endTimeDisplayGroupOffsetHours = process.env.FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS ? parseInt(process.env.FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS) : 120
         }
 
         const expectedStartTime = moment(taskRunCompletionTime).subtract(startTimeDisplayGroupOffsetHours, 'hours').toISOString().substring(0, 19)
@@ -131,9 +131,9 @@ async function getWorkflowOffsetData (context, pool, workflowId) {
     }
   } else {
     if (result && result.recordset && result.recordset[0] && result.recordset.length > 1) {
-      context.log(`Multiple custom offsets have been found.`)
+      context.log('Multiple custom offsets have been found.')
     } else {
-      context.log(`No offsets found.`)
+      context.log('No offsets found.')
     } offsetData = null
   }
   return offsetData

@@ -24,8 +24,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
     // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
 
-    let startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-    let endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.endTimeOffset, taskRunData) || 0
+    const startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+    const endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.endTimeOffset, taskRunData) || 0
     taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
     taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
   } else {
@@ -52,10 +52,10 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
     buildPiServerUrlCall.fewsParameters = `${plotId}${locationIds}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
     // Construct the URL used to retrieve timeseries display groups for the configured plot, locations and date range.
     buildPiServerUrlCall.fewsPiUrl =
-      encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
+      encodeURI(`${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/timeseries/displaygroups?useDisplayUnits=false
         &showThresholds=true&omitMissing=true&onlyHeaders=false&documentFormat=PI_JSON${buildPiServerUrlCall.fewsParameters}`)
   } else {
     context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})` +
-      `- Timeseries for all locations have been imported`)
+      '- Timeseries for all locations have been imported')
   }
 }

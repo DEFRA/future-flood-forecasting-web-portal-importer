@@ -2,7 +2,7 @@ const refresh = require('../Shared/shared-refresh-csv-rows')
 
 module.exports = async function (context) {
   const refreshData = {
-    csvUrl: process.env['IGNORED_WORKFLOW_URL'],
+    csvUrl: process.env.IGNORED_WORKFLOW_URL,
     workflowRefreshCsvType: 'I',
     tableName: 'ignored_workflow',
     csvSourceFile: 'ignored workflow refresh',

@@ -3,7 +3,7 @@ const { isBoolean } = require('../Shared/utils')
 
 module.exports = async function (context) {
   const refreshData = {
-    csvUrl: process.env['NON_DISPLAY_GROUP_WORKFLOW_URL'],
+    csvUrl: process.env.NON_DISPLAY_GROUP_WORKFLOW_URL,
     workflowRefreshCsvType: 'N',
     tableName: 'non_display_group_workflow',
     csvSourceFile: 'non display group refresh',

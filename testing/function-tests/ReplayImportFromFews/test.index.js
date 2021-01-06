@@ -27,12 +27,12 @@ module.exports = describe('Tests for replaying messages on the ImportFromFews de
     })
 
     it('should transfer object messages to the fews-import-queue', async () => {
-      await replayImportFromFews(context, messages['singlePlotApprovedForecast'][0])
-      expect(context.bindings.importFromFews).toBe(messages['singlePlotApprovedForecast'][0])
+      await replayImportFromFews(context, messages.singlePlotApprovedForecast[0])
+      expect(context.bindings.importFromFews).toBe(messages.singlePlotApprovedForecast[0])
     })
     it('should transfer non-object messages to the fews-import-queue', async () => {
-      await replayImportFromFews(context, JSON.stringify(messages['singlePlotApprovedForecast'][0]))
-      expect(context.bindings.importFromFews).toBe(JSON.stringify(messages['singlePlotApprovedForecast'][0]))
+      await replayImportFromFews(context, JSON.stringify(messages.singlePlotApprovedForecast[0]))
+      expect(context.bindings.importFromFews).toBe(JSON.stringify(messages.singlePlotApprovedForecast[0]))
     })
   })
 })

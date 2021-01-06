@@ -24,7 +24,7 @@ module.exports = {
       // Object mode is required to manipulate JSON.
       objectMode: true,
       transform: (object, encoding, done) => {
-        done(null, [object['key'], object['value']])
+        done(null, [object.key, object.value])
       }
     })
 
@@ -81,7 +81,7 @@ module.exports = {
       }
       return offsetInteger
     } else {
-      context.log(`Non-zero offset required.`)
+      context.log('Non-zero offset required.')
       return null
     }
   }

@@ -132,7 +132,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     it('should prevent replay of a task run plot following NO resolution of invalid configuration. The timeseries staging exception should still be active', async () => {
       const messageKey = 'taskRunWithTimeseriesStagingExceptions'
       await insertTimeseriesHeaderAndTimeseriesStagingExceptions(pool, 1) // timeseries staging exception inserted after workflow refresh date
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData['taskRunWithUnresolvedTimeseriesStagingExceptions'])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData.taskRunWithUnresolvedTimeseriesStagingExceptions)
     })
     it('should allow replay of a task run following invalid resolution of a partial load failure. Invalid resolution is caused by a workflow plot being defined in multiple display group CSV files. The original timeseries staging exception should be deactivated', async () => {
       const messageKey = 'multiplePlotApprovedForecast'
@@ -180,7 +180,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // so check that an exception is thrown to facilitate this process.
       await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast')
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should not import data (with no staging exceptions present) for an unapproved forecast spanning task run until approved', async () => {
       const request = new sql.Request(pool)
       await request.batch(`
@@ -190,15 +190,15 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           ('Test_Partial_Taskrun_Span_Workflow', 'Span_Filter', 1, 0, 0, 'external_historical')
       `)
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunSpan')
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunSpan', expectedData['approvedPartialTaskRunSpan'])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunSpan', expectedData.approvedPartialTaskRunSpan)
     })
   })
 
   async function insertTimeseriesHeaderAndTimeseries (pool) {
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages['singlePlotApprovedForecast'])
-    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
-    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
+    const message = JSON.stringify(taskRunCompleteMessages.singlePlotApprovedForecast)
+    const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
+    const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
@@ -219,9 +219,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException (pool) {
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages['multiplePlotApprovedForecast'])
-    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
-    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
+    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast)
+    const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
+    const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
@@ -249,9 +249,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   async function insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv (pool, exceptionTimeOffset) {
     const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingExceptions'])
-    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
-    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
+    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions)
+    const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
+    const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()
@@ -276,9 +276,9 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     // the workflow (reference data) refresh table updates at the start of this test file
     const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages['taskRunWithTimeseriesStagingExceptions'])
-    const taskRunStartTime = taskRunCompleteMessages['commonMessageData'].startTime
-    const taskRunCompletionTime = taskRunCompleteMessages['commonMessageData'].completionTime
+    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions)
+    const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
+    const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
       declare @id1 uniqueidentifier
       set @id1 = newid()

@@ -90,7 +90,7 @@ async function replayMessagesForTimeseriesStagingExceptionsIfServiceConfigUpdate
   const config = {
     outputBindingName: 'importFromFews',
     parameters: {
-      secondsSinceCsvRefreshed: process.env['SERVICE_CONFIG_UPDATE_DETECTION_LIMIT'] || 300
+      secondsSinceCsvRefreshed: process.env.SERVICE_CONFIG_UPDATE_DETECTION_LIMIT || 300
     },
     parseMessageAsJson: true,
     preparedStatement: preparedStatement

@@ -210,7 +210,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecast'
       const config = {
         messageKey: messageKey,
-        mockResponses: [ mockResponse ],
+        mockResponses: [mockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
           sourceType: 'F',
@@ -231,7 +231,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterNonForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
       const mockResponses = [
         {
@@ -465,7 +465,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
     it('should throw a timeseries staging exception when an non-integer custom offset is provided', async () => {
       const offsetValue = 'ten'
-      let expectedErrorDetails = new Error('Unable to return an integer for an offset value: ten')
+      const expectedErrorDetails = new Error('Unable to return an integer for an offset value: ten')
       await importFromFewsTestUtils.checkTextOffsetRejectsWithError(offsetValue, expectedErrorDetails)
     })
   })
@@ -513,7 +513,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const taskRunId = importFromFewsMessages[config.messageKey][0].taskRunId
     const previousTaskRunEndTimeRequest = new sql.Request(pool)
     const currentTaskRunCompletionTimeseriesRequest = new sql.Request(pool)
-    let defaultTruncationOffsetHours = process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS'] ? parseInt(process.env['FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS']) : 24
+    let defaultTruncationOffsetHours = process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS ? parseInt(process.env.FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS) : 24
     if (!Number.isInteger(defaultTruncationOffsetHours)) {
       defaultTruncationOffsetHours = 24
     }

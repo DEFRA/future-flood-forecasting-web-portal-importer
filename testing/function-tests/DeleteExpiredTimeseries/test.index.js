@@ -20,7 +20,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     // 3) Data row exists in header alone if data not loaded for header (in no data is returned or data out of date)
     beforeAll(async () => {
       await pool.connect()
-      await request.batch(`set lock_timeout 5000;`)
+      await request.batch('set lock_timeout 5000;')
     })
 
     // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
@@ -32,25 +32,25 @@ module.exports = describe('Timeseries data deletion tests', () => {
       delete process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 240
       process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 200
-      hardLimit = parseInt(process.env['DELETE_EXPIRED_TIMESERIES_HARD_LIMIT'])
-      softLimit = process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT'] ? parseInt(process.env['DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT']) : hardLimit
+      hardLimit = parseInt(process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)
+      softLimit = process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT ? parseInt(process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT) : hardLimit
       // The order of deletion is sentiive to referential integrity
-      await request.query(`delete from fff_reporting.timeseries_job`)
-      await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries`)
-      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
-      await request.batch(`delete from fff_staging.inactive_staging_exception`)
-      await request.batch(`delete from fff_staging.staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries_header`)
+      await request.query('delete from fff_reporting.timeseries_job')
+      await request.query('delete from fff_staging.inactive_timeseries_staging_exception')
+      await request.batch('delete from fff_staging.timeseries')
+      await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.batch('delete from fff_staging.inactive_staging_exception')
+      await request.batch('delete from fff_staging.staging_exception')
+      await request.batch('delete from fff_staging.timeseries_header')
     })
     afterAll(async () => {
-      await request.query(`delete from fff_reporting.timeseries_job`)
-      await request.query(`delete from fff_staging.inactive_timeseries_staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries`)
-      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
-      await request.batch(`delete from fff_staging.inactive_staging_exception`)
-      await request.batch(`delete from fff_staging.staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries_header`)
+      await request.query('delete from fff_reporting.timeseries_job')
+      await request.query('delete from fff_staging.inactive_timeseries_staging_exception')
+      await request.batch('delete from fff_staging.timeseries')
+      await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.batch('delete from fff_staging.inactive_staging_exception')
+      await request.batch('delete from fff_staging.staging_exception')
+      await request.batch('delete from fff_staging.timeseries_header')
       await pool.close()
     })
     it('should delete a record with a complete job status and with an import date older than the hard limit', async () => {
@@ -168,7 +168,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
 
       const importDate = await createImportDate(importDateStatus)
       await checkDeleteRejectsWithDefaultHeaderTableIsolationOnInsert(importDate)
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('Should prevent deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is not set', async () => {
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = null
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
@@ -200,7 +200,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const isolationHintSet = true
       await insertRecordIntoTables(importDate, statusCode, testDescription)
       await checkSelectRejectsWithDeleteInProgress(isolationHintSet)
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 35000)
     it('Check for snapshot isolation (Azure DB default). Check select rejects with no snapshot and no table hint with delete in progress (will use default ReadCommited isolation), else check select is successful when delete is in progress with snapshot isolation ON', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 6
@@ -217,7 +217,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       } else {
         await checkDefaultSelectSucceedsWithDeleteInProgress(testDescription)
       }
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 35000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 35000)
     it('should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit', async () => {
       const importDateStatus = 'exceedsSoft'
       const testDescription = 'should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit'
@@ -615,7 +615,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest2 = new sql.Request(transaction2)
       // Copy the lock timeout period
       let lockTimeoutValue
-      process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
+      process.env.SQLDB_LOCK_TIMEOUT ? lockTimeoutValue = process.env.SQLDB_LOCK_TIMEOUT : lockTimeoutValue = 6500
       const query2 =
         `set lock_timeout ${lockTimeoutValue}
          select * from fff_reporting.TIMESERIES_JOB
@@ -650,7 +650,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest2 = new sql.Request(transaction2)
       // Copy the lock timeout period
       let lockTimeoutValue
-      process.env['SQLDB_LOCK_TIMEOUT'] ? lockTimeoutValue = process.env['SQLDB_LOCK_TIMEOUT'] : lockTimeoutValue = 6500
+      process.env.SQLDB_LOCK_TIMEOUT ? lockTimeoutValue = process.env.SQLDB_LOCK_TIMEOUT : lockTimeoutValue = 6500
       const query2 =
         `set lock_timeout ${lockTimeoutValue}
          select * from fff_reporting.TIMESERIES_JOB ${isolationHintSet ? 'with (readcommittedlock)' : ''}

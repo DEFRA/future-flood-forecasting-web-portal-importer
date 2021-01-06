@@ -49,19 +49,19 @@ const lockTimeoutData = {
 
 module.exports = function (pool) {
   const deleteWorkflowData = async function (request) {
-    await request.batch(`delete from fff_staging.coastal_display_group_workflow`)
-    await request.batch(`delete from fff_staging.fluvial_display_group_workflow`)
-    await request.batch(`delete from fff_staging.non_display_group_workflow`)
-    await request.batch(`delete from fff_staging.ignored_workflow`)
-    await request.batch(`delete from fff_staging.workflow_refresh`)
+    await request.batch('delete from fff_staging.coastal_display_group_workflow')
+    await request.batch('delete from fff_staging.fluvial_display_group_workflow')
+    await request.batch('delete from fff_staging.non_display_group_workflow')
+    await request.batch('delete from fff_staging.ignored_workflow')
+    await request.batch('delete from fff_staging.workflow_refresh')
   }
   const deleteTimeseriesData = async function (request) {
-    await request.batch(`delete from fff_staging.inactive_timeseries_staging_exception`)
-    await request.batch(`delete from fff_staging.timeseries_staging_exception`)
-    await request.batch(`delete from fff_staging.timeseries`)
-    await request.batch(`delete from fff_staging.timeseries_header`)
-    await request.batch(`delete from fff_staging.inactive_staging_exception`)
-    await request.batch(`delete from fff_staging.staging_exception`)
+    await request.batch('delete from fff_staging.inactive_timeseries_staging_exception')
+    await request.batch('delete from fff_staging.timeseries_staging_exception')
+    await request.batch('delete from fff_staging.timeseries')
+    await request.batch('delete from fff_staging.timeseries_header')
+    await request.batch('delete from fff_staging.inactive_staging_exception')
+    await request.batch('delete from fff_staging.staging_exception')
   }
   this.beforeAll = async function () {
     const request = new sql.Request(pool)

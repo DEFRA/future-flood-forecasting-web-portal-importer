@@ -67,6 +67,6 @@ async function deleteStagingExceptions (context, preparedStatement, expiryDate, 
     deleteRowBatchSize
   }
 
-  let result = await preparedStatement.execute(parameters)
+  const result = await preparedStatement.execute(parameters)
   context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the 'StagingException' table.`)
 }

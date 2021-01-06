@@ -96,7 +96,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // so check that an exception is thrown to facilitate this process.
       await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast')
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should throw an exception when the core engine PI server is unavailable', async () => {
       // If the core engine PI server is down messages are eligible for replay a certain number of times so check that
       // an exception is thrown to facilitate this process.
@@ -116,7 +116,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       // only one partial taskrun is approved and this should come after all the preceding unapproved partial taskruns
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunForecast')
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunForecast', expectedData['approvedPartialTaskRunForecast'])
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunForecast', expectedData.approvedPartialTaskRunForecast)
     })
     it('should dismiss (for the same taskRun) messages for an approved forecast run and unapproved forecast run following the earlier load of the approved partial taskrun message', async () => {
       // this test simulates a situation where an unapproved partial taskrun message is received after the approved partial taskrun message
