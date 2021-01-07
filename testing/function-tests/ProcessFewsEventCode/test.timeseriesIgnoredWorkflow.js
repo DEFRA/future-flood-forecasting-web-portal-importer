@@ -31,6 +31,8 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
     })
 
     it('should reject an ignored workflow', async () => {
+      // Use custom database connection settings to increase test coverage
+      await commonTimeseriesTestUtils.setOptionalDatabaseEnvironmentVariables()
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('ignoredForecast')
     })
     it('should throw an exception when the ignored workflow table locks due to refresh', async () => {

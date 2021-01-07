@@ -165,4 +165,19 @@ module.exports = function (pool) {
       }
     }
   }
+  this.setOptionalDatabaseEnvironmentVariables = async function () {
+    process.env.SQLDB_ABORT_TRANSACTION_ON_ERROR = false
+    process.env.SQLDB_PORT = 1433
+    process.env.SQLDB_CONNECTION_TIMEOUT = 15000
+    process.env.SQLDB_REQUEST_TIMEOUT = 60000
+    process.env.SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS = 3
+    process.env.SQLDB_MAX_POOLED_CONNECTIONS = 10
+    process.env.SQLDB_MIN_POOLED_CONNECTIONS = 6
+    process.env.SQLDB_ACQUIRE_TIMEOUT_MILLIS = 30000
+    process.env.SQLDB_CREATE_TIMEOUT_MILLIS = 30000
+    process.env.SQLDB_DESTROY_TIMEOUT_MILLIS = 5000
+    process.env.SQLDB_IDLE_TIMEOUT_MILLIS = 30000
+    process.env.SQLDB_REAP_INTERVAL_MILLIS = 1000
+    process.env.SQLDB_CREATE_RETRY_INTERVAL_MILLIS = 200
+  }
 }
