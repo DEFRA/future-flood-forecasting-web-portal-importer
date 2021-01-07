@@ -1,8 +1,15 @@
 const replayEligibleTimeseriesStagingExceptions = require('../message-replay/replay-eligible-timeseries-staging-exceptions')
+const deleteCsvStagingExceptions = require('./failed-csv-load-handler/delete-csv-staging-exception')
 const replayEligibleStagingExceptions = require('../message-replay/replay-eligible-staging-exceptions')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
-const loadExceptions = require('../csv-load/failed-csv-load-handler/load-csv-exceptions')
+const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
 const fetch = require('node-fetch')
+const neatCsv = require('neat-csv')
+const sql = require('mssql')
+
+module.exports = async function (context, refreshData) {
+  // Transaction 1
+  // Refresh with a serializable isolation level so that refresh is prevented if the table is in use.
   // If the table is in use and table lock acquisition fails, the function invocation will fail.
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be

@@ -1,4 +1,4 @@
-const refresh = require('../Shared/csv-load-handler/shared-refresh-csv-rows')
+const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
 const { isBoolean } = require('../Shared/utils')
 
 module.exports = async function (context) {
