@@ -64,11 +64,11 @@ const importedLocationsForTaskRunQuery = `
 `
 
 const displayGroupWorkflowQueries = {
-  'C': {
+  C: {
     aggregatedLocations: aggregatedCoastalDisplayGroupWorkflowLocationsQuery,
     unaggregatedLocations: unaggregatedCoastalDisplayGroupWorkflowLocationsQuery
   },
-  'F': {
+  F: {
     aggregatedLocations: aggregatedFluvialDisplayGroupWorkflowLocationsQuery,
     unaggregatedLocations: unaggregatedFluvialDisplayGroupWorkflowLocationsQuery
   }

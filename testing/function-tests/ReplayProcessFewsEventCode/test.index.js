@@ -27,8 +27,8 @@ module.exports = describe('Tests for replaying messages on the ProcessFewsEventC
     })
 
     it('should transfer messages containing valid JSON to the fews-eventcode-queue', async () => {
-      await replayProcessFewsEventCode(context, messages['singlePlotApprovedForecast'])
-      expect(context.bindings.processFewsEventCode).toBe(messages['singlePlotApprovedForecast'])
+      await replayProcessFewsEventCode(context, messages.singlePlotApprovedForecast)
+      expect(context.bindings.processFewsEventCode).toBe(messages.singlePlotApprovedForecast)
     })
 
     it('should transfer messages containing invalid JSON to the fews-eventcode-queue', async () => {

@@ -2,7 +2,7 @@ const refresh = require('../Shared/shared-refresh-csv-rows')
 
 module.exports = async function (context) {
   const refreshData = {
-    csvUrl: process.env['MVT_URL'],
+    csvUrl: process.env.MVT_URL,
     tableName: 'multivariate_thresholds',
     csvSourceFile: 'mvt',
     deleteStatement: 'delete from fff_staging.multivariate_thresholds',

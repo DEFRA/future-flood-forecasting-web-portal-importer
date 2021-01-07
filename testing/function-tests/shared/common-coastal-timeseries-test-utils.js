@@ -31,7 +31,7 @@ module.exports = function (pool, messages) {
   this.beforeEach = async function () {
     await commonTimeseriesTestUtils.beforeEach(pool)
     const request = new sql.Request(pool)
-    await request.query(`delete from fff_staging.fluvial_display_group_workflow`)
+    await request.query('delete from fff_staging.fluvial_display_group_workflow')
   }
   this.afterAll = async function () {
     await commonTimeseriesTestUtils.afterAll(pool)

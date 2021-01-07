@@ -88,8 +88,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
   let baseStartTime
   let baseEndTime
 
-  let truncationOffsetHoursBackward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-  let truncationOffsetHoursForward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.endTimeOffset, taskRunData) || 0
+  const truncationOffsetHoursBackward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+  const truncationOffsetHoursForward = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.filterData.endTimeOffset, taskRunData) || 0
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     // the time frame search period base time is the current end time for forecast data
@@ -124,7 +124,7 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
 
   if (buildPiServerUrlCall.fewsParameters) {
     buildPiServerUrlCall.fewsPiUrl =
-      encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=true&showProducts=false
+      encodeURI(`${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=true&showProducts=false
         &omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&documentFormat=PI_JSON&forecastCount=1${buildPiServerUrlCall.fewsParameters}`)
   } else {
     // FEWS parameters must be specified otherwise the data return is likely to be very large

@@ -44,11 +44,11 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       dummyData = {
         dummyWorkflow: [{ filterId: 'dummyFilter', approved: 0, startTimeOffset: 1, endTimeOffset: 2, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
-      await request.batch(`delete from fff_staging.csv_staging_exception`)
-      await request.batch(`delete from fff_staging.staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
-      await request.batch(`delete from fff_staging.non_display_group_workflow`)
-      await request.batch(`delete from fff_staging.workflow_refresh`)
+      await request.batch('delete from fff_staging.csv_staging_exception')
+      await request.batch('delete from fff_staging.staging_exception')
+      await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.batch('delete from fff_staging.non_display_group_workflow')
+      await request.batch('delete from fff_staging.workflow_refresh')
       await request.batch(`
           insert into
             fff_staging.non_display_group_workflow
@@ -58,8 +58,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     })
 
     afterAll(async () => {
-      await request.batch(`delete from fff_staging.non_display_group_workflow`)
-      await request.batch(`delete from fff_staging.csv_staging_exception`)
+      await request.batch('delete from fff_staging.non_display_group_workflow')
+      await request.batch('delete from fff_staging.csv_staging_exception')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -280,14 +280,14 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponseData = {
         status: 404,
-        body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
+        body: fs.createReadStream('testing/function-tests/general-files/404.html'),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
       await fetch.mockResolvedValue(mockResponseData)
 
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
       const expectedData = {
         nonDisplayGroupData: dummyData,
         numberOfExceptionRows: 0
@@ -297,7 +297,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       await checkExpectedResults(expectedData)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
-      const expectedError = new Error(`connect ECONNREFUSED mockhost`)
+      const expectedError = new Error('connect ECONNREFUSED mockhost')
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
@@ -315,7 +315,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       }
       await lockNonDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should load unloadable rows into csv exceptions table', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,

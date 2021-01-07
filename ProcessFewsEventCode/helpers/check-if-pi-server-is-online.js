@@ -3,7 +3,7 @@ const axios = require('axios')
 module.exports = async function (context) {
   try {
     const fewsPiUrl =
-      encodeURI(`${process.env['FEWS_PI_API']}/FewsWebServices/rest/fewspiservice/v1/filters?documentFormat=PI_JSON`)
+      encodeURI(`${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/filters?documentFormat=PI_JSON`)
     await axios.get(fewsPiUrl)
   } catch (err) {
     if (typeof err.response === 'undefined') {

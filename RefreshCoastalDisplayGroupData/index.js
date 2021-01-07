@@ -4,7 +4,7 @@ const sql = require('mssql')
 
 module.exports = async function (context) {
   const refreshData = {
-    csvUrl: process.env['COASTAL_DISPLAY_GROUP_WORKFLOW_URL'],
+    csvUrl: process.env.COASTAL_DISPLAY_GROUP_WORKFLOW_URL,
     workflowRefreshCsvType: 'C',
     tableName: '#coastal_display_group_workflow_temp',
     csvSourceFile: 'coastal display group',

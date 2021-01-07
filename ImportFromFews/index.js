@@ -98,7 +98,7 @@ async function processDataRetrievalError (context, taskRunData, err) {
 async function processImportError (context, taskRunData, err) {
   let errorData
   if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
-    context.log.error(`Failed to connect to ${process.env['FEWS_PI_API']}`)
+    context.log.error(`Failed to connect to ${process.env.FEWS_PI_API}`)
     // If connection to the PI Server fails propagate the failure so that standard Azure message replay
     // functionality is used.
     throw err
@@ -156,7 +156,7 @@ async function retrieveFewsData (context, taskRunData) {
     taskRunData.piServerUrlCallsIndex = index
     const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[index]
     try {
-      await buildPiServerUrlCall['buildPiServerUrlIfPossibleFunction'](context, taskRunData)
+      await buildPiServerUrlCall.buildPiServerUrlIfPossibleFunction(context, taskRunData)
       if (buildPiServerUrlCall.fewsPiUrl) {
         await retrieveAndCompressFewsData(context, taskRunData)
         taskRunData.fewsParameters = buildPiServerUrlCall.fewsParameters
@@ -203,9 +203,9 @@ async function processFewsDataRetrievalResults (context, taskRunData) {
 
 async function createStagedTimeseriesMessageIfNeeded (context, timeseriesId) {
   const bindingDefinitions = JSON.stringify(context.bindingDefinitions)
-  bindingDefinitions.includes(`"direction":"out"`) ? context.bindings.stagedTimeseries = [] : context.log(`No output binding attached.`)
+  bindingDefinitions.includes('"direction":"out"') ? context.bindings.stagedTimeseries = [] : context.log('No output binding attached.')
 
-  if (bindingDefinitions.includes(`"direction":"out"`)) {
+  if (bindingDefinitions.includes('"direction":"out"')) {
     // Prepare to send a message containing the primary key of the inserted record.
     context.bindings.stagedTimeseries.push({
       id: timeseriesId

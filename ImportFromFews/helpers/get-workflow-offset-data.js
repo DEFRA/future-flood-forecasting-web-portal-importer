@@ -34,7 +34,7 @@ module.exports = async function (context, preparedStatement, taskRunData) {
     } else {
       offsetValuesCount = 0
     }
-    let errorMessage = `An error has been found in the custom offsets for workflow: ${taskRunData.workflowId}. ${offsetValuesCount} found.`
+    const errorMessage = `An error has been found in the custom offsets for workflow: ${taskRunData.workflowId}. ${offsetValuesCount} found.`
     context.log(errorMessage)
     const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV.`
     const errorData = {

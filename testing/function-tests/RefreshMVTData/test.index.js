@@ -46,15 +46,15 @@ module.exports = describe('Refresh mvt data tests', () => {
         UPPER_BOUND_INCLUSIVE: 1,
         PRIORITY: 9
       }
-      await request.query(`delete from fff_staging.csv_staging_exception`)
-      await request.query(`delete from fff_staging.multivariate_thresholds`)
+      await request.query('delete from fff_staging.csv_staging_exception')
+      await request.query('delete from fff_staging.multivariate_thresholds')
       await request.query(`insert into fff_staging.multivariate_thresholds (CENTRE, CRITICAL_CONDITION_ID, INPUT_LOCATION_ID, OUTPUT_LOCATION_ID, TARGET_AREA_CODE, INPUT_PARAMETER_ID, LOWER_BOUND, UPPER_BOUND, LOWER_BOUND_INCLUSIVE, UPPER_BOUND_INCLUSIVE, PRIORITY) 
       values ('${dummyData.CENTRE}', '${dummyData.CRITICAL_CONDITION_ID}', '${dummyData.INPUT_LOCATION_ID}', '${dummyData.OUTPUT_LOCATION_ID}', '${dummyData.TARGET_AREA_CODE}', '${dummyData.INPUT_PARAMETER_ID}', '${dummyData.LOWER_BOUND}', '${dummyData.UPPER_BOUND}', '${dummyData.LOWER_BOUND_INCLUSIVE}', '${dummyData.UPPER_BOUND_INCLUSIVE}', '${dummyData.PRIORITY}')`)
     })
 
     afterAll(async () => {
-      await request.query(`delete from fff_staging.multivariate_thresholds`)
-      await request.query(`delete from fff_staging.csv_staging_exception`)
+      await request.query('delete from fff_staging.multivariate_thresholds')
+      await request.query('delete from fff_staging.csv_staging_exception')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -198,7 +198,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
-      const expectedError = new Error(`connect ECONNREFUSED mockhost`)
+      const expectedError = new Error('connect ECONNREFUSED mockhost')
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
@@ -217,11 +217,11 @@ module.exports = describe('Refresh mvt data tests', () => {
 
       await lockMultivariateThresholdTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should not refresh when a non-csv file (JSON) is provided', async () => {
       const mockResponse = {
         status: STATUS_CODE_200,
-        body: fs.createReadStream(`testing/function-tests/general-files/json.json`),
+        body: fs.createReadStream('testing/function-tests/general-files/json.json'),
         statusText: STATUS_TEXT_OK,
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
@@ -230,7 +230,7 @@ module.exports = describe('Refresh mvt data tests', () => {
 
       const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
 
       await expect(MVTRefreshFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
@@ -238,7 +238,7 @@ module.exports = describe('Refresh mvt data tests', () => {
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponse = {
         status: 404,
-        body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
+        body: fs.createReadStream('testing/function-tests/general-files/404.html'),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
@@ -247,7 +247,7 @@ module.exports = describe('Refresh mvt data tests', () => {
 
       const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
 
       await expect(MVTRefreshFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)

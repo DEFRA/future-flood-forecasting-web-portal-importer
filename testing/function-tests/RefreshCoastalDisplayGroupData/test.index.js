@@ -42,25 +42,25 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
           dummyPlot: ['dummyLocation']
         }
       }
-      await request.batch(`delete from fff_staging.csv_staging_exception`)
-      await request.batch(`delete from fff_staging.staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
-      await request.query(`delete from fff_staging.coastal_display_group_workflow`)
-      await request.batch(`delete from fff_staging.workflow_refresh`)
-      await request.query(`insert into fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids) values ('dummyWorkflow', 'dummyPlot', 'dummyLocation')`)
+      await request.batch('delete from fff_staging.csv_staging_exception')
+      await request.batch('delete from fff_staging.staging_exception')
+      await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.query('delete from fff_staging.coastal_display_group_workflow')
+      await request.batch('delete from fff_staging.workflow_refresh')
+      await request.query('insert into fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids) values (\'dummyWorkflow\', \'dummyPlot\', \'dummyLocation\')')
     })
 
     afterEach(async () => {
       // As the jestConnectionPool pool is only closed at the end of the test suite the global temporary table used by each function
       // invocation needs to be dropped manually between each test case.
-      await request.batch(`delete from fff_staging.staging_exception`)
-      await request.batch(`delete from fff_staging.timeseries_staging_exception`)
-      await request.query(`drop table if exists #coastal_display_group_workflow_temp`)
+      await request.batch('delete from fff_staging.staging_exception')
+      await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.query('drop table if exists #coastal_display_group_workflow_temp')
     })
 
     afterAll(async () => {
-      await request.query(`delete from fff_staging.coastal_display_group_workflow`)
-      await request.query(`delete from fff_staging.csv_staging_exception`)
+      await request.query('delete from fff_staging.coastal_display_group_workflow')
+      await request.query('delete from fff_staging.csv_staging_exception')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -237,7 +237,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
-      const expectedError = new Error(`connect ECONNREFUSED mockhost`)
+      const expectedError = new Error('connect ECONNREFUSED mockhost')
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
@@ -255,11 +255,11 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
       await lockCoastalDisplayGroupTableAndCheckMessageCannotBeProcessed(mockResponseData)
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should not refresh when a non-csv file (JSON) is provided', async () => {
       const mockResponse = {
         status: STATUS_CODE_200,
-        body: fs.createReadStream(`testing/function-tests/general-files/json.json`),
+        body: fs.createReadStream('testing/function-tests/general-files/json.json'),
         statusText: STATUS_TEXT_OK,
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
@@ -270,7 +270,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         coastalDisplayGroupData: dummyData,
         numberOfExceptionRows: 0
       }
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
 
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData)
@@ -278,7 +278,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     it('should not refresh if csv endpoint is not found(404)', async () => {
       const mockResponse = {
         status: 404,
-        body: fs.createReadStream(`testing/function-tests/general-files/404.html`),
+        body: fs.createReadStream('testing/function-tests/general-files/404.html'),
         statusText: 'Not found',
         headers: { 'Content-Type': HTML },
         url: '.html'
@@ -290,7 +290,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         numberOfExceptionRows: 0
       }
 
-      const expectedError = new Error(`No csv file detected`)
+      const expectedError = new Error('No csv file detected')
 
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData)

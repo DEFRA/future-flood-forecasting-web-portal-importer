@@ -13,14 +13,14 @@ module.exports = describe('Test shared connection', () => {
     })
 
     it('should throw an exception when the set timeout value is an injection script', async () => {
-      process.env.SQLDB_LOCK_TIMEOUT = `delete from fff_staging.IGNORED_WORKFLOW`
-      const lockVaue = await doInTransaction(getLockTimeout, context, `The test failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE)
+      process.env.SQLDB_LOCK_TIMEOUT = 'delete from fff_staging.IGNORED_WORKFLOW'
+      const lockVaue = await doInTransaction(getLockTimeout, context, 'The test failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE)
 
       await expect(lockVaue).toEqual(6500)
     })
   })
   async function getLockTimeout (transaction, context) {
-    let lockTimeoutValue = await new sql.Request(transaction).query(`SELECT @@LOCK_TIMEOUT AS [LockTimeout];`)
+    let lockTimeoutValue = await new sql.Request(transaction).query('SELECT @@LOCK_TIMEOUT AS [LockTimeout];')
     lockTimeoutValue = lockTimeoutValue.recordset[0].LockTimeout
     return lockTimeoutValue
   }

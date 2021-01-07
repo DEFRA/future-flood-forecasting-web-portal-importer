@@ -108,7 +108,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       const messageKey = 'singlePlotApprovedForecast'
       const config = {
         messageKey: messageKey,
-        mockResponses: [ mockResponse ],
+        mockResponses: [mockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
           sourceType: 'P',
@@ -136,8 +136,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const initialLocationData = {
         plotId: importFromFewsMessages[messageKey][0].plotId,
-        includedLocations: [ 'Test Location3a', 'Test Location3b' ],
-        excludedLocations: [ 'Test Location3c', 'Test Location3d' ]
+        includedLocations: ['Test Location3a', 'Test Location3b'],
+        excludedLocations: ['Test Location3c', 'Test Location3d']
       }
 
       const config = [
@@ -192,8 +192,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const initialLocationData = {
         plotId: importFromFewsMessages[messageKey][0].plotId,
-        includedLocations: [ 'Test Location3a', 'Test Location3b' ],
-        excludedLocations: [ 'Test Location3c', 'Test Location3d' ]
+        includedLocations: ['Test Location3a', 'Test Location3b'],
+        excludedLocations: ['Test Location3c', 'Test Location3d']
       }
 
       const config = [
@@ -222,8 +222,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
           expectedLocationData: [
             {
               plotId: importFromFewsMessages[messageKey][0].plotId,
-              includedLocations: [ 'Test Location3c', 'Test Location3d' ],
-              excludedLocations: [ 'Test Location3a', 'Test Location3b' ]
+              includedLocations: ['Test Location3c', 'Test Location3d'],
+              excludedLocations: ['Test Location3a', 'Test Location3b']
             },
             initialLocationData
           ],
@@ -305,7 +305,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       }
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
-    }, parseInt(process.env['SQLTESTDB_REQUEST_TIMEOUT'] || 15000) + 5000)
+    }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
   })
 
   async function insertTimeseriesHeaders (pool) {

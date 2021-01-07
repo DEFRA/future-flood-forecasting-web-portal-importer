@@ -2,8 +2,8 @@
 
 const { ServiceBusClient } = require('@azure/service-bus')
 
-const connectionString = process.env['AzureWebJobsServiceBus']
-const topicName = process.env['AZURE_SERVICE_BUS_TOPIC']
+const connectionString = process.env.AzureWebJobsServiceBus
+const topicName = process.env.AZURE_SERVICE_BUS_TOPIC
 
 async function main () {
   const sbClient = ServiceBusClient.createFromConnectionString(connectionString)
@@ -12,8 +12,8 @@ async function main () {
 
   try {
     const message = {
-      body: process.env['AZURE_SERVICE_BUS_TEST_MESSAGE'],
-      label: `test`
+      body: process.env.AZURE_SERVICE_BUS_TEST_MESSAGE,
+      label: 'test'
     }
     console.log(`Sending message: ${message.body}`)
     await sender.send(message)

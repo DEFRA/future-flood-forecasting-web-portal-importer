@@ -18,7 +18,7 @@ module.exports = {
       await pool.connect()
 
       // Set the lock timeout period for the connection
-      const lockValue = parseInt(process.env['SQLDB_LOCK_TIMEOUT'])
+      const lockValue = parseInt(process.env.SQLDB_LOCK_TIMEOUT)
       // The setting of SET LOCK_TIMEOUT is set at execute or run time and not at parse time. Parameterisation is not available so the input is sanitised
       // A batched request is utilised to ensure the timeout is executed on requests within the pool
       await request.batch(`set lock_timeout ${(Number.isInteger(lockValue) && Number(lockValue) > 2000) ? lockValue : 6500}`)
@@ -48,7 +48,7 @@ module.exports = {
             context.log.warn('The transaction has been rolled back.')
           }
         } else {
-          context.log.error(`No transaction to commit or rollback`)
+          context.log.error('No transaction to commit or rollback')
         }
       } catch (err) {
         context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
