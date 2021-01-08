@@ -41,7 +41,6 @@ This prevents core forecasting engine messages from being processed until suppor
 | FEWS_PI_API                                      | Protocol, fully qualified domain name and optional port of the core forecasting engine REST API|
 | FUNCTIONS_EXTENSION_VERSION                      | Functions runtime version (**must be ~2**)                                                     |
 | FUNCTIONS_WORKER_RUNTIME                         | The language worker runtime to load in the function app (**must be node**)                     |
-| SQLDB_CONNECTION_STRING                          | [mssql node module](https://www.npmjs.com/package/mssql) connection string (see timeout note below) |                                                                                        |
 | WEBSITE_NODE_DEFAULT_VERSION                     | Default version of Node.js (**Microsoft Azure default is recommended**)                        |
 | FLUVIAL_FORECAST_LOCATION_URL                    | URL used to provide the forecast location data                                                 |
 | COASTAL_TRITON_FORECAST_LOCATION_URL             | URL used to provide the coastal triton location data                                           |
@@ -55,12 +54,10 @@ This prevents core forecasting engine messages from being processed until suppor
 | MVT_URL                                          | URL used to provide the multivariate threshold information                                     |
 | AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default (set to true)                             |
 | AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default (set to true)                       |
-
-### Request Timeout Considerations
-
-Successful loading of core forecasting engine data into the staging database requires a compatible database request timeout larger than the
-default of 15 seconds. Request timeout tuning is achieved through the mssql connection string (please see the
-[mssql node module](https://www.npmjs.com/package/mssql) documentation) specified in the SQLDB_CONNECTION_STRING application setting.
+| SQLDB_USER | [mssql node module](https://www.npmjs.com/package/mssql) username for authentication |
+| SQLDB_PASSWORD | [mssql node module](https://www.npmjs.com/package/mssql) password for authentication |
+| SQLDB_SERVER | [mssql node module](https://www.npmjs.com/package/mssql) server |
+| SQLDB_DATABASE | [mssql node module](https://www.npmjs.com/package/mssql) database name |
 
 ## Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
 
@@ -98,12 +95,27 @@ accordingly.
 | AZURE_SERVICE_BUS_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-forecast-location-topic                                 |
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                               |
 | FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                           |
+| SQLDB_CONNECTION_STRING                          | [mssql node module](https://www.npmjs.com/package/mssql) connection string |
 
 ## Optional Runtime Function App Settings/Environment Variables
 
 | name                         | description                                                                                                                                                                                                                    |
 |------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| SQLDB_LOCK_TIMEOUT           | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                                                                                                  |
+| SQLDB_PORT | [mssql node module](https://www.npmjs.com/package/mssql) database port (uses the mssql module default))
+| SQLDB_CONNECTION_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database connection timeout (uses the mssql module default) |
+| SQLDB_REQUEST_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database request timeout (defaults to 60000ms) |
+| SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS | [mssql node module](https://www.npmjs.com/package/mssql) maximum number of connection retries for transient errors (uses the underlying [tedious module](http://tediousjs.github.io/tedious/api-connection.html) default |
+| SQLDB_PACKET_SIZE | [mssql node module](https://www.npmjs.com/package/mssql) database packet size (uses the underlying [tedious module](http://tediousjs.github.io/tedious/api-connection.html) default |
+| SQLDB_ABORT_TRANSACTION_ON_ERROR | [mssql node module](https://www.npmjs.com/package/mssql) boolean determining whether to rollback a transaction automatically if any error is encountered during the given transaction's execution. This sets the value for XACT_ABORT during the initial SQL phase of a connection (uses the mssql module default.) |
+| SQLDB_MAX_POOLED_CONNECTIONS | [mssql node module](https://www.npmjs.com/package/mssql) maximum connection pool size (defaults to AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS * 2) |
+| SQLDB_MIN_POOLED_CONNECTIONS  | [mssql node module](https://www.npmjs.com/package/mssql) minimum connection pool size (defaults to AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS + 1) |
+| SQLDB_ACQUIRE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database resource acquisition timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) acquireTimeoutMillis default) |
+| SQLDB_CREATE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) creation operation timeout if a resource cannot be acquired (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createTimeoutMillis default) |
+| SQLDB_DESTROY_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) destroy operation timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) destroyTimeoutMillis default) |
+| SQLDB_IDLE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) idle resource timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) idleTimeoutMillis default) |
+| SQLDB_REAP_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to check for idle resources to destroy (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) reapIntervalMillis default) |
+| SQLDB_CREATE_RETRY_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to wait before retrying a failed creation operation (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createRetryIntervalMillis default) |
+| SQLDB_LOCK_TIMEOUT | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                                                                                                  |
 | FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS | The number of hours before task run completion time that core forecasting engine display group data should be retrieved (defaults to 14)                                                                                                     |
 | FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS   | The number of hours after task run completion time that core forecasting engine display group data should be retrieved (defaults to 120)                                                                                                     |
 | DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)                                                     |
