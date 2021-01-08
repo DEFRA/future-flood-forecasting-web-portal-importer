@@ -37,7 +37,6 @@
 * Microsoft Azure service bus queue named **fews-import-queue**.
   * A message is placed on this queue for each plot and filter associated with a completed task run within the core forecasting engine. Messages are
   processed by the **ImportFromFews** function. Message processing extracts timeseries associated with a plot or filter from the core forecasting engine and loads the data into the staging database.
-* Microsoft Azure service bus queue named **fews-import-queue**.
   * Following an outage, the **ReplayImportFromFews** function can be enabled temporarily to allow messages on the dead letter queue for **fews-import-queue** to be placed back on **fews-import-queue** (see [Replaying Messages From Dead Letter Queues After An Outage](./Replaying-dead-letter-messages.md))
 * Microsoft Azure service bus queue named **fews-fluvial-forecast-location-queue**  
   * Messages are placed on this queue when the set of fluvial forecast locations is updated. Messages are processed by the **RefreshFluvialForecastLocationData** function. Message processing retrieves the updated data and uses it to replace the content of the **FLUVIAL_FORECAST_LOCATION** table.
