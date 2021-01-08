@@ -235,7 +235,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       const expectedErrorDescription = 'row is missing data.'
 
       const expectedNonDisplayGroupData = {
-        test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
+        test_non_display_workflow_2: [{ filterId: 'test_filter_a', approved: 0, startTimeOffset: null, endTimeOffset: null, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
       const expectedData = {
@@ -324,7 +324,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         contentType: TEXT_CSV
       }
       const expectedNonDisplayGroupData = {
-        test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
+        test_non_display_workflow_1: [{ filterId: 'test_filter_1', approved: 0, startTimeOffset: null, endTimeOffset: null, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
       const expectedErrorDescription = 'row is missing data.'
       const expectedData = {
@@ -344,8 +344,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       }
 
       const expectedNonDisplayGroupData = {
-        test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }],
-        test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: 0, endTimeOffset: 0, timeSeriesType: EXTERNAL_HISTORICAL }]
+        test_non_display_workflow_3: [{ filterId: 'test_filter_3', approved: 0, startTimeOffset: null, endTimeOffset: null, timeSeriesType: EXTERNAL_HISTORICAL }],
+        test_non_display_workflow_2: [{ filterId: 'test_filter_2', approved: 1, startTimeOffset: null, endTimeOffset: null, timeSeriesType: EXTERNAL_HISTORICAL }]
       }
 
       const expectedData = {

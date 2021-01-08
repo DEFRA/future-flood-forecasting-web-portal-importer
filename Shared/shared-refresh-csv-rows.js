@@ -104,10 +104,14 @@ async function buildPreparedStatementParameters (context, row, refreshData) {
     const expectedCsvKey = columnObject.expectedCSVKey
 
     if (row[expectedCsvKey] || columnObject.nullValueOverride === true) {
+      let rowData = row[expectedCsvKey]
+      if (columnObject.nullValueOverride === true && (row[expectedCsvKey] === null || row[expectedCsvKey] === '')) {
+        rowData = null
+      }
       if (columnObject.preprocessor) {
-        preparedStatementExecuteObject[columnName] = columnObject.preprocessor(row[expectedCsvKey], columnName)
+        preparedStatementExecuteObject[columnName] = columnObject.preprocessor(rowData, columnName)
       } else {
-        preparedStatementExecuteObject[columnName] = row[expectedCsvKey]
+        preparedStatementExecuteObject[columnName] = rowData
       }
     } else {
       return { rowError: true }
