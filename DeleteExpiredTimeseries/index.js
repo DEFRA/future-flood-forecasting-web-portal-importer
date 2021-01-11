@@ -5,7 +5,7 @@ const moment = require('moment')
 const sql = require('mssql')
 
 const deleteQueries = {
-  reporting_tj: `
+  reporting_timeseries_job: `
     delete r 
     from fff_reporting.timeseries_job r
     inner join #deletion_job_temp te
@@ -73,7 +73,7 @@ async function removeExpiredTimeseries (transaction, context) {
 
   context.log.info('Data delete starting.')
   // The order of deletion is sensitive to referential integrity
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_reporting.timeseries_job', deleteQueries.reporting_tj)
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_reporting.timeseries_job', deleteQueries.reporting_timeseries_job)
   await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.inactive_timeseries_staging_exception', deleteQueries.staging_inactive_timeseries_staging_exception)
   await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_staging_exception', deleteQueries.staging_timeseries_staging_exception)
   await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries', deleteQueries.staging_timeseries)
