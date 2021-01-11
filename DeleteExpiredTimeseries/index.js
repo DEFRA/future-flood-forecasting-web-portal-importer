@@ -11,25 +11,25 @@ const deleteQueries = {
     inner join #deletion_job_temp te
       on te.reporting_id = r.id
     `,
-  staging_itse: `
+  staging_inactive_timeseries_staging_exception: `
     delete itse 
     from fff_staging.inactive_timeseries_staging_exception itse
     inner join #deletion_job_temp te
       on itse.timeseries_staging_exception_id = te.exceptions_id
     `,
-  staging_tse: `
+  staging_timeseries_staging_exception: `
     delete tse 
     from fff_staging.timeseries_staging_exception tse
     inner join #deletion_job_temp te
       on te.exceptions_id = tse.id
     `,
-  staging_t: `
+  staging_timeseries: `
     delete t 
     from fff_staging.timeseries t
     inner join #deletion_job_temp te
       on te.timeseries_id = t.id
     `,
-  staging_th: `
+  staging_timeseries_header: `
     delete th 
     from fff_staging.timeseries_header th
     inner join #deletion_job_temp te
@@ -74,10 +74,10 @@ async function removeExpiredTimeseries (transaction, context) {
   context.log.info('Data delete starting.')
   // The order of deletion is sensitive to referential integrity
   await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_reporting.timeseries_job', deleteQueries.reporting_tj)
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.inactive_timeseries_staging_exception', deleteQueries.staging_itse)
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_staging_exception', deleteQueries.staging_tse)
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries', deleteQueries.staging_t)
-  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_header', deleteQueries.staging_th)
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.inactive_timeseries_staging_exception', deleteQueries.staging_inactive_timeseries_staging_exception)
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_staging_exception', deleteQueries.staging_timeseries_staging_exception)
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries', deleteQueries.staging_timeseries)
+  await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_header', deleteQueries.staging_timeseries_header)
   await deleteStagingExceptions(context, transaction, hardDate, deleteRowBatchSize)
 }
 
