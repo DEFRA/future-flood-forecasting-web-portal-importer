@@ -122,8 +122,8 @@ async function buildPreparedStatementParameters (context, row, refreshData) {
 
 async function processCsvRow (context, preparedStatement, row, refreshData) {
   try {
-    const result = await buildPreparedStatementParameters(context, row, refreshData)
-    if (result.rowError) {
+    const rowExecuteObject = await buildPreparedStatementParameters(context, row, refreshData)
+    if (rowExecuteObject.rowError) {
       context.log.warn('row is missing data.')
       const failedRowInfo = {
         rowData: row,
@@ -132,7 +132,7 @@ async function processCsvRow (context, preparedStatement, row, refreshData) {
       }
       refreshData.failedCsvRows.push(failedRowInfo)
     } else {
-      await preparedStatement.execute(result)
+      await preparedStatement.execute(rowExecuteObject)
     }
   } catch (err) {
     context.log.warn(`An error has been found in a row.\nError : ${err}.`)
