@@ -1,3 +1,5 @@
+const transactionHelper = require('../Shared/transaction-helper')
+
 if (process.env.TEST_TIMEOUT) {
   jest.setTimeout(parseInt(process.env.TEST_TIMEOUT))
 }
@@ -12,6 +14,10 @@ describe('Run all unit tests in sequence', () => {
 
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV }
+  })
+
+  afterAll(async () => {
+    await transactionHelper.closeConnectionPool()
   })
 
   // A custom Jest matcher to test table timeouts

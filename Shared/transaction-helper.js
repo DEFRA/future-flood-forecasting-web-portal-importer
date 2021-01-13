@@ -1,10 +1,21 @@
-const Connection = require('../Shared/connection-pool')
+['beforeExit', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM']
+  .forEach(event => process.on(event, closeConnectionPoolInternal))
+
+const ConnectionPool = require('../Shared/connection-pool')
 const sql = require('mssql')
+const { promisify } = require('util')
+
+let connectionPool
+let pool
 
 module.exports = {
+  closeConnectionPool: async function () {
+    await closeConnectionPoolInternal()
+  },
   doInTransaction: async function (fn, context, errorMessage, isolationLevel, ...args) {
-    const connection = new Connection()
-    const pool = connection.pool
+    connectionPool = connectionPool || new ConnectionPool()
+    pool = pool || connectionPool.pool
+
     const request = new sql.Request(pool)
 
     let transaction
@@ -42,9 +53,10 @@ module.exports = {
           if (transaction._aborted) {
             context.log.warn('The transaction has been aborted.')
           } else if (transaction._rollbackRequested) {
+            await endTransactionAndResetConnectionIfPossible(context, transaction)
             context.log.warn('Transaction rollback has been requested.')
           } else {
-            await transaction.rollback()
+            await endTransactionAndResetConnectionIfPossible(context, transaction, transaction.rollback.bind(transaction))
             context.log.warn('The transaction has been rolled back.')
           }
         } else {
@@ -57,12 +69,7 @@ module.exports = {
     } finally {
       try {
         if (transaction && !transaction._aborted && !transaction._rollbackRequested) {
-          await transaction.commit()
-        }
-      } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
-      try {
-        if (pool) {
-          await pool.close()
+          await endTransactionAndResetConnectionIfPossible(context, transaction, transaction.commit.bind(transaction))
         }
       } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
     }
@@ -84,5 +91,31 @@ module.exports = {
         }
       } catch (err) { context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`) }
     }
+  }
+}
+
+async function closeConnectionPoolInternal () {
+  if (pool) {
+    await pool.close()
+    connectionPool = undefined
+    pool = undefined
+  }
+}
+
+async function endTransactionAndResetConnectionIfPossible (context, transaction, endTransactionFunction) {
+  if (transaction && transaction._acquiredConnection) {
+    const promisifiedReset = promisify(transaction._acquiredConnection.reset.bind(transaction._acquiredConnection))
+    if (endTransactionFunction) {
+      // Restore the default transaction isolation level as a connection reset does not do this.
+      const request = new sql.Request(transaction)
+      await request.batch('set transaction isolation level read committed')
+      // Commit or rollback the transaction before the pooled connection is reset as reset causes the transaction to be aborted.
+      await endTransactionFunction()
+    }
+    // Reset the pooled connection to ensure temporary tables are cleared (see https://github.com/tediousjs/tedious/issues/85).
+    await promisifiedReset()
+    context.log('Connection has been reset')
+  } else {
+    context.warn('Unable to reset connection as it has released')
   }
 }
