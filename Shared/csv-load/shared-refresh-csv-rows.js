@@ -172,7 +172,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
     }
 
     const csvLoadResult = await new sql.Request(transaction).query(refreshData.countStatement)
-    context.log.info(`The ${refreshData.csvSourceFile} table now contains ${csvLoadResult.recordset[0].number} new/updated records`)
+    context.log.info(`The ${refreshData.tableName} table now contains ${csvLoadResult.recordset[0].number} new/updated records`)
     if (csvLoadResult.recordset[0].number === 0) {
       // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
       await transaction.rollback()
