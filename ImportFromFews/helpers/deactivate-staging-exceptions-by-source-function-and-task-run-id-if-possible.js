@@ -59,5 +59,5 @@ async function doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsA
   }
 
   const result = await preparedStatement.execute(parameters)
-  return !!(result.recordset && result.recordset[0])
+  return Promise.resolve(!!(result.recordset && result.recordset[0]))
 }
