@@ -377,7 +377,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
             and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = '${CatchmentOrder}'
             and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
             and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}' and DATUM = '${Datum}' and DISPLAY_ORDER = '${DisplayOrder}'
-      `)
+        `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
