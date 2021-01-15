@@ -291,12 +291,38 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
+
+    it('should refresh given a valid CSV file with a null datum value', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'valid-null-datum.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedForecastLocationData = [{
+        Centre: 'Birmingham',
+        MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
+        Catchment: 'Derwent',
+        FFFSLocID: '40443',
+        FFFSLocName: 'CHATSWORTH',
+        PlotId: 'Fluvial_Gauge_MFDO',
+        DRNOrder: 123,
+        Order: 8988,
+        Datum: '',
+        CatchmentOrder: 1
+      }]
+      const expectedNumberOfExceptionRows = 0
+      // We cannot check for a null value with a WHERE clause, therefore just check the row has successfully inserted into the table.
+      const skipDetailedCheck = true
+      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck)
+    })
   })
 
-  async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows) {
+  async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedForecastLocationData, expectedNumberOfExceptionRows)
+    await checkExpectedResults(expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -312,7 +338,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedForecastLocationData, expectedNumberOfExceptionRows) {
+  async function checkExpectedResults (expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck) {
     const result = await request.query(`
     select 
       count(*) 
@@ -326,7 +352,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Live data row count: ${result.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
 
-    if (expectedNumberOfRows > 0) {
+    if (expectedNumberOfRows > 0 && !skipDetailedCheck) {
       for (const row of expectedForecastLocationData) {
         const Centre = row.Centre
         const MFDOArea = row.MFDOArea
@@ -335,22 +361,23 @@ module.exports = describe('Refresh forecast location data tests', () => {
         const FFFSLocName = row.FFFSLocName
         const PlotId = row.PlotId
         const DRNOrder = row.DRNOrder
-        const displayOrder = row.Order
-        const catchmentOrder = row.CatchmentOrder
+        const DisplayOrder = row.Order
+        const Datum = row.Datum
+        const CatchmentOrder = row.CatchmentOrder
 
         const databaseResult = await request.query(`
-      select 
-        count(*) 
-      as 
-        number 
-      from 
-        fff_staging.fluvial_forecast_location
-      where 
-        CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
-        and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = '${catchmentOrder}'
-        and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
-      and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}' and DISPLAY_ORDER = '${displayOrder}'
-      `)
+          select 
+            count(*) 
+          as 
+            number 
+          from 
+            fff_staging.fluvial_forecast_location
+          where 
+            CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
+            and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = '${CatchmentOrder}'
+            and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
+            and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}' and DATUM = '${Datum}' and DISPLAY_ORDER = '${DisplayOrder}'
+        `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }

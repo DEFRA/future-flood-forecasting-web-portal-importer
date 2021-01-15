@@ -343,12 +343,53 @@ module.exports = describe('Refresh mvt data tests', () => {
       await commonCSVTestUtils.insertCSVStagingException()
       await refreshMVTDataAndCheckExpectedResults(mockResponseData2, expectedMVTData, expectedNumberOfExceptionRows2, expectedErrorDescription2)
     })
+    it('should refresh given a valid csv with string values set to NULL for upper bound and lower bound (inserting NULL values into the db via the preprocessor), with 0 exceptions', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'valid-with-NaN-bound-values.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedMVTData = [
+        {
+          CENTRE: 'CENTRE1',
+          CRITICAL_CONDITION_ID: 'dummy',
+          INPUT_LOCATION_ID: 'dummy',
+          OUTPUT_LOCATION_ID: 'dummy',
+          TARGET_AREA_CODE: 'dummy',
+          INPUT_PARAMETER_ID: 'dummy',
+          LOWER_BOUND: 'NaN1',
+          UPPER_BOUND: 'NaN2',
+          LOWER_BOUND_INCLUSIVE: 0,
+          UPPER_BOUND_INCLUSIVE: 1,
+          PRIORITY: 9
+        },
+        {
+          CENTRE: 'CENTRE2',
+          CRITICAL_CONDITION_ID: 'dummy',
+          INPUT_LOCATION_ID: 'dummy',
+          OUTPUT_LOCATION_ID: 'dummy',
+          TARGET_AREA_CODE: 'dummy',
+          INPUT_PARAMETER_ID: 'dummy',
+          LOWER_BOUND: 'NaN3',
+          UPPER_BOUND: 'NaN4',
+          LOWER_BOUND_INCLUSIVE: 0,
+          UPPER_BOUND_INCLUSIVE: 0,
+          PRIORITY: 1
+        }]
+      const expectedNumberOfExceptionRows = 0
+      // We cannot check for a null value with a WHERE clause, therefore just check the row has successfully inserted into the table.
+      const skipDetailedCheck = true
+      const expectedErrorDescription = false
+      await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck)
+    })
   })
 
-  async function refreshMVTDataAndCheckExpectedResults (mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription) {
+  async function refreshMVTDataAndCheckExpectedResults (mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck) {
     await mockFetchResponse(mockResponseData)
     await MVTRefreshFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription)
+    await checkExpectedResults(expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -377,11 +418,11 @@ module.exports = describe('Refresh mvt data tests', () => {
     context.log(`Actual data row count: ${MVTCount.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
   }
 
-  async function checkExpectedResults (expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription) {
+  async function checkExpectedResults (expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck) {
     const expectedNumberOfRows = expectedMVTData.length
     await checkResultCount(expectedNumberOfRows)
     // Check each expected row is in the database
-    if (expectedNumberOfRows > 0) {
+    if (expectedNumberOfRows > 0 && !skipDetailedCheck) {
       for (const row of expectedMVTData) {
         const databaseResult = await request.query(`
         select 

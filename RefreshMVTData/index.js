@@ -35,7 +35,7 @@ function parseBooleanString (booleanString) {
 }
 
 function returnNullForNaN (value) {
-  if (isNaN(value) || value === '') {
+  if (isNaN(value)) {
     return null
   } else {
     return value
