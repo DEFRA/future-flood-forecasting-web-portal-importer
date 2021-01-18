@@ -192,6 +192,17 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunSpan')
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunSpan', expectedData.approvedPartialTaskRunSpan)
     })
+    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration of some location names, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should NOT be deactivated by the ProcessEventCode function', async () => {
+      const messageKey = 'multiplePlotApprovedForecast'
+      await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingExceptionPartialBadLocation(pool)
+      const updatedExpectedData = expectedData[messageKey]
+      // The plot is not misspelled so ProcessEventCode will not remove this timeseries staging exception
+      updatedExpectedData.remainingTimeseriesStagingExceptions = [{
+        sourceId: 'Test Coastal Plot 2a',
+        sourceType: 'P'
+      }]
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, updatedExpectedData)
+    })
   })
 
   async function insertTimeseriesHeaderAndTimeseries (pool) {
@@ -241,6 +252,35 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
         (@id3, 'Test Coastal Plot 2a typo', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000002", "plotId": "Test Coastal Plot 2a typo"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
+    `
+    query.replace(/"/g, "'")
+    await request.query(query)
+  }
+
+  async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingExceptionPartialBadLocation (pool) {
+    const request = new sql.Request(pool)
+    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast)
+    const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
+    const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
+    const query = `
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      insert into fff_staging.timeseries_header
+        (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
+      values
+        (@id1, convert(datetime2, '${taskRunStartTime}', 126) at time zone 'utc', convert(datetime2, '${taskRunCompletionTime}', 126) at time zone 'utc', 1, 1, 'ukeafffsmc00:000000002','Test_Coastal_Workflow2', '${message}')
+      insert into fff_staging.timeseries
+        (id, fews_data, fews_parameters, timeseries_header_id, import_time)
+      values
+        (@id2, compress('fews_data'), '&plotId=Test Coastal Plot 2a&locationIds=Test Coastal Location 2a-1;&startTime=more data', @id1, getutcdate())
+      insert into fff_staging.timeseries_staging_exception
+        (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
+      values
+        (@id3, 'Test Coastal Plot 2a', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000002", "plotId": "Test Coastal Plot 2a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
     `
     query.replace(/"/g, "'")
     await request.query(query)

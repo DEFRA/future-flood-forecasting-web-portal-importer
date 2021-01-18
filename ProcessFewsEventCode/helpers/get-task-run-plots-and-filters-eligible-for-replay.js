@@ -143,8 +143,14 @@ async function getUnimportedLocationsForTaskRunPlot (context, taskRunData) {
 }
 
 async function addItemForReplay (context, taskRunData) {
-  taskRunData.itemsEligibleForReplay.push({
-    sourceId: taskRunData.plotId,
-    sourceType: 'P'
-  })
+  // Check the item does not already exist in the replay array
+  const itemFound = taskRunData.itemsEligibleForReplay.some(replayItem => replayItem.sourceId === taskRunData.plotId)
+  if (!itemFound) {
+    taskRunData.itemsEligibleForReplay.push({
+      sourceId: taskRunData.plotId,
+      sourceType: 'P'
+    })
+  } else {
+    context.log.warn(`Plot: ${taskRunData.plotId}, has already been identified as eligible for replay.`)
+  }
 }
