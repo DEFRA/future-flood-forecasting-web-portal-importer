@@ -54,8 +54,9 @@ module.exports = {
   },
   getEnvironmentVariableAsAbsoluteInteger: function (environmentVariableName) {
     let environmentVariableAsInteger
-    if (Number.isInteger(process.env[environmentVariableName])) {
-      environmentVariableAsInteger = Math.abs(Number(process.env[environmentVariableName]))
+    const parsedEnvironmentVariable = Number(process.env[environmentVariableName])
+    if (Number.isInteger(parsedEnvironmentVariable)) {
+      environmentVariableAsInteger = Math.abs(parsedEnvironmentVariable)
     }
     return environmentVariableAsInteger
   },

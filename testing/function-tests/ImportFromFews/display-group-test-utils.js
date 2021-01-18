@@ -1,5 +1,6 @@
 const moment = require('moment')
 const sql = require('mssql')
+const { isBoolean } = require('../../../Shared/utils')
 
 module.exports = {
   checkImportedData: async function (config, context, pool) {
@@ -99,7 +100,8 @@ module.exports = {
     }
 
     // The following check is for when there is an output binding named 'stagedTimeseries' active.
-    if (process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED === true) {
+    if (isBoolean(process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED) &&
+        JSON.parse(process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED)) {
       for (const stagedTimeseries of context.bindings.stagedTimeseries) {
         expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
       }
