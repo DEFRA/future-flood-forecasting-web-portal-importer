@@ -42,43 +42,43 @@ async function processMessage (transaction, context, message) {
   taskRunData.sourceFunction = 'I'
   taskRunData.getAllLocationsForWorkflowPlotWhenNoTimeseriesExist = true
 
-  if (message.taskRunId) {
+  if (message.taskRunId && (!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId)) {
     await getTimeseriesHeaderData(context, taskRunData)
-  }
-
-  if (message.taskRunId &&
-       ((!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId))) {
-    if (taskRunData.plotId) {
-      taskRunData.sourceId = taskRunData.plotId
-      taskRunData.sourceType = 'P'
-      taskRunData.sourceTypeDescription = 'plot'
-      taskRunData.buildPiServerUrlCalls = [
-        {
-          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupUrlIfPossible
-        },
-        // A fallback function that attempts to remove problematic locations from the original PI Server call
-        // if the original PI Server call fails.
-        {
-          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible
-        }
-      ]
-      // Set the CSV type as unknown until the CSV file containing the plot can be found.
-      taskRunData.csvType = 'U'
-    } else {
-      taskRunData.sourceId = taskRunData.filterId
-      taskRunData.sourceType = 'F'
-      taskRunData.sourceTypeDescription = 'filter'
-      taskRunData.buildPiServerUrlCalls = [
-        {
-          buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesUrlIfPossible
-        }
-      ]
-      taskRunData.csvType = 'N'
-    }
+    await setSourceConfig(taskRunData)
     await processMessageIfPossible(taskRunData, context, message)
   } else {
     taskRunData.errorMessage = 'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
     await createStagingException(context, taskRunData)
+  }
+}
+
+async function setSourceConfig (taskRunData) {
+  if (taskRunData.plotId) {
+    taskRunData.sourceId = taskRunData.plotId
+    taskRunData.sourceType = 'P'
+    taskRunData.sourceTypeDescription = 'plot'
+    taskRunData.buildPiServerUrlCalls = [
+      {
+        buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupUrlIfPossible
+      },
+      // A fallback function that attempts to remove problematic locations from the original PI Server call
+      // if the original PI Server call fails.
+      {
+        buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible
+      }
+    ]
+    // Set the CSV type as unknown until the CSV file containing the plot can be found.
+    taskRunData.csvType = 'U'
+  } else if (taskRunData.filterId) {
+    taskRunData.sourceId = taskRunData.filterId
+    taskRunData.sourceType = 'F'
+    taskRunData.sourceTypeDescription = 'filter'
+    taskRunData.buildPiServerUrlCalls = [
+      {
+        buildPiServerUrlIfPossibleFunction: buildPiServerGetTimeseriesUrlIfPossible
+      }
+    ]
+    taskRunData.csvType = 'N'
   }
 }
 
@@ -183,11 +183,11 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
       Accept: 'application/json'
     }
   }
-  context.log(`Retrieving data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  logTaskRunProgress(context, taskRunData, 'Retrieving data')
   const fewsResponse = await axios(axiosConfig)
-  context.log(`Retrieved data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  logTaskRunProgress(context, taskRunData, 'Retrieved data')
   taskRunData.fewsData = await minifyAndGzip(fewsResponse.data)
-  context.log(`Compressed data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  logTaskRunProgress(context, taskRunData, 'Compressed data')
 }
 
 async function processFewsDataRetrievalResults (context, taskRunData) {
@@ -214,7 +214,7 @@ async function createStagedTimeseriesMessageIfNeeded (context, timeseriesId) {
 }
 
 async function loadFewsData (context, preparedStatement, taskRunData) {
-  context.log(`Loading data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  logTaskRunProgress(context, taskRunData, 'Loading data')
   await preparedStatement.input('fewsData', sql.VarBinary)
   await preparedStatement.input('fewsParameters', sql.NVarChar)
   await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
@@ -238,5 +238,9 @@ async function loadFewsData (context, preparedStatement, taskRunData) {
   if (result.recordset && result.recordset[0] && result.recordset[0].id) {
     createStagedTimeseriesMessageIfNeeded(context, result.recordset && result.recordset[0] && result.recordset[0].id)
   }
-  context.log(`Loaded data for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  logTaskRunProgress(context, taskRunData, 'Loaded data')
+}
+
+async function logTaskRunProgress (context, taskRunData, messageContext) {
+  context.log(`${messageContext} for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 }

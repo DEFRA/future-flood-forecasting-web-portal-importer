@@ -1,8 +1,8 @@
-const replayEligibleTimeseriesStagingExceptions = require('./message-replay/replay-eligible-timeseries-staging-exceptions')
-const deleteCsvStagingExceptions = require('./csv-load/failed-csv-load-handler/delete-csv-staging-exception')
-const replayEligibleStagingExceptions = require('./message-replay/replay-eligible-staging-exceptions')
-const { doInTransaction, executePreparedStatementInTransaction } = require('./transaction-helper')
-const loadExceptions = require('./csv-load/failed-csv-load-handler/load-csv-exceptions')
+const replayEligibleTimeseriesStagingExceptions = require('../message-replay/replay-eligible-timeseries-staging-exceptions')
+const deleteCsvStagingExceptions = require('./failed-csv-load-handler/delete-csv-staging-exception')
+const replayEligibleStagingExceptions = require('../message-replay/replay-eligible-staging-exceptions')
+const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
+const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -176,7 +176,7 @@ async function refreshInternal (context, preparedStatement, refreshData) {
     }
 
     const csvLoadResult = await new sql.Request(transaction).query(refreshData.countStatement)
-    context.log.info(`The ${refreshData.csvSourceFile} table now contains ${csvLoadResult.recordset[0].number} new/updated records`)
+    context.log.info(`The ${refreshData.tableName} table now contains ${csvLoadResult.recordset[0].number} new/updated records`)
     if (csvLoadResult.recordset[0].number === 0) {
       // If all the records in the csv were invalid, this query needs rolling back to avoid a blank database overwrite.
       await transaction.rollback()

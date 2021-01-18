@@ -1,9 +1,9 @@
-const refresh = require('../Shared/shared-refresh-csv-rows')
+const commonCoastalLocationRefreshData = require('../Shared/csv-load/common-refresh-data')
+const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
 
 module.exports = async function (context) {
-  const refreshData = {
+  const localRefreshData = {
     csvUrl: process.env.COASTAL_MVT_FORECAST_LOCATION_URL,
-    tableName: 'coastal_forecast_location',
     csvSourceFile: 'mvt coastal location',
     deleteStatement: 'delete from fff_staging.coastal_forecast_location where coastal_type = \'Multivariate Thresholds\'',
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'Multivariate Thresholds\'',
@@ -12,16 +12,12 @@ module.exports = async function (context) {
         fff_staging.coastal_forecast_location (fffs_loc_id, coastal_order, centre, mfdo_area, ta_name, coastal_type)
       values 
         (@fffs_loc_id, @coastal_order, @centre, @mfdo_area, @ta_name, @coastal_type)`,
-    // Column information and corresponding csv information
     functionSpecificData: [
-      { tableColumnName: 'FFFS_LOC_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
-      { tableColumnName: 'COASTAL_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CoastalOrder' },
-      { tableColumnName: 'CENTRE', tableColumnType: 'NVarChar', expectedCSVKey: 'Centre' },
       { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
-      { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' },
-      { tableColumnName: 'COASTAL_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'Type' }
+      { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' }
     ]
   }
-
+  const refreshData = Object.assign(localRefreshData, commonCoastalLocationRefreshData.commonRefreshData)
+  refreshData.functionSpecificData.push(...commonCoastalLocationRefreshData.commonCoastalLocationFunctionSpecificData)
   await refresh(context, refreshData)
 }

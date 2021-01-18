@@ -35,15 +35,10 @@ const deleteAndTransferAggregatedRecordQueries = {
 module.exports = async function refreshDisplayGroupTable (transaction, context, tempTableName, tableName) {
   try {
     const tempRecordCount = await countTableRecords(context, transaction, tempTableName, countQueries[tempTableName])
-    // Do not refresh the display_group_workflow table if the local temporary table is empty.
-    if (tempRecordCount > 0) {
-      const request = new sql.Request(transaction)
-      // Concatenate all locations for each combination of workflow ID and plot ID.
-      await request.batch(deleteAndTransferAggregatedRecordQueries[tableName])
-    } else {
-      // If the csv is empty then the file is essentially ignored
-      context.log.warn(`${tempTableName} contains no records - Aborting ${tableName} refresh`)
-    }
+    context.log.info(`There are ${tempRecordCount} rows in the temp table. Now commencing concatenation of locations for each combination of workflow ID and plot ID.`)
+    const request = new sql.Request(transaction)
+    // Concatenate all locations for each combination of workflow ID and plot ID.
+    await request.batch(deleteAndTransferAggregatedRecordQueries[tableName])
 
     const recordCount = await countTableRecords(context, transaction, `fff_staging.${tableName}`, countQueries[tableName])
     if (recordCount === 0) {
