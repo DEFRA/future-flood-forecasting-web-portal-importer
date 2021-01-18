@@ -4,6 +4,7 @@ const Context = require('../mocks/defaultContext')
 const timer = require('../mocks/defaultTimer')
 const moment = require('moment')
 const sql = require('mssql')
+const { getEnvironmentVariableAsAbsoluteInteger } = require('../../../Shared/utils')
 
 module.exports = describe('Timeseries data deletion tests', () => {
   let context
@@ -30,8 +31,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       context = new Context()
       delete process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
       delete process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT
-      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 240
-      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 200
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = '240'
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = '200'
       hardLimit = parseInt(process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)
       softLimit = process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT ? parseInt(process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT) : hardLimit
       // The order of deletion is sentiive to referential integrity
@@ -182,12 +183,12 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.'))
     })
     it('Should prevent deletion if the DELETE_EXPIRED_TIMESERIES_HARD_LIMIT is 0 hours', async () => {
-      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 0
-      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.'))
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = '0'
+      await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT must be an integer greater than 0.'))
     })
     it('Should prevent deletion with a soft limit set higher than the hard limit', async () => {
-      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = 51
-      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = 50
+      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = '51'
+      process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = '50'
 
       await expect(runTimerFunction()).rejects.toEqual(new Error('DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT must be an integer and less than or equal to the hard-limit.'))
     })
@@ -287,7 +288,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
 
       const expectedNumberofRows = 0
 
-      process.env.TIMESERIES_DELETE_BATCH_SIZE = 1
+      process.env.TIMESERIES_DELETE_BATCH_SIZE = '1'
 
       const importDate = await createImportDate(importDateStatus)
       await insertMultipleRowsIntoEachTableForOneHeaderRecord(importDate, statusCode, testDescription)
@@ -615,7 +616,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest2 = new sql.Request(transaction2)
       // Copy the lock timeout period
       let lockTimeoutValue
-      process.env.SQLDB_LOCK_TIMEOUT ? lockTimeoutValue = process.env.SQLDB_LOCK_TIMEOUT : lockTimeoutValue = 6500
+      process.env.SQLDB_LOCK_TIMEOUT ? lockTimeoutValue = getEnvironmentVariableAsAbsoluteInteger(process.env.SQLDB_LOCK_TIMEOUT) : lockTimeoutValue = 6500
       const query2 =
         `set lock_timeout ${lockTimeoutValue}
          select * from fff_reporting.TIMESERIES_JOB
@@ -650,7 +651,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const newRequest2 = new sql.Request(transaction2)
       // Copy the lock timeout period
       let lockTimeoutValue
-      process.env.SQLDB_LOCK_TIMEOUT ? lockTimeoutValue = process.env.SQLDB_LOCK_TIMEOUT : lockTimeoutValue = 6500
+      process.env.SQLDB_LOCK_TIMEOUT ? lockTimeoutValue = getEnvironmentVariableAsAbsoluteInteger(process.env.SQLDB_LOCK_TIMEOUT) : lockTimeoutValue = 6500
       const query2 =
         `set lock_timeout ${lockTimeoutValue}
          select * from fff_reporting.TIMESERIES_JOB ${isolationHintSet ? 'with (readcommittedlock)' : ''}

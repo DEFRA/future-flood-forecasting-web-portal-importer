@@ -151,8 +151,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     it('should allow the default forecast start-time and end-time to be overridden using environment variables', async () => {
       const originalEnvironment = process.env
       try {
-        process.env.FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS = 24
-        process.env.FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS = 48
+        process.env.FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS = '24'
+        process.env.FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS = '48'
         const mockResponse = {
           data: {
             key: 'Timeseries display groups data'
@@ -267,7 +267,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         }
       }
 
-      process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = true // in this case the build script would contain function.json with an output binding
+      process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED = 'true' // in this case the build script would contain function.json with an output binding
       context.bindingDefinitions = [{ direction: 'out', name: 'stagedTimeseries', type: 'serviceBus' }]
 
       const config = {
