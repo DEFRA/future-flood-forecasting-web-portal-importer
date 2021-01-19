@@ -29,15 +29,20 @@ module.exports = async function (context) {
 }
 
 async function createDisplayGroupTemporaryTable (transaction, context) {
-  // Create a local temporary table to hold coastal_display_group CSV data.
+  // Ensure a local temporary table exists to hold coastal_display_group CSV data.
+  // Deletion of the local temporary table associated with the pooled database connection
+  // is not managed by connection reset (see http://tediousjs.github.io/tedious/api-connection.html#function_reset)
+  // as this appears to cause intermittent connection state problems.
+  // Deletion of the local temporary table associated with the pooled database connection is performed manually.
   await new sql.Request(transaction).batch(`
-      create table #coastal_display_group_workflow_temp
-      (
-        id uniqueidentifier not null default newid(),
-        workflow_id nvarchar(64) not null,
-        plot_id nvarchar(64) not null,
-        location_id nvarchar(64) not null
-      )
+    drop table if exists #coastal_display_group_workflow_temp;
+    create table #coastal_display_group_workflow_temp
+    (
+      id uniqueidentifier not null default newid(),
+      workflow_id nvarchar(64) not null,
+      plot_id nvarchar(64) not null,
+      location_id nvarchar(64) not null
+    );
   `)
 }
 

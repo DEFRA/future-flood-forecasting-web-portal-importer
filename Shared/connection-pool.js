@@ -30,9 +30,11 @@ module.exports = function () {
     server: process.env.SQLDB_SERVER,
     database: process.env.SQLDB_DATABASE,
     requestTimeout: requestTimeout || 60000,
+    maxRetriesOnTransientErrors: 20,
     pool: {
       min: minPooledConnections || maxConcurrentCalls + 1,
-      max: maxPooledConnections || maxConcurrentCalls * 2
+      max: maxPooledConnections || maxConcurrentCalls * 2,
+      propagateCreateError: false
     }
   }
 

@@ -38,6 +38,8 @@ async function doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsA
               source_type
             from
               fff_staging.timeseries t
+            -- Ignore locked records
+            with (readpast)
             where
               t.timeseries_header_id = th.id
             union
@@ -46,6 +48,8 @@ async function doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsA
               source_type
             from
               fff_staging.v_active_timeseries_staging_exception tse
+            -- Ignore locked records
+            with (readpast)
             where
               tse.timeseries_header_id = th.id
           )

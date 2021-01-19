@@ -3,6 +3,7 @@ const deleteStagingExceptions = require('./deleteStagingExceptions')
 const insertDataIntoTemp = require('./insertDataIntoTempTable')
 const moment = require('moment')
 const sql = require('mssql')
+const dropTempTableSql = 'drop table if exists #deletion_job_temp;'
 
 const deleteQueries = {
   reporting_timeseries_job: `
@@ -79,6 +80,7 @@ async function removeExpiredTimeseries (transaction, context) {
   await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries', deleteQueries.staging_timeseries)
   await executePreparedStatementInTransaction(deleteRecords, context, transaction, 'fff_staging.timeseries_header', deleteQueries.staging_timeseries_header)
   await deleteStagingExceptions(context, transaction, hardDate, deleteRowBatchSize)
+  await dropTempTable(context, transaction)
 }
 
 async function setDeletionDates (context) {
@@ -109,29 +111,38 @@ async function setDeletionDates (context) {
 
 async function createTempTable (transaction, context) {
   context.log.info('Building temp table')
-  // Create a local temporary table to store deletion jobs
+  // Ensure a local temporary table exists to store deletion jobs.
+  // Deletion of the local temporary table associated with the pooled database connection
+  // is not managed by connection reset (see http://tediousjs.github.io/tedious/api-connection.html#function_reset)
+  // as this appears to cause intermittent connection state problems.
+  // Deletion of the local temporary table associated with the pooled database connection is performed manually.
   await new sql.Request(transaction).batch(`
-      create table #deletion_job_temp
-      (
-        reporting_id uniqueidentifier,
-        timeseries_id uniqueidentifier,
-        timeseries_header_id uniqueidentifier not null,
-        exceptions_id uniqueidentifier,
-        import_time datetimeoffset,
-      )
-      CREATE CLUSTERED INDEX ix_deletion_job_temp_reporting_id
-        ON #deletion_job_temp (reporting_id)
-      CREATE INDEX ix_deletion_job_temp_timeseries_id
-        ON #deletion_job_temp (timeseries_id)
-      CREATE INDEX ix_deletion_job_temp_timeseries_header_id
-        ON #deletion_job_temp (timeseries_header_id)
-      CREATE INDEX ix_deletion_job_temp_exceptions_id
-        ON #deletion_job_temp (exceptions_id)
-    `)
+    drop table if exists #deletion_job_temp;
+    create table #deletion_job_temp
+    (
+      reporting_id uniqueidentifier,
+      timeseries_id uniqueidentifier,
+      timeseries_header_id uniqueidentifier not null,
+      exceptions_id uniqueidentifier,
+      import_time datetimeoffset,
+    );
+    create clustered index ix_deletion_job_temp_reporting_id
+      on #deletion_job_temp (reporting_id);
+    create index ix_deletion_job_temp_timeseries_id
+      on #deletion_job_temp (timeseries_id);
+    create index ix_deletion_job_temp_timeseries_header_id
+      on #deletion_job_temp (timeseries_header_id);
+    create index ix_deletion_job_temp_exceptions_id
+      on #deletion_job_temp (exceptions_id);
+  `)
 }
 
 async function deleteRecords (context, preparedStatement, tableName, deleteQuery) {
   await preparedStatement.prepare(deleteQuery + ';select @@rowcount as deleted')
   const result = await preparedStatement.execute()
   context.log.info(`The 'DeleteExpiredTimeseries' function has deleted ${result.recordset[0].deleted} rows from the ${tableName} table.`)
+}
+
+async function dropTempTable (context, transaction) {
+  await new sql.Request(transaction).batch(dropTempTableSql)
 }
