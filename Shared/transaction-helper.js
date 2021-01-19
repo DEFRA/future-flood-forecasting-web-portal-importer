@@ -33,7 +33,6 @@ module.exports = {
               context.log.warn('The transaction has been aborted.')
             } else if (transaction._rollbackRequested) {
               await resetConnectionAndEndTransaction(context, transaction)
-              await transaction.rollback()
               context.log.warn('Transaction rollback has been requested.')
             } else {
               await resetConnectionAndEndTransaction(context, transaction, transaction.rollback.bind(transaction))
