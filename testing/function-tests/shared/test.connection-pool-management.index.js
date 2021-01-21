@@ -43,6 +43,8 @@ module.exports = describe('Test connection pool management', () => {
         expect(connection.config.options.requestTimeout).toBe(parseInt(process.env.SQLDB_REQUEST_TIMEOUT_MILLIS))
         expect(connection.config.options.maxRetriesOnTransientErrors).toBe(parseInt(process.env.SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS))
         expect(connection.config.options.packetSize).toBe(parseInt(process.env.SQLDB_PACKET_SIZE))
+        expect(pool.pool.max).toBe(parseInt(process.env.SQLDB_MAX_POOLED_CONNECTIONS))
+        expect(pool.pool.min).toBe(parseInt(process.env.SQLDB_MIN_POOLED_CONNECTIONS))
         expect(pool.pool.acquireTimeoutMillis).toBe(parseInt(process.env.SQLDB_ACQUIRE_TIMEOUT_MILLIS))
         expect(pool.pool.createTimeoutMillis).toBe(parseInt(process.env.SQLDB_CREATE_TIMEOUT_MILLIS))
         expect(pool.pool.destroyTimeoutMillis).toBe(parseInt(process.env.SQLDB_DESTROY_TIMEOUT_MILLIS))
