@@ -38,6 +38,7 @@ module.exports = describe('Test connection pool management', () => {
         connection = await pool.acquire()
         expect(connection.config.options.port).toBe(parseInt(process.env.SQLDB_PORT))
         expect(connection.config.options.abortTransactionOnError).toBe(true)
+        expect(connection.config.options.enableNumericRoundabort).toBe(false)
         expect(connection.config.options.connectTimeout).toBe(parseInt(process.env.SQLDB_CONNECTION_TIMEOUT_MILLIS))
         expect(connection.config.options.requestTimeout).toBe(parseInt(process.env.SQLDB_REQUEST_TIMEOUT_MILLIS))
         expect(connection.config.options.maxRetriesOnTransientErrors).toBe(parseInt(process.env.SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS))

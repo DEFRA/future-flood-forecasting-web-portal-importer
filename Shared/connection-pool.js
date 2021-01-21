@@ -18,6 +18,9 @@ module.exports = function () {
     database: process.env.SQLDB_DATABASE,
     requestTimeout: numericEnvironmentVariables.requestTimeout || 60000,
     options: {
+      // Do not raise an error during loss of precision as this must be disabled for certain operations
+      // (see https://docs.microsoft.com/en-us/sql/t-sql/statements/set-numeric-roundabort-transact-sql?view=sql-server-ver15).
+      enableNumericRoundabort: false
     },
     pool: {
       min: numericEnvironmentVariables.minPooledConnections || maxConcurrentCalls + 1,
