@@ -103,13 +103,14 @@ async function beginTransaction (context, isolationLevel) {
 }
 
 async function resetConnectionAndEndTransaction (context, transaction, endTransactionFunction) {
-  // Restore the default transaction isolation level before returning the connection to the pool
+  // Restore the default transaction isolation level before returning the connection to the pool.
+  // NOTE - The reset function of the pooled connection (see http://tediousjs.github.io/tedious/api-connection.html#function_reset)
+  // is not used as this appears to cause intermittent connection state problems. Individual functions are responsible
+  // for performing operations that are part of returning a pooled connection to its initial state (such as dropping local temporary tables).
   const request = new sql.Request(transaction)
   await request.batch('set transaction isolation level read committed')
   // Commit or rollback the transaction
   await endTransactionFunction()
-  // Do not use the reset function of the pooled connection (see http://tediousjs.github.io/tedious/api-connection.html#function_reset)
-  // as this appears to cause intermittent connection state problems.
 }
 
 async function initialiseConnectionPool () {
