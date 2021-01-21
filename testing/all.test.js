@@ -17,6 +17,8 @@ describe('Run all unit tests in sequence', () => {
   })
 
   afterAll(async () => {
+    // When all tests run successfully, the connection pool used by the function app will be closed
+    // already. Attempt to close it again to increase test coverage.
     await transactionHelper.closeConnectionPool()
   })
 
@@ -64,4 +66,5 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ImportFromFews/test.timeseriesIgnoredWorkflow.index')
   require('./function-tests/ReplayImportFromFews/test.index')
   require('./function-tests/shared/test.connection-analysis.index')
+  require('./function-tests/shared/test.connection-pool-management.index')
 })
