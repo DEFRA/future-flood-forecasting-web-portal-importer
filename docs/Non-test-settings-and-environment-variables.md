@@ -115,6 +115,9 @@ accordingly.
 | SQLDB_IDLE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) idle resource timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) idleTimeoutMillis default) |
 | SQLDB_REAP_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to check for idle resources to destroy (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) reapIntervalMillis default) |
 | SQLDB_CREATE_RETRY_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to wait before retrying a failed creation operation (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createRetryIntervalMillis default) |
+| SQLDB_PROPAGATE_CREATE_ERROR | [mssql node module](https://www.npmjs.com/package/mssql) boolean determining if the first pending acquire is
+  rejected when a create operation fails. If this is false (the default) then the create operation is retried until the acquisition timeout has
+  passed (uses the mssql module default.) |
 | SQLDB_LOCK_TIMEOUT | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                                                                                                  |
 | FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS | The number of hours before task run completion time that core forecasting engine display group data should be retrieved (defaults to 14)                                                                                                     |
 | FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS   | The number of hours after task run completion time that core forecasting engine display group data should be retrieved (defaults to 120)                                                                                                     |

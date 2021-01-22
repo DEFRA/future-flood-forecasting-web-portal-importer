@@ -21,6 +21,7 @@ module.exports = describe('Test connection pool management', () => {
       process.env.SQLDB_IDLE_TIMEOUT_MILLIS = '55000'
       process.env.SQLDB_REAP_INTERVAL_MILLIS = '2000'
       process.env.SQLDB_CREATE_RETRY_INTERVAL_MILLIS = '300'
+      process.env.SQLDB_PROPAGATE_CREATE_ERROR = 'true'
       const connectionPool = new ConnectionPool()
       pool = connectionPool.pool
       await pool.connect()

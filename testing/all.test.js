@@ -67,4 +67,5 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ReplayImportFromFews/test.index')
   require('./function-tests/shared/test.connection-analysis.index')
   require('./function-tests/shared/test.connection-pool-management.index')
+  require('./function-tests/shared/test.invalid-environment-variable-based-configuration')
 })

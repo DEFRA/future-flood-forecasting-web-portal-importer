@@ -1,16 +1,17 @@
-const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
-const { pipeline, Transform } = require('stream')
 const JSONStream = require('jsonstream-next')
+const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
+const { logger } = require('defra-logging-facade')
+const { pipeline, Transform } = require('stream')
 const { createGzip } = require('zlib')
 const { promisify } = require('util')
 const pipe = promisify(pipeline)
 
-module.exports = {
+const self = module.exports = {
   isBoolean: function (value) {
     if (typeof (value) === 'boolean') {
       return true
     } else if (typeof (value) === 'string') {
-      return !!value.match(/true|false/i)
+      return !!value.match(/^true|false$/i)
     } else {
       return false
     }
@@ -85,5 +86,24 @@ module.exports = {
       context.log('Non-zero offset required.')
       return null
     }
+  },
+  getEnvironmentVariableAsPositiveIntegerInRange: function (config) {
+    let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
+    const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
+    if (!Number.isInteger(Number(config.minimum))) {
+      environmentVariableAsInteger = undefined
+      loggingFunction(`Ignoring ${config.environmentVariableName} - minimum value must be specified`)
+    }
+    if (!Number.isInteger(Number(config.maximum))) {
+      environmentVariableAsInteger = undefined
+      loggingFunction(`Ignoring ${config.environmentVariableName} - maximum value must be specified`)
+    }
+    if (Number.isInteger(Number(environmentVariableAsInteger)) &&
+        (environmentVariableAsInteger < config.minimum ||
+         environmentVariableAsInteger > config.maximum)) {
+      environmentVariableAsInteger = undefined
+      loggingFunction(`Ignoring ${config.environmentVariableName} - value must be between ${config.minimum} and ${config.maximum}`)
+    }
+    return environmentVariableAsInteger
   }
 }

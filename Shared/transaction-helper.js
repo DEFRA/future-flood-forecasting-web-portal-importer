@@ -133,7 +133,7 @@ async function initialiseConnectionPool () {
   for (let index = 0; index < pooledConnections.length; index++) {
     await pool.release(pooledConnections[index])
   }
-  logger.info(`Initialised connection pool with ${pool.pool.min} connections`)
+  logger.info(`Initialised connection pool with ${pool.pool.min} connection(s)`)
 }
 
 // Ensure the connection pool is initialised before any messages are processed.
