@@ -3,15 +3,15 @@ if (process.env.TEST_TIMEOUT) {
 }
 
 describe('Run all unit tests in sequence', () => {
-  const OLD_ENV = process.env
+  const ORIGINAL_ENV = Object.freeze(process.env)
 
   beforeEach(() => {
-    process.env = { ...OLD_ENV }
+    process.env = { ...ORIGINAL_ENV }
     jest.resetAllMocks()
   })
 
   afterEach(() => {
-    process.env = OLD_ENV
+    process.env = { ...ORIGINAL_ENV }
   })
 
   // A custom Jest matcher to test table timeouts
