@@ -9,7 +9,7 @@ module.exports = function () {
   // - some custom defaults
   // - selected environment variable based customisation.
   const numericEnvironmentVariables = getNumericEnvironmentVariables()
-  const maxConcurrentCalls = hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls
+  const maxConcurrentCalls = Math.max(1, Math.min(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls, 10))
 
   const config = {
     user: process.env.SQLDB_USER,
