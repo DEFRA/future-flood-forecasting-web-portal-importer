@@ -5,7 +5,7 @@
 | name                                      | description                                                                                           |
 |-------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics) |
-| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted.                     |
+| AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted (1 to 10 inclusive). |
 | DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION | The expression dictating how often stale timeseries data is removed from staging.                     |
 
 ## Optional Build Time Environment Variables
@@ -101,20 +101,20 @@ accordingly.
 
 | name                         | description                                                                                                                                                                                                                    |
 |------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| SQLDB_PORT | [mssql node module](https://www.npmjs.com/package/mssql) database port (uses the mssql module default))
-| SQLDB_CONNECTION_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database connection timeout (uses the mssql module default) |
-| SQLDB_REQUEST_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database request timeout (defaults to 60000ms) |
-| SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS | [mssql node module](https://www.npmjs.com/package/mssql) maximum number of connection retries for transient errors (uses the underlying [tedious module](http://tediousjs.github.io/tedious/api-connection.html) default |
-| SQLDB_PACKET_SIZE | [mssql node module](https://www.npmjs.com/package/mssql) database packet size (uses the underlying [tedious module](http://tediousjs.github.io/tedious/api-connection.html) default |
+| SQLDB_PORT | [mssql node module](https://www.npmjs.com/package/mssql) database port (1024 to 49151 inclusive - uses the mssql module default))
+| SQLDB_CONNECTION_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database connection timeout (15000 to 60000 inclusive - uses the mssql module default) |
+| SQLDB_REQUEST_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database request timeout (15000 to 120000 inclusive - defaults to 60000ms) |
+| SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS | [mssql node module](https://www.npmjs.com/package/mssql) maximum number of connection retries for transient errors (3 to 20 inclusive - uses the underlying [tedious module](http://tediousjs.github.io/tedious/api-connection.html) default |
+| SQLDB_PACKET_SIZE | [mssql node module](https://www.npmjs.com/package/mssql) database packet size (a power of two between 4096 and 65536 inclusive - uses the underlying [tedious module](http://tediousjs.github.io/tedious/api-connection.html) default |
 | SQLDB_ABORT_TRANSACTION_ON_ERROR | [mssql node module](https://www.npmjs.com/package/mssql) boolean determining whether to rollback a transaction automatically if any error is encountered during the given transaction's execution. This sets the value for XACT_ABORT during the initial SQL phase of a connection (uses the mssql module default.) |
-| SQLDB_MAX_POOLED_CONNECTIONS | [mssql node module](https://www.npmjs.com/package/mssql) maximum connection pool size (defaults to AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS * 2) |
-| SQLDB_MIN_POOLED_CONNECTIONS  | [mssql node module](https://www.npmjs.com/package/mssql) minimum connection pool size (defaults to AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS + 1) |
-| SQLDB_ACQUIRE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database resource acquisition timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) acquireTimeoutMillis default) |
-| SQLDB_CREATE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) creation operation timeout if a resource cannot be acquired (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createTimeoutMillis default) |
-| SQLDB_DESTROY_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) destroy operation timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) destroyTimeoutMillis default) |
-| SQLDB_IDLE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) idle resource timeout (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) idleTimeoutMillis default) |
-| SQLDB_REAP_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to check for idle resources to destroy (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) reapIntervalMillis default) |
-| SQLDB_CREATE_RETRY_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to wait before retrying a failed creation operation (uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createRetryIntervalMillis default) |
+| SQLDB_MAX_POOLED_CONNECTIONS | [mssql node module](https://www.npmjs.com/package/mssql) maximum connection pool size (1 to 20 inclusive - defaults to AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS * 2) |
+| SQLDB_MIN_POOLED_CONNECTIONS  | [mssql node module](https://www.npmjs.com/package/mssql) minimum connection pool size (1 to 20 inclusive - defaults to AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS + 1) |
+| SQLDB_ACQUIRE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database resource acquisition timeout (5000 to 120000 inclusive - uses the underlying [tarn module](https://www.npmjs.com/package/tarn) acquireTimeoutMillis default) |
+| SQLDB_CREATE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) creation operation timeout if a resource cannot be acquired (5000 to 120000 inclusive- uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createTimeoutMillis default) |
+| SQLDB_DESTROY_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) destroy operation timeout (5000 to 30000 inclusive - uses the underlying [tarn module](https://www.npmjs.com/package/tarn) destroyTimeoutMillis default) |
+| SQLDB_IDLE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) idle resource timeout (5000 to 120000 inclusive- uses the underlying [tarn module](https://www.npmjs.com/package/tarn) idleTimeoutMillis default) |
+| SQLDB_REAP_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to check for idle resources to destroy (1000 to 30000 inclusive - uses the underlying [tarn module](https://www.npmjs.com/package/tarn) reapIntervalMillis default) |
+| SQLDB_CREATE_RETRY_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to wait before retrying a failed creation operation (200 to 5000 inclusive - uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createRetryIntervalMillis default) |
 | SQLDB_PROPAGATE_CREATE_ERROR | [mssql node module](https://www.npmjs.com/package/mssql) boolean determining if the first pending acquire is
   rejected when a create operation fails. If this is false (the default) then the create operation is retried until the acquisition timeout has
   passed (uses the mssql module default.) |
