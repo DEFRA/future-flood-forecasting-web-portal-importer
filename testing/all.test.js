@@ -5,7 +5,7 @@ if (process.env.TEST_TIMEOUT) {
 }
 
 describe('Run all unit tests in sequence', () => {
-  const ORIGINAL_ENV = Object.freeze(process.env)
+  const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV }
@@ -13,7 +13,7 @@ describe('Run all unit tests in sequence', () => {
   })
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV }
+    process.env = ORIGINAL_ENV
   })
 
   afterAll(async () => {
