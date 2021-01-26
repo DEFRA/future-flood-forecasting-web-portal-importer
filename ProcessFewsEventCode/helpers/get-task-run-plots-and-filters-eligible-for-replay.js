@@ -128,21 +128,21 @@ async function getUnimportedLocationsForTaskRunPlot (context, taskRunData) {
   try {
     const unimportedLocationIds = await getLocationsToImportForTaskRunPlot(context, taskRunData)
     if (unimportedLocationIds) {
-      await addItemForReplay(context, taskRunData)
+      await addPlotItemForReplay(context, taskRunData)
     }
   } catch (err) {
     if (err instanceof TimeseriesStagingError) {
       // The workflow exists in neither or both of the coastal and fluvial CSVs. Add the plot to the list of items
       // to be replayed so that it is still processed by the ImportFromFews function (causing a TimeseriesStagingException
       // to be created).
-      await addItemForReplay(context, taskRunData)
+      await addPlotItemForReplay(context, taskRunData)
     } else {
       throw err
     }
   }
 }
 
-async function addItemForReplay (context, taskRunData) {
+async function addPlotItemForReplay (context, taskRunData) {
   // Check the item associated with a plot does not already exist in the replay array.
   // Only plots are subject to repeat additions to the replay array.
   const plotItemExists = taskRunData.itemsEligibleForReplay.some(replayItem =>
