@@ -20,7 +20,11 @@ const TimeseriesStagingError = require('../Shared/timeseries-functions/timeserie
 
 module.exports = async function (context, message) {
   context.log(`Processing timeseries import message: ${JSON.stringify(message)}`)
-  await doInTransaction(processMessage, context, 'The FEWS data import function has failed with the following error:', null, message)
+  const taskRunData = Object.assign({}, message)
+  await doInTransaction(processMessage, context, 'The FEWS data import function has failed with the following error:', null, message, taskRunData)
+  // If all plots/filters for the task run have been processed, associated staging exceptions can be deactivated.
+  // This is performed in a new transaction to avoid deadlocks when plots/filters are processed concurrently.
+  await doInTransaction(deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible, context, 'The FEWS data import function has failed with the following error:', null, taskRunData)
 }
 
 async function processMessageIfPossible (taskRunData, context, message) {
@@ -35,8 +39,7 @@ async function processMessageIfPossible (taskRunData, context, message) {
   }
 }
 
-async function processMessage (transaction, context, message) {
-  const taskRunData = Object.assign({}, message)
+async function processMessage (transaction, context, message, taskRunData) {
   taskRunData.transaction = transaction
   taskRunData.message = message
   taskRunData.sourceFunction = 'I'
@@ -134,7 +137,6 @@ async function importFromFews (context, taskRunData) {
       await retrieveFewsData(context, taskRunData)
       if (taskRunData.fewsData) {
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
-        await deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible(context, taskRunData)
       }
     } else {
       context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +

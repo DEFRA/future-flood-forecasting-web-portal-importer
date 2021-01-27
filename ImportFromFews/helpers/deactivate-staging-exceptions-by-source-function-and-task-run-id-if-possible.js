@@ -2,18 +2,17 @@ const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../../Sh
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
-module.exports = async function (context, taskRunData) {
+module.exports = async function (transaction, context, taskRunData) {
   // Staging exceptions created by the ImportFromFews function for a task run can be deactivated
   // if a timeseries or timeseries staging exception exists for every plot/filter of the associated workflow.
-  if (await executePreparedStatementInTransaction(doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)) {
+  if (await executePreparedStatementInTransaction(doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsAndFilters, context, transaction, taskRunData)) {
+    taskRunData.transaction = transaction
     await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
   }
 }
 
 async function doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsAndFilters (context, preparedStatement, taskRunData) {
   await preparedStatement.input('taskRunId', sql.NVarChar)
-  await preparedStatement.input('sourceId', sql.NVarChar)
-  await preparedStatement.input('sourceType', sql.NVarChar)
 
   await preparedStatement.prepare(`
     select
@@ -53,11 +52,9 @@ async function doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsA
   `)
 
   const parameters = {
-    taskRunId: taskRunData.taskRunId,
-    sourceId: taskRunData.message.plotId ? taskRunData.message.plotId : taskRunData.message.filterId,
-    sourceType: taskRunData.message.plotId ? 'P' : 'F'
+    taskRunId: taskRunData.taskRunId
   }
 
   const result = await preparedStatement.execute(parameters)
-  return !!(result.recordset && result.recordset[0])
+  return Promise.resolve(!!(result.recordset && result.recordset[0]))
 }

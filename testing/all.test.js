@@ -1,9 +1,11 @@
+const transactionHelper = require('../Shared/transaction-helper')
+
 if (process.env.TEST_TIMEOUT) {
   jest.setTimeout(parseInt(process.env.TEST_TIMEOUT))
 }
 
 describe('Run all unit tests in sequence', () => {
-  const ORIGINAL_ENV = Object.freeze(process.env)
+  const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV }
@@ -11,7 +13,13 @@ describe('Run all unit tests in sequence', () => {
   })
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV }
+    process.env = ORIGINAL_ENV
+  })
+
+  afterAll(async () => {
+    // When all tests run successfully, the connection pool used by the function app will be closed
+    // already. Attempt to close it again to increase test coverage.
+    await transactionHelper.closeConnectionPool()
   })
 
   // A custom Jest matcher to test table timeouts
@@ -58,4 +66,6 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ImportFromFews/test.timeseriesIgnoredWorkflow.index')
   require('./function-tests/ReplayImportFromFews/test.index')
   require('./function-tests/shared/test.connection-analysis.index')
+  require('./function-tests/shared/test.connection-pool-management.index')
+  require('./function-tests/shared/test.invalid-environment-variable-based-configuration')
 })
