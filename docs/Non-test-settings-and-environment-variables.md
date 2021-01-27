@@ -34,7 +34,7 @@ This prevents core forecasting engine messages from being processed until suppor
 
 | name                                             | description                                                                                    |
 |--------------------------------------------------|------------------------------------------------------------------------------------------------|
-| APPINSIGHTS_INSTRUMENTATIONKEY                   | Instrumention key controlling if telemetry is sent to the ApplicationInsights service          |
+| APPINSIGHTS_INSTRUMENTATIONKEY                   | Instrumentation key controlling if telemetry is sent to the ApplicationInsights service          |
 | AzureWebJobsServiceBus                           | Service bus connection string used by the function app                                         |
 | AzureWebJobsStorage                              | Storage account connection string used by the function app                                     |
 | AZURE_STORAGE_CONNECTION_STRING                  | Storage account connection string used by the function app                                     |
@@ -115,9 +115,7 @@ accordingly.
 | SQLDB_IDLE_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) idle resource timeout (5000 to 120000 inclusive- uses the underlying [tarn module](https://www.npmjs.com/package/tarn) idleTimeoutMillis default) |
 | SQLDB_REAP_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to check for idle resources to destroy (1000 to 30000 inclusive - uses the underlying [tarn module](https://www.npmjs.com/package/tarn) reapIntervalMillis default) |
 | SQLDB_CREATE_RETRY_INTERVAL_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) interval to wait before retrying a failed creation operation (200 to 5000 inclusive - uses the underlying [tarn module](https://www.npmjs.com/package/tarn) createRetryIntervalMillis default) |
-| SQLDB_PROPAGATE_CREATE_ERROR | [mssql node module](https://www.npmjs.com/package/mssql) boolean determining if the first pending acquire is
-  rejected when a create operation fails. If this is false (the default) then the create operation is retried until the acquisition timeout has
-  passed (uses the mssql module default.) |
+| SQLDB_PROPAGATE_CREATE_ERROR | [mssql node module](https://www.npmjs.com/package/mssql) boolean determining if the first pending acquire is rejected when a create operation fails. If this is false (the default) then the create operation is retried until the acquisition timeout has passed (uses the mssql module default.) |
 | SQLDB_LOCK_TIMEOUT | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                                                                                                  |
 | FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS | The number of hours before task run completion time that core forecasting engine display group data should be retrieved (defaults to 14)                                                                                                     |
 | FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS   | The number of hours after task run completion time that core forecasting engine display group data should be retrieved (defaults to 120)                                                                                                     |
