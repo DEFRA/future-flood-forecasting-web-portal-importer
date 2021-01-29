@@ -140,7 +140,8 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
         ]
       }
 
-      await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+      await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
 
     it('should group locations by plot ID and workflow ID given multiple combinations of workflowId and plotId', async () => {
@@ -163,7 +164,8 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
         }
       }
 
-      await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+      await refreshDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
 
     it('should not refresh with valid header row but no data rows', async () => {
@@ -311,10 +313,10 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     })
   })
 
-  async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedData) {
+  async function refreshDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedData, expectWorkflowRefresh) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message)
-    await checkExpectedResults(expectedData)
+    await checkExpectedResults(expectedData, expectWorkflowRefresh)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -330,7 +332,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedData) {
+  async function checkExpectedResults (expectedData, expectWorkflowRefresh) {
     const result = await request.query(`
       select 
         count(*) 
@@ -375,10 +377,10 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
           expect(dbLocations).toEqual(expectedLocationsArray)
         }
       }
-      if (expectedNumberOfRows > 1) {
+      if (typeof expectWorkflowRefresh !== 'undefined') {
         // If the CSV table is expected to contain rows other than the row of dummy data check that the workflow refresh table
         // contains a row for the CSV.
-        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData()
+        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData(expectWorkflowRefresh)
       }
     }
     // Check exceptions

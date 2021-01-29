@@ -108,8 +108,9 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         ]
       }
 
+      const expectWorkflowRefresh = true
       await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords()
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
     it('should ignore a  CSV file with misspelled headers', async () => {
       const mockResponseData = {
@@ -181,8 +182,9 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         numberOfExceptionRows: 1
       }
 
+      const expectWorkflowRefresh = true
       const expectedErrorDescription = 'row is missing data'
-      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      await refreshCoastalDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should omit all rows as there is missing values for the entire column', async () => {
@@ -297,10 +299,10 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     })
   })
 
-  async function refreshCoastalDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedData) {
+  async function refreshCoastalDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedData, expectWorkflowRefresh) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message) // This is a call to the function index
-    await checkExpectedResults(expectedData)
+    await checkExpectedResults(expectedData, expectWorkflowRefresh)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -316,7 +318,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedData) {
+  async function checkExpectedResults (expectedData, expectWorkflowRefresh) {
     const tableCountResult = await request.query(`
       select 
         count(*) 
@@ -358,10 +360,10 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         }
       }
 
-      if (expectedNumberOfRows > 1) {
+      if (typeof expectWorkflowRefresh !== 'undefined') {
         // If the CSV table is expected to contain rows other than the row of dummy data check that the workflow refresh table
         // contains a row for the CSV.
-        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData()
+        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData(expectWorkflowRefresh)
       }
     }
     // Check exceptions

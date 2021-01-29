@@ -14,15 +14,35 @@ module.exports = async function (context, refreshData) {
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.READ_COMMITTED, refreshData)
 
   // Transaction 2
+  // If a rollback has occurred, workflow refresh and message replay should not occur.
+  if (refreshData.workflowRefreshCsvType && refreshData.refreshRollbackRequested === false) {
+    await doInTransaction(workflowRefreshAndReplay, context, 'Workflow data refresh after csv refresh failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+  }
+
+  // Transaction 3
+  // Regardless of rollback, all exceptions should be recorded.
   if (refreshData.failedCsvRows.length > 0) {
     await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedCsvRows)
   } else {
     context.log.info('There were no csv exceptions during load.')
   }
   // context.done() not required as the async function returns the desired result, there is no output binding to be activated.
+}
+
+async function workflowRefreshAndReplay (transaction, context, refreshData) {
+  await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+  const replayData = {
+    csvType: refreshData.workflowRefreshCsvType,
+    transaction: transaction
+  }
+  // Attempt to replay messages with a staging exception linked to the CSV type.
+  await replayEligibleStagingExceptions(context, replayData)
+
+  // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
+  await replayEligibleTimeseriesStagingExceptions(context, replayData)
 }
 
 async function refreshInTransaction (transaction, context, refreshData) {
@@ -37,24 +57,12 @@ async function refreshInTransaction (transaction, context, refreshData) {
   await executePreparedStatementInTransaction(refreshInternal, context, transaction, refreshData)
 
   if (!transaction._rollbackRequested) {
+    refreshData.refreshRollbackRequested = false
     if (refreshData.postOperation) {
       await refreshData.postOperation(transaction, context)
     }
     // remove the outdated csv staging exceptions for this csv csvSourceFile
     await executePreparedStatementInTransaction(deleteCsvStagingExceptions, context, transaction, refreshData.csvSourceFile)
-    if (refreshData.workflowRefreshCsvType) {
-      const replayData = {
-        csvType: refreshData.workflowRefreshCsvType,
-        transaction: transaction
-      }
-      await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
-
-      // Attempt to replay messages with a staging exception linked to the CSV type.
-      await replayEligibleStagingExceptions(context, replayData)
-
-      // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
-      await replayEligibleTimeseriesStagingExceptions(context, replayData)
-    }
   }
 }
 
@@ -146,7 +154,6 @@ async function processCsvRow (context, preparedStatement, row, refreshData) {
 }
 
 async function processCsvRows (context, transaction, preparedStatement, refreshData) {
-  await new sql.Request(transaction).query(refreshData.deleteStatement)
   for (const columnObject of refreshData.functionSpecificData) {
     if (columnObject.tableColumnType === 'Decimal') {
       await preparedStatement.input(columnObject.tableColumnName, sql.Decimal(columnObject.precision, columnObject.scale))
@@ -165,6 +172,8 @@ async function processCsvRows (context, transaction, preparedStatement, refreshD
 async function refreshInternal (context, preparedStatement, refreshData) {
   try {
     const transaction = preparedStatement.parent
+    // Clear the table in preparation for the refresh.
+    await new sql.Request(transaction).query(refreshData.deleteStatement)
     refreshData.failedCsvRows = []
     await getCsvData(context, refreshData)
     refreshData.csvRows = await neatCsv(refreshData.csvResponse.body)

@@ -132,9 +132,10 @@ module.exports = describe('Ignored workflow loader tests', () => {
       await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedData)
     })
     it('should refresh given a valid CSV file and replay eligible failed messages', async () => {
+      const expectWorkflowRefresh = true
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
       await doInTransaction(insertExceptions, context, 'Error')
-      await loadValidCsvAndCheckExpectedResults(['ukeafffsmc00:000000001 message'])
+      await loadValidCsvAndCheckExpectedResults(['ukeafffsmc00:000000001 message'], expectWorkflowRefresh)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
       const expectedError = new Error('connect ECONNREFUSED mockhost')
@@ -210,14 +211,15 @@ module.exports = describe('Ignored workflow loader tests', () => {
     })
     it('should allow optional use of a HTTP Authorization header ', async () => {
       process.env.CONFIG_AUTHORIZATION = 'Mock token'
-      await loadValidCsvAndCheckExpectedResults()
+      const expectWorkflowRefresh = true
+      await loadValidCsvAndCheckExpectedResults(false, expectWorkflowRefresh)
     })
   })
 
-  async function refreshIgnoredWorkflowDataAndCheckExpectedResults (mockResponseData, expectedData) {
+  async function refreshIgnoredWorkflowDataAndCheckExpectedResults (mockResponseData, expectedData, expectWorkflowRefresh) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedData)
+    await checkExpectedResults(expectedData, expectWorkflowRefresh)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -233,7 +235,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedData) {
+  async function checkExpectedResults (expectedData, expectWorkflowRefresh) {
     const result = await request.query(`
     select 
       count(*)
@@ -263,10 +265,10 @@ module.exports = describe('Ignored workflow loader tests', () => {
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
 
-      if (expectedNumberOfRows > 1) {
+      if (typeof expectWorkflowRefresh !== 'undefined') {
         // If the CSV table is expected to contain rows other than the row of dummy data check that the workflow refresh table
         // contains a row for the CSV.
-        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData()
+        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData(expectWorkflowRefresh)
       }
     }
     // Check exceptions
@@ -324,7 +326,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     expect(result.recordset[0].description).toBe(expectedErrorDescription)
   }
 
-  async function loadValidCsvAndCheckExpectedResults (replayedStagingExceptionMessages) {
+  async function loadValidCsvAndCheckExpectedResults (replayedStagingExceptionMessages, expectWorkflowRefresh) {
     const mockResponseData = {
       statusCode: STATUS_CODE_200,
       filename: 'valid-ignored-workflows.csv',
@@ -347,7 +349,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       replayedStagingExceptionMessages: replayedStagingExceptionMessages || []
     }
 
-    await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedData)
+    await refreshIgnoredWorkflowDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
   }
 
   async function insertExceptions (transaction, context) {
