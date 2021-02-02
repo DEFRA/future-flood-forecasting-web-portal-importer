@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 3
+      - name: Cache node.js modules
+        uses: actions/cache@v2
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-          
+      - name: Install node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Install node.js dependencies
+        run: npm ci
+      - name: Run build script
+        env:
+          AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
+          DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION: "${{ secrets.DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION }}"
+          FFFS_WEB_PORTAL_BUILD_TYPE: "${{ secrets.FFFS_WEB_PORTAL_BUILD_TYPE }}"
+        run: |
+          npm run build
+      - name: Run markdown linting check
+        run: |
+          node_modules/.bin/markdownlint $PWD --ignore node_modules
+      - name: Run unit tests
+        env:
+          AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
+          DELETE_EXPIRED_TIMESERIES_HARD_LIMIT: "${{ secrets.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT }}"
+          FFFS_WEB_PORTAL_STAGING_DB_ADMIN_PASSWORD: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_ADMIN_PASSWORD }}"
+          FFFS_WEB_PORTAL_STAGING_DB_ADMIN_USERNAME: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_ADMIN_USERNAME }}"
+          FFFS_WEB_PORTAL_STAGING_DB_CONNECTION_STRING: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_CONNECTION_STRING }}"
+          FFFS_WEB_PORTAL_STAGING_DB_PASSWORD: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_PASSWORD }}"
+          FFFS_WEB_PORTAL_STAGING_DB_REPORTING_PASSWORD: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_REPORTING_PASSWORD }}"
+          FFFS_WEB_PORTAL_STAGING_DB_REPORTING_USERNAME: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_REPORTING_USERNAME }}"
+          FFFS_WEB_PORTAL_STAGING_DB_USERNAME: "${{ secrets.FFFS_WEB_PORTAL_STAGING_DB_USERNAME }}"
+          SA_PASSWORD: "${{ secrets.SA_PASSWORD }}"
+          SQLDB_DATABASE: "${{ secrets.SQLDB_DATABASE }}"
+          SQLDB_PASSWORD: "${{ secrets.SQLDB_PASSWORD }}"
+          SQLDB_SERVER: "${{ secrets.SQLDB_SERVER }}"
+          SQLDB_USER: "${{ secrets.SQLDB_USER }}"
+          SQLTESTDB_HOST: "${{ secrets.SQLTESTDB_HOST }}"
+          SQLTESTDB_PORT: "${{ secrets.SQLTESTDB_PORT }}"
+        run:
+          npm test
+
