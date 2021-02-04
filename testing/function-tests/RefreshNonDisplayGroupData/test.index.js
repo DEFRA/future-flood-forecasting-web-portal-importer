@@ -97,7 +97,9 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         numberOfExceptionRows: 0
       }
 
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
     it('should load a valid csv correctly - multiple filters per workflow and replay eligible failed messages', async () => {
       const mockResponseData = {
@@ -124,12 +126,11 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         ]
       }
 
+      const expectWorkflowRefresh = true
       await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords(-60)
-
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
       await doInTransaction(insertExceptions, context, 'Error')
-
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
     it('should not load duplicate rows in a csv', async () => {
       const mockResponseData = {
@@ -150,8 +151,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         nonDisplayGroupData: expectedNonDisplayGroupData,
         numberOfExceptionRows: 1
       }
-
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should ignore a CSV file with misspelled headers', async () => {
@@ -188,8 +189,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         nonDisplayGroupData: expectedNonDisplayGroupData,
         numberOfExceptionRows: 0
       }
-
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
     it('should not refresh with valid header row but no data rows', async () => {
       const mockResponseData = {
@@ -243,7 +244,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         numberOfExceptionRows: 1
       }
 
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should omit all rows as there is missing values for the entire column', async () => {
@@ -331,8 +333,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         nonDisplayGroupData: expectedNonDisplayGroupData,
         numberOfExceptionRows: 1
       }
-
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectWorkflowRefresh = true
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
       await checkExceptionIsCorrect(expectedErrorDescription)
     })
     it('should only load valid rows within a csv correctly. bit instead of boolean row loaded into exceptions', async () => {
@@ -352,15 +354,30 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         nonDisplayGroupData: expectedNonDisplayGroupData,
         numberOfExceptionRows: 1
       }
+      const expectWorkflowRefresh = true
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
+    })
+    it('should not refresh workflow refresh table with no row loads (creating a transaction rollback)', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'empty.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: JSONFILE
+      }
 
-      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData)
+      const expectedData = {
+        nonDisplayGroupData: dummyData
+      }
+
+      const expectWorkflowRefresh = false
+      await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
   })
 
-  async function refreshNonDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedNonDisplayGroupData, expectedNumberOfExceptionRows) {
+  async function refreshNonDisplayGroupDataAndCheckExpectedResults (mockResponseData, expectedNonDisplayGroupData, expectWorkflowRefresh) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message)
-    await checkExpectedResults(expectedNonDisplayGroupData, expectedNumberOfExceptionRows)
+    await checkExpectedResults(expectedNonDisplayGroupData, expectWorkflowRefresh)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -376,7 +393,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedData) {
+  async function checkExpectedResults (expectedData, expectWorkflowRefresh) {
     const result = await request.query(`
       select 
         count(*) 
@@ -426,10 +443,10 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         expect(dbData).toEqual(expectedWorkflowDataSorted)
       }
 
-      if (expectedNumberOfRows > 1) {
+      if (typeof expectWorkflowRefresh !== 'undefined') {
         // If the CSV table is expected to contain rows other than the row of dummy data check that the workflow refresh table
         // contains a row for the CSV.
-        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData()
+        await commonWorkflowCsvTestUtils.checkWorkflowRefreshData(expectWorkflowRefresh)
       }
     }
     // Check exceptions

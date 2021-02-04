@@ -28,8 +28,8 @@ module.exports = function (context, pool, config) {
     }
   }
 
-  this.checkWorkflowRefreshData = async function () {
-    await doInTransaction(checkWorkflowRefreshDataInTransaction, context, 'Unable to check workflow refresh data', null, config)
+  this.checkWorkflowRefreshData = async function (expectWorkflowRefresh) {
+    await doInTransaction(checkWorkflowRefreshDataInTransaction, context, 'Unable to check workflow refresh data', null, config, expectWorkflowRefresh)
   }
 
   this.checkReplayedStagingExceptionMessages = async function (expectedReplayedStagingExceptionMessages) {
@@ -46,11 +46,11 @@ module.exports = function (context, pool, config) {
   }
 }
 
-async function checkWorkflowRefreshDataInTransaction (transaction, context, config) {
-  await executePreparedStatementInTransaction(checkWorkflowRefreshDataInternal, context, transaction, config)
+async function checkWorkflowRefreshDataInTransaction (transaction, context, config, expectWorkflowRefresh) {
+  await executePreparedStatementInTransaction(checkWorkflowRefreshDataInternal, context, transaction, config, expectWorkflowRefresh)
 }
 
-async function checkWorkflowRefreshDataInternal (context, preparedStatement, config) {
+async function checkWorkflowRefreshDataInternal (context, preparedStatement, config, expectWorkflowRefresh) {
   await preparedStatement.input('csvType', sql.NVarChar)
   await preparedStatement.prepare(`
     select
@@ -67,5 +67,9 @@ async function checkWorkflowRefreshDataInternal (context, preparedStatement, con
   }
 
   const result = await preparedStatement.execute(parameters)
-  expect(result.recordset[0].number).toBe(1)
+  if (expectWorkflowRefresh === true) {
+    expect(result.recordset[0].number).toBe(1)
+  } else {
+    expect(result.recordset[0].number).toBe(0)
+  }
 }
