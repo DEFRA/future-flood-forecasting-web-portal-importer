@@ -132,7 +132,7 @@ async function processCsvRow (context, preparedStatement, row, refreshData) {
   try {
     const rowExecuteObject = await buildPreparedStatementParameters(context, row, refreshData)
     if (rowExecuteObject.rowError) {
-      // context.log.warn('row is missing data.')
+      context.log.warn('row is missing data.')
       const failedRowInfo = {
         rowData: row,
         errorMessage: 'row is missing data.',
