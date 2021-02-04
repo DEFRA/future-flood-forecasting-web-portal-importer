@@ -14,7 +14,7 @@ module.exports = async function (context, refreshData) {
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.READ_COMMITTED, refreshData)
+  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
 
   // Transaction 2
   // If a rollback has occurred, workflow refresh and message replay should not occur.
@@ -132,7 +132,7 @@ async function processCsvRow (context, preparedStatement, row, refreshData) {
   try {
     const rowExecuteObject = await buildPreparedStatementParameters(context, row, refreshData)
     if (rowExecuteObject.rowError) {
-      context.log.warn('row is missing data.')
+      // context.log.warn('row is missing data.')
       const failedRowInfo = {
         rowData: row,
         errorMessage: 'row is missing data.',
