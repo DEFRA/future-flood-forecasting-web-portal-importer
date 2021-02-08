@@ -42,21 +42,27 @@ module.exports = async function (context, message) {
 async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, transaction, taskRunData) {
   // Process data for each CSV file associated with the workflow.
   await getTaskRunPlotsAndFiltersToBeProcessed(context, taskRunData)
-  taskRunData.itemsToBeProcessed = taskRunData.unprocessedItems.concat(taskRunData.itemsEligibleForReplay)
+
   // Create a message for each plot/filter to be processed for the task run.
-  for (const itemToBeProcessed of taskRunData.itemsToBeProcessed) {
-    if ((itemToBeProcessed.sourceType === 'P' || taskRunData.spanWorkflow) && taskRunData.forecast && !taskRunData.approved) {
-      context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
-    } else {
-      const message = {
-        taskRunId: taskRunData.taskRunId
-      }
-      message[sourceTypeLookup[itemToBeProcessed.sourceType].messageKey] = itemToBeProcessed.sourceId
-      taskRunData.outgoingMessages.push(message)
-      context.log(`Created message for ${sourceTypeLookup[itemToBeProcessed.sourceType].description} ID ${itemToBeProcessed.sourceId}`)
-    }
-  }
+  // (see https://medium.com/@antonioval/making-array-iteration-easy-when-using-async-await-6315c3225838)
+  await Promise.all(taskRunData.itemsToBeProcessed.map(async itemToBeProcessed =>
+    await createOutgoingMessageIfPossible(context, taskRunData, itemToBeProcessed)
+  ))
+
   await processOutgoingMessagesIfPossible(context, taskRunData)
+}
+
+async function createOutgoingMessageIfPossible (context, taskRunData, itemToBeProcessed) {
+  if ((itemToBeProcessed.sourceType === 'P' || taskRunData.spanWorkflow) && taskRunData.forecast && !taskRunData.approved) {
+    context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
+  } else {
+    const message = {
+      taskRunId: taskRunData.taskRunId
+    }
+    message[sourceTypeLookup[itemToBeProcessed.sourceType].messageKey] = itemToBeProcessed.sourceId
+    taskRunData.outgoingMessages.push(message)
+    context.log(`Created message for ${sourceTypeLookup[itemToBeProcessed.sourceType].description} ID ${itemToBeProcessed.sourceId}`)
+  }
 }
 
 async function processTaskRunData (context, transaction, taskRunData) {
