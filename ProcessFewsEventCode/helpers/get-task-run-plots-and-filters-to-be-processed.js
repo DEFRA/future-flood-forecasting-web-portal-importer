@@ -22,6 +22,8 @@ module.exports = async function (context, taskRunData) {
   } else {
     await executePreparedStatementInTransaction(getAllPlotsAndFiltersForWorkflow, context, taskRunData.transaction, taskRunData)
   }
+  taskRunData.itemsToBeProcessed = taskRunData.unprocessedItems.concat(taskRunData.itemsEligibleForReplay)
+  return Promise.resolve(taskRunData)
 }
 
 async function getAllPlotsAndFiltersForWorkflow (context, preparedStatement, taskRunData) {

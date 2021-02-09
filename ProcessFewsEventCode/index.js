@@ -42,21 +42,27 @@ module.exports = async function (context, message) {
 async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, transaction, taskRunData) {
   // Process data for each CSV file associated with the workflow.
   await getTaskRunPlotsAndFiltersToBeProcessed(context, taskRunData)
-  taskRunData.itemsToBeProcessed = taskRunData.unprocessedItems.concat(taskRunData.itemsEligibleForReplay)
+
   // Create a message for each plot/filter to be processed for the task run.
-  for (const itemToBeProcessed of taskRunData.itemsToBeProcessed) {
-    if ((itemToBeProcessed.sourceType === 'P' || taskRunData.spanWorkflow) && taskRunData.forecast && !taskRunData.approved) {
-      context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
-    } else {
-      const message = {
-        taskRunId: taskRunData.taskRunId
-      }
-      message[sourceTypeLookup[itemToBeProcessed.sourceType].messageKey] = itemToBeProcessed.sourceId
-      taskRunData.outgoingMessages.push(message)
-      context.log(`Created message for ${sourceTypeLookup[itemToBeProcessed.sourceType].description} ID ${itemToBeProcessed.sourceId}`)
-    }
-  }
+  // (see https://medium.com/@antonioval/making-array-iteration-easy-when-using-async-await-6315c3225838)
+  await Promise.all(taskRunData.itemsToBeProcessed.map(async itemToBeProcessed =>
+    await createOutgoingMessageIfPossible(context, taskRunData, itemToBeProcessed)
+  ))
+
   await processOutgoingMessagesIfPossible(context, taskRunData)
+}
+
+async function createOutgoingMessageIfPossible (context, taskRunData, itemToBeProcessed) {
+  if ((itemToBeProcessed.sourceType === 'P' || taskRunData.spanWorkflow) && taskRunData.forecast && !taskRunData.approved) {
+    context.log.warn(`Ignoring data for plot ID ${itemToBeProcessed.sourceId} of unapproved forecast message ${JSON.stringify(taskRunData.message)}`)
+  } else {
+    const message = {
+      taskRunId: taskRunData.taskRunId
+    }
+    message[sourceTypeLookup[itemToBeProcessed.sourceType].messageKey] = itemToBeProcessed.sourceId
+    taskRunData.outgoingMessages.push(message)
+    context.log(`Created message for ${sourceTypeLookup[itemToBeProcessed.sourceType].description} ID ${itemToBeProcessed.sourceId}`)
+  }
 }
 
 async function processTaskRunData (context, transaction, taskRunData) {
@@ -93,14 +99,14 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     // - all the plots/filters for the workflow taskRun have already been loaded successfully into timeseries
     // - there was a partial/failed previous load AND the workflow reference data associated with the missing timeseries (t-s-exceptions) has not yet been refreshed
     context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
-  } else if (taskRunData.itemsToBeProcessed.length > 0) {
+  } else if ((taskRunData.forecast && !taskRunData.approved) || taskRunData.itemsToBeProcessed.length > 0) {
     // If there is no header this means this taskRun has not partially/successfully run before.
     // In this case (no header) the function app will find and store all corresponding plots/filters as items to be processed for a taskRun.
     // If there are itemsToBeProcessed then there IS reference data in staging for the taskRun/workflow.
     // No messages at this point means the items to process are plots linked to an unapproved forecast and so should not be forwarded
     context.log(`All plots in the taskRun: ${taskRunData.taskRunId} (for workflowId: ${taskRunData.workflowId}) are unapproved.`)
   } else {
-    // There are no items to process, messages to forward or header row meaning:
+    // If this code is reached there are no items to process, messages to forward or header row for observed data or approved forecast data meaning:
     // - this taskRun has not partially/successfully run before.
     // - staging has no reference data listed for the taskRun workflowId
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
