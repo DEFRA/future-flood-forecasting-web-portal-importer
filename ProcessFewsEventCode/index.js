@@ -105,10 +105,11 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     // If there are itemsToBeProcessed then there IS reference data in staging for the taskRun/workflow.
     // No messages at this point means the items to process are plots linked to an unapproved forecast and so should not be forwarded
     context.log(`All plots in the taskRun: ${taskRunData.taskRunId} (for workflowId: ${taskRunData.workflowId}) are unapproved.`)
-  } else {
-    // There are no items to process, messages to forward or header row meaning:
+  } else if (!taskRunData.forecast || taskRunData.approved) {
+    // If this code is reached there are no items to process, messages to forward or header row for observed data or approved forecast data meaning:
     // - this taskRun has not partially/successfully run before.
     // - staging has no reference data listed for the taskRun workflowId
+    // Note that unapproved forecast data is ignored.
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
     await createStagingException(context, taskRunData)
   }
