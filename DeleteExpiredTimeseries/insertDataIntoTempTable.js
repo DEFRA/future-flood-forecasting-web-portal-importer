@@ -1,7 +1,7 @@
 const { executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
 const sql = require('mssql')
 
-const queryRootHard = `
+const collectExpiredRecordsQuery = `
 insert into #deletion_job_temp
   (reporting_id, timeseries_id, timeseries_header_id, import_time, exceptions_id)
 -- linked rows in header-timeseries-reporting (not including rows in only header-timeseries or only header)
@@ -78,27 +78,18 @@ union
   where
   h.import_time < cast(@date as datetimeoffset)`
 
-module.exports = async function (context, transaction, date, isSoftDate, deleteHeaderRowBatchSize) {
-  await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, isSoftDate, deleteHeaderRowBatchSize)
+module.exports = async function (context, transaction, date, deleteHeaderRowBatchSize) {
+  await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, deleteHeaderRowBatchSize)
 }
 
-async function insertDataIntoTemp (context, preparedStatement, date, isSoftDate, deleteHeaderRowBatchSize) {
-  context.log.info(`Loading ${isSoftDate ? 'Soft' : 'Hard'} data into temp table`)
-  const FME_COMPLETE_JOB_STATUS = 6
+async function insertDataIntoTemp (context, preparedStatement, date, deleteHeaderRowBatchSize) {
+  context.log.info('Loading expired data into temp table')
 
   await preparedStatement.input('date', sql.DateTimeOffset)
-  await preparedStatement.input('completeStatus', sql.Int)
   await preparedStatement.input('deleteHeaderRowBatchSize', sql.Int)
-  if (isSoftDate) {
-    // due to the introduction of partial loading soft limit deletes are currently inactive and pending refactoring
-    const queryRootSoft = null
-    await preparedStatement.prepare(queryRootSoft)
-  } else {
-    await preparedStatement.prepare(queryRootHard)
-  }
+  await preparedStatement.prepare(collectExpiredRecordsQuery)
   const parameters = {
     date,
-    completeStatus: FME_COMPLETE_JOB_STATUS,
     deleteHeaderRowBatchSize
   }
 
