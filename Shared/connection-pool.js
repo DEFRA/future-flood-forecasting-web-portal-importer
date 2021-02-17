@@ -12,8 +12,6 @@ module.exports = function () {
   const maxConcurrentCalls = Math.max(1, Math.min(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls, 10))
 
   const config = {
-    user: process.env.SQLDB_USER,
-    password: process.env.SQLDB_PASSWORD,
     server: process.env.SQLDB_SERVER,
     database: process.env.SQLDB_DATABASE,
     requestTimeout: numericEnvironmentVariables.requestTimeout || 60000,
@@ -28,6 +26,7 @@ module.exports = function () {
     }
   }
 
+  addAuthenticationConfig(config)
   addOptionalConfig(config, numericEnvironmentVariables)
   this.pool = new sql.ConnectionPool(config)
 
@@ -36,6 +35,27 @@ module.exports = function () {
     logger.error(err)
     throw err
   })
+}
+
+function addAuthenticationConfig (config) {
+  if (isBoolean(process.env.AUTHENTICATE_WITH_MSI) &&
+      JSON.parse(process.env.AUTHENTICATE_WITH_MSI) &&
+      process.env.MSI_ENDPOINT &&
+      process.env.MSI_SECRET) {
+    logger.info('Configuring MSI app service authentication')
+
+    config.authentication = {
+      type: 'azure-active-directory-msi-app-service',
+      options: {
+        msiEndpoint: process.env.MSI_ENDPOINT,
+        msiSecret: process.env.MSI_SECRET
+      }
+    }
+  } else {
+    logger.info('Configuring default authentication')
+    config.user = process.env.SQLDB_USER
+    config.password = process.env.SQLDB_PASSWORD
+  }
 }
 
 function addOptionalConfig (config, numericEnvironmentVariables) {
