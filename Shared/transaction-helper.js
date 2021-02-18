@@ -1,6 +1,3 @@
-['beforeExit', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM']
-  .forEach(event => process.on(event, closeConnectionPoolInternal))
-
 const ConnectionPool = require('../Shared/connection-pool')
 const { logger } = require('defra-logging-facade')
 const sql = require('mssql')
@@ -114,6 +111,7 @@ async function resetConnectionAndEndTransaction (context, transaction, endTransa
 }
 
 async function initialiseConnectionPool () {
+  const shutdownEvents = ['beforeExit', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT', 'SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM']
   const pooledConnections = []
   connectionPool = new ConnectionPool()
   pool = connectionPool.pool
@@ -133,6 +131,12 @@ async function initialiseConnectionPool () {
   for (let index = 0; index < pooledConnections.length; index++) {
     await pool.release(pooledConnections[index])
   }
+
+  // Add shutdown event handlers.
+  for (const shutdownEvent of shutdownEvents) {
+    process.on(shutdownEvent, await closeConnectionPoolInternal)
+  }
+
   logger.info(`Initialised connection pool with ${pool.pool.min} connection(s)`)
 }
 

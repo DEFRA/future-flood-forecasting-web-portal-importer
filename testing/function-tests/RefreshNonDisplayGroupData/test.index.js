@@ -435,9 +435,9 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
           `)
         const rows = filterQuery.recordset
         const dbData = []
-        rows.forEach(row =>
+        for (const row of rows) {
           dbData.push({ filterId: row.filter_id, approved: row.approved, startTimeOffset: row.startTimeOffset, endTimeOffset: row.endTimeOffset, timeSeriesType: row.timeSeriesType })
-        )
+        }
         const expectedWorkflowDataSorted = expectedWorkflowData.sort()
         // get an array of filter ids for a given workflow id from the database
         expect(dbData).toEqual(expectedWorkflowDataSorted)
