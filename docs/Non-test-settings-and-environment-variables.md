@@ -51,6 +51,9 @@ username/password authentication.
 
 #### MSI App Service Authentication Related Function App Settings/Environment Variables
 
+Note that these environment variables are provided by the Microsoft Azure platform automatically when the functions are published to a function app
+with a system identity.
+
 | name                                             | description                                                                                    |
 |--------------------------------------------------|------------------------------------------------------------------------------------------------|
 | MSI_ENDPOINT                                     | [Azure managed identity](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet) URL to the local token service |
