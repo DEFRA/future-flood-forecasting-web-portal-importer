@@ -44,10 +44,6 @@ This prevents core forecasting engine messages from being processed until suppor
 
 **Either** Microsoft Azure Managed Service Identity (MSI) App Service authentication or username/password authentication is supported.
 
-| name                                             | description                                                                                    |
-|--------------------------------------------------|------------------------------------------------------------------------------------------------|
-| AUTHENTICATE_WITH_MSI                            | A boolean controlling whether MSI App Service authentication is enabled                        |
-
 #### MSI App Service Authentication Related Function App Settings/Environment Variables
 
 Note that these environment variables are provided by the Microsoft Azure platform automatically when the functions are published to a function app
@@ -130,6 +126,7 @@ accordingly.
 
 | name                         | description                                                                                                                                                                                                                    |
 |------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AUTHENTICATE_WITH_MSI | A boolean controlling whether or not MSI App Service authentication is enabled |
 | SQLDB_PORT | [mssql node module](https://www.npmjs.com/package/mssql) database port (1024 to 49151 inclusive - uses the mssql module default))
 | SQLDB_CONNECTION_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database connection timeout (15000 to 60000 inclusive - uses the mssql module default) |
 | SQLDB_REQUEST_TIMEOUT_MILLIS | [mssql node module](https://www.npmjs.com/package/mssql) database request timeout (15000 to 120000 inclusive - defaults to 60000ms) |
