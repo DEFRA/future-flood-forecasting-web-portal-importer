@@ -40,6 +40,31 @@ This prevents core forecasting engine messages from being processed until suppor
 
 ## Mandatory Runtime Function App Settings/Environment Variables
 
+### Mandatory Staging Database Authentication Related Function App Settings/Environment Variables
+
+Staging database authentication is achievable using **either** Microsoft Azure Managed Service Identity (MSI) App Service authentication or
+username/password authentication.
+
+| name                                             | description                                                                                    |
+|--------------------------------------------------|------------------------------------------------------------------------------------------------|
+| AUTHENTICATE_WITH_MSI                            | A boolean controlling whether MSI App Service authentication is enabled                        |
+
+#### MSI App Service Authentication Related Function App Settings/Environment Variables
+
+| name                                             | description                                                                                    |
+|--------------------------------------------------|------------------------------------------------------------------------------------------------|
+| MSI_ENDPOINT                                     | [Azure managed identity](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet) URL to the local token service |
+| MSI_SECRET                                       | [Azure managed identity](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet) header used to help mitigate server-side request forgery (SSRF) attacks.  |
+
+#### Username/Password Authentication Related Function App Settings/Environment Variables
+
+| name                                             | description                                                                                    |
+|--------------------------------------------------|------------------------------------------------------------------------------------------------|
+| SQLDB_USER                                       | [mssql node module](https://www.npmjs.com/package/mssql) username for authentication           |
+| SQLDB_PASSWORD                                   | [mssql node module](https://www.npmjs.com/package/mssql) password for authentication           |
+
+### Mandatory Non-Authentication Related App Settings/Environment Variables
+
 | name                                             | description                                                                                    |
 |--------------------------------------------------|------------------------------------------------------------------------------------------------|
 | APPINSIGHTS_INSTRUMENTATIONKEY                   | Instrumentation key controlling if telemetry is sent to the ApplicationInsights service          |
@@ -62,8 +87,6 @@ This prevents core forecasting engine messages from being processed until suppor
 | MVT_URL                                          | URL used to provide the multivariate threshold information                                     |
 | AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default (set to true)                             |
 | AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default (set to true)                       |
-| SQLDB_USER | [mssql node module](https://www.npmjs.com/package/mssql) username for authentication |
-| SQLDB_PASSWORD | [mssql node module](https://www.npmjs.com/package/mssql) password for authentication |
 | SQLDB_SERVER | [mssql node module](https://www.npmjs.com/package/mssql) server |
 | SQLDB_DATABASE | [mssql node module](https://www.npmjs.com/package/mssql) database name |
 
