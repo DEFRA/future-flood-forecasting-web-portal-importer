@@ -42,8 +42,7 @@ This prevents core forecasting engine messages from being processed until suppor
 
 ### Mandatory Staging Database Authentication Related Function App Settings/Environment Variables
 
-Staging database authentication is achievable using **either** Microsoft Azure Managed Service Identity (MSI) App Service authentication or
-username/password authentication.
+**Either** Microsoft Azure Managed Service Identity (MSI) App Service authentication or username/password authentication is supported.
 
 | name                                             | description                                                                                    |
 |--------------------------------------------------|------------------------------------------------------------------------------------------------|
