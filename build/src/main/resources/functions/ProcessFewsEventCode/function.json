@@ -4,7 +4,7 @@
       "name": "message",
       "type": "serviceBusTrigger",
       "direction": "in",
-      "queueName": "fews-eventcode-queue",
+      "queueName": "replay-fews-import-dead-letter-queue",
       "connection": "AzureWebJobsServiceBus"
     },
     {
