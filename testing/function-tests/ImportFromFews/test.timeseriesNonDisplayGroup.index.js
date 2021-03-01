@@ -590,7 +590,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // retrieved from the database to an array and then check that the array contains
       // each expected mock timeseries.
       // To check if messages containing the primary keys of the timeseries records will be
-      // sent to a queue/topic for reporting and visualisation purposes, copy the primary
+      // sent to a queue for reporting and visualisation purposes, copy the primary
       // keys retrieved from the database to an array and check that the output binding for
       // staged timeseries contains each expected primary key.
       receivedFewsData.push(JSON.parse(result.recordset[index].fews_data))
