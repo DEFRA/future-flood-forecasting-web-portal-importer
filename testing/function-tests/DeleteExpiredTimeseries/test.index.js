@@ -12,7 +12,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
   const pool = jestConnectionPool.pool
   const request = new sql.Request(pool)
   let hardLimit
-  let softLimit // the soft limit (only has context in the tests) in this context is a configurable amount of time before the hard limit
+  let withinLimit // the withinLimit (only has context in the tests) is a set amount of time less than the hard limit
 
   describe('The delete expired staging timeseries data function:', () => {
     // there are 3 possible scenarios of data to be deleted:
@@ -30,11 +30,9 @@ module.exports = describe('Timeseries data deletion tests', () => {
       // function implementation for context needs creating for each test, jest.fn() mocks are contained within the Context class.
       context = new Context()
       delete process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
-      delete process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = '240'
-      process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT = '200'
       hardLimit = parseInt(process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)
-      softLimit = process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT ? parseInt(process.env.DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT) : hardLimit
+      withinLimit = parseInt(process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT) - 1
       // The order of deletion is sensitive to referential integrity
       await request.query('delete from fff_reporting.timeseries_job')
       await request.query('delete from fff_staging.inactive_timeseries_staging_exception')
@@ -66,8 +64,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should NOT (due to inactive soft limit functionality) delete a record with a complete job status and with an import date older than the soft limit', async () => {
-      const importDateStatus = 'exceedsSoft'
+    it('should NOT delete a record with a complete job status and with an import date younger than the hard limit', async () => {
+      const importDateStatus = 'withinLimit'
       const statusCode = 6
       const testDescription = 'should NOT delete a record with a complete job status and with an import date younger than the hard limit'
 
@@ -140,8 +138,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
         await checkSnapshotIsolationSelectSucceedsWithDeleteInProgress(testDescription)
       }
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 35000)
-    it('should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit', async () => {
-      const importDateStatus = 'exceedsSoft'
+    it('should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that have a younger import date than the hard limit', async () => {
+      const importDateStatus = 'withinLimit'
       const testDescription = 'should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit'
 
       const expectedNumberofRows = 1
@@ -151,7 +149,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should delete a record only existing in timeseries_header and timeseries_staging_exception that is older than the hard limit', async () => {
+    it('should delete a record only existing in timeseries_header and timeseries_staging_exception that have an older import date than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
       const testDescription = 'should delete a record only existing in timeseries_header and timeseries_staging_exception that is older than the hard limit'
 
@@ -162,8 +160,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should NOT delete a record only existing in timeseries_header that is younger than the hard limit', async () => {
-      const importDateStatus = 'exceedsSoft'
+    it('should NOT delete a record only existing in timeseries_header that has a younger import date than the hard limit', async () => {
+      const importDateStatus = 'withinLimit'
       const testDescription = 'should NOT delete a record only existing in timeseries_header that is younger than the hard limit'
 
       const expectedNumberofRows = 1
@@ -173,7 +171,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should delete a record only existing in timeseries_header that is older than the hard limit', async () => {
+    it('should delete a record only existing in timeseries_header that has an older import date than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
       const testDescription = 'should delete a record only existing in timeseries_header that is older than the hard limit'
 
@@ -184,7 +182,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should delete an inactive timeseries exception with an import date older than the hard limit', async () => {
+    it('should delete an inactive timeseries exception that has an older import date than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
       const expectedNumberofRows = 0
       const importDate = await createImportDate(importDateStatus)
@@ -194,7 +192,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkDeletionStatus(expectedNumberofRows)
     })
     it('should NOT delete an inactive timeseries exception with an import date younger than the hard limit date', async () => {
-      const importDateStatus = 'exceedsSoft'
+      const importDateStatus = 'withinLimit'
       const expectedNumberofRows = 1
       const importDate = await createImportDate(importDateStatus)
 
@@ -227,7 +225,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkStagingExceptionDeletionStatus(expectedNumberofRows)
     })
     it('should NOT delete a staging exception record (and the associated inactive-staging-exception) with an import date younger than the hard limit', async () => {
-      const importDateStatus = 'exceedsSoft'
+      const importDateStatus = 'withinLimit'
 
       const expectedNumberofRows = 1
       const expectedDescription = 'this record has an associated inactive exception'
@@ -238,7 +236,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await checkStagingExceptionDeletionStatus(expectedNumberofRows, expectedDescription)
     })
     it('should NOT delete a staging exception record (with no associated-inactive-staging exception) with an import date younger than the hard limit date', async () => {
-      const importDateStatus = 'exceedsSoft'
+      const importDateStatus = 'withinLimit'
 
       const expectedNumberofRows = 1
       const expectedDescription = 'this record has no associated inactive exception'
@@ -266,8 +264,8 @@ module.exports = describe('Timeseries data deletion tests', () => {
       case 'activeDate':
         importDate = await moment.utc().toDate().toISOString()
         break
-      case 'exceedsSoft':
-        importDate = await moment.utc().subtract(parseInt(softLimit), 'hours').toDate().toISOString()
+      case 'withinLimit':
+        importDate = await moment.utc().subtract(parseInt(withinLimit), 'hours').toDate().toISOString()
         break
       case 'exceedsHard':
         importDate = await moment.utc().subtract(parseInt(hardLimit), 'hours').toDate().toISOString()
