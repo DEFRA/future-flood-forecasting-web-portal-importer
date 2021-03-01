@@ -138,7 +138,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
         await checkSnapshotIsolationSelectSucceedsWithDeleteInProgress(testDescription)
       }
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 35000)
-    it('should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that have a younger import date than the hard limit', async () => {
+    it('should NOT delete records only existing in timeseries_header and timeseries_staging_exception that have a younger import date than the hard limit', async () => {
       const importDateStatus = 'withinLimit'
       const testDescription = 'should NOT delete a record only existing in timeseries_header and timeseries_staging_exception that is younger than the hard limit'
 
@@ -149,7 +149,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       await runTimerFunction()
       await checkDeletionStatus(expectedNumberofRows)
     })
-    it('should delete a record only existing in timeseries_header and timeseries_staging_exception that have an older import date than the hard limit', async () => {
+    it('should delete records only existing in timeseries_header and timeseries_staging_exception that have an older import date than the hard limit', async () => {
       const importDateStatus = 'exceedsHard'
       const testDescription = 'should delete a record only existing in timeseries_header and timeseries_staging_exception that is older than the hard limit'
 
