@@ -18,21 +18,19 @@ need to check that the database is populated correctly. As such, rather than moc
   
 ## Exploratory Testing
 
-### Sending Messages To Azure Service Bus Queues/Topics
+### Sending Messages To Azure Service Bus Queues
 
-In the absence of other means to send messages to Azure Service Bus Queues/Topics such as [Service Bus Explorer](https://code.msdn.microsoft.com/windowsapps/Service-Bus-Explorer-f2abca5a), basic test clients are provided. Mandatory and test client
-specific environment variables need to be set (see below) and then one of the following commands should be run from the root
+In the absence of other means to send messages to Azure Service Bus Queues such as [Service Bus Explorer](https://code.msdn.microsoft.com/windowsapps/Service-Bus-Explorer-f2abca5a), basic test clients are provided. Mandatory and test client
+specific environment variables need to be set (see below) and then the following command should be run from the root
 directory of this project.
 
 * node testing/service-bus/publish-to-queue.js
-* node testing/service-bus/publish-to-topic.js
 
 ### Exploratory Test Client Specific Environment Variables
 
 | name                                      | description                                                                                             |
 |-------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | AZURE_SERVICE_BUS_QUEUE                   | The Azure service bus queue to which test messages are sent                                             |
-| AZURE_SERVICE_BUS_TOPIC                   | The Azure service bus topic to which test messages are sent                                             |
 | AZURE_SERVICE_BUS_TEST_MESSAGE            | The test message                                                                                        |
 
 ## Unit Test Specific Environment Variables
