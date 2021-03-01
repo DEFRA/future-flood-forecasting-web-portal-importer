@@ -23,7 +23,7 @@ Node.js Microsoft Azure functions responsible for extracting data from the core 
 * [Prerequisites](docs/Prerequisites.md)
 * [Installation activities](docs/Installation-activities.md)
 * [Non-test related function app settings and environment variables](docs/Non-test-settings-and-environment-variables.md)
-* [Running the queue/topic based functions](docs/Running-the-queue-topic-functions.md)
+* [Running the queue based functions](docs/Running-the-queue-functions.md)
 * [Testing](docs/Testing.md)
 * [Replaying Messages From Dead Letter Queues After An Outage](docs/Replaying-dead-letter-messages.md)
 

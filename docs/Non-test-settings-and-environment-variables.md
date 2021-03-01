@@ -4,7 +4,6 @@
 
 | name                                      | description                                                                                           |
 |-------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics) |
 | AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS    | The maximum number of concurrent calls from Azure Service Bus that are permitted (1 to 10 inclusive). |
 | DELETE_EXPIRED_TIMESERIES_CRON_EXPRESSION | The expression dictating how often stale timeseries data is removed from staging.                     |
 
@@ -14,6 +13,15 @@
 |-------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED | When set to true, this provides an output binding connecting to an azure service bus queue named 'fews-staged-timeseries-queue'|
 
+## Redundant Legacy Build Time Function App Settings/Environment Variables
+
+The function app settings/environment variables below are no longer used. It is recommended that they should be removed from any existing installation
+accordingly.
+
+| name                                      | description                                                                                           |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| FFFS_WEB_PORTAL_BUILD_TYPE                | **queue** or **topic** (configures the function app to use either Azure service bus queues or topics) |
+
 ## Mandatory Runtime Function App Settings/Environment Variables For Deployments Affecting The Structure Of Core Forecasting Engine Workflow Configuration Data
 
 | name                                      | description                                                                                           |
@@ -21,12 +29,12 @@
 | AzureWebJobs.ImportFromFews.Disabled             | Disable the ImportFromFews function (Set to true)                                              |
 | AzureWebJobs.ProcessFewsEventCode.Disabled       | Disable the ProcessFewsEventCode function (Set to true)                                        |
 
-The ImportFromFews and ProcessFewsEventCode functions **must** be disabled during deployments affecting the structure of core forecasting engine workflow configuration data. The endpoints **must** remain disabled until messages on the following Azure Service Bus queues/topics have been processed **successfully**.
+The ImportFromFews and ProcessFewsEventCode functions **must** be disabled during deployments affecting the structure of core forecasting engine workflow configuration data. The endpoints **must** remain disabled until messages on the following Azure Service Bus queues have been processed **successfully**.
 
-* fews-coastal-display-group-queue/fews-coastal-display-group-topic
-* fews-fluvial-display-group-queue/fews-fluvial-display-group-topic
-* fews-ignored-workflows-queue/fews-ignored-workflows-topic
-* fews-non-display-group-queue/fews-non-display-group-topic
+* fews-coastal-display-group-queue
+* fews-fluvial-display-group-queue
+* fews-ignored-workflows-queue
+* fews-non-display-group-queue
 
 This prevents core forecasting engine messages from being processed until supporting configuration data has been loaded.
 
@@ -59,23 +67,6 @@ This prevents core forecasting engine messages from being processed until suppor
 | SQLDB_SERVER | [mssql node module](https://www.npmjs.com/package/mssql) server |
 | SQLDB_DATABASE | [mssql node module](https://www.npmjs.com/package/mssql) database name |
 
-## Mandatory Runtime Function App Settings/Environment Variables If Using Microsoft Azure Service Bus Topics
-
-| name                                                  | description                                                                                    |
-|-------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                         |
-| AZURE_SERVICE_BUS_FEWS_IMPORT_SUBSCRIPTION_NAME       | Subscription name associated with fews-import-topic                                            |
-| AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME | Subscription name associated with fews-staged-timeseries-topic                                 |
-| AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-display-group-topic                         |
-| AZURE_SERVICE_BUS_COASTAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-display-group-topic                         |
-| AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
-| AZURE_SERVICE_BUS_FLUVIAL_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-forecast-location-topic                 |
-| AZURE_SERVICE_BUS_COASTAL_TIDAL_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-tidal-forecast-location-topic     |
-| AZURE_SERVICE_BUS_COASTAL_TRITON_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-triton-forecast-location-topic   |
-| AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-mvt-forecast-location-topic         |
-| AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                                 |
-| AZURE_SERVICE_BUS_MVT_SUBSCRIPTION_NAME | Subscription name associated with fews-mvt-topic                                                             |
-
 ## Redundant Legacy Runtime Function App Settings/Environment Variables
 
 The function app settings/environment variables below are no longer used. It is recommended that they should be removed from any existing installation
@@ -96,6 +87,18 @@ accordingly.
 | FFFS_WEB_PORTAL_STAGING_DB_STAGING_SCHEMA | Staging, staging schema name                                                                               |
 | FFFS_WEB_PORTAL_STAGING_DB_REPORTING_SCHEMA | Staging, reporting schema name                                                                           |
 | SQLDB_CONNECTION_STRING                          | [mssql node module](https://www.npmjs.com/package/mssql) connection string |
+| AZURE_SERVICE_BUS_EVENT_CODE_SUBSCRIPTION_NAME        | Subscription name associated with fews-eventcode-topic                                         |
+| AZURE_SERVICE_BUS_FEWS_IMPORT_SUBSCRIPTION_NAME       | Subscription name associated with fews-import-topic                                            |
+| AZURE_SERVICE_BUS_STAGED_TIMESERIES_SUBSCRIPTION_NAME | Subscription name associated with fews-staged-timeseries-topic                                 |
+| AZURE_SERVICE_BUS_FLUVIAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-display-group-topic                         |
+| AZURE_SERVICE_BUS_COASTAL_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-display-group-topic                         |
+| AZURE_SERVICE_BUS_NON_DISPLAY_GROUP_SUBSCRIPTION_NAME | Subscription name associated with fews-non-display-group-topic (no fluvial/coastal distinction)|
+| AZURE_SERVICE_BUS_FLUVIAL_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-fluvial-forecast-location-topic                 |
+| AZURE_SERVICE_BUS_COASTAL_TIDAL_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-tidal-forecast-location-topic     |
+| AZURE_SERVICE_BUS_COASTAL_TRITON_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-triton-forecast-location-topic   |
+| AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-mvt-forecast-location-topic         |
+| AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                                 |
+| AZURE_SERVICE_BUS_MVT_SUBSCRIPTION_NAME | Subscription name associated with fews-mvt-topic                                                             |
 
 ## Optional Runtime Function App Settings/Environment Variables
 
