@@ -28,7 +28,7 @@
   * The URL for retrieving the set of ignored workflows.
   * The URL for retrieving the set of multivariate thresholds data.
 
-### Runtime Prerequisites When Using Microsoft Azure Service Bus Queues
+### Microsoft Azure Service Bus Queues
 
 * Microsoft Azure service bus queue named **fews-eventcode-queue**  
   * Messages are placed on this queue when a task run has completed within the core forecasting engine. Messages placed on this queue provide information on the completed task run to be processed by the **ProcessFewsEventCode** function.  The **ProcessFewsEventCode** function places a message for each
@@ -59,27 +59,12 @@
 * Optional Microsoft Azure service bus queue named **fews-staged-timeseries-queue**  
   * This queue is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function. The output binding is activated by setting the optional build time environment variable **IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED** to a value of **true** (see [Non-test related function app settings and environment variables](./Non-test-settings-and-environment-variables.md)). Messages are placed on this queue when the **ImportFromFews** function loads timeseries data associated with a task run into the staging database. A message is sent for each row inserted into the **TIMESERIES** table.
 
-### Runtime Prerequisites When Using Microsoft Azure Service Bus Topics
-
-* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
-* Microsoft Azure service bus queue named **fews-import-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-fluvial-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-coastal-tidal-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-coastal-triton-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-coastal-mvt-forecast-location-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription  
-* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
-* Microsoft Azure service bus topic named **fews-mvt-topic** and associated topic subscription
-* Optional Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription. This topic is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function.  
-
-The purpose of each topic is analagous to that of each corresponding queue.
-
 ## Redundant Legacy Prerequisites
 
 The function app prerequisites below are no longer required. It is recommended that they should be removed from any existing installation
 accordingly.
+
+**This list reflects a decision to remove support for Microsoft Azure service bus topics.**
 
 * Microsoft Azure storage queue named **fewspiqueue**
 * Microsoft Azure service bus queue named **fews-location-lookup-queue**
@@ -91,4 +76,16 @@ accordingly.
 * Microsoft Azure service bus queue named **fews-coastal-non-display-group-queue**
 * Microsoft Azure service bus topic named **fews-coastal-non-display-group-topic** and associated topic subscription
 * Microsoft Azure service bus queue named **fews-forecast-location-queue**
-* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription  
+* Microsoft Azure service bus topic named **fews-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-eventcode-topic** and associated topic subscription
+* Microsoft Azure service bus queue named **fews-import-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-tidal-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-triton-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-mvt-forecast-location-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-fluvial-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-coastal-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-non-display-group-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-ignored-workflows-topic** and associated topic subscription
+* Microsoft Azure service bus topic named **fews-mvt-topic** and associated topic subscription
+* Optional Microsoft Azure service bus topic named **fews-staged-timeseries-topic** and associated topic subscription. This topic is optional and only required when combined with a corresponding active output binding on the **ImportFromFews** function.
