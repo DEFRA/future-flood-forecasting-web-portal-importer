@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copy the configuration file for each function into place based on whether a queue or topic build is being performed. 
+# Copy the configuration file for each function into place.
 rm -f ProcessFewsEventCode/function.json
 rm -f ReplayProcessFewsEventCode/function.json
 rm -f ImportFromFews/function.json
