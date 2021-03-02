@@ -99,6 +99,7 @@ accordingly.
 | AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-mvt-forecast-location-topic         |
 | AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                                 |
 | AZURE_SERVICE_BUS_MVT_SUBSCRIPTION_NAME | Subscription name associated with fews-mvt-topic                                                             |
+| DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)|
 
 ## Optional Runtime Function App Settings/Environment Variables
 
