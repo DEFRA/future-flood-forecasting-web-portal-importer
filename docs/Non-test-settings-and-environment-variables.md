@@ -99,6 +99,7 @@ accordingly.
 | AZURE_SERVICE_BUS_COASTAL_MVT_FORECAST_LOCATION_SUBSCRIPTION_NAME | Subscription name associated with fews-coastal-mvt-forecast-location-topic         |
 | AZURE_SERVICE_BUS_IGNORED_WORKFLOWS_SUBSCRIPTION_NAME | Subscription name associated with fews-ignored-workflows-topic                                 |
 | AZURE_SERVICE_BUS_MVT_SUBSCRIPTION_NAME | Subscription name associated with fews-mvt-topic                                                             |
+| DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)|
 
 ## Optional Runtime Function App Settings/Environment Variables
 
@@ -122,7 +123,6 @@ accordingly.
 | SQLDB_LOCK_TIMEOUT | Time limit for database lock acquisition in milliseconds (defaults to 6500ms)                                                                                                                                                  |
 | FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS | The number of hours before task run completion time that core forecasting engine display group data should be retrieved (defaults to 14)                                                                                                     |
 | FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS   | The number of hours after task run completion time that core forecasting engine display group data should be retrieved (defaults to 120)                                                                                                     |
-| DELETE_EXPIRED_TIMESERIES_SOFT_LIMIT | The number of hours before the current time before which all completed status timeseries data should be removed (defaults to DELETE_EXPIRED_TIMESERIES_HARD_LIMIT)                                                     |
 | FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS | The number of hours before the previous task run end time (current task run start time if its the first task run for a given workflow) that core engine non-display-group data should be retrieved for (defaults to 24) |
 | TIMESERIES_DELETE_BATCH_SIZE | The number of timeseries_header rows (including linked foreign key rows) to be deleted on a single run of the DeleteExpiredTimeseries function (defaults to 1000)                                                               |
 | CONFIG_AUTHORIZATION | If resources specified through URL related app settings are protected, this app setting must be used to provide access. The value provides access to a token used in a HTTP Authorization header. |
