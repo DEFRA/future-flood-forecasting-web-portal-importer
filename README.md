@@ -1,6 +1,7 @@
 # Future Flood Forecasting Web Portal Importer
 
 [![CI](https://github.com/DEFRA/future-flood-forecasting-web-portal-importer/actions/workflows/ci.yml/badge.svg)](https://github.com/DEFRA/future-flood-forecasting-web-portal-importer/actions/workflows/ci.yml)
+<a href="https://codeclimate.com/github/DEFRA/future-flood-forecasting-web-portal-importer/maintainability"><img src="https://api.codeclimate.com/v1/badges/1ac657643bee19c0a22a/maintainability" /></a>
 
 Node.js Microsoft Azure functions responsible for extracting data from the core forecasting engine and importing it into a staging database prior to transformation for reporting and visualisation purposes.
 
