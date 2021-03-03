@@ -44,14 +44,21 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
-      - name: Set pull request git branch for code climate
+      - name: Set pull request GIT_BRANCH environment variable for code climate
         if: github.event_name == 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
-      - name: Set non-pull request git branch for code climate
+      - name: Set non-pull request GIT_BRANCH environment variable for code climate
         if: github.event_name != 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-      - name: Set git commit sha for code climate
+      - name: Set GITHUB_SHA environment variable for code climate
         run: echo "GIT_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
+      - name: Set up code climate for test coverage reporting
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter before-build
       - name: Run unit tests
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
@@ -72,5 +79,9 @@ jobs:
           SQLTESTDB_PORT: "${{ secrets.SQLTESTDB_PORT }}"
         run:
           npm test
-
+      - name: Upload test coverage to code climate        
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: |
+          ./cc-test-reporter after-build -t lcov --exit-code $?  
 
