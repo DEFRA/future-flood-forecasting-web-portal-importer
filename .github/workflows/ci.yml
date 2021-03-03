@@ -44,14 +44,14 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
-      - name: Set git branch for pull requests
+      - name: Set pull request git branch for code climate
         if: github.event_name == 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
-      - name: Set git branch for non-pull requests        
+      - name: Set non-pull request git branch for code climate
         if: github.event_name != 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-      - name: Debug
-        run: echo $GIT_BRANCH
+      - name: Set git commit sha for code climate
+        run: echo "GIT_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
       - name: Run unit tests
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
