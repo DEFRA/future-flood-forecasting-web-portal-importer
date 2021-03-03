@@ -84,6 +84,6 @@ jobs:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: |
           cd testing
-          ./cc-test-reporter format-coverage -t lcov
+          ../cc-test-reporter format-coverage -t lcov
           #./cc-test-reporter after-build -t lcov --exit-code $?
 
