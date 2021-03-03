@@ -47,7 +47,7 @@ jobs:
       - name: Set git branch for pull requests
         if: github.event_name == 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
-      - name: Set git branch for non-pull_requests        
+      - name: Set git branch for non-pull requests        
         if: github.event_name != 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       - name: Debug
