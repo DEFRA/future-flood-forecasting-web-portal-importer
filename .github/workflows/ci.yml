@@ -34,8 +34,6 @@ jobs:
           java-version: 1.8
       - name: Install node.js dependencies
         run: npm ci
-      - name: Debug
-        run: echo $GITHUB_REF ' ' $GITHUB_HEAD_REF
       - name: Run build script
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
@@ -46,6 +44,13 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
+      - name: Set code climate environment variables
+        if: github.event_name == 'pull_request'
+        run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
+        if: github.event_name != 'pull_request'
+        run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Debug
+        run: echo $GIT_BRANCH
       - name: Run unit tests
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
