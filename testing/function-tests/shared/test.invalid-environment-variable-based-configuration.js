@@ -1,6 +1,7 @@
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const { getEnvironmentVariableAsPositiveIntegerInRange } = require('../../../Shared/utils')
+const hostJson = require('../../../host.json')
 
 module.exports = describe('Test invalid environment variable based configuration', () => {
   let pool
@@ -45,8 +46,9 @@ module.exports = describe('Test invalid environment variable based configuration
         expect(connection.config.options.requestTimeout).not.toBe(parseInt(process.env.SQLDB_REQUEST_TIMEOUT_MILLIS))
         expect(connection.config.options.maxRetriesOnTransientErrors).not.toBe(parseInt(process.env.SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS))
         expect(connection.config.options.packetSize).not.toBe(parseInt(process.env.SQLDB_PACKET_SIZE))
-        expect(pool.pool.max).not.toBe(parseInt(process.env.SQLDB_MAX_POOLED_CONNECTIONS))
-        expect(pool.pool.min).not.toBe(parseInt(process.env.SQLDB_MIN_POOLED_CONNECTIONS))
+        // If the connection pool size is invalid, the default size should be configured.
+        expect(pool.pool.max).toBe(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls * 2)
+        expect(pool.pool.min).toBe(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls + 1)
         expect(pool.pool.acquireTimeoutMillis).not.toBe(parseInt(process.env.SQLDB_ACQUIRE_TIMEOUT_MILLIS))
         expect(pool.pool.createTimeoutMillis).not.toBe(parseInt(process.env.SQLDB_CREATE_TIMEOUT_MILLIS))
         expect(pool.pool.destroyTimeoutMillis).not.toBe(parseInt(process.env.SQLDB_DESTROY_TIMEOUT_MILLIS))
