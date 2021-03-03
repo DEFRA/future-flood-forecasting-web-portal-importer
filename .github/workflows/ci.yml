@@ -44,10 +44,11 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
-      - name: Set code climate environment variables
+      - name: Set git branch for pull requests
         if: github.event_name == 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
-        else: github.event_name != 'pull_request'
+      - name: Set git branch for non-pull_requests        
+        if: github.event_name != 'pull request'
         run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       - name: Debug
         run: echo $GIT_BRANCH
