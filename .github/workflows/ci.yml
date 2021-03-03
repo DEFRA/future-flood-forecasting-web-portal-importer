@@ -83,5 +83,6 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: |
-          ./cc-test-reporter after-build -t lcov -i ./testing/coverage/lconv.info --exit-code $?
+          ./cc-test-reporter format-coverage -t lcov --prefix ./testing
+          ./cc-test-reporter after-build -t lcov --exit-code $?
 
