@@ -35,7 +35,7 @@ jobs:
       - name: Install node.js dependencies
         run: npm ci
       - name: Debug
-        run: echo $GITHUB_REF && ' ' && echo $GITHUB_HEAD_REF
+        run: echo $GITHUB_REF ' ' $GITHUB_HEAD_REF
       - name: Run build script
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
