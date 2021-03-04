@@ -79,7 +79,7 @@ jobs:
           SQLTESTDB_HOST: "${{ secrets.SQLTESTDB_HOST }}"
           SQLTESTDB_PORT: "${{ secrets.SQLTESTDB_PORT }}"
         run:
-          pwd
+          npm test
       - name: Upload test coverage to code climate        
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
