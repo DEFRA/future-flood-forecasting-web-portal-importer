@@ -1,4 +1,4 @@
-# Incident Management Forecasting (Known Formerly As Future Flood Forecasting) Web Portal Importer
+# Incident Management Forecasting (Known Previously As Future Flood Forecasting) Web Portal Importer
 
 [![CI](https://github.com/DEFRA/future-flood-forecasting-web-portal-importer/actions/workflows/ci.yml/badge.svg)](https://github.com/DEFRA/future-flood-forecasting-web-portal-importer/actions/workflows/ci.yml)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/1ac657643bee19c0a22a/test_coverage)](https://codeclimate.com/github/DEFRA/future-flood-forecasting-web-portal-importer/test_coverage)
