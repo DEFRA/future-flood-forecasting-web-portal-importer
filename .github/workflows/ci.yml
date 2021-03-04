@@ -44,6 +44,8 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
+      # https://docs.codeclimate.com/docs/github-actions-test-coverage
+      # https://stackoverflow.com/questions/58033366/how-to-get-current-branch-within-github-actions
       - name: Set pull request GIT_BRANCH environment variable for code climate
         if: github.event_name == 'pull_request'
         run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
@@ -59,6 +61,8 @@ jobs:
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
           ./cc-test-reporter before-build
+          # The test coverage files are in a nested location so create a symbolic link for the code climate test
+          # reporter to use.
           ln -s testing/coverage coverage
       - name: Run unit tests
         env:
