@@ -9,12 +9,12 @@
 ### Additional Considerations
 
 As this Azure function app is responsible for placing data extracted from the core forecasting engine into an Azure SQL database, unit tests
-need to check that the database is populated correctly. As such, rather than mocking database functionality, a dedicated database instance is required for unit testing purposes. This dedicated database instance must be created in the same way as non-unit test specific instances using the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project. Unit test specific environment variables (defined below) must be set to allow the unit tests to utilise a dedicated database instance.
+need to check that the database is populated correctly. As such, rather than mocking database functionality, a dedicated database instance is required for unit testing purposes. This dedicated database instance must be created in the same way as non-unit test specific instances using the [Incident Management Forecasting Staging Database Scripting](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project. Unit test specific environment variables (defined below) must be set to allow the unit tests to utilise a dedicated database instance.
 
 * If unit test specific environment variables identify an existing database instance, the instance will be used by unit tests.
 * If unit test specific environment variables do not identify an existing database instance a docker based Microsoft SQL Server instance will be
   created for use by the unit tests.
-  * The creation of docker based Microsoft SQL Server instances relies on the prerequisites of the [Future Flood Forecasting Web Portal Staging](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
+  * The creation of docker based Microsoft SQL Server instances relies on the prerequisites of the [Incident Management Forecasting Staging Database Scripting](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) project.
   
 ## Exploratory Testing
 
