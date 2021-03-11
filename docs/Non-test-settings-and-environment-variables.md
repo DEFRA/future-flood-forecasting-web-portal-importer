@@ -42,7 +42,13 @@ This prevents core forecasting engine messages from being processed until suppor
 
 ### Mandatory Staging Database Authentication Related Function App Settings/Environment Variables
 
-**Either** Microsoft Azure Managed Service Identity (MSI) App Service authentication or username/password authentication is supported.
+**Either** Microsoft Azure Managed Service Identity (MSI) App Service authentication or username/password authentication is supported. Note that MSI authentication is dependent on a number of prerequisties:
+
+* The staging database **must** include an account for a Microsoft Azure Active Directory user with the same name as the Microsoft Azure function app that the functions are published to.
+* The functions **must** be published to a function app with a system identity that has role permissions on the staging database.
+
+Note that the list of prerequistites is simplified and excludes fine detail accordingly. The reader is encouraged
+to consult MSI documentation before configuring the prerequisites as a number of options are available. Example MSI documention can be found at [https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet](https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet)
 
 #### MSI App Service Authentication Related Function App Settings/Environment Variables
 
