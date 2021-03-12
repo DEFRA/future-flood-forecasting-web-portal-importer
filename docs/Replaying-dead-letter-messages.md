@@ -1,4 +1,4 @@
-# Replaying Messages From The fews-eventcode And fews-import Dead Letter Queues After An Outage
+# Replaying Messages From The fews-eventcode And fews-import Dead Letter Replay Queues After An Outage
 
 * Disable the ProcessFewsEventCode function (achievable using the Azure portal or by using the function app setting AzureWebJobs.ProcessFewsEventCode.Disabled with a value of true).
 * Disable the ImportFromFews function (achievable using the Azure portal or by using the function app setting AzureWebJobs.ImportFromFews.Disabled with a value of true).

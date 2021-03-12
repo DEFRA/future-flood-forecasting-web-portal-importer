@@ -31,7 +31,7 @@ module.exports = describe('Test invalid environment variable based configuration
 
     afterAll(async () => {
       if (pool) {
-        pool.close()
+        await pool.close()
       }
     })
 
