@@ -124,7 +124,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
     it('Check for snapshot isolation (Azure DB default). Check select rejects with no snapshot and no table hint with delete in progress (will use default Read Committed isolation), else check select is successful when delete is in progress with snapshot isolation ON', async () => {
       const importDateStatus = 'exceedsHard'
       const statusCode = 6
-      const testDescription = { rowsAffected: [1] }
+      const testDescription = { rowsAffected: [2] }
 
       const importDate = await createImportDate(importDateStatus)
       await insertRecordIntoTables(importDate, statusCode, testDescription)

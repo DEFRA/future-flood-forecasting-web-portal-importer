@@ -143,7 +143,7 @@ module.exports = describe('Refresh mvt data tests', () => {
         PRIORITY: 5
       }]
       const expectedNumberOfExceptionRows = 1
-      const expectedErrorDescription = 'String or binary data would be truncated.'
+      const expectedErrorDescription = 'String or binary data would be truncated'
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription)
     })
     it('should load rows that contain true/false or 0/1 for a bit column and ignore rows that contain not bit values', async () => {
