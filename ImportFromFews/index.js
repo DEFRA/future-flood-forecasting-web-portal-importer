@@ -185,11 +185,11 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
       Accept: 'application/json'
     }
   }
-  logTaskRunProgress(context, taskRunData, 'Retrieving data')
+  await logTaskRunProgress(context, taskRunData, 'Retrieving data')
   const fewsResponse = await axios(axiosConfig)
-  logTaskRunProgress(context, taskRunData, 'Retrieved data')
+  await logTaskRunProgress(context, taskRunData, 'Retrieved data')
   taskRunData.fewsData = await minifyAndGzip(fewsResponse.data)
-  logTaskRunProgress(context, taskRunData, 'Compressed data')
+  await logTaskRunProgress(context, taskRunData, 'Compressed data')
 }
 
 async function processFewsDataRetrievalResults (context, taskRunData) {
@@ -216,7 +216,7 @@ async function createStagedTimeseriesMessageIfNeeded (context, timeseriesId) {
 }
 
 async function loadFewsData (context, preparedStatement, taskRunData) {
-  logTaskRunProgress(context, taskRunData, 'Loading data')
+  await logTaskRunProgress(context, taskRunData, 'Loading data')
   await preparedStatement.input('fewsData', sql.VarBinary)
   await preparedStatement.input('fewsParameters', sql.NVarChar)
   await preparedStatement.input('timeseriesHeaderId', sql.NVarChar)
@@ -240,7 +240,7 @@ async function loadFewsData (context, preparedStatement, taskRunData) {
   if (result.recordset && result.recordset[0] && result.recordset[0].id) {
     createStagedTimeseriesMessageIfNeeded(context, result.recordset && result.recordset[0] && result.recordset[0].id)
   }
-  logTaskRunProgress(context, taskRunData, 'Loaded data')
+  await logTaskRunProgress(context, taskRunData, 'Loaded data')
 }
 
 async function logTaskRunProgress (context, taskRunData, messageContext) {
