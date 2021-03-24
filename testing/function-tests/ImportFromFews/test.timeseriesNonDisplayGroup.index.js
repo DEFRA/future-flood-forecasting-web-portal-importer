@@ -172,7 +172,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           fff_staging.timeseries_header
             (task_start_time, task_completion_time, task_run_id, workflow_id, forecast, approved, message)
           values
-            (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000016', 'External_Forecasting_Workflow1', 0, 0, '{"input": "Test message"}')
+            (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000019', 'External_Forecasting_Workflow1', 0, 0, '{"input": "Test message"}')
        `)
 
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSingleFilterApprovedExternalForecasting')

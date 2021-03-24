@@ -47,6 +47,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.batch('delete from fff_staging.staging_exception')
       await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.batch('delete from fff_staging.timeseries_header')
       await request.batch('delete from fff_staging.non_display_group_workflow')
       await request.batch('delete from fff_staging.workflow_refresh')
       await request.batch(`
