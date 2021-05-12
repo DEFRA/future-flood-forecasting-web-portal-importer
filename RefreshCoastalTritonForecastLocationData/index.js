@@ -1,4 +1,4 @@
-const commonCoastalLocationRefreshData = require('../Shared/csv-load/common-refresh-data')
+const commonRefreshData = require('../Shared/csv-load/common-refresh-data')
 const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
 
 module.exports = async function (context) {
@@ -19,7 +19,7 @@ module.exports = async function (context) {
     ]
   }
 
-  const refreshData = Object.assign(localRefreshData, commonCoastalLocationRefreshData.commonRefreshData)
-  refreshData.functionSpecificData.push(...commonCoastalLocationRefreshData.commonCoastalLocationFunctionSpecificData)
+  const refreshData = Object.assign(localRefreshData, commonRefreshData.commonCoastalLocationRefreshData)
+  refreshData.functionSpecificData.push(...commonRefreshData.commonCoastalLocationFunctionSpecificData)
   await refresh(context, refreshData)
 }
