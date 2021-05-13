@@ -1,115 +1,128 @@
-const JSONStream = require('jsonstream-next')
-const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
-const { logger } = require('defra-logging-facade')
-const { pipeline, Transform } = require('stream')
-const { createGzip } = require('zlib')
-const { promisify } = require('util')
+import fs from 'fs'
+import JSONStream from 'jsonstream-next'
+import TimeseriesStagingError from './timeseries-functions/timeseries-staging-error.js'
+import loggingFacade from 'defra-logging-facade'
+import { pipeline, Transform } from 'stream'
+import { createGzip } from 'zlib'
+import { promisify } from 'util'
+const logger = loggingFacade.logger
 const pipe = promisify(pipeline)
 const moment = require('moment')
 
 const LATEST = 'latest'
 const PREVIOUS = 'previous'
 
-const self = module.exports = {
-  isBoolean: function (value) {
-    if (typeof (value) === 'boolean') {
-      return true
-    } else if (typeof (value) === 'string') {
-      return !!value.match(/^true|false$/i)
-    } else {
-      return false
-    }
-  },
-  minifyAndGzip: async function (jsonStream) {
-    const gzip = createGzip()
-    const buffers = []
-    let buffersLength = 0
-
-    const preStringifyObjectTransform = new Transform({
-      // Object mode is required to manipulate JSON.
-      objectMode: true,
-      transform: (object, encoding, done) => {
-        done(null, [object.key, object.value])
-      }
-    })
-
-    const byteArrayTransform = new Transform({
-      transform: (chunk, encoding, done) => {
-        buffers.push(chunk)
-        buffersLength += chunk.length
-        done()
-      }
-    })
-
-    // Minification is achieved using a stream compatible version of JSON.stringify(JSON.parse(jsonString)).
-    await pipe(
-      jsonStream,
-      // Emit keys and values from the stream.
-      JSONStream.parse('$*'),
-      // Transform the keys and values into the form required by JSONStream.stringifyObject
-      preStringifyObjectTransform,
-      // Minify the contents of the stream through the removal of new lines and use of
-      // JSON.stringify with no indentation.
-      JSONStream.stringifyObject('{', ',', '}', 0),
-      gzip,
-      byteArrayTransform
-    )
-
-    return Buffer.concat(buffers, buffersLength)
-  },
-  getEnvironmentVariableAsAbsoluteInteger: function (environmentVariableName) {
-    let environmentVariableAsInteger
-    const parsedEnvironmentVariable = Number(process.env[environmentVariableName])
-    if (Number.isInteger(parsedEnvironmentVariable)) {
-      environmentVariableAsInteger = Math.abs(parsedEnvironmentVariable)
-    }
-    return environmentVariableAsInteger
-  },
-  getAbsoluteIntegerForNonZeroOffset: function (context, offset, taskRunData) {
-    if (offset && offset !== 0) {
-      return getAbsoluteIntegerForNonZeroOffsetInternal(context, offset, taskRunData)
-    } else {
-      context.log('Non-zero offset required.')
-      return null
-    }
-  },
-  getEnvironmentVariableAsPositiveIntegerInRange: function (config) {
-    let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
-    const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
-    if (!isNumericEnvironmentVariableRangeDefined(config, loggingFunction)) {
-      environmentVariableAsInteger = undefined
-    }
-
-    if (Number.isInteger(Number(environmentVariableAsInteger)) &&
-        (environmentVariableAsInteger < config.minimum ||
-         environmentVariableAsInteger > config.maximum)) {
-      environmentVariableAsInteger = undefined
-      loggingFunction(`Ignoring ${config.environmentVariableName} - value must be between ${config.minimum} and ${config.maximum}`)
-    }
-    return environmentVariableAsInteger
-  },
-  getEnvironmentVariableAsBoolean: function (environmentVariableName) {
-    let environmentVariableAsBoolean
-    if (self.isBoolean(process.env[environmentVariableName])) {
-      environmentVariableAsBoolean = JSON.parse(process.env[environmentVariableName])
-    }
-    return environmentVariableAsBoolean
-  },
-  logObsoleteTaskRunMessage: function (context, taskRunData) {
-    context.log.warn(
-      `Ignoring message for ${taskRunData.sourceDetails} completed on ${taskRunData.taskRunCompletionTime}` +
-      ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`
-    )
-  },
-  addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData: function (taskRunData, result) {
-    addTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result, LATEST, addFallbackLatestTaskRunCompletionPropertiesToTaskRunData)
-  },
-  addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData: function (taskRunData, result) {
-    addTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result, PREVIOUS, addFallbackPreviousTaskRunCompletionPropertiesToTaskRunData)
-  },
-  logMessageForTaskRunPlotOrFilter: function (context, taskRunData, prefix, suffix) {
-    context.log(`${prefix} for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) ${suffix || ''}`)
+export const isBoolean = function (value) {
+  if (typeof (value) === 'boolean') {
+    return true
+  } else if (typeof (value) === 'string') {
+    return !!value.match(/^true|false$/i)
+  } else {
+    return false
   }
+}
+
+export const minifyAndGzip = async function (jsonStream) {
+  const gzip = createGzip()
+  const buffers = []
+  let buffersLength = 0
+
+  const preStringifyObjectTransform = new Transform({
+    // Object mode is required to manipulate JSON.
+    objectMode: true,
+    transform: (object, encoding, done) => {
+      done(null, [object.key, object.value])
+    }
+  })
+
+  const byteArrayTransform = new Transform({
+    transform: (chunk, encoding, done) => {
+      buffers.push(chunk)
+      buffersLength += chunk.length
+      done()
+    }
+  })
+
+  // Minification is achieved using a stream compatible version of JSON.stringify(JSON.parse(jsonString)).
+  await pipe(
+    jsonStream,
+    // Emit keys and values from the stream.
+    JSONStream.parse('$*'),
+    // Transform the keys and values into the form required by JSONStream.stringifyObject
+    preStringifyObjectTransform,
+    // Minify the contents of the stream through the removal of new lines and use of
+    // JSON.stringify with no indentation.
+    JSONStream.stringifyObject('{', ',', '}', 0),
+    gzip,
+    byteArrayTransform
+  )
+
+  return Buffer.concat(buffers, buffersLength)
+}
+
+export const getEnvironmentVariableAsAbsoluteInteger = function (environmentVariableName) {
+  let environmentVariableAsInteger
+  const parsedEnvironmentVariable = Number(process.env[environmentVariableName])
+  if (Number.isInteger(parsedEnvironmentVariable)) {
+    environmentVariableAsInteger = Math.abs(parsedEnvironmentVariable)
+  }
+  return environmentVariableAsInteger
+}
+
+export const getAbsoluteIntegerForNonZeroOffset = function (context, offset, taskRunData) {
+  if (offset && offset !== 0) {
+    return getAbsoluteIntegerForNonZeroOffsetInternal(context, offset, taskRunData)
+  } else {
+    context.log('Non-zero offset required.')
+    return null
+  }
+}
+
+export const getEnvironmentVariableAsPositiveIntegerInRange = function (config) {
+  let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
+  const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
+  if (!isNumericEnvironmentVariableRangeDefined(config, loggingFunction)) {
+    environmentVariableAsInteger = undefined
+  }
+
+  if (Number.isInteger(Number(environmentVariableAsInteger)) &&
+      (environmentVariableAsInteger < config.minimum ||
+       environmentVariableAsInteger > config.maximum)) {
+    environmentVariableAsInteger = undefined
+    loggingFunction(`Ignoring ${config.environmentVariableName} - value must be between ${config.minimum} and ${config.maximum}`)
+  }
+  return environmentVariableAsInteger
+}
+
+export const getEnvironmentVariableAsBoolean = function (environmentVariableName) {
+  let environmentVariableAsBoolean
+  if (self.isBoolean(process.env[environmentVariableName])) {
+    environmentVariableAsBoolean = JSON.parse(process.env[environmentVariableName])
+  }
+  return environmentVariableAsBoolean
+}
+
+export const logObsoleteTaskRunMessage = function (context, taskRunData) {
+  context.log.warn(
+    `Ignoring message for ${taskRunData.sourceDetails} completed on ${taskRunData.taskRunCompletionTime}` +
+    ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`
+  )
+}
+
+export const addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData = function (taskRunData, result) {
+  addTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result, LATEST, addFallbackLatestTaskRunCompletionPropertiesToTaskRunData)
+}
+
+export const addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData = function (taskRunData, result) {
+  addTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result, PREVIOUS, addFallbackPreviousTaskRunCompletionPropertiesToTaskRunData)
+}
+
+export const logMessageForTaskRunPlotOrFilter = function (context, taskRunData, prefix, suffix) {
+  context.log(`${prefix} for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) ${suffix || ''}`)
+}
+
+export const loadJsonFile = function (file) {
+  return JSON.parse(fs.readFileSync(file))
 }
 
 function addTaskRunCompletionPropertiesFromQueryResultToTaskRunData (taskRunData, result, propertyNamePrefix, fallbackFunction) {

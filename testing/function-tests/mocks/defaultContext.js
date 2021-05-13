@@ -1,6 +1,8 @@
-const { logger } = require('defra-logging-facade')
+import { jest } from '@jest/globals'
+import loggingFacade from 'defra-logging-facade'
+const logger = loggingFacade.logger
 
-module.exports = function () {
+export default function () {
   this.bindings = {}
   this.bindingDefinitions = []
   this.done = jest.fn(logger.info('context.done() called'))

@@ -1,8 +1,8 @@
-const sql = require('mssql')
-const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
-const StagingError = require('./staging-error')
+import sql from 'mssql'
+import { doInTransaction, executePreparedStatementInTransaction } from '../transaction-helper.js'
+import StagingError from './staging-error.js'
 
-module.exports = async function (context, stagingExceptionData) {
+export default async function (context, stagingExceptionData) {
   const isolationLevel = null
   const transaction = stagingExceptionData.transaction
   await transaction.rollback()

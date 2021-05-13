@@ -1,7 +1,7 @@
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
+import sql from 'mssql'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   return Promise.resolve(await executePreparedStatementInTransaction(isIgnoredWorkflow, context, taskRunData.transaction, taskRunData))
 }
 

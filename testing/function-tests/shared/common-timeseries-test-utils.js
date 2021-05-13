@@ -1,4 +1,4 @@
-const sql = require('mssql')
+import sql from 'mssql'
 
 const COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
   insert into
@@ -47,7 +47,7 @@ const lockTimeoutData = {
   }
 }
 
-module.exports = function (pool) {
+export default function (pool) {
   const deleteWorkflowData = async function (request) {
     await request.batch('delete from fff_staging.coastal_display_group_workflow')
     await request.batch('delete from fff_staging.fluvial_display_group_workflow')

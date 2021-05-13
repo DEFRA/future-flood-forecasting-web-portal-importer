@@ -1,5 +1,5 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
 const query = `
   insert into
@@ -27,7 +27,8 @@ const query = `
         itse.timeseries_staging_exception_id = tse.id
     )
 `
-module.exports = async function (context, taskRunData) {
+
+export default async function (context, taskRunData) {
   await executePreparedStatementInTransaction(deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter, context, taskRunData.transaction, taskRunData)
 }
 
