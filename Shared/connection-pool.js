@@ -74,8 +74,12 @@ function addOptionalConfig (config, numericEnvironmentVariables) {
     config.options.abortTransactionOnError = JSON.parse(process.env.SQLDB_ABORT_TRANSACTION_ON_ERROR)
   }
 
+  if (isBoolean(process.env.SQLDB_TRUST_SERVER_CERTIFICATE)) {
+    config.options.trustServerCertificate = JSON.parse(process.env.SQLDB_TRUST_SERVER_CERTIFICATE)
+  }
+
   if (isBoolean(process.env.SQLDB_PROPAGATE_CREATE_ERROR)) {
-    config.pool.propagteCreateError = JSON.parse(process.env.SQLDB_PROPAGATE_CREATE_ERROR)
+    config.pool.propagateCreateError = JSON.parse(process.env.SQLDB_PROPAGATE_CREATE_ERROR)
   }
 }
 
