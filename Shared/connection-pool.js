@@ -1,8 +1,8 @@
-const sql = require('mssql')
-const { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange, logger } = require('./utils')
-const hostJson = require('../host.json')
+import sql from 'mssql'
+import { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange, loadJsonFile, logger } from './utils.js'
+const hostJson = loadJsonFile('./host.json')
 
-module.exports = function () {
+export default function () {
   // Configure database connectivity using:
   // - some mssql defaults
   // - some custom defaults

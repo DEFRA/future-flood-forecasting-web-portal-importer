@@ -1,4 +1,4 @@
-module.exports = async function (records) {
+export default async function (records) {
   const array = []
   for (const record of records) {
     array.push({

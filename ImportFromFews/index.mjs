@@ -1,23 +1,23 @@
-const buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-fallback-url-if-possible')
-const buildPiServerGetTimeseriesDisplayGroupUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-display-groups-url-if-possible')
-const buildPiServerGetTimeseriesUrlIfPossible = require('./helpers/build-pi-server-get-timeseries-url-if-possible')
-const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
-const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./helpers/deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
-const deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible = require('./helpers/deactivate-staging-exceptions-by-source-function-and-task-run-id-if-possible')
-const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
-const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const isMessageIgnored = require('./helpers/is-message-ignored')
-const processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible = require('./helpers/process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible')
-const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
-const processImportError = require('./helpers/process-import-error')
-const retrieveAndLoadFewsData = require('./helpers/retrieve-and-load-fews-data')
-const PartialFewsDataError = require('../Shared/message-replay/partial-fews-data-error')
-const processPartialFewsDataError = require('../Shared/message-replay/process-partial-fews-data-error')
-const publishScheduledMessagesIfNeeded = require('../Shared/timeseries-functions/publish-scheduled-messages-if-needed')
+import buildPiServerGetTimeseriesDisplayGroupFallbackUrlIfPossible from './helpers/build-pi-server-get-timeseries-display-groups-fallback-url-if-possible.js'
+import buildPiServerGetTimeseriesDisplayGroupUrlIfPossible from './helpers/build-pi-server-get-timeseries-display-groups-url-if-possible.js'
+import buildPiServerGetTimeseriesUrlIfPossible from './helpers/build-pi-server-get-timeseries-url-if-possible.js'
+import createStagingException from '../Shared/timeseries-functions/create-staging-exception.js'
+import deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter from './helpers/deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter.js'
+import deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId from '../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id.js'
+import deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible from './helpers/deactivate-staging-exceptions-by-source-function-and-task-run-id-if-possible.js'
+import { doInTransaction, executePreparedStatementInTransaction } from '../Shared/transaction-helper.js'
+import getTimeseriesHeaderData from './helpers/get-timeseries-header-data.js'
+import isLatestTaskRunForWorkflow from '../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
+import processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible from './helpers/process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible.js'
+import isMessageIgnored from './helpers/is-message-ignored.js'
+import isSpanWorkflow from '../Shared/timeseries-functions/check-spanning-workflow.js'
+import processImportError from './helpers/process-import-error.js'
+import retrieveAndLoadFewsData from './helpers/retrieve-and-load-fews-data.js'
+import PartialFewsDataError from '../Shared/message-replay/partial-fews-data-error.js'
+import processPartialFewsDataError from '../Shared/message-replay/process-partial-fews-data-error.js'
+import publishScheduledMessagesIfNeeded from '../Shared/timeseries-functions/publish-scheduled-messages-if-needed.js'
 
-module.exports = async function (context, message) {
+export default async function (context, message) {
   context.log(`Processing timeseries import message: ${JSON.stringify(message)}`)
   const errorMessage = 'The FEWS data import function has failed with the following error:'
   const isolationLevel = null

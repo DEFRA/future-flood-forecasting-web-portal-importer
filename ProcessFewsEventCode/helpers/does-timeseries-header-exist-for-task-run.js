@@ -1,7 +1,7 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   return Promise.resolve(await executePreparedStatementInTransaction(doesTimeseriesHeaderExistForTaskRun, context, taskRunData.transaction, taskRunData))
 }
 

@@ -1,10 +1,15 @@
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const replayProcessFewsEventCode = require('../../../ReplayProcessFewsEventCode')
-const messages = require('../ProcessFewsEventCode/messages/task-run-complete/fluvial-display-group-messages.json')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import replayProcessFewsEventCode from '../../../ReplayProcessFewsEventCode/index.mjs'
+import { jest } from '@jest/globals'
 
-module.exports = describe('Tests for replaying messages on the ProcessFewsEventCode dead letter queue', () => {
+jest.mock('node-fetch')
+
+const messages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/fluvial-display-group-messages.json')
+
+export const replayDeadLetteredProcessFewsEventCodeMessageTests = () => describe('Tests for replaying dead lettered ProcessFewsEventCode messages', () => {
   let context
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool

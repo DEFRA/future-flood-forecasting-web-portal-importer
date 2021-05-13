@@ -1,9 +1,9 @@
-const extract = require('./extract')
+import extract from './extract.js'
 
 const expectedNumberOfMatches = 2
 const matchIndexToReturn = 1
 
-module.exports = async function (context, taskRunData, regex, errorMessageSubject) {
+export default async function (context, taskRunData, regex, errorMessageSubject) {
   const extractionData = {
     taskRunData,
     regex,

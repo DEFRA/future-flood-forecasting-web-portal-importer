@@ -1,4 +1,4 @@
-const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
+import refresh from '../Shared/csv-load/shared-refresh-csv-rows.js'
 
 const functionSpecificData = [
   { tableColumnName: 'GROUP_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'groupID' },
@@ -8,7 +8,7 @@ const functionSpecificData = [
   { tableColumnName: 'SHORT_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'shortName' }
 ]
 
-module.exports = async function (context) {
+export default async function (context) {
   // Ideally, these constants would be replaced with inline attributes within refreshData.
   // Inline attributes caused code climate to report code duplication. Using a number of
   // distinct constants satisfies code climate.
