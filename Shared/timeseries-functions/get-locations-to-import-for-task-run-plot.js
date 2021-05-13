@@ -1,7 +1,7 @@
-const sql = require('mssql')
-const doTimeseriesExistForTaskRunPlotOrFilter = require('./do-timeseries-exist-for-task-run-plot-or-filter')
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
-const TimeseriesStagingError = require('./timeseries-staging-error')
+import sql from 'mssql'
+import doTimeseriesExistForTaskRunPlotOrFilter from './do-timeseries-exist-for-task-run-plot-or-filter.js'
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
+import TimeseriesStagingError from './timeseries-staging-error.js'
 
 const aggregatedCoastalDisplayGroupWorkflowLocationsQuery = `
   select
@@ -74,7 +74,7 @@ const displayGroupWorkflowQueries = {
   }
 }
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   return Promise.resolve(await buildLocationsToImportForTaskRunPlot(context, taskRunData))
 }
 

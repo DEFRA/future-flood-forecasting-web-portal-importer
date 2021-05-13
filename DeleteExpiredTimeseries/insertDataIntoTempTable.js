@@ -1,5 +1,5 @@
-const { executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../Shared/transaction-helper.js'
+import sql from 'mssql'
 
 const collectExpiredRecordsQuery = `
 insert into #deletion_job_temp
@@ -78,7 +78,7 @@ union
   where
   h.import_time < cast(@date as datetimeoffset)`
 
-module.exports = async function (context, transaction, date, deleteHeaderRowBatchSize) {
+export default async function (context, transaction, date, deleteHeaderRowBatchSize) {
   await executePreparedStatementInTransaction(insertDataIntoTemp, context, transaction, date, deleteHeaderRowBatchSize)
 }
 

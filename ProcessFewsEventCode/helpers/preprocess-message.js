@@ -1,8 +1,9 @@
-const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+import createStagingException from '../../Shared/timeseries-functions/create-staging-exception.js'
 
 const errorMessage = 'Message must be either a string or a pure object'
 
-module.exports = async function (context, transaction, message) {
+export default async function (context, transaction, message) {
+  const errorMessage = 'Message must be either a string or a pure object'
   let returnValue = null
 
   if (message) {

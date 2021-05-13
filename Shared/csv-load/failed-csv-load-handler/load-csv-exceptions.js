@@ -1,6 +1,6 @@
-const createCSVStagingException = require('./create-csv-staging-exception')
+import createCSVStagingException from './create-csv-staging-exception.js'
 
-module.exports = async function (transaction, context, sourceFile, failedRows) {
+export default async function (transaction, context, sourceFile, failedRows) {
   for (let i = 0; i < failedRows.length; i++) {
     const csvStagingExceptionData = {
       sourceFile,

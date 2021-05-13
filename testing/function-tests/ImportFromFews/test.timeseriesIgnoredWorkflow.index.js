@@ -1,13 +1,15 @@
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const importFromFewsMessages = require('./messages/ignored-workflow-messages')
-const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-const { checkImportedData } = require('./display-group-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const moment = require('moment')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js'
+import ImportFromFewsTestUtils from './import-from-fews-test-utils.js'
+import { checkImportedData } from './display-group-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import moment from 'moment'
+import sql from 'mssql'
 
-module.exports = describe('Tests for preventing ignored workflow import', () => {
+const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/ignored-workflow-messages.json')
+
+export const ignoredWorkflowImportFromFewsTests = () => describe('Tests for preventing ignored workflow import', () => {
   let context
   let importFromFewsTestUtils
 

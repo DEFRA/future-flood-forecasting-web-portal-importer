@@ -1,6 +1,6 @@
 // Code adapted from https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-nodejs-how-to-use-queues-new-package
 
-const { ServiceBusClient } = require('@azure/service-bus')
+import { ServiceBusClient } from '@azure/service-bus'
 
 const connectionString = process.env.AzureWebJobsServiceBus
 const queueName = process.env.AZURE_SERVICE_BUS_QUEUE

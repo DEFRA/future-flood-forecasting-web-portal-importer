@@ -1,6 +1,4 @@
-
-const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
-const commonRefreshData = require('../Shared/csv-load/common-refresh-data')
+import refresh from '../Shared/csv-load/shared-refresh-csv-rows.js'
 
 const functionSpecificData = [
   { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
@@ -18,7 +16,7 @@ const functionSpecificData = [
   { tableColumnName: 'LOCATION_Z', tableColumnType: 'Decimal', expectedCSVKey: 'LocationZ', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN }
 ]
 
-module.exports = async function (context) {
+export default async function (context) {
   const refreshData = {
     csvUrl: process.env.FLUVIAL_FORECAST_LOCATION_URL,
     nonWorkflowRefreshCsvType: 'FFL',

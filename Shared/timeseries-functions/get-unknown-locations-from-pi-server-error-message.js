@@ -1,4 +1,4 @@
-module.exports = async function (context, errorMessage) {
+export default async function (context, errorMessage) {
   let matches
   const regex = /Location\s+(.*?)\s+does not exist/ig
   const nonExistentLocationsIds = new Set()

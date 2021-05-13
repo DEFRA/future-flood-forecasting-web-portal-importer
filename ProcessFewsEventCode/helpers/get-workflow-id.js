@@ -1,8 +1,8 @@
-const extract = require('./extraction-utils')
+import extract from './extraction-utils.js'
 
 const workflowIdRegex = /task(?:\s+run)?\s+([^\s]*)\s+/i
 const workflowIdText = 'workflow ID'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   return await extract(context, taskRunData, workflowIdRegex, workflowIdText)
 }

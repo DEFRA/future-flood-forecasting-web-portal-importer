@@ -1,12 +1,14 @@
-const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
-const taskRunCompleteMessages = require('./messages/task-run-complete/non-display-group-messages')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const moment = require('moment')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonNonDisplayGroupTimeseriesTestUtils from '../shared/common-non-display-group-timeseries-test-utils.js'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import moment from 'moment'
+import sql from 'mssql'
 
-module.exports = describe('Tests for import timeseries non-display groups', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/non-display-group-messages.json')
+
+export const nonDisplayGroupProcessFewsEventCodeTests = () => describe('Non-display group process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 
@@ -83,7 +85,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         insert into
           fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
         values
-          ('description: invalid message', 'Error', 'ukeafffsmc00:000000003', 'P', 'Test_Workflow1', @exceptionTime);
+          ('description: invalid message', 'Error', 'ukeafffsmc00:000000003', 'P', 'Test_Workflow1', @exceptionTime)
       `)
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
