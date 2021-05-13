@@ -1,17 +1,15 @@
-const refreshDisplayGroupTable = require('./refresh-display-group-data')
-const sql = require('mssql')
+import refreshDisplayGroupTable from './refresh-display-group-data.js'
+import sql from 'mssql'
 
 const COASTAL = 'coastal'
 const FLUVIAL = 'fluvial'
 
-module.exports = {
-  getCoastalDisplayGroupMetadata: async function () {
-    return await getDisplayGroupMetadata(process.env.COASTAL_DISPLAY_GROUP_WORKFLOW_URL, 'C', COASTAL)
-  },
+export const getCoastalDisplayGroupMetadata = async function () {
+  return await getDisplayGroupMetadata(process.env.COASTAL_DISPLAY_GROUP_WORKFLOW_URL, 'C', COASTAL)
+}
 
-  getFluvialDisplayGroupMetadata: async function () {
-    return await getDisplayGroupMetadata(process.env.FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL, 'F', FLUVIAL)
-  }
+export const getFluvialDisplayGroupMetadata = async function () {
+  return await getDisplayGroupMetadata(process.env.FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL, 'F', FLUVIAL)
 }
 
 async function getDisplayGroupMetadata (csvUrl, workflowRefreshCsvType, displayGroupType) {

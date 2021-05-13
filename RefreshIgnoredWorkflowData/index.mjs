@@ -1,6 +1,6 @@
-const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
+import refresh from '../Shared/csv-load/shared-refresh-csv-rows.js'
 
-module.exports = async function (context) {
+export default async function (context) {
   const refreshData = {
     csvUrl: process.env.IGNORED_WORKFLOW_URL,
     workflowRefreshCsvType: 'I',

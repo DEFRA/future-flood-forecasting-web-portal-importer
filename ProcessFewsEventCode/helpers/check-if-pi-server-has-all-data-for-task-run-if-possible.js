@@ -10,14 +10,14 @@
 // completed when a task run completion message is received. This results in client
 // code attempting to delay subsequent processing until PI Server indexing has completed
 // to minimise the risk of data gaps.
-const { getDuration } = require('../../Shared/utils')
-const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
-const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
-const doIfMaximumDelayForPiServerIndexingIsNotExceeded =
-  require('../../Shared/timeseries-functions/do-if-maximum-delay-for-pi-server-indexing-is-not-exceeded')
-const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
-const axios = require('axios')
-const moment = require('moment')
+import { getDuration } from '../../Shared/utils.js'
+import getPiServerErrorMessage from '../../Shared/timeseries-functions/get-pi-server-error-message.js'
+import createStagingException from '../../Shared/timeseries-functions/create-staging-exception.js'
+import doIfMaximumDelayForPiServerIndexingIsNotExceeded
+  from '../../Shared/timeseries-functions/do-if-maximum-delay-for-pi-server-indexing-is-not-exceeded.js'
+import PartialFewsDataError from '../../Shared/message-replay/partial-fews-data-error.js'
+import axios from 'axios'
+import moment from 'moment'
 
 const PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE_KEY = 'pauseBeforeReplayingIncomingMessage'
 const OUTGOING_FILTER_MESSAGE_DELAY_KEY = 'outgoingFilterMessageDelay'
@@ -47,7 +47,7 @@ const OUTGOING_FILTER_MESSAGE_DELAY_MILLIS =
 const OUTGOING_PLOT_MESSAGE_DELAY_MILLIS =
   getDuration(durationTypeConfig[OUTGOING_PLOT_MESSAGE_DELAY_KEY])
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   checkOutgoingMessages(context, taskRunData)
   const fewsResponse = await checkIfPiServerIsOnline(context, taskRunData)
   const noActionTakenMessage =

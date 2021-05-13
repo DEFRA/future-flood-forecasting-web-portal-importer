@@ -1,7 +1,7 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
-module.exports = async function (context, replayData) {
+export default async function (context, replayData) {
   await executePreparedStatementInTransaction(getCoreForecastingEngineMessagesForKnownWorkflows, context, replayData.transaction, replayData)
 }
 

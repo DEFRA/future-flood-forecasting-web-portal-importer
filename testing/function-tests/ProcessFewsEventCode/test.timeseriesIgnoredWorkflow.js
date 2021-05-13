@@ -1,10 +1,12 @@
-const taskRunCompleteMessages = require('./messages/task-run-complete/ignored-workflow-messages')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
 
-module.exports = describe('Tests for import timeseries ignored workflows', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/ignored-workflow-messages.json')
+
+export const ignoredWorkflowProcessFewsEventCodeTests = () => describe('Ignored workflow process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 

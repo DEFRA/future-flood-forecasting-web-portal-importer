@@ -1,19 +1,16 @@
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const { getAbsoluteIntegerForNonZeroOffset, getEnvironmentVariableAsAbsoluteInteger } = require('../../../Shared/utils')
-const messageFunction = require('../../../ImportFromFews/index')
-const { objectToStream } = require('../shared/utils')
-const axios = require('axios')
-const sql = require('mssql')
-const moment = require('moment')
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js'
+import { getAbsoluteIntegerForNonZeroOffset, getEnvironmentVariableAsAbsoluteInteger } from '../../../Shared/utils.js'
+import messageFunction from '../../../ImportFromFews/index.mjs'
+import { objectToStream } from '../shared/utils.js'
+import axios from 'axios'
+import sql from 'mssql'
+import moment from 'moment'
+import { expect } from 'vitest'
 
-jest.mock('@azure/service-bus')
-jest.mock('axios')
-
-module.exports = function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
+export default function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessages = async function (messageKey, mockResponses) {
     if (mockResponses) {
-      let mock = axios
       for (const mockResponse of mockResponses) {
         const mockResponseWithDataAsStream = JSON.parse(JSON.stringify(mockResponse))
         if (mockResponse instanceof Error) {
@@ -21,10 +18,10 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
           // A mock Error is being cloned so just copy the error message and stack trace manually.
           mockResponseWithDataAsStream.message = mockResponse.message
           mockResponseWithDataAsStream.stack = mockResponse.stack
-          mock = axios.mockRejectedValueOnce(mockResponseWithDataAsStream)
+          axios.mockRejectedValueOnce(mockResponseWithDataAsStream)
         } else {
           mockResponseWithDataAsStream.data = await objectToStream(mockResponse.data)
-          mock = mock.mockReturnValueOnce(mockResponseWithDataAsStream)
+          axios.mockReturnValueOnce(mockResponseWithDataAsStream)
         }
       }
     }
@@ -186,7 +183,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
       message: 'message content'
     }
 
-    // the util function 'getAbsoluteIntegerForNonZeroOffset' is anonymous, Jest requires a function within an expect statement
+    // the util function 'getAbsoluteIntegerForNonZeroOffset' is anonymous and Vitest appears to require a function within an expect statement
     async function assignVariableToFunction (offsetValue, taskRunData) {
       await getAbsoluteIntegerForNonZeroOffset(context, offsetValue, taskRunData)
     }

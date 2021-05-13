@@ -1,6 +1,6 @@
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
-const { prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData } = require('../csv-load/service-configuration-update-utils')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
+import { prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData } from '../csv-load/service-configuration-update-utils.js'
+import sql from 'mssql'
 
 const activeTimeseriesStagingExceptionMessagesByCsvTypeForExistingWorkflowsQuery = `
   select distinct
@@ -50,7 +50,7 @@ const timeseriesHeaderMessagesForActiveTimeseriesStagingExceptionsByCsvTypeForMi
     )
 `
 
-module.exports = async function (context, replayData) {
+export default async function (context, replayData) {
   // Replay messages for CSV related timeseries staging exceptions linked to known workflows.
   await executePreparedStatementInTransaction(replayMessagesForCsvRelatedTimeseriesStagingExceptions, context, replayData.transaction, replayData)
   // Replay timeseries header (core engine) messages for CSV related timeseries staging exceptions linked to unknown workflows.

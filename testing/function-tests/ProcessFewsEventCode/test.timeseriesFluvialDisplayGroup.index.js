@@ -1,11 +1,13 @@
-const taskRunCompleteMessages = require('./messages/task-run-complete/fluvial-display-group-messages')
-const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-timeseries-test-utils')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonFluvialTimeseriesTestUtils from '../shared/common-fluvial-timeseries-test-utils.js'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import sql from 'mssql'
 
-module.exports = describe('Tests for import timeseries display groups', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/fluvial-display-group-messages.json')
+
+export const fluvialDisplayGroupProcessFewsEventCodeTests = () => describe('Fluvial display group process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 

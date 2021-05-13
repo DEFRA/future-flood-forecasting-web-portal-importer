@@ -1,6 +1,7 @@
-const { logger } = require('../../../Shared/utils')
+import { logger } from '../../../Shared/utils'
+import { jest } from '@jest/globals'
 
-module.exports = function () {
+export default function () {
   this.bindingData = {
     deliveryCount: 0
   }

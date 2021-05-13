@@ -1,5 +1,5 @@
-const { executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../Shared/transaction-helper.js'
+import sql from 'mssql'
 
 const deleteStagingExceptionsQuery = `
 -- staging exceptions to be deleted
@@ -41,7 +41,7 @@ join (
 select 
   @@rowcount as deleted`
 
-module.exports = async function (context, transaction, expiryDate, deleteRowBatchSize) {
+export default async function (context, transaction, expiryDate, deleteRowBatchSize) {
   const deleteStagingExceptionData = {
     expiryDate,
     deleteRowBatchSize,

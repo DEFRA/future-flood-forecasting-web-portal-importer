@@ -1,16 +1,17 @@
-const MVTRefreshFunction = require('../../../RefreshMVTData/index')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const CommonWorkflowCSVTestUtils = require('../shared/common-workflow-csv-test-utils')
-const Util = require('../shared/common-csv-refresh-utils')
-const Context = require('../mocks/defaultContext')
-const message = require('../mocks/defaultMessage')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import MVTRefreshFunction from '../../../RefreshMVTData/index.mjs'
+import ConnectionPool from '../../../Shared/connection-pool'
+import CommonWorkflowCSVTestUtils from '../shared/common-workflow-csv-test-utils.js'
+import Util from '../shared/common-csv-refresh-utils'
+import Context from '../mocks/defaultContext'
+import message from '../mocks/defaultMessage'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { jest } from '@jest/globals'
 
 jest.mock('node-fetch')
 
-module.exports = describe('Refresh mvt data tests', () => {
+export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'

@@ -1,4 +1,6 @@
-module.exports = describe('Test configuration for MSI database authentication', () => {
+import ConnectionPool from '../../../Shared/connection-pool.js'
+
+export const msiDatabaseAuthenticationTests = () => describe('Test configuration for MSI database authentication', () => {
   describe('MSI database authentication', () => {
     beforeAll(async () => {
       // Reset modules so that ../../../Shared/utils.js is reloaded without the
@@ -13,7 +15,6 @@ module.exports = describe('Test configuration for MSI database authentication', 
       process.env.MSI_ENDPOINT = 'msi-endopoint-id'
       process.env.MSI_SECRET = 'msi-secret'
       try {
-        const ConnectionPool = require('../../../Shared/connection-pool')
         const connectionPool = new ConnectionPool()
         pool = connectionPool.pool
         // Attempting MSI based authentication in a unit test environment

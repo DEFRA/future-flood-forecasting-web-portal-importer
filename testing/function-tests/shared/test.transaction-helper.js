@@ -1,7 +1,7 @@
-const sql = require('mssql')
-const { doInTransaction, executePreparedStatementInTransaction } = require('../../../Shared/transaction-helper')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
+import sql from 'mssql'
+import { doInTransaction, executePreparedStatementInTransaction } from '../../../Shared/transaction-helper.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
 
 const jestConnectionPool = new ConnectionPool()
 const pool = jestConnectionPool.pool
@@ -9,7 +9,7 @@ const errorMessage = 'ERROR'
 
 let context
 
-module.exports = describe('Test transaction helper', () => {
+export const transactionHelperTests = () => describe('Test transaction helper', () => {
   describe('The transaction helper', () => {
     beforeAll(async () => {
       await pool.connect()

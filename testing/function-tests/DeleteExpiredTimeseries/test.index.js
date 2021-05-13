@@ -1,12 +1,12 @@
-const deleteFunction = require('../../../DeleteExpiredTimeseries/index')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const timer = require('../mocks/defaultTimer')
-const moment = require('moment')
-const sql = require('mssql')
-const { getEnvironmentVariableAsAbsoluteInteger } = require('../../../Shared/utils')
+import deleteFunction from '../../../DeleteExpiredTimeseries/index.mjs'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { timer } from '../mocks/defaultTimer.js'
+import { getEnvironmentVariableAsAbsoluteInteger } from '../../../Shared/utils.js'
+import moment from 'moment'
+import sql from 'mssql'
 
-module.exports = describe('Timeseries data deletion tests', () => {
+export const timeseriesDataDeletionTests = () => describe('Timeseries data deletion tests', () => {
   let context
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool

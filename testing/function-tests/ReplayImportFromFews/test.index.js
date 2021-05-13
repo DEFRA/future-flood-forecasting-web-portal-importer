@@ -1,14 +1,16 @@
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const replayImportFromFews = require('../../../ReplayImportFromFews')
-const messages = require('../ImportFromFews/messages/fluvial-display-group-messages.json')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import replayImportFromFews from '../../../ReplayImportFromFews/index.mjs'
 
-module.exports = describe('Tests for replaying messages on the ImportFromFews dead letter queue', () => {
+export const replayDeadLetteredImportFromFewsMessageTests = () => describe('Tests for replaying dead lettered ImportFromFews messages', () => {
   let context
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
+
+  const messages = loadJsonFile('testing/function-tests/ImportFromFews/messages/fluvial-display-group-messages.json')
 
   describe('Message processing for the ImportFromFews dead letter queue', () => {
     beforeAll(async () => {

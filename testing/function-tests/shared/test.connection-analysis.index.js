@@ -1,8 +1,8 @@
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const Context = require('../mocks/defaultContext')
-const sql = require('mssql')
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import Context from '../mocks/defaultContext.js'
+import sql from 'mssql'
 
-module.exports = describe('Test shared connection', () => {
+export const sharedConnectionTests = () => describe('Test shared connection', () => {
   let context
 
   describe('Transaction helper', () => {

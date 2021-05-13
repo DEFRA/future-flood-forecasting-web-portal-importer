@@ -1,7 +1,7 @@
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const sql = require('mssql')
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
-module.exports = function (context, pool) {
+export default function (context, pool) {
   this.checkExpectedServiceConfigurationUpdateNotificationStatus = async function (context, expectedServiceConfigurationUpdateNotification) {
     if (expectedServiceConfigurationUpdateNotification) {
       expect(context.bindings.serviceConfigurationUpdateCompleted.length).toBe(1)
@@ -9,6 +9,7 @@ module.exports = function (context, pool) {
       expect(context.bindings.serviceConfigurationUpdateCompleted.length).toBe(0)
     }
   }
+
   this.insertCSVStagingException = async function () {
     const isolationLevel = null
     await doInTransaction({ fn: insertCSVStagingException, context, errorMessage: 'Unable to insert csv staging exception data', isolationLevel })

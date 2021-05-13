@@ -1,9 +1,9 @@
-const Context = require('../mocks/defaultContext')
-const sendServiceConfigurationUpdateNotification = require('../../../SendServiceConfigurationUpdateNotification')
-const axios = require('axios')
+import Context from '../mocks/defaultContext.js'
+import sendServiceConfigurationUpdateNotification from '../../../SendServiceConfigurationUpdateNotification/index.mjs'
+import axios from 'axios'
 
 jest.mock('axios')
-module.exports = describe('Tests for replaying messages on the ProcessFewsEventCode dead letter queue', () => {
+export const sendServiceConfigurationUpdateNotificationTests = () => describe('Tests for replaying messages on the ProcessFewsEventCode dead letter queue', () => {
   const ORIGINAL_ENV = process.env
   let context
 

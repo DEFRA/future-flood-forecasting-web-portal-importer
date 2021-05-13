@@ -1,9 +1,9 @@
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { getEnvironmentVariableAsPositiveIntegerInRange } = require('../../../Shared/utils')
-const hostJson = require('../../../host.json')
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { getEnvironmentVariableAsPositiveIntegerInRange, loadJsonFile } from '../../../Shared/utils.js'
+const hostJson = loadJsonFile('./host.json')
 
-module.exports = describe('Test invalid environment variable based configuration', () => {
+export const invalidEnvironmentVariableBasedConfigurationTests = () => describe('Test invalid environment variable based configuration', () => {
   let pool
 
   describe('Invalid environment variables', () => {

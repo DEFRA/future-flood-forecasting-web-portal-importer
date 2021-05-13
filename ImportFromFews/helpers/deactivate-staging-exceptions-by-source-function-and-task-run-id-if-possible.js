@@ -1,6 +1,6 @@
-const { deactivateStagingExceptionBySourceFunctionAndTaskRunId } = require('../../Shared/timeseries-functions/deactivation-utils')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const sql = require('mssql')
+import { deactivateStagingExceptionBySourceFunctionAndTaskRunId } from '../../Shared/timeseries-functions/deactivation-utils.js'
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
 const query = `
   select
@@ -38,7 +38,7 @@ const query = `
       )
     )
 `
-module.exports = async function (transaction, context, taskRunData) {
+export default async function (transaction, context, taskRunData) {
   // Staging exceptions created by the ImportFromFews function for a task run can be deactivated
   // if a timeseries or timeseries staging exception exists for every plot/filter of the associated workflow.
   if (await executePreparedStatementInTransaction(doTimeseriesOrTimeseriesStagingExceptionsExistForAllTaskRunPlotsAndFilters, context, transaction, taskRunData)) {

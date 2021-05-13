@@ -1,5 +1,5 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
 const query = `
   select
@@ -13,7 +13,7 @@ const query = `
     coalesce(
       forecast,
       convert(bit, case
-        when message like '%forecast:%true%' then 1
+        when message like '%forecast:%true%' then 1         
         when message like '%is made current manually%' then 1  
         when message like '%forecast:%false%' then 0
         end
@@ -33,7 +33,7 @@ const query = `
     task_run_id = @taskRunId
 `
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getTimeseriesHeaderData, context, taskRunData.transaction, taskRunData)
 }
 

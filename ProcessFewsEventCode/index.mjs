@@ -1,27 +1,27 @@
-const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
-const { deactivateStagingExceptionBySourceFunctionAndTaskRunId, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters } = require('../Shared/timeseries-functions/deactivation-utils')
-const getTaskRunPlotsAndFiltersToBeProcessed = require('./helpers/get-task-run-plots-and-filters-to-be-processed')
-const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
-const createStagingException = require('../Shared/timeseries-functions/create-staging-exception')
-const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
-const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
-const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
-const checkIfPiServerHasAllDataForTaskRunIfPossible = require('./helpers/check-if-pi-server-has-all-data-for-task-run-if-possible')
-const StagingError = require('../Shared/timeseries-functions/staging-error')
-const createTimeseriesHeader = require('./helpers/create-timeseries-header')
-const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
-const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const isTaskRunApproved = require('./helpers/is-task-run-approved')
-const preprocessMessage = require('./helpers/preprocess-message')
-const getWorkflowId = require('./helpers/get-workflow-id')
-const getTaskRunId = require('./helpers/get-task-run-id')
-const isForecast = require('./helpers/is-forecast')
-const { logObsoleteTaskRunMessage } = require('../Shared/utils')
-const PartialFewsDataError = require('../Shared/message-replay/partial-fews-data-error')
-const processPartialFewsDataError = require('../Shared/message-replay/process-partial-fews-data-error')
-const publishScheduledMessagesIfNeeded = require('../Shared/timeseries-functions/publish-scheduled-messages-if-needed')
-const moment = require('moment')
+import deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId from '../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id.js'
+import { deactivateStagingExceptionBySourceFunctionAndTaskRunId, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters } from '../Shared/timeseries-functions/deactivation-utils.js'
+import getTaskRunPlotsAndFiltersToBeProcessed from './helpers/get-task-run-plots-and-filters-to-be-processed.js'
+import isLatestTaskRunForWorkflow from '../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
+import doesTimeseriesHeaderExistForTaskRun from './helpers/does-timeseries-header-exist-for-task-run.js'
+import createStagingException from '../Shared/timeseries-functions/create-staging-exception.js'
+import isIgnoredWorkflow from '../Shared/timeseries-functions/is-ignored-workflow.js'
+import checkIfPiServerHasAllDataForTaskRunIfPossible from './helpers/check-if-pi-server-has-all-data-for-task-run-if-possible.js'
+import isSpanWorkflow from '../Shared/timeseries-functions/check-spanning-workflow.js'
+import getTaskRunCompletionDate from './helpers/get-task-run-completion-date.js'
+import StagingError from '../Shared/timeseries-functions/staging-error.js'
+import createTimeseriesHeader from './helpers/create-timeseries-header.js'
+import getTaskRunStartDate from './helpers/get-task-run-start-date.js'
+import { doInTransaction, executePreparedStatementInTransaction } from '../Shared/transaction-helper.js'
+import isTaskRunApproved from './helpers/is-task-run-approved.js'
+import preprocessMessage from './helpers/preprocess-message.js'
+import getWorkflowId from './helpers/get-workflow-id.js'
+import getTaskRunId from './helpers/get-task-run-id.js'
+import isForecast from './helpers/is-forecast.js'
+import { logObsoleteTaskRunMessage } from '../Shared/utils.js'
+import PartialFewsDataError from '../Shared/message-replay/partial-fews-data-error.js'
+import processPartialFewsDataError from '../Shared/message-replay/process-partial-fews-data-error.js'
+import publishScheduledMessagesIfNeeded from '../Shared/timeseries-functions/publish-scheduled-messages-if-needed.js'
+import moment from 'moment'
 
 const sourceTypeLookup = {
   F: {
@@ -34,7 +34,7 @@ const sourceTypeLookup = {
   }
 }
 
-module.exports = async function (context, message) {
+export default async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
   const errorMessage = 'The message routing function has failed with the following error:'
   const isolationLevel = null

@@ -1,16 +1,17 @@
-const coastalRefreshFunction = require('../../../RefreshCoastalTritonForecastLocationData/index')
-const CommonWorkflowCSVTestUtils = require('../shared/common-workflow-csv-test-utils')
-const Util = require('../shared/common-csv-refresh-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const message = require('../mocks/defaultMessage')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import coastalRefreshFunction from '../../../RefreshCoastalTritonForecastLocationData/index.mjs'
+import CommonWorkflowCSVTestUtils from '../shared/common-workflow-csv-test-utils.js'
+import Util from '../shared/common-csv-refresh-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import message from '../mocks/defaultMessage.js'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { jest } from '@jest/globals'
 
 jest.mock('node-fetch')
 
-module.exports = describe('Refresh coastal location data tests', () => {
+export const refreshCoastalTritonForecastLocationDataTests = () => describe('Refresh coastal Triton forecast location data tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'

@@ -1,5 +1,5 @@
-const sql = require('mssql')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+import sql from 'mssql'
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
 
 const query = `
   insert into
@@ -9,7 +9,7 @@ const query = `
     (@sourceId, @sourceType, @csvError, @csvType, @fewsParameters, @payload, @timeseriesHeaderId, @description)
 `
 
-module.exports = async function (context, errorData) {
+export default async function (context, errorData) {
   await executePreparedStatementInTransaction(createTimeseriesStagingException, context, errorData.transaction, errorData)
 }
 

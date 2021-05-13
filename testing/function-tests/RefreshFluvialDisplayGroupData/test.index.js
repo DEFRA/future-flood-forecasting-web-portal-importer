@@ -1,16 +1,17 @@
-const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const message = require('../mocks/defaultMessage')
-const messageFunction = require('../../../RefreshFluvialDisplayGroupData/index')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import CommonWorkflowCsvTestUtils from '../shared/common-workflow-csv-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import message from '../mocks/defaultMessage.js'
+import messageFunction from '../../../RefreshFluvialDisplayGroupData/index.mjs'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { jest } from '@jest/globals'
 
 jest.mock('node-fetch')
 
-module.exports = describe('Insert fluvial_display_group_workflow data tests', () => {
+export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refresh fluvial display group workflow data tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
@@ -442,72 +443,72 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
 
   async function insertExceptions (transaction, context) {
     await new sql.Request(transaction).batch(`
-      declare @id1 uniqueidentifier;
-      set @id1 = newid();
-      declare @id2 uniqueidentifier;
-      set @id2 = newid();
-      declare @id3 uniqueidentifier;
-      set @id3 = newid();
-      declare @id4 uniqueidentifier;
-      set @id4 = newid();
-      declare @id5 uniqueidentifier;
-      set @id5 = newid();
-      declare @id6 uniqueidentifier;
-      set @id6 = newid();
-      declare @id7 uniqueidentifier;
-      set @id7 = newid();
-      declare @id8 uniqueidentifier;
-      set @id8 = newid();
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      declare @id4 uniqueidentifier
+      set @id4 = newid()
+      declare @id5 uniqueidentifier
+      set @id5 = newid()
+      declare @id6 uniqueidentifier
+      set @id6 = newid()
+      declare @id7 uniqueidentifier
+      set @id7 = newid()
+      declare @id8 uniqueidentifier
+      set @id8 = newid()
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for workflow1', 'ukeafffsmc00:000000001', 'P', 'workflow1', getutcdate());
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for workflow1', 'ukeafffsmc00:000000001', 'P', 'workflow1', getutcdate())
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate())
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'workflow1', 'ukeafffsmc00:000000003 message');
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'workflow1', 'ukeafffsmc00:000000003 message')
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id2, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000004', 'workflow1', 'ukeafffsmc00:000000004 message');
+        (@id2, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000004', 'workflow1', 'ukeafffsmc00:000000004 message')
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id3, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000005', 'workflow2', 'ukeafffsmc00:000000005 message');
+        (@id3, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000005', 'workflow2', 'ukeafffsmc00:000000005 message')
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id4, 'plot1', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id4, 'plot1', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id5, 'plot2', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id5, 'plot2', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "plot2"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id6, 'plot1 with typo', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot1 with typo"}', @id2, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id6, 'plot1 with typo', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot1 with typo"}', @id2, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id7, 'plot2 with typo', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot2 with typo"}', @id2, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id7, 'plot2 with typo', 'P', 1, 'F', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "plotId": "plot2 with typo"}', @id2, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id8, 'plot1', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000005", "plotId": "plot1"}', @id3, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id8, 'plot1', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000005", "plotId": "plot1"}', @id3, 'Error text', dateadd(hour, -1, getutcdate()))
     `)
   }
 })

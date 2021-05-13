@@ -1,17 +1,21 @@
-const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
-const taskRunCompleteMessages = require('./messages/task-run-complete/non-display-group-messages')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const moment = require('moment')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonNonDisplayGroupTimeseriesTestUtils from '../shared/common-non-display-group-timeseries-test-utils.js'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import moment from 'moment'
+import sql from 'mssql'
+import * as azureServiceBus from '@azure/service-bus'
+import { afterAll, beforeAll, beforeEach, describe, it, vi } from 'vitest'
 
-module.exports = describe('Tests for import timeseries non-display groups', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/non-display-group-messages.json')
+
+export const nonDisplayGroupProcessFewsEventCodeTests = () => describe('Non-display group process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool)
   const request = new sql.Request(pool)
 
@@ -69,12 +73,23 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
       await commonNonDisplayGroupTimeseriesTestUtils.beforeEach()
+      vi.spyOn(azureServiceBus, 'ServiceBusAdministrationClient').mockImplementation(() => {
+        return {
+          getQueue: async queueName => {
+            return new Promise((resolve, reject) => {
+              resolve({
+                maxDeliveryCount: 2
+              })
+            })
+          }
+        }
+      })
     })
 
     afterAll(async () => {
@@ -89,7 +104,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         insert into
           fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
         values
-          ('description: invalid message', 'Error', 'ukeafffsmc00:000000003', 'P', 'Test_Workflow1', @exceptionTime);
+          ('description: invalid message', 'Error', 'ukeafffsmc00:000000003', 'P', 'Test_Workflow1', @exceptionTime)
       `)
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
