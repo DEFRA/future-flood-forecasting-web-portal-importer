@@ -82,6 +82,7 @@ jobs:
           SQLDB_USER: "${{ secrets.SQLDB_USER }}"
           SQLTESTDB_HOST: "${{ secrets.SQLTESTDB_HOST }}"
           SQLTESTDB_PORT: "${{ secrets.SQLTESTDB_PORT }}"
+          SQLDB_TRUST_SERVER_CERTIFICATE: "${{ secrets.SQLDB_TRUST_SERVER_CERTIFICATE }}"
         run:
           npm test
       - name: Upload test coverage to code climate        
