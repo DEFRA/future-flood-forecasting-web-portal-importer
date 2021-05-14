@@ -1,3 +1,7 @@
+ratings:
+  paths:
+  - "**/*.js"
+  - "**/*.mjs"
 exclude_patterns:
 - "**/test.*"
 - "testing/**"
