@@ -5,21 +5,34 @@ const pipe = promisify(pipeline)
 module.exports = async function (context, err) {
   let errorMessage
   if (err && ((err.response && err.response.data) || err.message)) {
-    errorMessage = err.message
-    if (err.response && err.response.data) {
-      let errorDetails
-      if (err.response.data instanceof Readable) {
-        errorDetails = await getErrorDetailsFromStream(err.response.data)
-        // Replace the response data with the details received from the stream
-        // as the stream can only be read once.
-        err.response.data = errorDetails
-      } else {
-        errorDetails = err.response.data
-      }
-      errorMessage = `${err.message} (${errorDetails})`
-    }
+    errorMessage = await getErrorMessageFromError(err)
   }
   return errorMessage
+}
+
+async function getErrorMessageFromError (error) {
+  let errorDetails
+  let errorMessage = error.message
+
+  if (error.response && error.response.data) {
+    errorDetails = await getErrorDetailsFromErrorResponse(error.response)
+    errorMessage = `${error.message} (${errorDetails})`
+  }
+
+  return errorMessage
+}
+
+async function getErrorDetailsFromErrorResponse (errorResponse) {
+  let errorDetails
+  if (errorResponse && errorResponse.data instanceof Readable) {
+    errorDetails = await getErrorDetailsFromStream(errorResponse.data)
+    // Replace the response data with the details received from the stream
+    // as the stream can only be read once.
+    errorResponse.data = errorDetails
+  } else {
+    errorDetails = errorResponse.data
+  }
+  return errorDetails
 }
 
 async function getErrorDetailsFromStream (stream) {
