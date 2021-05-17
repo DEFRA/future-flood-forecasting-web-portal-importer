@@ -25,8 +25,6 @@ export const doInTransaction = async function (fn, context, errorMessage, isolat
       return await fn(transaction, context, ...args)
     } catch (err) {
       await processTransactionException(context, transaction, err, config.errorMessage)
->>>>>>> Use ES modules
-      }
     } finally {
       await endTransaction(context, transaction)
     }
