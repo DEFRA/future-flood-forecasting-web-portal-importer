@@ -1,5 +1,8 @@
 import sql from 'mssql'
+<<<<<<< HEAD
 
+=======
+>>>>>>> Refactor for maintainability
 const query = `
   select
     case when
@@ -28,7 +31,10 @@ const query = `
       0
     end as span_workflow
 `
+<<<<<<< HEAD
 
+=======
+>>>>>>> Refactor for maintainability
 export default async function (context, preparedStatement, taskRunData) {
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.prepare(query)
