@@ -26,11 +26,23 @@
     "@azure/service-bus": "^7.2.0",
     "jest": "^27.0.6",
     "markdownlint-cli": "^0.27.1",
+    "@babel/plugin-transform-modules-commonjs": "^7.14.0",
+    "babel-jest": "^27.0.2",
+    "regenerator-runtime": "^0.13.7",
     "standard": "^16.0.3"
   },
   "standard": {
     "env": [
       "jest"
     ]
+  },
+  "babel": {
+    "env": {
+      "test": {
+        "plugins": [
+          "@babel/plugin-transform-modules-commonjs"
+        ]
+      }
+    }
   }
 }
