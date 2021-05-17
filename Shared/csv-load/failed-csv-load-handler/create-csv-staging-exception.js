@@ -1,13 +1,8 @@
 const { executePreparedStatementInTransaction } = require('../../transaction-helper')
 const sql = require('mssql')
 
-module.exports = async function (csvStagingExceptionData) {
-  const exceptionData = {
-    sourceFile: csvStagingExceptionData.sourceFile,
-    rowData: csvStagingExceptionData.rowData,
-    description: csvStagingExceptionData.description
-  }
-  await executePreparedStatementInTransaction(createCsvStagingException, csvStagingExceptionData.context, csvStagingExceptionData.transaction, exceptionData)
+module.exports = async function (context, transaction, csvStagingExceptionData) {
+  await executePreparedStatementInTransaction(createCsvStagingException, context, transaction, csvStagingExceptionData)
 }
 
 async function createCsvStagingException (context, preparedStatement, exceptionData) {
