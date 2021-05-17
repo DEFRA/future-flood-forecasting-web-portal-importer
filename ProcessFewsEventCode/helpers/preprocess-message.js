@@ -3,7 +3,6 @@ import createStagingException from '../../Shared/timeseries-functions/create-sta
 const errorMessage = 'Message must be either a string or a pure object'
 
 export default async function (context, transaction, message) {
-  const errorMessage = 'Message must be either a string or a pure object'
   let returnValue = null
 
   if (message) {
