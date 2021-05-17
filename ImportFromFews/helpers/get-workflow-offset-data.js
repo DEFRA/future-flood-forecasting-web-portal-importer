@@ -28,26 +28,30 @@ module.exports = async function (context, preparedStatement, taskRunData) {
       endTimeOffset: result.recordset[0].end_time_offset_hours
     }
   } else {
-    let offsetValuesCount
-    if (result && result.recordset && result.recordset[0] && result.recordset.length > 1) {
-      offsetValuesCount = result.recordset.length
-    } else {
-      offsetValuesCount = 0
-    }
-    const errorMessage = `An error has been found in the custom offsets for workflow: ${taskRunData.workflowId}. ${offsetValuesCount} found.`
-    context.log(errorMessage)
-    const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV.`
-    const errorData = {
-      transaction: taskRunData.transaction,
-      sourceId: taskRunData.sourceId,
-      sourceType: taskRunData.sourceType,
-      csvError: true,
-      csvType: taskRunData.csvType || 'N',
-      fewsParameters: null,
-      payload: taskRunData.message,
-      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-      description: errorDescription
-    }
-    throw new TimeseriesStagingError(errorData, errorDescription)
+    await processWorkflowCustomOffsetsError(context, taskRunData, result)
   }
+}
+
+async function processWorkflowCustomOffsetsError (context, taskRunData, result) {
+  let offsetValuesCount
+  if (result && result.recordset && result.recordset[0] && result.recordset.length > 1) {
+    offsetValuesCount = result.recordset.length
+  } else {
+    offsetValuesCount = 0
+  }
+  const errorMessage = `An error has been found in the custom offsets for workflow: ${taskRunData.workflowId}. ${offsetValuesCount} found.`
+  context.log(errorMessage)
+  const errorDescription = `${errorMessage} Task run ${taskRunData.taskRunId} in the non-display group CSV.`
+  const errorData = {
+    transaction: taskRunData.transaction,
+    sourceId: taskRunData.sourceId,
+    sourceType: taskRunData.sourceType,
+    csvError: true,
+    csvType: taskRunData.csvType || 'N',
+    fewsParameters: null,
+    payload: taskRunData.message,
+    timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+    description: errorDescription
+  }
+  throw new TimeseriesStagingError(errorData, errorDescription)
 }
