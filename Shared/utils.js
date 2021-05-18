@@ -105,5 +105,12 @@ const self = module.exports = {
       loggingFunction(`Ignoring ${config.environmentVariableName} - value must be between ${config.minimum} and ${config.maximum}`)
     }
     return environmentVariableAsInteger
+  },
+  getEnvironmentVariableAsBoolean: function (environmentVariableName) {
+    let environmentVariableAsBoolean
+    if (self.isBoolean(process.env[environmentVariableName])) {
+      environmentVariableAsBoolean = JSON.parse(process.env[environmentVariableName])
+    }
+    return environmentVariableAsBoolean
   }
 }
