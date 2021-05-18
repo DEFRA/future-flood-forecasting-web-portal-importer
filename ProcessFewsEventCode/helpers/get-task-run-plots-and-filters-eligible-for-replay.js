@@ -1,4 +1,5 @@
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const getItemsToBeProcessedAsArray = require('./get-items-to-be-processed-as-array')
 const getLocationsToImportForTaskRunPlot = require('../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot')
 const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 const sql = require('mssql')
@@ -89,13 +90,8 @@ async function getTaskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptions (c
   }
 
   const result = await preparedStatement.execute(parameters)
-
-  for (const record of result.recordset) {
-    taskRunData.itemsEligibleForReplay.push({
-      sourceId: record.source_id,
-      sourceType: record.source_type
-    })
-  }
+  const itemsEligibleForReplay = await getItemsToBeProcessedAsArray(result.recordset)
+  taskRunData.itemsEligibleForReplay.push(...itemsEligibleForReplay)
 }
 
 async function getWorkflowPlots (context, preparedStatement, taskRunData) {

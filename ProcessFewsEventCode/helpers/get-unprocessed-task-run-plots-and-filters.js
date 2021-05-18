@@ -1,4 +1,5 @@
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const getItemsToBeProcessedAsArray = require('./get-items-to-be-processed-as-array')
 const sql = require('mssql')
 
 module.exports = async function (context, taskRunData) {
@@ -53,11 +54,6 @@ async function getUnprocessedTaskRunPlotsAndFilters (context, preparedStatement,
   }
 
   const result = await preparedStatement.execute(parameters)
-
-  for (const record of result.recordset) {
-    taskRunData.unprocessedItems.push({
-      sourceId: record.source_id,
-      sourceType: record.source_type
-    })
-  }
+  const unprocessedItems = await getItemsToBeProcessedAsArray(result.recordset)
+  taskRunData.unprocessedItems.push(...unprocessedItems)
 }
