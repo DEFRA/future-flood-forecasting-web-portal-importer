@@ -2,11 +2,11 @@ const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = req
 const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
 const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const isNonDisplayGroupForecast = require('./is-non-display-group-forecast')
-const isNonForecastOrLatestTaskRunForWorkflow = require('./is-non-forecast-or-latest-task-run-for-workflow')
 const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const timeseriesTypeConstants = require('./timeseries-type-constants')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
+const processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible = require('./process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible')
 const moment = require('moment')
 const sql = require('mssql')
 
@@ -49,12 +49,7 @@ module.exports = async function (context, taskRunData) {
     await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
-  if (await isNonForecastOrLatestTaskRunForWorkflow(context, taskRunData, true)) {
-    await processTaskRunApprovalStatus(context, taskRunData)
-  } else {
-    context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
-      ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
-  }
+  await processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible(context, taskRunData, true, processTaskRunApprovalStatus)
 }
 
 async function buildTimeParameters (context, taskRunData) {

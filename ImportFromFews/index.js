@@ -9,7 +9,7 @@ const { doInTransaction, executePreparedStatementInTransaction } = require('../S
 const getTimeseriesHeaderData = require('./helpers/get-timeseries-header-data')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const isMessageIgnored = require('./helpers/is-message-ignored')
-const isNonForecastOrLatestTaskRunForWorkflow = require('./helpers/is-non-forecast-or-latest-task-run-for-workflow')
+const processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible = require('./helpers/process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible')
 const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
 const processImportError = require('./helpers/process-import-error')
 const retrieveAndLoadFewsData = require('./helpers/retrieve-and-load-fews-data')
@@ -83,12 +83,8 @@ async function setSourceConfig (taskRunData) {
 
 async function importFromFews (context, taskRunData) {
   try {
-    if (await isNonForecastOrLatestTaskRunForWorkflow(context, taskRunData, false)) {
-      await retrieveAndLoadFewsData(context, taskRunData)
-    } else {
-      context.log.warn(`Ignoring message for plot ${taskRunData.plotId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
-        ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
-    }
+    await processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible(context, taskRunData, false, retrieveAndLoadFewsData)
+
     if (taskRunData.forecast && await isLatestTaskRunForWorkflow(context, taskRunData)) {
       await deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId(context, taskRunData)
       await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
