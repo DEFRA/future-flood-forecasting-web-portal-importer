@@ -15,22 +15,26 @@ module.exports = async function (context, taskRunData, err) {
     if (err instanceof TimeseriesStagingError) {
       errorData = err.context
     } else {
-      const csvError = (err.response && err.response.status === 400) || false
-      const csvType = csvError ? taskRunData.csvType : null
-      const piServerErrorMessage = await getPiServerErrorMessage(context, err)
-      const errorDescription = `An error occurred while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
-      errorData = {
-        transaction: taskRunData.transaction,
-        sourceId: taskRunData.sourceId,
-        sourceType: taskRunData.sourceType,
-        csvError: csvError,
-        csvType: csvType,
-        fewsParameters: taskRunData.fewsParameters || null,
-        payload: taskRunData.message,
-        timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-        description: errorDescription
-      }
+      errorData = await createTimeseriesStagingExceptionData(context, taskRunData, err)
     }
     await createTimeseriesStagingException(context, errorData)
+  }
+}
+
+async function createTimeseriesStagingExceptionData (context, taskRunData, err) {
+  const csvError = (err.response && err.response.status === 400) || false
+  const csvType = csvError ? taskRunData.csvType : null
+  const piServerErrorMessage = await getPiServerErrorMessage(context, err)
+  const errorDescription = `An error occurred while processing data for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}): ${piServerErrorMessage}`
+  return {
+    transaction: taskRunData.transaction,
+    sourceId: taskRunData.sourceId,
+    sourceType: taskRunData.sourceType,
+    csvError: csvError,
+    csvType: csvType,
+    fewsParameters: taskRunData.fewsParameters || null,
+    payload: taskRunData.message,
+    timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+    description: errorDescription
   }
 }
