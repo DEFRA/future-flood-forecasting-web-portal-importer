@@ -112,5 +112,11 @@ const self = module.exports = {
       environmentVariableAsBoolean = JSON.parse(process.env[environmentVariableName])
     }
     return environmentVariableAsBoolean
+  },
+  logObsoleteTaskRunMessage: function (context, taskRunData) {
+    context.log.warn(
+      `Ignoring message for ${taskRunData.sourceDetails} completed on ${taskRunData.taskRunCompletionTime}` +
+      ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`
+    )
   }
 }

@@ -18,6 +18,7 @@ const preprocessMessage = require('./helpers/preprocess-message')
 const getWorkflowId = require('./helpers/get-workflow-id')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const isForecast = require('./helpers/is-forecast')
+const { logObsoleteTaskRunMessage } = require('../Shared/utils')
 const moment = require('moment')
 
 const sourceTypeLookup = {
@@ -127,6 +128,7 @@ async function parseMessage (context, transaction, message) {
   }
   taskRunData.taskRunId = await getTaskRunId(context, taskRunData)
   taskRunData.workflowId = await getWorkflowId(context, taskRunData)
+  taskRunData.sourceDetails = `task run ${taskRunData.taskRunId}`
   taskRunData.timeseriesHeaderExistsForTaskRun = await doesTimeseriesHeaderExistForTaskRun(context, taskRunData)
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
@@ -152,8 +154,7 @@ async function processMessage (transaction, context, message) {
         if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
           await processTaskRunData(context, transaction, taskRunData)
         } else {
-          context.log.warn(`Ignoring message for task run ${taskRunData.taskRunId} completed on ${taskRunData.taskRunCompletionTime}` +
-            ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
+          logObsoleteTaskRunMessage(context, taskRunData)
         }
       }
     }
