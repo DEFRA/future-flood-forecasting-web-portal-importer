@@ -79,6 +79,7 @@ async function setSourceConfig (taskRunData) {
     ]
     taskRunData.csvType = 'N'
   }
+  taskRunData.sourceDetails = `${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`
 }
 
 async function importFromFews (context, taskRunData) {

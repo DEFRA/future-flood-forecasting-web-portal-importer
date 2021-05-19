@@ -4,7 +4,7 @@ module.exports = async function (context, taskRunData) {
   context.log(`Attempting to filter out unknown locations for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   await buildKnownLocations(context, taskRunData)
   if (taskRunData.knownLocationsIds.length > 0) {
-    context.log(`Found known locations (${taskRunData.knownLocationsIds}) (for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+    context.log(`Found known locations (${taskRunData.knownLocationsIds}) (for ${taskRunData.sourceDetails})`)
     const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
     const plotId = `&plotId=${taskRunData.plotId}`
     const locationIds = `&locationIds=${taskRunData.knownLocationsIds.replace(/;/g, '&locationIds=')}`
