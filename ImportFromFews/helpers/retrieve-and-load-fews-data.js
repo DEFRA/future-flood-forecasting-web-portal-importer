@@ -21,21 +21,20 @@ async function retrieveFewsData (context, taskRunData) {
     const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[index]
     try {
       await buildPiServerUrlCall.buildPiServerUrlIfPossibleFunction(context, taskRunData)
-      if (buildPiServerUrlCall.fewsPiUrl) {
-        await retrieveAndCompressFewsData(context, taskRunData)
-        taskRunData.fewsParameters = buildPiServerUrlCall.fewsParameters
-        taskRunData.fewsPiUrl = buildPiServerUrlCall.fewsPiUrl
-        // Fews data has been retrieved and compressed so no further calls to the PI Server are needed.
-        break
-      } else {
-        // The URL could not be built. Do not make any more calls to the PI Server.
-        break
-      }
+      !Object.is(buildPiServerUrlCall.fewsPiUrl, undefined) && (await retrieveFewsDataFromFewsPiServer(context, taskRunData, buildPiServerUrlCall))
+      // Fews data has been retrieved and compressed or the URL could not be built. Do not make any more calls to the PI Server.
+      break
     } catch (err) {
       await processDataRetrievalError(context, taskRunData, err)
     }
   }
   await processFewsDataRetrievalResults(context, taskRunData)
+}
+
+async function retrieveFewsDataFromFewsPiServer (context, taskRunData, buildPiServerUrlCall) {
+  await retrieveAndCompressFewsData(context, taskRunData)
+  taskRunData.fewsParameters = buildPiServerUrlCall.fewsParameters
+  taskRunData.fewsPiUrl = buildPiServerUrlCall.fewsPiUrl
 }
 
 async function retrieveAndCompressFewsData (context, taskRunData) {
