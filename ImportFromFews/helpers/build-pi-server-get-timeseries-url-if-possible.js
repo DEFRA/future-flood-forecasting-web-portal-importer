@@ -202,11 +202,8 @@ async function throwCsvError (taskRunData, errorDescription, csvType, fewsParame
 
 async function processTaskRunApprovalStatus (context, taskRunData) {
   if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
-    if (!taskRunData.filterData.approvalRequired) {
-      context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
-    } else {
-      context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
-    }
+    Object.is(taskRunData.filterData.approvalRequired, true) && (context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`))
+    Object.is(taskRunData.approved, true) && (context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`))
     await buildPiServerUrlIfPossible(context, taskRunData)
   } else {
     context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)
