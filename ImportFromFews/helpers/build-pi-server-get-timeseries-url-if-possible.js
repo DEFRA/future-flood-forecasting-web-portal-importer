@@ -1,6 +1,8 @@
 const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
 const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
 const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const isNonDisplayGroupForecast = require('./is-non-display-group-forecast')
+const isNonForecastOrLatestTaskRunForWorkflow = require('./is-non-forecast-or-latest-task-run-for-workflow')
 const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const timeseriesTypeConstants = require('./timeseries-type-constants')
@@ -43,11 +45,11 @@ const getLatestTaskRunEndTimeQuery = `
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
-  if (isForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
+  if (isNonDisplayGroupForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
     await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
-  if (await isNonForecastOrLatestForecastTaskRunForWorkflow(context, taskRunData)) {
+  if (await isNonForecastOrLatestTaskRunForWorkflow(context, taskRunData, true)) {
     await processTaskRunApprovalStatus(context, taskRunData)
   } else {
     context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
@@ -181,14 +183,6 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
   }
 
   return taskRunData
-}
-
-function isForecast (context, taskRunData) {
-  return taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING
-}
-
-async function isNonForecastOrLatestForecastTaskRunForWorkflow (context, taskRunData) {
-  return !isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)
 }
 
 async function throwCsvError (taskRunData, errorDescription, csvType, fewsParameters) {
