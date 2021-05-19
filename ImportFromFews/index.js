@@ -133,7 +133,7 @@ async function processImportError (context, taskRunData, err) {
 
 async function importFromFews (context, taskRunData) {
   try {
-    if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+    if (await isNonForecastOrLatestForecastTaskRunForWorkflow(context, taskRunData)) {
       await retrieveFewsData(context, taskRunData)
       if (taskRunData.fewsData) {
         await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
@@ -245,4 +245,8 @@ async function loadFewsData (context, preparedStatement, taskRunData) {
 
 async function logTaskRunProgress (context, taskRunData, messageContext) {
   context.log(`${messageContext} for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+}
+
+async function isNonForecastOrLatestForecastTaskRunForWorkflow (context, taskRunData) {
+  return !taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)
 }

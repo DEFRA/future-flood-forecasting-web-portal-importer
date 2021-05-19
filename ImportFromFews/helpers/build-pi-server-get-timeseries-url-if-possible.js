@@ -47,7 +47,7 @@ module.exports = async function (context, taskRunData) {
     await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
-  if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+  if (await isNonForecastOrLatestForecastTaskRunForWorkflow(context, taskRunData)) {
     await processTaskRunApprovalStatus(context, taskRunData)
   } else {
     context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
@@ -185,6 +185,10 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
 
 function isForecast (context, taskRunData) {
   return taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING
+}
+
+async function isNonForecastOrLatestForecastTaskRunForWorkflow (context, taskRunData) {
+  return !isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)
 }
 
 async function throwCsvError (taskRunData, errorDescription, csvType, fewsParameters) {
