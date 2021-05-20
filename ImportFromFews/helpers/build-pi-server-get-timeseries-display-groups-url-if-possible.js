@@ -20,7 +20,7 @@ async function buildTimeParameters (context, taskRunData) {
 
 async function buildStartAndEndTimes (context, taskRunData) {
   // Check if the workflow includes non-display group filters, if so inherit the ndg offset values
-  if (taskRunData.spanWorkflow && taskRunData.spanWorkflow === true) {
+  if (taskRunData.spanWorkflow) {
     // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
 
