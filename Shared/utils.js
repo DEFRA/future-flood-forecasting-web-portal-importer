@@ -5,6 +5,10 @@ const { pipeline, Transform } = require('stream')
 const { createGzip } = require('zlib')
 const { promisify } = require('util')
 const pipe = promisify(pipeline)
+const moment = require('moment')
+
+const LATEST = 'latest'
+const PREVIOUS = 'previous'
 
 const self = module.exports = {
   isBoolean: function (value) {
@@ -118,5 +122,30 @@ const self = module.exports = {
       `Ignoring message for ${taskRunData.sourceDetails} completed on ${taskRunData.taskRunCompletionTime}` +
       ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`
     )
+  },
+  addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData: function (taskRunData, result) {
+    addTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result, LATEST, addFallbackLatestTaskRunCompletionPropertiesToTaskRunData)
+  },
+  addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData: function (taskRunData, result) {
+    addTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result, PREVIOUS, addFallbackPreviousTaskRunCompletionPropertiesToTaskRunData)
   }
+}
+
+function addTaskRunCompletionPropertiesFromQueryResultToTaskRunData (taskRunData, result, propertyNamePrefix, fallbackFunction) {
+  if (result.recordset && result.recordset[0] && result.recordset[0][`${propertyNamePrefix}_staged_task_run_id`]) {
+    taskRunData[`${propertyNamePrefix}TaskRunId`] = result.recordset[0][`${propertyNamePrefix}_staged_task_run_id`]
+    taskRunData[`${propertyNamePrefix}TaskRunCompletionTime`] =
+      moment(result.recordset[0][`${propertyNamePrefix}_staged_task_completion_time`]).toISOString()
+  } else {
+    fallbackFunction(taskRunData)
+  }
+}
+
+function addFallbackLatestTaskRunCompletionPropertiesToTaskRunData (taskRunData) {
+  taskRunData.latestTaskRunId = taskRunData.taskRunId
+  taskRunData.latestTaskRunCompletionTime = taskRunData.taskRunCompletionTime
+}
+
+function addFallbackPreviousTaskRunCompletionPropertiesToTaskRunData (taskRunData) {
+  taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
 }

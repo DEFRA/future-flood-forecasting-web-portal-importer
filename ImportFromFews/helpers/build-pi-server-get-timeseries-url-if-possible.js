@@ -1,5 +1,5 @@
 const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
+const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset, addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData } = require('../../Shared/utils')
 const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const isNonDisplayGroupForecast = require('./is-non-display-group-forecast')
 const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
@@ -168,14 +168,15 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
   }
 
   const result = await preparedStatement.execute(parameters)
+  addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result)
 
-  if (result.recordset && result.recordset[0] && result.recordset[0].previous_staged_task_run_id) {
-    taskRunData.previousTaskRunId = result.recordset[0].previous_staged_task_run_id
-    taskRunData.previousTaskRunCompletionTime =
-      moment(result.recordset[0].previous_staged_task_completion_time).toISOString()
-  } else {
-    taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
-  }
+  // if (result.recordset && result.recordset[0] && result.recordset[0].previous_staged_task_run_id) {
+  //   taskRunData.previousTaskRunId = result.recordset[0].previous_staged_task_run_id
+  //   taskRunData.previousTaskRunCompletionTime =
+  //     moment(result.recordset[0].previous_staged_task_completion_time).toISOString()
+  // } else {
+  //   taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
+  // }
 
   return taskRunData
 }
