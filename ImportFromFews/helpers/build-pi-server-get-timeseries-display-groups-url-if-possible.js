@@ -20,20 +20,21 @@ async function buildTimeParameters (context, taskRunData) {
 
 async function buildStartAndEndTimes (context, taskRunData) {
   // Check if the workflow includes non-display group filters, if so inherit the ndg offset values
+  let startTimeOffsetHours
+  let endTimeOffsetHours
+
   if (taskRunData.spanWorkflow) {
     // check if there is a custom offset specified for the non-display group workflow, if not inherit the default offset
     await executePreparedStatementInTransaction(getCustomOffsets, context, taskRunData.transaction, taskRunData)
-
-    const startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
-    const endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.endTimeOffset, taskRunData) || 0
-    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+    startTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.startTimeOffset, taskRunData) || getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_OFFSET_HOURS') || 24
+    endTimeOffsetHours = getAbsoluteIntegerForNonZeroOffset(context, taskRunData.offsetData.endTimeOffset, taskRunData) || 0
   } else {
-    const startTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS') || 14
-    const endTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS') || 120
-    taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
-    taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
+    startTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_DISPLAY_GROUP_START_TIME_OFFSET_HOURS') || 14
+    endTimeOffsetHours = getEnvironmentVariableAsAbsoluteInteger('FEWS_DISPLAY_GROUP_END_TIME_OFFSET_HOURS') || 120
   }
+
+  taskRunData.startTime = moment(taskRunData.taskRunCompletionTime).subtract(startTimeOffsetHours, 'hours').toISOString()
+  taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
