@@ -106,26 +106,39 @@ async function getCsvData (context, refreshData) {
 
 async function buildPreparedStatementParameters (context, row, refreshData) {
   const preparedStatementExecuteObject = {}
+  let returnValue = preparedStatementExecuteObject
+  let rowError = false
+  let index = 0
+  const numberOfColumnObjects = refreshData.functionSpecificData.length
   // check all the expected values are present in the csv row and exclude incomplete csvRows.
-  for (const columnObject of refreshData.functionSpecificData) {
-    const columnName = columnObject.tableColumnName
+  // Use a while loop with nested ternary operators to reduce the cognitive complexity rating.
+  while (!rowError && index < numberOfColumnObjects) {
+    const columnObject = refreshData.functionSpecificData[index]
     const expectedCsvKey = columnObject.expectedCSVKey
 
-    if (row[expectedCsvKey] || columnObject.nullValueOverride === true) {
-      let rowData = row[expectedCsvKey]
-      if (columnObject.nullValueOverride === true && (row[expectedCsvKey] === null || row[expectedCsvKey] === '')) {
-        rowData = null
-      }
-      if (columnObject.preprocessor) {
-        preparedStatementExecuteObject[columnName] = columnObject.preprocessor(rowData, columnName)
-      } else {
-        preparedStatementExecuteObject[columnName] = rowData
-      }
-    } else {
-      return { rowError: true }
-    }
+    // The row must have a value for the current column or the current column must allow null values
+    row[expectedCsvKey] || columnObject.nullValueOverride
+      ? await buildPreparedStatementParametersForColumn(context, row, preparedStatementExecuteObject, columnObject)
+      : rowError = true
+
+    rowError ? returnValue = { rowError: true } : index++
   }
-  return preparedStatementExecuteObject
+  return returnValue
+}
+
+async function buildPreparedStatementParametersForColumn (context, row, preparedStatementExecuteObject, columnObject) {
+  const columnName = columnObject.tableColumnName
+  const expectedCsvKey = columnObject.expectedCSVKey
+
+  let rowData = row[expectedCsvKey]
+  if (columnObject.nullValueOverride === true && (row[expectedCsvKey] === null || row[expectedCsvKey] === '')) {
+    rowData = null
+  }
+  if (columnObject.preprocessor) {
+    preparedStatementExecuteObject[columnName] = columnObject.preprocessor(rowData, columnName)
+  } else {
+    preparedStatementExecuteObject[columnName] = rowData
+  }
 }
 
 async function processCsvRow (context, preparedStatement, row, refreshData) {
