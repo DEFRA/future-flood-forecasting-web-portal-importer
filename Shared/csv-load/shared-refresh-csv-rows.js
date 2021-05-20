@@ -114,16 +114,24 @@ async function buildPreparedStatementParameters (context, row, refreshData) {
   // Use a while loop with nested ternary operators to reduce the cognitive complexity rating.
   while (!rowError && index < numberOfColumnObjects) {
     const columnObject = refreshData.functionSpecificData[index]
-    const expectedCsvKey = columnObject.expectedCSVKey
-
-    // The row must have a value for the current column or the current column must allow null values
-    row[expectedCsvKey] || columnObject.nullValueOverride
-      ? await buildPreparedStatementParametersForColumn(context, row, preparedStatementExecuteObject, columnObject)
-      : rowError = true
-
+    rowError = await buildPreparedStatementParametersForColumnIfPossible(context, row, preparedStatementExecuteObject, columnObject)
     rowError ? returnValue = { rowError: true } : index++
   }
   return returnValue
+}
+
+async function buildPreparedStatementParametersForColumnIfPossible (context, row, preparedStatementExecuteObject, columnObject) {
+  const expectedCsvKey = columnObject.expectedCSVKey
+  let rowError = false
+
+  // The row must have a value for the current column or the current column must allow null values
+  if (row[expectedCsvKey] || columnObject.nullValueOverride) {
+    await buildPreparedStatementParametersForColumn(context, row, preparedStatementExecuteObject, columnObject)
+  } else {
+    rowError = true
+  }
+
+  return rowError
 }
 
 async function buildPreparedStatementParametersForColumn (context, row, preparedStatementExecuteObject, columnObject) {
