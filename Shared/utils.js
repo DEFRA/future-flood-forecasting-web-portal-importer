@@ -94,14 +94,11 @@ const self = module.exports = {
   getEnvironmentVariableAsPositiveIntegerInRange: function (config) {
     let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
     const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
-    if (!Number.isInteger(Number(config.minimum))) {
+    if (!isInteger(config.environmentVariableName, config.minimum, loggingFunction) ||
+       !isInteger(config.environmentVariableName, config.maximum, loggingFunction)) {
       environmentVariableAsInteger = undefined
-      loggingFunction(`Ignoring ${config.environmentVariableName} - minimum value must be specified`)
     }
-    if (!Number.isInteger(Number(config.maximum))) {
-      environmentVariableAsInteger = undefined
-      loggingFunction(`Ignoring ${config.environmentVariableName} - maximum value must be specified`)
-    }
+
     if (Number.isInteger(Number(environmentVariableAsInteger)) &&
         (environmentVariableAsInteger < config.minimum ||
          environmentVariableAsInteger > config.maximum)) {
@@ -148,4 +145,12 @@ function addFallbackLatestTaskRunCompletionPropertiesToTaskRunData (taskRunData)
 
 function addFallbackPreviousTaskRunCompletionPropertiesToTaskRunData (taskRunData) {
   taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
+}
+
+function isInteger (label, value, loggingFunction) {
+  const returnValue = Number.isInteger(Number(value))
+  if (!returnValue) {
+    loggingFunction(`Ignoring ${label} - minimum value must be specified`)
+  }
+  return returnValue
 }
