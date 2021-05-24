@@ -82,39 +82,27 @@ const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFiltersQ
 
 module.exports = {
   deactivateStagingExceptionBySourceFunctionAndTaskRunId: async function (context, stagingExceptionData) {
-    const config = {
-      data: stagingExceptionData,
-      parameters: [
-        {
-          name: 'sourceFunction',
-          type: sql.NVarChar,
-          value: stagingExceptionData.sourceFunction
-        }
-      ],
-      query: deactivateBySourceFunctionAndTaskRunIdQuery
-    }
-
-    await supplementConfigurationAndPerformQuery(context, config)
+    await buildConfigurationAndPerformQuery(context, stagingExceptionData, deactivateBySourceFunctionAndTaskRunIdQuery, 'sourceFunction')
   },
   deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters: async function (context, taskRunData) {
-    const config = {
-      data: taskRunData,
-      parameters: [
-        {
-          name: 'workflowId',
-          type: sql.NVarChar,
-          value: taskRunData.workflowId
-        }
-      ],
-      query: deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFiltersQuery
-    }
-
-    await supplementConfigurationAndPerformQuery(context, config)
+    await buildConfigurationAndPerformQuery(context, taskRunData, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFiltersQuery, 'workflowId')
   }
 }
 
-async function supplementConfigurationAndPerformQuery (context, config) {
-  const transaction = config.data.transaction
+async function buildConfigurationAndPerformQuery (context, data, query, requiredParameterName) {
+  const config = {
+    data,
+    parameters: [
+      {
+        name: requiredParameterName,
+        type: sql.NVarChar,
+        value: data[requiredParameterName]
+      }
+    ],
+    query
+  }
+  const transaction = data.transaction
+
   addTaskRunIdParameterConfig(context, config)
   await executePreparedStatementInTransaction(performQuery, context, transaction, config)
 }
