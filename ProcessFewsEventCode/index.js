@@ -1,6 +1,5 @@
 const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
-const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/deactivate-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
-const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id')
+const { deactivateStagingExceptionBySourceFunctionAndTaskRunId, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters } = require('../Shared/timeseries-functions/deactivation-utils')
 const getTaskRunPlotsAndFiltersToBeProcessed = require('./helpers/get-task-run-plots-and-filters-to-be-processed')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')

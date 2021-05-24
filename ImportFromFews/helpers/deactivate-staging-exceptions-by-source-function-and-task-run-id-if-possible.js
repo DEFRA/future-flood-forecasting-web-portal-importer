@@ -1,4 +1,4 @@
-const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id.js')
+const { deactivateStagingExceptionBySourceFunctionAndTaskRunId } = require('../../Shared/timeseries-functions/deactivation-utils')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const sql = require('mssql')
 
