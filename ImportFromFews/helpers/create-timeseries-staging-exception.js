@@ -2,11 +2,11 @@ const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 
 const query = `
-insert into
-  fff_staging.timeseries_staging_exception
-    (source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
-values
- (@sourceId, @sourceType, @csvError, @csvType, @fewsParameters, @payload, @timeseriesHeaderId, @description)
+  insert into
+    fff_staging.timeseries_staging_exception
+      (source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
+  values
+    (@sourceId, @sourceType, @csvError, @csvType, @fewsParameters, @payload, @timeseriesHeaderId, @description)
 `
 
 module.exports = async function (context, errorData) {
