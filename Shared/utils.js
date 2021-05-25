@@ -76,8 +76,7 @@ const self = module.exports = {
   getEnvironmentVariableAsPositiveIntegerInRange: function (config) {
     let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
     const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
-    if (!isInteger(config.environmentVariableName, config.minimum, loggingFunction) ||
-       !isInteger(config.environmentVariableName, config.maximum, loggingFunction)) {
+    if (!isNumericEnvironmentVariableRangeDefined(config, loggingFunction)) {
       environmentVariableAsInteger = undefined
     }
 
@@ -152,6 +151,11 @@ function getAbsoluteIntegerForNonZeroOffsetInternal (context, offset, taskRunDat
     throw new TimeseriesStagingError(errorData, errorDescription)
   }
   return offsetInteger
+}
+
+function isNumericEnvironmentVariableRangeDefined (config, loggingFunction) {
+  return isInteger(config.environmentVariableName, config.minimum, loggingFunction) &&
+         isInteger(config.environmentVariableName, config.maximum, loggingFunction)
 }
 
 function isInteger (label, value, loggingFunction) {
