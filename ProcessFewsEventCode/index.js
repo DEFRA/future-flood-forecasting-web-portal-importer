@@ -80,9 +80,7 @@ async function processTaskRunData (context, transaction, taskRunData) {
 async function processOutgoingMessagesIfPossible (context, taskRunData) {
   // expect a number of plots/filters in message format, to forward to next function
   if (taskRunData.outgoingMessages.length > 0) {
-    if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
-      await createTimeseriesHeader(context, taskRunData)
-    }
+    Object.is(taskRunData.timeseriesHeaderExistsForTaskRun, false) && await createTimeseriesHeader(context, taskRunData)
 
     await deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId(context, taskRunData)
     await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
