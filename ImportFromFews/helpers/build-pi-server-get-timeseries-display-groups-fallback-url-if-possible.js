@@ -1,7 +1,8 @@
 const getUnknownLocationsFromPiServerErrorMessage = require('../../Shared/timeseries-functions/get-unknown-locations-from-pi-server-error-message')
+const { logMessageForTaskRunPlotOrFilter } = require('../../Shared/utils')
 
 module.exports = async function (context, taskRunData) {
-  context.log(`Attempting to filter out unknown locations for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  logMessageForTaskRunPlotOrFilter(context, taskRunData, 'Attempting to filter out unknown locations')
   await buildKnownLocations(context, taskRunData)
   if (taskRunData.knownLocationsIds.length > 0) {
     context.log(`Found known locations (${taskRunData.knownLocationsIds}) (for ${taskRunData.sourceDetails})`)

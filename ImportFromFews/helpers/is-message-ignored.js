@@ -1,6 +1,7 @@
 const doTimeseriesExistForTaskRunPlotOrFilter = require('../../Shared/timeseries-functions/do-timeseries-exist-for-task-run-plot-or-filter')
 const doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter = require('./do-active-timeseries-staging-exceptions-exist-for-task-run-plot-or-filter')
 const isIgnoredWorkflow = require('../../Shared/timeseries-functions/is-ignored-workflow')
+const { logMessageForTaskRunPlotOrFilter } = require('../../Shared/utils')
 
 module.exports = async function (context, taskRunData) {
   let ignoreMessage = false
@@ -25,7 +26,7 @@ module.exports = async function (context, taskRunData) {
       await doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter(context, taskRunData)
 
     if (timeseriesExistForTaskRunPlotOrFilter && !timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
-      context.log(`Ignoring message for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - Timeseries have been imported`)
+      logMessageForTaskRunPlotOrFilter(context, taskRunData, 'Ignoring message for', '- Timeseries have been imported')
       ignoreMessage = true
     }
   }
