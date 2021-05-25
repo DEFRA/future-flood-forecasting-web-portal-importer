@@ -88,11 +88,15 @@ async function buildLocationsToImportForTaskRunPlot (context, taskRunData) {
   }
 
   if (locationsToImportForTaskRunPlotFunction) {
-    const result = await executePreparedStatementInTransaction(locationsToImportForTaskRunPlotFunction, context, taskRunData.transaction, taskRunData)
+    return await retrieveLocationsToImportForTaskRunPlot(context, taskRunData, locationsToImportForTaskRunPlotFunction)
+  }
+}
 
-    if (result && result.recordset && result.recordset.length === 1) {
-      return result.recordset[0].location_ids
-    }
+async function retrieveLocationsToImportForTaskRunPlot (context, taskRunData, locationsToImportForTaskRunPlotFunction) {
+  const result = await executePreparedStatementInTransaction(locationsToImportForTaskRunPlotFunction, context, taskRunData.transaction, taskRunData)
+
+  if (result && result.recordset && result.recordset.length === 1) {
+    return result.recordset[0].location_ids
   }
 }
 
