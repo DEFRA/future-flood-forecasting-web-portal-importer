@@ -67,25 +67,7 @@ const self = module.exports = {
   },
   getAbsoluteIntegerForNonZeroOffset: function (context, offset, taskRunData) {
     if (offset && offset !== 0) {
-      let offsetInteger
-      if (Number.isInteger(offset)) {
-        offsetInteger = Math.abs(Number(offset))
-      } else {
-        const errorDescription = `Unable to return an integer for an offset value: ${offset}`
-
-        const errorData = {
-          sourceId: taskRunData.sourceId,
-          sourceType: taskRunData.sourceType,
-          csvError: true,
-          csvType: taskRunData.csvType || 'U',
-          fewsParameters: null,
-          timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-          payload: taskRunData.message,
-          description: errorDescription
-        }
-        throw new TimeseriesStagingError(errorData, errorDescription)
-      }
-      return offsetInteger
+      return getAbsoluteIntegerForNonZeroOffsetInternal(context, offset, taskRunData)
     } else {
       context.log('Non-zero offset required.')
       return null
@@ -148,6 +130,28 @@ function addFallbackLatestTaskRunCompletionPropertiesToTaskRunData (taskRunData)
 
 function addFallbackPreviousTaskRunCompletionPropertiesToTaskRunData (taskRunData) {
   taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
+}
+
+function getAbsoluteIntegerForNonZeroOffsetInternal (context, offset, taskRunData) {
+  let offsetInteger
+  if (Number.isInteger(offset)) {
+    offsetInteger = Math.abs(Number(offset))
+  } else {
+    const errorDescription = `Unable to return an integer for an offset value: ${offset}`
+
+    const errorData = {
+      sourceId: taskRunData.sourceId,
+      sourceType: taskRunData.sourceType,
+      csvError: true,
+      csvType: taskRunData.csvType || 'U',
+      fewsParameters: null,
+      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
+      payload: taskRunData.message,
+      description: errorDescription
+    }
+    throw new TimeseriesStagingError(errorData, errorDescription)
+  }
+  return offsetInteger
 }
 
 function isInteger (label, value, loggingFunction) {
