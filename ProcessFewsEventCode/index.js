@@ -65,17 +65,21 @@ async function createOutgoingMessageIfPossible (context, taskRunData, itemToBePr
   }
 }
 
-async function processTaskRunDataIfPossible (context, transaction, preprocessedMessage) {
+async function parseMessageAndProcessTaskRunDataIfPossible (context, transaction, preprocessedMessage) {
   const taskRunData = await parseMessage(context, transaction, preprocessedMessage)
   // As the forecast and approved indicators are booleans progression must be based on them being defined.
   if (taskRunData.taskRunCompletionTime && taskRunData.workflowId && taskRunData.taskRunId &&
     typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
-    // Do not import out of date forecast data.
-    if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-      await processTaskRunData(context, transaction, taskRunData)
-    } else {
-      logObsoleteTaskRunMessage(context, taskRunData)
-    }
+    await processTaskRunDataIfPossible(context, transaction, taskRunData)
+  }
+}
+
+async function processTaskRunDataIfPossible (context, transaction, taskRunData) {
+  // Do not import out of date forecast data.
+  if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+    await processTaskRunData(context, transaction, taskRunData)
+  } else {
+    logObsoleteTaskRunMessage(context, taskRunData)
   }
 }
 
@@ -140,7 +144,7 @@ async function processMessage (transaction, context, message) {
     // If a JSON message is received convert it to a string.
     const preprocessedMessage = await preprocessMessage(context, transaction, message)
     if (preprocessedMessage) {
-      await processTaskRunDataIfPossible(context, transaction, preprocessedMessage)
+      await parseMessageAndProcessTaskRunDataIfPossible(context, transaction, preprocessedMessage)
     }
   } catch (err) {
     if (!(err instanceof StagingError)) {
