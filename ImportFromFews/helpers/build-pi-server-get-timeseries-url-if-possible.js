@@ -109,15 +109,19 @@ async function buildFewsTimeParameters (context, taskRunData) {
   taskRunData.fewsEndTime = await getFewsTimeParameter(context, taskRunData.endTime, 'endTime')
 }
 
-async function buildPiServerUrlIfPossible (context, taskRunData) {
-  const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
+async function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) {
   const filterData = taskRunData.filterData
-  await buildTimeParameters(context, taskRunData)
   if (filterData.timeseriesType && (filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL || filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING)) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
   } else if (filterData.timeseriesType && filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
   }
+}
+
+async function buildPiServerUrlIfPossible (context, taskRunData) {
+  const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
+  await buildTimeParameters(context, taskRunData)
+  await buildFewsParameters(context, taskRunData, buildPiServerUrlCall)
 
   if (buildPiServerUrlCall.fewsParameters) {
     buildPiServerUrlCall.fewsPiUrl =
@@ -169,15 +173,6 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
 
   const result = await preparedStatement.execute(parameters)
   addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result)
-
-  // if (result.recordset && result.recordset[0] && result.recordset[0].previous_staged_task_run_id) {
-  //   taskRunData.previousTaskRunId = result.recordset[0].previous_staged_task_run_id
-  //   taskRunData.previousTaskRunCompletionTime =
-  //     moment(result.recordset[0].previous_staged_task_completion_time).toISOString()
-  // } else {
-  //   taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
-  // }
-
   return taskRunData
 }
 

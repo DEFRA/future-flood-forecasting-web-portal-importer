@@ -30,15 +30,5 @@ async function isLatestTaskRunForWorkflow (context, preparedStatement, taskRunDa
 
   const result = await preparedStatement.execute(parameters)
   addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result)
-
-  // if (result.recordset && result.recordset[0] && result.recordset[0].latest_staged_task_run_id) {
-  //   taskRunData.latestTaskRunId = result.recordset[0].latest_staged_task_run_id
-  //   taskRunData.latestTaskRunCompletionTime =
-  //     moment(result.recordset[0].latest_staged_task_completion_time).toISOString()
-  // } else {
-  //   taskRunData.latestTaskRunId = taskRunData.taskRunId
-  //   taskRunData.latestTaskRunCompletionTime = taskRunData.taskRunCompletionTime
-  // }
-
   return taskRunData.latestTaskRunId === taskRunData.taskRunId
 }
