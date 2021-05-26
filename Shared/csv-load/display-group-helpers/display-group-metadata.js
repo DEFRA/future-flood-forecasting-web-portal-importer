@@ -10,7 +10,7 @@ module.exports = {
   },
 
   getFluvialDisplayGroupMetadata: async function () {
-    return await getDisplayGroupMetadata(process.env.COASTAL_DISPLAY_GROUP_WORKFLOW_URL, 'F', FLUVIAL)
+    return await getDisplayGroupMetadata(process.env.FLUVIAL_DISPLAY_GROUP_WORKFLOW_URL, 'F', FLUVIAL)
   }
 }
 
