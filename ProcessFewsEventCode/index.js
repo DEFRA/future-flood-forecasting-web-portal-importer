@@ -33,9 +33,11 @@ const sourceTypeLookup = {
 
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
+  const errorMessage = 'The message routing function has failed with the following error:'
+  const isolationLevel = null
   const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
   context.log(`Processing core engine message: ${messageToLog}`)
-  await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
+  await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message)
   // context.done() not required in async functions
 }
 

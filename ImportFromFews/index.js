@@ -16,11 +16,14 @@ const retrieveAndLoadFewsData = require('./helpers/retrieve-and-load-fews-data')
 
 module.exports = async function (context, message) {
   context.log(`Processing timeseries import message: ${JSON.stringify(message)}`)
+  const errorMessage = 'The FEWS data import function has failed with the following error:'
+  const isolationLevel = null
+
   const taskRunData = Object.assign({}, message)
-  await doInTransaction(processMessage, context, 'The FEWS data import function has failed with the following error:', null, message, taskRunData)
+  await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message, taskRunData)
   // If all plots/filters for the task run have been processed, associated staging exceptions can be deactivated.
   // This is performed in a new transaction to avoid deadlocks when plots/filters are processed concurrently.
-  await doInTransaction(deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible, context, 'The FEWS data import function has failed with the following error:', null, taskRunData)
+  await doInTransaction({ fn: deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible, context, errorMessage, isolationLevel }, taskRunData)
 }
 
 async function processMessageIfPossible (taskRunData, context, message) {

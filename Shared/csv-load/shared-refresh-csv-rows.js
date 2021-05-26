@@ -8,24 +8,26 @@ const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, refreshData) {
+  const isolationLevel = sql.ISOLATION_LEVEL.SERIALIZABLE
+
   // Transaction 1
   // Refresh with a serializable isolation level so that refresh is prevented if the table is in use.
   // If the table is in use and table lock acquisition fails, the function invocation will fail.
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+  await doInTransaction({ fn: refreshInTransaction, context, errorMessage: `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, isolationLevel }, refreshData)
 
   // Transaction 2
   // If a rollback has occurred, workflow refresh and message replay should not occur.
   if (refreshData.workflowRefreshCsvType && refreshData.refreshRollbackRequested === false) {
-    await doInTransaction(workflowRefreshAndReplay, context, 'Workflow data refresh after csv refresh failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+    await doInTransaction({ fn: workflowRefreshAndReplay, context, errorMessage: 'Workflow data refresh after csv refresh failed with the following error:', isolationLevel }, refreshData)
   }
 
   // Transaction 3
   // Regardless of rollback, all exceptions should be recorded.
   if (refreshData.failedCsvRows.length > 0) {
-    await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedCsvRows)
+    await doInTransaction({ fn: loadExceptions, context, errorMessage: `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, isolationLevel }, refreshData.csvSourceFile, refreshData.failedCsvRows)
   } else {
     context.log.info('There were no csv exceptions during load.')
   }

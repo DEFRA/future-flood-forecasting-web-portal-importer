@@ -29,7 +29,8 @@ module.exports = function (context, pool, config) {
   }
 
   this.checkWorkflowRefreshData = async function (expectWorkflowRefresh) {
-    await doInTransaction(checkWorkflowRefreshDataInTransaction, context, 'Unable to check workflow refresh data', null, config, expectWorkflowRefresh)
+    const isolationLevel = null
+    await doInTransaction({ fn: checkWorkflowRefreshDataInTransaction, context, errorMessage: 'Unable to check workflow refresh data', isolationLevel }, config, expectWorkflowRefresh)
   }
 
   this.checkReplayedStagingExceptionMessages = async function (expectedReplayedStagingExceptionMessages) {

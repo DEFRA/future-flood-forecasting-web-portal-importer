@@ -11,20 +11,21 @@ module.exports = {
   closeConnectionPool: async function () {
     await closeConnectionPoolInternal()
   },
-  doInTransaction: async function (fn, context, errorMessage, isolationLevel, ...args) {
+  doInTransaction: async function (config, ...args) {
+    const context = config.context
     if (connectionPool) {
       let transaction
 
       try {
-        transaction = await beginTransaction(context, isolationLevel)
+        transaction = await beginTransaction(context, config.isolationLevel)
 
         // Call the function to be executed in the transaction passing
         // through the transaction, context and arguments from the caller.
         context.log(`Connection pool: size=${pool.size}, available=${pool.available}, borrowed=${pool.borrowed} pending=${pool.pending}`)
-        return await fn(transaction, context, ...args)
+        return await config.fn(transaction, context, ...args)
       } catch (err) {
         try {
-          context.log.error(`Transaction failed: ${errorMessage} ${err}`)
+          context.log.error(`Transaction failed: ${config.errorMessage} ${err}`)
           if (transaction) {
             if (transaction._aborted) {
               context.log.warn('The transaction has been aborted.')

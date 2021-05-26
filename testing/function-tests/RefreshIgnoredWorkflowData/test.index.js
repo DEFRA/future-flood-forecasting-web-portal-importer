@@ -134,7 +134,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     it('should refresh given a valid CSV file and replay eligible failed messages', async () => {
       const expectWorkflowRefresh = true
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
-      await doInTransaction(insertExceptions, context, 'Error')
+      await doInTransaction({ fn: insertExceptions, context, errorMessage: 'Error' })
       await loadValidCsvAndCheckExpectedResults(['ukeafffsmc00:000000001 message'], expectWorkflowRefresh)
     })
     it('should throw an exception when the csv server is unavailable', async () => {

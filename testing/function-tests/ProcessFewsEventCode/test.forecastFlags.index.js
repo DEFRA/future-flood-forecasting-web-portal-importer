@@ -26,7 +26,7 @@ module.exports = describe('Test forecast flags', () => {
       await commonTimeseriesTestUtils.afterAll(pool)
     })
     it('should return undefined when a message does not contain an unexpected boolean value', async () => {
-      await doInTransaction(testInTransaction, context, 'Error')
+      await doInTransaction({ fn: testInTransaction, context, errorMessage: 'Error' })
     })
     it('should return true for boolean values', () => {
       expect(isBoolean(true)).toBe(true)

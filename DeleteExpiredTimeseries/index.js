@@ -51,7 +51,12 @@ module.exports = async function (context, myTimer) {
     // running (the locks are released after reading, there are no modified objects in the query so no further locks should take place).
     // Read committed ensures only committed data is selected to delete. Read committed does not protect against Non-repeatable reads or Phantom reads,
     // however the higher isolation levels (given the nature of the queries in the transaction) do not justify the concurrency cost in this case.
-    await doInTransaction(removeExpiredTimeseries, context, 'The expired timeseries deletion has failed with the following error:', sql.ISOLATION_LEVEL.READ_COMMITTED)
+    await doInTransaction({
+      fn: removeExpiredTimeseries,
+      context,
+      errorMessage: 'The expired timeseries deletion has failed with the following error:',
+      isolationLevel: sql.ISOLATION_LEVEL.READ_COMMITTED
+    })
   } else {
     context.log.warn('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.')
     throw new Error('DELETE_EXPIRED_TIMESERIES_HARD_LIMIT needs setting before timeseries can be removed.')

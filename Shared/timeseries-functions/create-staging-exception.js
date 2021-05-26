@@ -3,9 +3,10 @@ const { doInTransaction, executePreparedStatementInTransaction } = require('../t
 const StagingError = require('./staging-error')
 
 module.exports = async function (context, stagingExceptionData) {
+  const isolationLevel = null
   const transaction = stagingExceptionData.transaction
   await transaction.rollback()
-  await doInTransaction(createStagingExceptionInTransaction, context, 'Unable to create staging exception', null, stagingExceptionData)
+  await doInTransaction({ fn: createStagingExceptionInTransaction, context, errorMessage: 'Unable to create staging exception', isolationLevel }, stagingExceptionData)
   if (stagingExceptionData.throwStagingErrorFollowingStagingExceptionCreation) {
     throw new StagingError(stagingExceptionData.errorMessage)
   } else {
