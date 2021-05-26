@@ -56,15 +56,7 @@ async function processTransactionException (context, transaction, err, errorMess
   try {
     context.log.error(`Transaction failed: ${errorMessage} ${err}`)
     if (transaction) {
-      if (transaction._aborted) {
-        context.log.warn('The transaction has been aborted.')
-      } else if (transaction._rollbackRequested) {
-        await resetConnectionAndEndTransaction(context, transaction)
-        context.log.warn('Transaction rollback has been requested.')
-      } else {
-        await resetConnectionAndEndTransaction(context, transaction, transaction.rollback.bind(transaction))
-        context.log.warn('The transaction has been rolled back.')
-      }
+      await endTransactionIfNeeded(context, transaction)
     } else {
       context.log.error('No transaction to commit or rollback')
     }
@@ -72,6 +64,18 @@ async function processTransactionException (context, transaction, err, errorMess
     context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
   }
   throw err
+}
+
+async function endTransactionIfNeeded (context, transaction) {
+  if (transaction._aborted) {
+    context.log.warn('The transaction has been aborted.')
+  } else if (transaction._rollbackRequested) {
+    await resetConnectionAndEndTransaction(context, transaction)
+    context.log.warn('Transaction rollback has been requested.')
+  } else {
+    await resetConnectionAndEndTransaction(context, transaction, transaction.rollback.bind(transaction))
+    context.log.warn('The transaction has been rolled back.')
+  }
 }
 
 async function endTransaction (context, transaction) {
