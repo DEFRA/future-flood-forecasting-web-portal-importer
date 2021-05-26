@@ -24,31 +24,9 @@ module.exports = {
         context.log(`Connection pool: size=${pool.size}, available=${pool.available}, borrowed=${pool.borrowed} pending=${pool.pending}`)
         return await config.fn(transaction, context, ...args)
       } catch (err) {
-        try {
-          context.log.error(`Transaction failed: ${config.errorMessage} ${err}`)
-          if (transaction) {
-            if (transaction._aborted) {
-              context.log.warn('The transaction has been aborted.')
-            } else if (transaction._rollbackRequested) {
-              await resetConnectionAndEndTransaction(context, transaction)
-              context.log.warn('Transaction rollback has been requested.')
-            } else {
-              await resetConnectionAndEndTransaction(context, transaction, transaction.rollback.bind(transaction))
-              context.log.warn('The transaction has been rolled back.')
-            }
-          } else {
-            context.log.error('No transaction to commit or rollback')
-          }
-        } catch (err) {
-          context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
-        }
-        throw err
+        await processTransactionException(context, transaction, err, config.errorMessage)
       } finally {
-        try {
-          if (transaction && !transaction._aborted && !transaction._rollbackRequested) {
-            await resetConnectionAndEndTransaction(context, transaction, transaction.commit.bind(transaction))
-          }
-        } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
+        await endTransaction(context, transaction)
       }
     } else {
       throw new Error(`${connectionPoolClosedMessage} - please restart the function app`)
@@ -72,6 +50,36 @@ module.exports = {
       } catch (err) { context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`) }
     }
   }
+}
+
+async function processTransactionException (context, transaction, err, errorMessage) {
+  try {
+    context.log.error(`Transaction failed: ${errorMessage} ${err}`)
+    if (transaction) {
+      if (transaction._aborted) {
+        context.log.warn('The transaction has been aborted.')
+      } else if (transaction._rollbackRequested) {
+        await resetConnectionAndEndTransaction(context, transaction)
+        context.log.warn('Transaction rollback has been requested.')
+      } else {
+        await resetConnectionAndEndTransaction(context, transaction, transaction.rollback.bind(transaction))
+        context.log.warn('The transaction has been rolled back.')
+      }
+    } else {
+      context.log.error('No transaction to commit or rollback')
+    }
+  } catch (err) {
+    context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
+  }
+  throw err
+}
+
+async function endTransaction (context, transaction) {
+  try {
+    if (transaction && !transaction._aborted && !transaction._rollbackRequested) {
+      await resetConnectionAndEndTransaction(context, transaction, transaction.commit.bind(transaction))
+    }
+  } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
 }
 
 async function closeConnectionPoolInternal () {
