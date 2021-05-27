@@ -73,10 +73,6 @@ function addOptionalConfig (config, numericEnvironmentVariables, booleanEnvironm
   !Object.is(booleanEnvironmentVariables.abortTransactionOnError, undefined) && (config.options.abortTransactionOnError = booleanEnvironmentVariables.abortTransactionOnError)
   !Object.is(booleanEnvironmentVariables.trustServerCertificate, undefined) && (config.options.trustServerCertificate = booleanEnvironmentVariables.trustServerCertificate)
   !Object.is(booleanEnvironmentVariables.propagateCreateError, undefined) && (config.pool.propagateCreateError = booleanEnvironmentVariables.propagateCreateError)
-
-  // config.options.abortTransactionOnError = getEnvironmentVariableAsBoolean(process.env.SQLDB_ABORT_TRANSACTION_ON_ERROR)
-  // config.options.trustServerCertificate = getEnvironmentVariableAsBoolean(process.env.SQLDB_TRUST_SERVER_CERTIFICATE)
-  // config.pool.propagateCreateError = getEnvironmentVariableAsBoolean(process.env.SQLDB_PROPAGATE_CREATE_ERROR)
 }
 
 function getNumericEnvironmentVariables () {
