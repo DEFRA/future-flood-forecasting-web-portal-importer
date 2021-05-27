@@ -26,7 +26,7 @@ module.exports = async function (context, taskRunData) {
       await doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter(context, taskRunData)
 
     if (timeseriesExistForTaskRunPlotOrFilter && !timeseriesStagingExceptionsExistForTaskRunPlotOrFilter) {
-      logMessageForTaskRunPlotOrFilter(context, taskRunData, 'Ignoring message for', '- Timeseries have been imported')
+      logMessageForTaskRunPlotOrFilter(context, taskRunData, 'Ignoring message', '- Timeseries have been imported')
       ignoreMessage = true
     }
   }
