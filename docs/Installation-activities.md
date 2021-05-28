@@ -10,4 +10,4 @@ does not prescribe how the activities should be performed.
 * Run npm scripts to configure the functions and run unit tests. For example:
   * npm run build && npm test
 * To run the functions in a Microsoft Azure environment, deploy the functions to a function app
-* To run the functions locally, issue the command **func start** as described in the Microsoft Azure documentation referenced above.  
+* To run the functions locally, issue the command **func start** as described in the Microsoft Azure documentation referenced above.
