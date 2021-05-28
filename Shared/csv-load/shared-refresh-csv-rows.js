@@ -8,24 +8,26 @@ const neatCsv = require('neat-csv')
 const sql = require('mssql')
 
 module.exports = async function (context, refreshData) {
+  const isolationLevel = sql.ISOLATION_LEVEL.SERIALIZABLE
+
   // Transaction 1
   // Refresh with a serializable isolation level so that refresh is prevented if the table is in use.
   // If the table is in use and table lock acquisition fails, the function invocation will fail.
   // In most cases function invocation will be retried automatically and should succeed.  In rare
   // cases where successive retries fail, the message that triggers the function invocation will be
   // placed on a dead letter queue.  In this case, manual intervention will be required.
-  await doInTransaction(refreshInTransaction, context, `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+  await doInTransaction({ fn: refreshInTransaction, context, errorMessage: `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, isolationLevel }, refreshData)
 
   // Transaction 2
   // If a rollback has occurred, workflow refresh and message replay should not occur.
   if (refreshData.workflowRefreshCsvType && refreshData.refreshRollbackRequested === false) {
-    await doInTransaction(workflowRefreshAndReplay, context, 'Workflow data refresh after csv refresh failed with the following error:', sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData)
+    await doInTransaction({ fn: workflowRefreshAndReplay, context, errorMessage: 'Workflow data refresh after csv refresh failed with the following error:', isolationLevel }, refreshData)
   }
 
   // Transaction 3
   // Regardless of rollback, all exceptions should be recorded.
   if (refreshData.failedCsvRows.length > 0) {
-    await doInTransaction(loadExceptions, context, `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, sql.ISOLATION_LEVEL.SERIALIZABLE, refreshData.csvSourceFile, refreshData.failedCsvRows)
+    await doInTransaction({ fn: loadExceptions, context, errorMessage: `The ${refreshData.csvSourceFile} exception load has failed with the following error:`, isolationLevel }, refreshData.csvSourceFile, refreshData.failedCsvRows)
   } else {
     context.log.info('There were no csv exceptions during load.')
   }
@@ -106,26 +108,47 @@ async function getCsvData (context, refreshData) {
 
 async function buildPreparedStatementParameters (context, row, refreshData) {
   const preparedStatementExecuteObject = {}
+  let returnValue = preparedStatementExecuteObject
+  let rowError = false
+  let index = 0
+  const numberOfColumnObjects = refreshData.functionSpecificData.length
   // check all the expected values are present in the csv row and exclude incomplete csvRows.
-  for (const columnObject of refreshData.functionSpecificData) {
-    const columnName = columnObject.tableColumnName
-    const expectedCsvKey = columnObject.expectedCSVKey
-
-    if (row[expectedCsvKey] || columnObject.nullValueOverride === true) {
-      let rowData = row[expectedCsvKey]
-      if (columnObject.nullValueOverride === true && (row[expectedCsvKey] === null || row[expectedCsvKey] === '')) {
-        rowData = null
-      }
-      if (columnObject.preprocessor) {
-        preparedStatementExecuteObject[columnName] = columnObject.preprocessor(rowData, columnName)
-      } else {
-        preparedStatementExecuteObject[columnName] = rowData
-      }
-    } else {
-      return { rowError: true }
-    }
+  // Use a while loop with nested ternary operators to reduce the cognitive complexity rating.
+  while (!rowError && index < numberOfColumnObjects) {
+    const columnObject = refreshData.functionSpecificData[index]
+    rowError = await buildPreparedStatementParametersForColumnIfPossible(context, row, preparedStatementExecuteObject, columnObject)
+    rowError ? returnValue = { rowError: true } : index++
   }
-  return preparedStatementExecuteObject
+  return returnValue
+}
+
+async function buildPreparedStatementParametersForColumnIfPossible (context, row, preparedStatementExecuteObject, columnObject) {
+  const expectedCsvKey = columnObject.expectedCSVKey
+  let rowError = false
+
+  // The row must have a value for the current column or the current column must allow null values
+  if (row[expectedCsvKey] || columnObject.nullValueOverride) {
+    await buildPreparedStatementParametersForColumn(context, row, preparedStatementExecuteObject, columnObject)
+  } else {
+    rowError = true
+  }
+
+  return rowError
+}
+
+async function buildPreparedStatementParametersForColumn (context, row, preparedStatementExecuteObject, columnObject) {
+  const columnName = columnObject.tableColumnName
+  const expectedCsvKey = columnObject.expectedCSVKey
+
+  let rowData = row[expectedCsvKey]
+  if (columnObject.nullValueOverride === true && (row[expectedCsvKey] === null || row[expectedCsvKey] === '')) {
+    rowData = null
+  }
+  if (columnObject.preprocessor) {
+    preparedStatementExecuteObject[columnName] = columnObject.preprocessor(rowData, columnName)
+  } else {
+    preparedStatementExecuteObject[columnName] = rowData
+  }
 }
 
 async function processCsvRow (context, preparedStatement, row, refreshData) {

@@ -1,5 +1,6 @@
 const sql = require('mssql')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
+const getItemsToBeProcessedAsArray = require('./get-items-to-be-processed-as-array')
 const getUnprocessedTaskRunPlotsAndFilters = require('./get-unprocessed-task-run-plots-and-filters')
 const getTaskRunPlotsAndFiltersEligibleForReplay = require('./get-task-run-plots-and-filters-eligible-for-replay')
 
@@ -35,11 +36,6 @@ async function getAllPlotsAndFiltersForWorkflow (context, preparedStatement, tas
   }
 
   const result = await preparedStatement.execute(parameters)
-
-  for (const record of result.recordset) {
-    taskRunData.unprocessedItems.push({
-      sourceId: record.source_id,
-      sourceType: record.source_type
-    })
-  }
+  const unprocessedItems = await getItemsToBeProcessedAsArray(result.recordset)
+  taskRunData.unprocessedItems.push(...unprocessedItems)
 }

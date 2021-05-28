@@ -1,10 +1,12 @@
 const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
+const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset, addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData } = require('../../Shared/utils')
 const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
+const isNonDisplayGroupForecast = require('./is-non-display-group-forecast')
 const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const timeseriesTypeConstants = require('./timeseries-type-constants')
 const getFewsTimeParameter = require('./get-fews-time-parameter')
+const processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible = require('./process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible')
 const moment = require('moment')
 const sql = require('mssql')
 
@@ -43,16 +45,11 @@ const getLatestTaskRunEndTimeQuery = `
 
 module.exports = async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
-  if (isForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
+  if (isNonDisplayGroupForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
     await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)
   }
   // Ensure data is not imported for out of date external/simulated forecasts.
-  if (!isForecast(context, taskRunData) || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-    await processTaskRunApprovalStatus(context, taskRunData)
-  } else {
-    context.log.warn(`Ignoring message for filter ${taskRunData.filterId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) completed on ${taskRunData.taskRunCompletionTime}` +
-      ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
-  }
+  await processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible(context, taskRunData, true, processTaskRunApprovalStatus)
 }
 
 async function buildTimeParameters (context, taskRunData) {
@@ -112,15 +109,19 @@ async function buildFewsTimeParameters (context, taskRunData) {
   taskRunData.fewsEndTime = await getFewsTimeParameter(context, taskRunData.endTime, 'endTime')
 }
 
-async function buildPiServerUrlIfPossible (context, taskRunData) {
-  const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
+async function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) {
   const filterData = taskRunData.filterData
-  await buildTimeParameters(context, taskRunData)
   if (filterData.timeseriesType && (filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL || filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING)) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
   } else if (filterData.timeseriesType && filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
   }
+}
+
+async function buildPiServerUrlIfPossible (context, taskRunData) {
+  const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
+  await buildTimeParameters(context, taskRunData)
+  await buildFewsParameters(context, taskRunData, buildPiServerUrlCall)
 
   if (buildPiServerUrlCall.fewsParameters) {
     buildPiServerUrlCall.fewsPiUrl =
@@ -171,20 +172,8 @@ async function getLatestTaskRunEndTime (context, preparedStatement, taskRunData)
   }
 
   const result = await preparedStatement.execute(parameters)
-
-  if (result.recordset && result.recordset[0] && result.recordset[0].previous_staged_task_run_id) {
-    taskRunData.previousTaskRunId = result.recordset[0].previous_staged_task_run_id
-    taskRunData.previousTaskRunCompletionTime =
-      moment(result.recordset[0].previous_staged_task_completion_time).toISOString()
-  } else {
-    taskRunData.previousTaskRunCompletionTime = null // task run not yet present in db
-  }
-
+  addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData(taskRunData, result)
   return taskRunData
-}
-
-function isForecast (context, taskRunData) {
-  return taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING
 }
 
 async function throwCsvError (taskRunData, errorDescription, csvType, fewsParameters) {
@@ -204,11 +193,8 @@ async function throwCsvError (taskRunData, errorDescription, csvType, fewsParame
 
 async function processTaskRunApprovalStatus (context, taskRunData) {
   if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
-    if (!taskRunData.filterData.approvalRequired) {
-      context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`)
-    } else {
-      context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`)
-    }
+    Object.is(taskRunData.filterData.approvalRequired, true) && (context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`))
+    Object.is(taskRunData.approved, true) && (context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`))
     await buildPiServerUrlIfPossible(context, taskRunData)
   } else {
     context.log.error(`Ignoring filter ${taskRunData.filterId}. The filter requires approval and has NOT been approved.`)

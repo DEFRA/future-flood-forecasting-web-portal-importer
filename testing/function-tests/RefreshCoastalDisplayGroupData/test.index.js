@@ -83,7 +83,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     })
     it('should refresh given a valid CSV file (even with extra csv fields) and replay eligible failed messages', async () => {
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
-      await doInTransaction(insertExceptions, context, 'Error')
+      await doInTransaction({ fn: insertExceptions, context, errorMessage: 'Error' })
 
       const mockResponseData = {
         statusCode: STATUS_CODE_200,

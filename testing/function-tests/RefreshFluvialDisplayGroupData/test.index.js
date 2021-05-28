@@ -46,6 +46,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.batch('delete from fff_staging.staging_exception')
       await request.batch('delete from fff_staging.timeseries_staging_exception')
+      await request.batch('delete from fff_staging.timeseries_header')
       await request.batch('delete from fff_staging.fluvial_display_group_workflow')
       await request.batch('delete from fff_staging.workflow_refresh')
       await request.batch('insert into fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids) values (\'dummyWorkflow\', \'dummyPlot\', \'dummyLocation\')')
@@ -114,7 +115,7 @@ module.exports = describe('Insert fluvial_display_group_workflow data tests', ()
     it('should group locations by plot ID and workflow ID given single location per workflowId/plotId and replay eligible failed messages', async () => {
       await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords(-600)
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
-      await doInTransaction(insertExceptions, context, 'Error')
+      await doInTransaction({ fn: insertExceptions, context, errorMessage: 'Error' })
 
       const mockResponseData = {
         statusCode: STATUS_CODE_200,

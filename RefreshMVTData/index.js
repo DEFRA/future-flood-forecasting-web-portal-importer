@@ -1,5 +1,11 @@
 const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
 
+const insertPreparedStatement = `
+  insert into 
+    fff_staging.multivariate_thresholds (centre, critical_condition_id, input_location_id, output_location_id, target_area_code,  input_parameter_id, lower_bound, upper_bound, lower_bound_inclusive, upper_bound_inclusive, priority) 
+  values 
+    (@centre, @critical_condition_id, @input_location_id, @output_location_id, @target_area_code, @input_parameter_id, @lower_bound,  @upper_bound, @lower_bound_inclusive, @upper_bound_inclusive, @priority)
+`
 module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.MVT_URL,
@@ -7,11 +13,7 @@ module.exports = async function (context) {
     csvSourceFile: 'mvt',
     deleteStatement: 'delete from fff_staging.multivariate_thresholds',
     countStatement: 'select count(*) as number from fff_staging.multivariate_thresholds',
-    insertPreparedStatement: `
-      insert into 
-        fff_staging.multivariate_thresholds (centre, critical_condition_id, input_location_id, output_location_id, target_area_code,  input_parameter_id, lower_bound, upper_bound, lower_bound_inclusive, upper_bound_inclusive, priority) 
-      values 
-        (@centre, @critical_condition_id, @input_location_id, @output_location_id, @target_area_code, @input_parameter_id, @lower_bound,  @upper_bound, @lower_bound_inclusive, @upper_bound_inclusive, @priority)`,
+    insertPreparedStatement,
     // Column information, and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'CENTRE', tableColumnType: 'NVarChar', expectedCSVKey: 'Centre', nullValueOverride: true },

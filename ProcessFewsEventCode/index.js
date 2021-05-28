@@ -1,6 +1,5 @@
 const deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId = require('../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id')
-const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = require('./helpers/deactivate-timeseries-staging-exceptions-for-non-existent-task-run-plots-and-filters')
-const deactivateStagingExceptionBySourceFunctionAndTaskRunId = require('../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id')
+const { deactivateStagingExceptionBySourceFunctionAndTaskRunId, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters } = require('../Shared/timeseries-functions/deactivation-utils')
 const getTaskRunPlotsAndFiltersToBeProcessed = require('./helpers/get-task-run-plots-and-filters-to-be-processed')
 const isLatestTaskRunForWorkflow = require('../Shared/timeseries-functions/is-latest-task-run-for-workflow')
 const doesTimeseriesHeaderExistForTaskRun = require('./helpers/does-timeseries-header-exist-for-task-run')
@@ -18,6 +17,7 @@ const preprocessMessage = require('./helpers/preprocess-message')
 const getWorkflowId = require('./helpers/get-workflow-id')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const isForecast = require('./helpers/is-forecast')
+const { logObsoleteTaskRunMessage } = require('../Shared/utils')
 const moment = require('moment')
 
 const sourceTypeLookup = {
@@ -33,9 +33,11 @@ const sourceTypeLookup = {
 
 module.exports = async function (context, message) {
   // This function is triggered via a queue message drop, 'message' is the name of the variable that contains the queue item payload.
+  const errorMessage = 'The message routing function has failed with the following error:'
+  const isolationLevel = null
   const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
   context.log(`Processing core engine message: ${messageToLog}`)
-  await doInTransaction(processMessage, context, 'The message routing function has failed with the following error:', null, message)
+  await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message)
   // context.done() not required in async functions
 }
 
@@ -65,6 +67,24 @@ async function createOutgoingMessageIfPossible (context, taskRunData, itemToBePr
   }
 }
 
+async function parseMessageAndProcessTaskRunDataIfPossible (context, transaction, preprocessedMessage) {
+  const taskRunData = await parseMessage(context, transaction, preprocessedMessage)
+  // As the forecast and approved indicators are booleans progression must be based on them being defined.
+  if (taskRunData.taskRunCompletionTime && taskRunData.workflowId && taskRunData.taskRunId &&
+    typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
+    await processTaskRunDataIfPossible(context, transaction, taskRunData)
+  }
+}
+
+async function processTaskRunDataIfPossible (context, transaction, taskRunData) {
+  // Do not import out of date forecast data.
+  if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
+    await processTaskRunData(context, transaction, taskRunData)
+  } else {
+    logObsoleteTaskRunMessage(context, taskRunData)
+  }
+}
+
 async function processTaskRunData (context, transaction, taskRunData) {
   const ignoredWorkflow =
     await isIgnoredWorkflow(context, taskRunData)
@@ -78,12 +98,9 @@ async function processTaskRunData (context, transaction, taskRunData) {
 }
 
 async function processOutgoingMessagesIfPossible (context, taskRunData) {
-  // expect a number of plots/filters in message format, to forward to next function
+  // Expect a number of plots/filters in message format, to forward to next function
   if (taskRunData.outgoingMessages.length > 0) {
-    if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
-      await createTimeseriesHeader(context, taskRunData)
-    }
-
+    await createTimeseriesHeaderIfNeeded(context, taskRunData)
     await deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId(context, taskRunData)
     await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
     await deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters(context, taskRunData)
@@ -93,24 +110,8 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     await checkIfPiServerIsOnline(context)
     // Prepare to send a message for each plot/filter associated with the task run.
     context.bindings.importFromFews = taskRunData.outgoingMessages
-  } else if (taskRunData.timeseriesHeaderExistsForTaskRun) {
-    // If there is a taskRun header, this taskRun has partially/successfully run at least once before
-    // If there are no messages to send out this means:
-    // - all the plots/filters for the workflow taskRun have already been loaded successfully into timeseries
-    // - there was a partial/failed previous load AND the workflow reference data associated with the missing timeseries (t-s-exceptions) has not yet been refreshed
-    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
-  } else if ((taskRunData.forecast && !taskRunData.approved) || taskRunData.itemsToBeProcessed.length > 0) {
-    // If there is no header this means this taskRun has not partially/successfully run before.
-    // In this case (no header) the function app will find and store all corresponding plots/filters as items to be processed for a taskRun.
-    // If there are itemsToBeProcessed then there IS reference data in staging for the taskRun/workflow.
-    // No messages at this point means the items to process are plots linked to an unapproved forecast and so should not be forwarded
-    context.log(`All plots in the taskRun: ${taskRunData.taskRunId} (for workflowId: ${taskRunData.workflowId}) are unapproved.`)
   } else {
-    // If this code is reached there are no items to process, messages to forward or header row for observed data or approved forecast data meaning:
-    // - this taskRun has not partially/successfully run before.
-    // - staging has no reference data listed for the taskRun workflowId
-    taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
-    await createStagingException(context, taskRunData)
+    await processReasonForNoOutgoingMessages(context, taskRunData)
   }
 }
 
@@ -127,6 +128,7 @@ async function parseMessage (context, transaction, message) {
   }
   taskRunData.taskRunId = await getTaskRunId(context, taskRunData)
   taskRunData.workflowId = await getWorkflowId(context, taskRunData)
+  taskRunData.sourceDetails = `task run ${taskRunData.taskRunId}`
   taskRunData.timeseriesHeaderExistsForTaskRun = await doesTimeseriesHeaderExistForTaskRun(context, taskRunData)
   // The core engine uses UTC but does not appear to use ISO 8601 date formatting. As such dates need to be specified as
   // UTC using ISO 8601 date formatting manually to ensure portability between local and cloud environments.
@@ -144,18 +146,7 @@ async function processMessage (transaction, context, message) {
     // If a JSON message is received convert it to a string.
     const preprocessedMessage = await preprocessMessage(context, transaction, message)
     if (preprocessedMessage) {
-      const taskRunData = await parseMessage(context, transaction, preprocessedMessage)
-      // As the forecast and approved indicators are booleans progression must be based on them being defined.
-      if (taskRunData.taskRunCompletionTime && taskRunData.workflowId && taskRunData.taskRunId &&
-        typeof taskRunData.forecast !== 'undefined' && typeof taskRunData.approved !== 'undefined') {
-        // Do not import out of date forecast data.
-        if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
-          await processTaskRunData(context, transaction, taskRunData)
-        } else {
-          context.log.warn(`Ignoring message for task run ${taskRunData.taskRunId} completed on ${taskRunData.taskRunCompletionTime}` +
-            ` - ${taskRunData.latestTaskRunId} completed on ${taskRunData.latestTaskRunCompletionTime} is the latest task run for workflow ${taskRunData.workflowId}`)
-        }
-      }
+      await parseMessageAndProcessTaskRunDataIfPossible(context, transaction, preprocessedMessage)
     }
   } catch (err) {
     if (!(err instanceof StagingError)) {
@@ -164,5 +155,33 @@ async function processMessage (transaction, context, message) {
       // Propagate other errors to facilitate message replay.
       throw err
     }
+  }
+}
+
+async function createTimeseriesHeaderIfNeeded (context, taskRunData) {
+  if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
+    await createTimeseriesHeader(context, taskRunData)
+  }
+}
+
+async function processReasonForNoOutgoingMessages (context, taskRunData) {
+  if (taskRunData.timeseriesHeaderExistsForTaskRun) {
+    // If there is a taskRun header, this taskRun has partially/successfully run at least once before
+    // If there are no messages to send out this means:
+    // - all the plots/filters for the workflow taskRun have already been loaded successfully into timeseries
+    // - there was a partial/failed previous load AND the workflow reference data associated with the missing timeseries (t-s-exceptions) has not yet been refreshed
+    context.log(`Ignoring message for task run ${taskRunData.taskRunId} - No plots/filters require processing`)
+  } else if ((taskRunData.forecast && !taskRunData.approved) || taskRunData.itemsToBeProcessed.length > 0) {
+    // If there is no header this means this taskRun has not partially/successfully run before.
+    // In this case (no header) the function app will find and store all corresponding plots/filters as items to be processed for a taskRun.
+    // If there are itemsToBeProcessed then there IS reference data in staging for the taskRun/workflow.
+    // No messages at this point means the items to process are plots linked to an unapproved forecast and so should not be forwarded
+    context.log(`All plots in the taskRun: ${taskRunData.taskRunId} (for workflowId: ${taskRunData.workflowId}) are unapproved.`)
+  } else {
+    // If this code is reached there are no items to process, messages to forward or header row for observed data or approved forecast data meaning:
+    // - this taskRun has not partially/successfully run before.
+    // - staging has no reference data listed for the taskRun workflowId
+    taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
+    await createStagingException(context, taskRunData)
   }
 }

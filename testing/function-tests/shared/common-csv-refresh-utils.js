@@ -3,7 +3,8 @@ const sql = require('mssql')
 
 module.exports = function (context) {
   this.insertCSVStagingException = async function () {
-    await doInTransaction(insertCSVStagingException, context, 'Unable to insert csv staging exception data', null)
+    const isolationLevel = null
+    await doInTransaction({ fn: insertCSVStagingException, context, errorMessage: 'Unable to insert csv staging exception data', isolationLevel })
   }
 }
 

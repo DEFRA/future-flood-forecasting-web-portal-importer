@@ -1,4 +1,4 @@
-const extract = require('./extract')
+const extract = require('./extraction-utils')
 
 module.exports = async function (context, taskRunData, indicatorName) {
   let indicator = taskRunData.message.includes('is made current manually')
@@ -6,7 +6,8 @@ module.exports = async function (context, taskRunData, indicatorName) {
   if (!indicator) {
     const indicatorRegex = new RegExp(`(?:${indicatorName}\\:?\\s*(True|False))`, 'i')
     const indicatorText = `task run ${indicatorName} status`
-    const indicatorString = await extract(context, taskRunData, indicatorRegex, 2, 1, indicatorText)
+
+    const indicatorString = await extract(context, taskRunData, indicatorRegex, indicatorText)
 
     if (typeof indicatorString === 'undefined') {
       indicator = undefined

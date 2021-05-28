@@ -130,7 +130,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       const expectWorkflowRefresh = true
       await commonWorkflowCsvTestUtils.insertWorkflowRefreshRecords(-60)
       // Ensure messages linked to CSV associated staging exceptions/timeseries staging exceptions are replayed.
-      await doInTransaction(insertExceptions, context, 'Error')
+      await doInTransaction({ fn: insertExceptions, context, errorMessage: 'Error' })
       await refreshNonDisplayGroupDataAndCheckExpectedResults(mockResponseData, expectedData, expectWorkflowRefresh)
     })
     it('should not load duplicate rows in a csv', async () => {

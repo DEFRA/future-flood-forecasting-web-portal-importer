@@ -1,5 +1,5 @@
 const sql = require('mssql')
-const { getEnvironmentVariableAsPositiveIntegerInRange, isBoolean } = require('./utils')
+const { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange } = require('./utils')
 const { logger } = require('defra-logging-facade')
 const hostJson = require('../host.json')
 
@@ -9,6 +9,7 @@ module.exports = function () {
   // - some custom defaults
   // - selected environment variable based customisation.
   const numericEnvironmentVariables = getNumericEnvironmentVariables()
+  const booleanEnvironmentVariables = getBooleanEnvironmentVariables()
   const maxConcurrentCalls = Math.max(1, Math.min(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls, 10))
 
   const config = {
@@ -26,8 +27,8 @@ module.exports = function () {
     }
   }
 
-  addAuthenticationConfig(config)
-  addOptionalConfig(config, numericEnvironmentVariables)
+  addAuthenticationConfig(config, booleanEnvironmentVariables)
+  addOptionalConfig(config, numericEnvironmentVariables, booleanEnvironmentVariables)
   this.pool = new sql.ConnectionPool(config)
 
   // To catch critical pool failures
@@ -37,9 +38,8 @@ module.exports = function () {
   })
 }
 
-function addAuthenticationConfig (config) {
-  if (isBoolean(process.env.AUTHENTICATE_WITH_MSI) &&
-      JSON.parse(process.env.AUTHENTICATE_WITH_MSI) &&
+function addAuthenticationConfig (config, booleanEnvironmentVariables) {
+  if (booleanEnvironmentVariables.authenticateWithMsi &&
       process.env.MSI_ENDPOINT &&
       process.env.MSI_SECRET) {
     logger.info('Configuring MSI app service authentication')
@@ -58,7 +58,7 @@ function addAuthenticationConfig (config) {
   }
 }
 
-function addOptionalConfig (config, numericEnvironmentVariables) {
+function addOptionalConfig (config, numericEnvironmentVariables, booleanEnvironmentVariables) {
   !Object.is(numericEnvironmentVariables.port, undefined) && (config.port = numericEnvironmentVariables.port)
   !Object.is(numericEnvironmentVariables.connectionTimeout, undefined) && (config.connectionTimeout = numericEnvironmentVariables.connectionTimeout)
   !Object.is(numericEnvironmentVariables.maxRetriesOnTransientErrors, undefined) && (config.options.maxRetriesOnTransientErrors = numericEnvironmentVariables.maxRetriesOnTransientErrors)
@@ -70,17 +70,9 @@ function addOptionalConfig (config, numericEnvironmentVariables) {
   !Object.is(numericEnvironmentVariables.reapIntervalMillis, undefined) && (config.pool.reapIntervalMillis = numericEnvironmentVariables.reapIntervalMillis)
   !Object.is(numericEnvironmentVariables.createRetryIntervalMillis, undefined) && (config.pool.createRetryIntervalMillis = numericEnvironmentVariables.createRetryIntervalMillis)
 
-  if (isBoolean(process.env.SQLDB_ABORT_TRANSACTION_ON_ERROR)) {
-    config.options.abortTransactionOnError = JSON.parse(process.env.SQLDB_ABORT_TRANSACTION_ON_ERROR)
-  }
-
-  if (isBoolean(process.env.SQLDB_TRUST_SERVER_CERTIFICATE)) {
-    config.options.trustServerCertificate = JSON.parse(process.env.SQLDB_TRUST_SERVER_CERTIFICATE)
-  }
-
-  if (isBoolean(process.env.SQLDB_PROPAGATE_CREATE_ERROR)) {
-    config.pool.propagateCreateError = JSON.parse(process.env.SQLDB_PROPAGATE_CREATE_ERROR)
-  }
+  !Object.is(booleanEnvironmentVariables.abortTransactionOnError, undefined) && (config.options.abortTransactionOnError = booleanEnvironmentVariables.abortTransactionOnError)
+  !Object.is(booleanEnvironmentVariables.trustServerCertificate, undefined) && (config.options.trustServerCertificate = booleanEnvironmentVariables.trustServerCertificate)
+  !Object.is(booleanEnvironmentVariables.propagateCreateError, undefined) && (config.pool.propagateCreateError = booleanEnvironmentVariables.propagateCreateError)
 }
 
 function getNumericEnvironmentVariables () {
@@ -100,6 +92,16 @@ function getNumericEnvironmentVariables () {
     createRetryIntervalMillis: getEnvironmentVariableAsPositiveIntegerInRange({ environmentVariableName: 'SQLDB_CREATE_RETRY_INTERVAL_MILLIS', minimum: 200, maximum: 5000 })
   }
   return validate(numericEnvironmentVariables)
+}
+
+function getBooleanEnvironmentVariables () {
+  const booleanEnvironmentVariables = {
+    abortTransactionOnError: getEnvironmentVariableAsBoolean('SQLDB_ABORT_TRANSACTION_ON_ERROR'),
+    trustServerCertificate: getEnvironmentVariableAsBoolean('SQLDB_TRUST_SERVER_CERTIFICATE'),
+    propagateCreateError: getEnvironmentVariableAsBoolean('SQLDB_PROPAGATE_CREATE_ERROR'),
+    authenticateWithMsi: getEnvironmentVariableAsBoolean('AUTHENTICATE_WITH_MSI')
+  }
+  return booleanEnvironmentVariables
 }
 
 function validate (numericEnvironmentVariables) {
