@@ -6,7 +6,7 @@ import getPiServerErrorMessage from '../../Shared/timeseries-functions/get-pi-se
 import { minifyAndGzip } from '../../Shared/utils.js'
 import processImportError from './process-import-error.js'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   await retrieveFewsData(context, taskRunData)
   if (taskRunData.fewsData) {
     await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)
