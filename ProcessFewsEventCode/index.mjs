@@ -1,5 +1,5 @@
 import deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId from '../Shared/timeseries-functions/deactivate-obsolete-staging-exceptions-by-source-function-and-workflow-id.js'
-import { deactivateStagingExceptionBySourceFunctionAndTaskRunId, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters } from ('../Shared/timeseries-functions/deactivation-utils.js')
+import { deactivateStagingExceptionBySourceFunctionAndTaskRunId, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters } from '../Shared/timeseries-functions/deactivation-utils.js'
 import getTaskRunPlotsAndFiltersToBeProcessed from './helpers/get-task-run-plots-and-filters-to-be-processed.js'
 import isLatestTaskRunForWorkflow from '../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
 import doesTimeseriesHeaderExistForTaskRun from './helpers/does-timeseries-header-exist-for-task-run.js'
@@ -17,7 +17,7 @@ import preprocessMessage from './helpers/preprocess-message.js'
 import getWorkflowId from './helpers/get-workflow-id.js'
 import getTaskRunId from './helpers/get-task-run-id.js'
 import isForecast from './helpers/is-forecast.js'
-import { logObsoleteTaskRunMessage } from ('../Shared/utils')
+import { logObsoleteTaskRunMessage } from '../Shared/utils'
 import moment from 'moment'
 
 const sourceTypeLookup = {

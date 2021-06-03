@@ -79,7 +79,7 @@ export const getAbsoluteIntegerForNonZeroOffset = function (context, offset, tas
 }
 
 export const getEnvironmentVariableAsPositiveIntegerInRange = function (config) {
-  let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
+  let environmentVariableAsInteger = getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
   const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
   if (!isNumericEnvironmentVariableRangeDefined(config, loggingFunction)) {
     environmentVariableAsInteger = undefined
@@ -96,7 +96,7 @@ export const getEnvironmentVariableAsPositiveIntegerInRange = function (config) 
 
 export const getEnvironmentVariableAsBoolean = function (environmentVariableName) {
   let environmentVariableAsBoolean
-  if (self.isBoolean(process.env[environmentVariableName])) {
+  if (isBoolean(process.env[environmentVariableName])) {
     environmentVariableAsBoolean = JSON.parse(process.env[environmentVariableName])
   }
   return environmentVariableAsBoolean

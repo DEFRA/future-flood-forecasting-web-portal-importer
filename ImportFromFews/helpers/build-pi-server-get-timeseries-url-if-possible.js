@@ -1,7 +1,7 @@
 import deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter from './deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter.js'
 import { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset, addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData } from '../../Shared/utils.js'
 import isLatestTaskRunForWorkflow from '../../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
-import isNonDisplayGroupForecast  from './is-non-display-group-forecast.js'
+import isNonDisplayGroupForecast from './is-non-display-group-forecast.js'
 import TimeseriesStagingError from '../../Shared/timeseries-functions/timeseries-staging-error.js'
 import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
 import { timeseriesTypeConstants } from './timeseries-type-constants.js'

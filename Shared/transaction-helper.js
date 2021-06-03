@@ -12,17 +12,18 @@ export const closeConnectionPool = async function () {
   await closeConnectionPoolInternal()
 }
 
-export const doInTransaction = async function (fn, context, errorMessage, isolationLevel, ...args) {
+export const doInTransaction = async function (config, ...args) {
+  const context = config.context
   if (connectionPool) {
     let transaction
 
     try {
-      transaction = await beginTransaction(context, isolationLevel)
+      transaction = await beginTransaction(context, config.isolationLevel)
 
       // Call the function to be executed in the transaction passing
       // through the transaction, context and arguments from the caller.
       context.log(`Connection pool: size=${pool.size}, available=${pool.available}, borrowed=${pool.borrowed} pending=${pool.pending}`)
-      return await fn(transaction, context, ...args)
+      return await config.fn(transaction, context, ...args)
     } catch (err) {
       await processTransactionException(context, transaction, err, config.errorMessage)
     } finally {
