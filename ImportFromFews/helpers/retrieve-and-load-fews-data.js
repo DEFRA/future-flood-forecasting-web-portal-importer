@@ -7,7 +7,7 @@ import { minifyAndGzip } from '../../Shared/utils.js'
 import processImportError from './process-import-error.js'
 import { timeseriesTypeConstants } from './timeseries-type-constants.js'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   await retrieveFewsData(context, taskRunData)
   if (taskRunData.fewsData) {
     await executePreparedStatementInTransaction(loadFewsData, context, taskRunData.transaction, taskRunData)

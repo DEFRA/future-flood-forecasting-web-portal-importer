@@ -7,7 +7,7 @@ const insertPreparedStatement = `
   values 
     (@centre, @critical_condition_id, @input_location_id, @output_location_id, @target_area_code, @input_parameter_id, @lower_bound,  @upper_bound, @lower_bound_inclusive, @upper_bound_inclusive, @priority)
 `
-module.exports = async function (context) {
+export default async function (context) {
   const refreshData = {
     csvUrl: process.env.MVT_URL,
     nonWorkflowRefreshCsvType: 'MVT',
