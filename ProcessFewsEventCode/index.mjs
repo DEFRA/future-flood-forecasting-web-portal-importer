@@ -17,7 +17,7 @@ import preprocessMessage from './helpers/preprocess-message.js'
 import getWorkflowId from './helpers/get-workflow-id.js'
 import getTaskRunId from './helpers/get-task-run-id.js'
 import isForecast from './helpers/is-forecast.js'
-import { logObsoleteTaskRunMessage } from '../Shared/utils'
+import { logObsoleteTaskRunMessage } from '../Shared/utils.js'
 import moment from 'moment'
 
 const sourceTypeLookup = {
