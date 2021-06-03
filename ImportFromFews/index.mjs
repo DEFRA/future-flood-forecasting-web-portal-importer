@@ -7,13 +7,12 @@ import deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId from '..
 import deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible from './helpers/deactivate-staging-exceptions-by-source-function-and-task-run-id-if-possible.js'
 import { doInTransaction, executePreparedStatementInTransaction } from '../Shared/transaction-helper.js'
 import getTimeseriesHeaderData from './helpers/get-timeseries-header-data.js'
-import { minifyAndGzip } from '../Shared/utils.js'
 import isLatestTaskRunForWorkflow from '../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
 import processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible from './helpers/process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible.js'
 import isMessageIgnored from './helpers/is-message-ignored.js'
 import isSpanWorkflow from '../Shared/timeseries-functions/check-spanning-workflow.js'
-import retrieveAndLoadFewsData from ('./helpers/retrieve-and-load-fews-data')
-
+import processImportError from './helpers/process-import-error.js'
+import retrieveAndLoadFewsData from './helpers/retrieve-and-load-fews-data'
 
 export default async function (context, message) {
   context.log(`Processing timeseries import message: ${JSON.stringify(message)}`)

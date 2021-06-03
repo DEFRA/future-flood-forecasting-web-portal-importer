@@ -1,4 +1,4 @@
-import deactivateStagingExceptionBySourceFunctionAndTaskRunId from '../../Shared/timeseries-functions/deactivate-staging-exceptions-by-source-function-and-task-run-id.js'
+import { deactivateStagingExceptionBySourceFunctionAndTaskRunId } from '../../Shared/timeseries-functions/deactivation-utils.js'
 import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
 import sql from 'mssql'
 

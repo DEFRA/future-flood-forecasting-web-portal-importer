@@ -1,5 +1,5 @@
 import { executePreparedStatementInTransaction } from '../transaction-helper.js'
-import { addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData } from require('../utils.js')
+import { addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData } from '../utils.js'
 import sql from 'mssql'
 
 export default async function (context, taskRunData) {

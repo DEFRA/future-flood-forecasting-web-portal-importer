@@ -1,11 +1,11 @@
-const axios = require('axios')
-const sql = require('mssql')
-const deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter = require('./deactivate-timeseries-staging-exceptions-for-task-run-plot-or-filter')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
-const { minifyAndGzip } = require('../../Shared/utils')
-const processImportError = require('./process-import-error')
-const timeseriesTypeConstants = require('./timeseries-type-constants')
+import axios from 'axios'
+import sql from 'mssql'
+import deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter from './deactivate-timeseries-staging-exceptions-for-task-run-plot-or-filter.js'
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import getPiServerErrorMessage from '../../Shared/timeseries-functions/get-pi-server-error-message.js'
+import { minifyAndGzip } from '../../Shared/utils.js'
+import processImportError from './process-import-error.js'
+import { timeseriesTypeConstants } from './timeseries-type-constants.js'
 
 module.exports = async function (context, taskRunData) {
   await retrieveFewsData(context, taskRunData)
