@@ -5,9 +5,10 @@ import loggingFacade from 'defra-logging-facade'
 import { pipeline, Transform } from 'stream'
 import { createGzip } from 'zlib'
 import { promisify } from 'util'
+import moment from 'moment'
+
 const logger = loggingFacade.logger
 const pipe = promisify(pipeline)
-const moment = require('moment')
 
 const LATEST = 'latest'
 const PREVIOUS = 'previous'

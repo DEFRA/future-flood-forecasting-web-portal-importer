@@ -1,5 +1,5 @@
-const sql = require('mssql')
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
+import sql from 'mssql'
+import { executePreparedStatementInTransaction } from '../transaction-helper'
 
 const deactivateBySourceFunctionAndTaskRunIdQuery = `
   insert into
