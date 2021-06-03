@@ -1,5 +1,5 @@
 import sql from 'mssql'
-import { executePreparedStatementInTransaction } from '../transaction-helper'
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
 
 const deactivateBySourceFunctionAndTaskRunIdQuery = `
   insert into

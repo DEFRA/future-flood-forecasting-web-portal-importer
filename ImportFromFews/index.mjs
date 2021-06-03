@@ -12,7 +12,7 @@ import processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible from
 import isMessageIgnored from './helpers/is-message-ignored.js'
 import isSpanWorkflow from '../Shared/timeseries-functions/check-spanning-workflow.js'
 import processImportError from './helpers/process-import-error.js'
-import retrieveAndLoadFewsData from './helpers/retrieve-and-load-fews-data'
+import retrieveAndLoadFewsData from './helpers/retrieve-and-load-fews-data.js'
 
 export default async function (context, message) {
   context.log(`Processing timeseries import message: ${JSON.stringify(message)}`)
