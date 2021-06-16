@@ -16,7 +16,7 @@
     "jsonstream-next": "^3.0.0",
     "moment": "^2.27.0",
     "mssql": "^7.1.3",
-    "neat-csv": "^5.1.0",
+    "neat-csv": "^6.0.1",
     "node-fetch": "^2.6.0"
   },
   "devDependencies": {
