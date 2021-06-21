@@ -6,9 +6,8 @@ const connectionString = process.env.AzureWebJobsServiceBus
 const queueName = process.env.AZURE_SERVICE_BUS_QUEUE
 
 async function main () {
-  const sbClient = ServiceBusClient.createFromConnectionString(connectionString)
-  const queueClient = sbClient.createQueueClient(queueName)
-  const sender = queueClient.createSender()
+  const sbClient = new ServiceBusClient(connectionString)
+  const sender = sbClient.createSender(queueName)
 
   try {
     const message = {
@@ -16,8 +15,8 @@ async function main () {
       label: 'test'
     }
     console.log(`Sending message: ${message.body}`)
-    await sender.send(message)
-    await queueClient.close()
+    await sender.sendMessages([message])
+    await sender.close()
   } catch (err) {
     console.log('Error occurred: ', err)
   } finally {
