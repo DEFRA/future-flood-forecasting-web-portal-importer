@@ -5,6 +5,7 @@ module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.NON_DISPLAY_GROUP_WORKFLOW_URL,
     workflowRefreshCsvType: 'N',
+    refreshCsvTable: 'workflow_refresh',
     tableName: 'non_display_group_workflow',
     csvSourceFile: 'non display group refresh',
     deleteStatement: 'delete from fff_staging.non_display_group_workflow',

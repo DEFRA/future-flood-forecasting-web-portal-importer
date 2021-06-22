@@ -35,7 +35,7 @@ module.exports = async function (context, refreshData) {
 }
 
 async function workflowRefreshAndReplay (transaction, context, refreshData) {
-  await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+  await executePreparedStatementInTransaction(updateRefreshCsvTable, context, transaction, refreshData)
   const replayData = {
     csvType: refreshData.workflowRefreshCsvType,
     transaction: transaction
@@ -68,11 +68,11 @@ async function refreshInTransaction (transaction, context, refreshData) {
   }
 }
 
-async function updateWorkflowRefreshTable (context, preparedStatement, refreshData) {
+async function updateRefreshCsvTable (context, preparedStatement, refreshData) {
   await preparedStatement.input('csvType', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    merge fff_staging.workflow_refresh with (holdlock) as target
+    merge fff_staging.${refreshData.refreshCsvTable} with (holdlock) as target
     using (values (@csvType, getutcdate())) as source (csv_type, refresh_time)
     on (target.csv_type = source.csv_type)
     when matched then
