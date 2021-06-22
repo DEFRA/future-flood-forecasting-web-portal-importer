@@ -35,7 +35,7 @@ module.exports = async function (context, refreshData) {
 }
 
 async function workflowRefreshAndReplay (transaction, context, refreshData) {
-  await executePreparedStatementInTransaction(updaterefreshCsvTimeTableName, context, transaction, refreshData)
+  await executePreparedStatementInTransaction(updateRefreshCsvTimeTableName, context, transaction, refreshData)
   const replayData = {
     csvType: refreshData.workflowRefreshCsvType,
     transaction: transaction
@@ -68,7 +68,7 @@ async function refreshInTransaction (transaction, context, refreshData) {
   }
 }
 
-async function updaterefreshCsvTimeTableName (context, preparedStatement, refreshData) {
+async function updateRefreshCsvTimeTableName (context, preparedStatement, refreshData) {
   await preparedStatement.input('csvType', sql.NVarChar)
 
   await preparedStatement.prepare(`
