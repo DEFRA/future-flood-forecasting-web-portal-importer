@@ -21,6 +21,8 @@ const functionSpecificData = [
 module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.FLUVIAL_FORECAST_LOCATION_URL,
+    nonWorkflowRefreshCsvType: 'FFL',
+    refreshCsvTimeTableName: 'non_workflow_refresh',
     tableName: 'fluvial_forecast_location',
     csvSourceFile: 'fluvial forecast location refresh',
     deleteStatement: 'delete from fff_staging.fluvial_forecast_location',
