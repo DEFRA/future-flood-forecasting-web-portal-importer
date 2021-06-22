@@ -4,7 +4,7 @@ module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.IGNORED_WORKFLOW_URL,
     workflowRefreshCsvType: 'I',
-    refreshCsvTimeTable: 'workflow_refresh',
+    refreshCsvTimeTableName: 'workflow_refresh',
     tableName: 'ignored_workflow',
     csvSourceFile: 'ignored workflow refresh',
     deleteStatement: 'delete from fff_staging.ignored_workflow',
