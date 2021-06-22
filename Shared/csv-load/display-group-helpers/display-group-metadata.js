@@ -18,7 +18,7 @@ async function getDisplayGroupMetadata (csvUrl, workflowRefreshCsvType, displayG
   return {
     csvUrl,
     workflowRefreshCsvType,
-    refreshCsvTable: 'workflow_refresh',
+    refreshCsvTimeTable: 'workflow_refresh',
     tableName: `#${displayGroupType}_display_group_workflow_temp`,
     csvSourceFile: `${displayGroupType} display group`,
     deleteStatement: `delete from fff_staging.#${displayGroupType}_display_group_workflow_temp`,
