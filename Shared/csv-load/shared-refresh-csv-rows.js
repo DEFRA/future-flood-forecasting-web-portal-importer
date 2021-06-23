@@ -69,10 +69,11 @@ async function refreshInTransaction (transaction, context, refreshData) {
 }
 
 async function updateRefreshCsvTimeTableName (context, preparedStatement, refreshData) {
+  const tableName = `${refreshData.nonWorkflowRefreshCsvType ? 'non_' : ''}workflow_refresh`
   await preparedStatement.input('csvType', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    merge fff_staging.${refreshData.refreshCsvTimeTableName} with (holdlock) as target
+    merge fff_staging.${tableName} with (holdlock) as target
     using (values (@csvType, getutcdate())) as source (csv_type, refresh_time)
     on (target.csv_type = source.csv_type)
     when matched then

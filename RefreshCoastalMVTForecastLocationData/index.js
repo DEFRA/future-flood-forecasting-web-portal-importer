@@ -5,7 +5,6 @@ module.exports = async function (context) {
   const localRefreshData = {
     csvUrl: process.env.COASTAL_MVT_FORECAST_LOCATION_URL,
     nonWorkflowRefreshCsvType: 'CMV',
-    refreshCsvTimeTableName: 'non_workflow_refresh',
     csvSourceFile: 'mvt coastal location',
     deleteStatement: 'delete from fff_staging.coastal_forecast_location where coastal_type = \'Multivariate Thresholds\'',
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'Multivariate Thresholds\'',

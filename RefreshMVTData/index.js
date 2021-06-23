@@ -11,7 +11,6 @@ module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.MVT_URL,
     nonWorkflowRefreshCsvType: 'MVT',
-    refreshCsvTimeTableName: 'non_workflow_refresh',
     tableName: 'multivariate_thresholds',
     csvSourceFile: 'mvt',
     deleteStatement: 'delete from fff_staging.multivariate_thresholds',
