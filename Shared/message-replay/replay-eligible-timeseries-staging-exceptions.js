@@ -1,5 +1,5 @@
 const { executePreparedStatementInTransaction } = require('../transaction-helper')
-const { prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvTables } = require('../csv-load/service-configuration-update-utils')
+const { prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData } = require('../csv-load/service-configuration-update-utils')
 const sql = require('mssql')
 
 const activeTimeseriesStagingExceptionMessagesByCsvTypeForExistingWorkflowsQuery = `
@@ -64,7 +64,7 @@ module.exports = async function (context, replayData) {
 }
 
 async function replayMessagesForTimeseriesStagingExceptionsIfServiceConfigUpdateHasBeenProcessed (context, preparedStatement) {
-  await prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvTables(context, preparedStatement)
+  await prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData(context, preparedStatement)
 
   const config = {
     outputBindingName: 'importFromFews',

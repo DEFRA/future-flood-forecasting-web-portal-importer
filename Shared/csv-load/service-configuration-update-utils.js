@@ -15,11 +15,25 @@ const startOfServiceConfigurationUpdateDetectionQueryWhenCheckingAllCsvTables = 
   from
 `
 
+const serviceConfigurationUpdateCompletedMessage = `{
+  "input": "notify"
+}`
+
 module.exports = {
-  prepareServiceConfigurationUpdateDetectionQueryForAllCsvTables: async function (context, preparedStatement) {
-    return await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, false)
+  processServiceConfigurationUpdateForAllCsvDataIfRequired: async function (context, preparedStatement) {
+    // Determine if a service configuration update for all CSV data has occurred.
+    const parameters = {
+      secondsSinceCsvRefreshed: process.env.SERVICE_CONFIG_UPDATE_DETECTION_LIMIT || 300
+    }
+
+    await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, false)
+    const result = preparedStatement.execute(parameters)
+
+    if (result && result.recordset && result.recordset[0]) {
+      await prepareToEnableCoreEngineTaskRunProcessingIfNeeded(context)
+    }
   },
-  prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvTables: async function (context, preparedStatement) {
+  prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData: async function (context, preparedStatement) {
     return await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, true)
   }
 }
@@ -48,4 +62,17 @@ async function prepareServiceConfigurationUpdateDetectionQuery (context, prepare
     `
   await preparedStatement.input('secondsSinceCsvRefreshed', sql.Int)
   await preparedStatement.prepare(serviceConfigurationUpdateDetectionQuery)
+}
+
+async function prepareToEnableCoreEngineTaskRunProcessingIfNeeded (context) {
+  // A service configuration update for all CSV data has occurred.
+  // If the ProcessFewsEventCode or ImportFromFews function is disabled (for example, during a deployment or failover scenario)
+  // place a message on the fews-service-configuration-update-completed-queue so that the function(s) can be enabled.
+  const messageToLog = 'A full service configuration update has been completed'
+  if (process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || process.env['AzureWebJobs.ImportFromFews.Disabled']) {
+    context.log(`${messageToLog} - preparing to send notification`)
+    context.bindings.serviceConfigurationUpdateCompleted = [serviceConfigurationUpdateCompletedMessage]
+  } else {
+    context.log(messageToLog)
+  }
 }
