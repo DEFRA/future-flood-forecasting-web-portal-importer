@@ -20,6 +20,13 @@
       "direction": "out",
       "queueName": "fews-import-queue",
       "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "serviceConfigurationUpdateCompleted",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-service-configuration-update-completed-queue",
+      "connection": "AzureWebJobsServiceBus"
     }
   ]
 }
