@@ -3,6 +3,7 @@ const deleteCsvStagingExceptions = require('./failed-csv-load-handler/delete-csv
 const replayEligibleStagingExceptions = require('../message-replay/replay-eligible-staging-exceptions')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
 const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
+const { processServiceConfigurationUpdateForAllCsvDataIfNeeded } = require('./service-configuration-update-utils')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -20,7 +21,7 @@ module.exports = async function (context, refreshData) {
 
   // Transaction 2
   // If a rollback has not occurred record the time of refresh and perform any additional message processing.
-  if (refreshData.workflowRefreshCsvType && refreshData.refreshRollbackRequested === false) {
+  if (refreshData.refreshRollbackRequested === false) {
     await doInTransaction({ fn: recordCsvRefreshTimeAndPerformRequiredMessageProcessing, context, errorMessage: 'Service configuration update detection after CSV refresh failed with the following error:', isolationLevel }, refreshData)
   }
 
@@ -36,8 +37,9 @@ module.exports = async function (context, refreshData) {
 
 async function recordCsvRefreshTimeAndPerformRequiredMessageProcessing (transaction, context, refreshData) {
   await executePreparedStatementInTransaction(updateCsvRefreshTimeTable, context, transaction, refreshData)
+
   const replayData = {
-    csvType: refreshData.workflowRefreshCsvType,
+    csvType: refreshData.workflowRefreshCsvType || refreshData.nonWorkflowRefreshCsvType,
     transaction: transaction
   }
 
@@ -48,6 +50,8 @@ async function recordCsvRefreshTimeAndPerformRequiredMessageProcessing (transact
     // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
     await replayEligibleTimeseriesStagingExceptions(context, replayData)
   }
+
+  await executePreparedStatementInTransaction(processServiceConfigurationUpdateForAllCsvDataIfNeeded, context, transaction)
 }
 
 async function refreshInTransaction (transaction, context, refreshData) {
@@ -87,7 +91,7 @@ async function updateCsvRefreshTimeTable (context, preparedStatement, refreshDat
   `)
 
   const parameters = {
-    csvType: refreshData.workflowRefreshCsvType
+    csvType: refreshData.workflowRefreshCsvType || refreshData.nonWorkflowRefreshCsvType
   }
 
   await preparedStatement.execute(parameters)

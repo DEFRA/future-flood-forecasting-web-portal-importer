@@ -20,7 +20,7 @@ const serviceConfigurationUpdateCompletedMessage = `{
 }`
 
 module.exports = {
-  processServiceConfigurationUpdateForAllCsvDataIfRequired: async function (context, preparedStatement) {
+  processServiceConfigurationUpdateForAllCsvDataIfNeeded: async function (context, preparedStatement) {
     // Determine if a service configuration update for all CSV data has occurred.
     const parameters = {
       secondsSinceCsvRefreshed: process.env.SERVICE_CONFIG_UPDATE_DETECTION_LIMIT || 300
