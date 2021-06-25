@@ -25,7 +25,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         insert into
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
         values
-          ('Span_Workflow', 'SpanPlot', 'Span Location' )
+          ('Span_Workflow', 'SpanPlot', 'Span Location')
       `)
     })
     beforeEach(async () => {
@@ -469,18 +469,49 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const expectedErrorDetails = new Error('Unable to return an integer for an offset value: ten')
       await importFromFewsTestUtils.checkTextOffsetRejectsWithError(offsetValue, expectedErrorDetails)
     })
+    it('in a simulated DR situation, it should import data (for a single filter associated with an approved forecast) building creation time parameters based on the FEWS_MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS default and not the now expired latestTaskRunEndTime', async () => {
+      const mockResponses = [
+        {
+          data: {
+            key: 'Timeseries non-display groups data'
+          }
+        },
+        {
+          data: {
+            key: 'Timeseries non-display groups data'
+          }
+        }
+      ]
+
+      const config = [
+        {
+          messageKey: 'singleFilterPreDR',
+          mockResponses: [mockResponses[0]]
+        },
+        {
+          messageKey: 'singleFilterPostDR',
+          mockResponses: [mockResponses[1]]
+        }
+      ]
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[0])
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[1])
+    })
   })
 
   async function insertTimeseriesHeaders (pool) {
     const request = new sql.Request(pool)
     const laterTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).add(30, 'seconds')
     const laterTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).add(30, 'seconds')
+    const DRTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(5, 'days')
+    const DRTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(5, 'days')
     await request.input('taskRunStartTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.startTime).toISOString())
     await request.input('taskRunCompletionTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.completionTime).toISOString())
     await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.toISOString())
     await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.toISOString())
     await request.input('laterTaskRunStartTime', sql.DateTime2, laterTaskRunStartTime.toISOString())
     await request.input('laterTaskRunCompletionTime', sql.DateTime2, laterTaskRunCompletionTime.toISOString())
+    await request.input('drTaskRunStartTime', sql.DateTime2, DRTaskRunStartTime.toISOString())
+    await request.input('drTaskRunCompletionTime', sql.DateTime2, DRTaskRunCompletionTime.toISOString())
 
     await request.batch(`
       insert into
@@ -504,8 +535,10 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000015', 'Unknown_Timeseries_Type_Workflow', 1, 0, '{"input": "Test message"}'),
        (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000017', 'Custom_Offset_Workflow', 0, 0, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000018', 'Custom_Offset_Workflow_Forecast', 0, 0, '{"input": "Test message"}')
-    `)
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000018', 'Custom_Offset_Workflow_Forecast', 0, 0, '{"input": "Test message"}'),
+       (@drTaskRunStartTime, @drTaskRunCompletionTime, 'ukeafffsmc00:000000020', 'DR_Workflow', 0, 1, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000021', 'DR_Workflow', 0, 1, '{"input": "Test message"}')
+       `)
   }
 
   async function checkImportedData (config, context, pool) {
@@ -518,6 +551,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     if (!Number.isInteger(defaultTruncationOffsetHours)) {
       defaultTruncationOffsetHours = 24
     }
+    const creationTimeOffset = process.env.FEWS_MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS ? parseInt(process.env.FEWS_MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS) : 48
+
     await previousTaskRunEndTimeRequest.input('taskRunId', sql.VarChar, taskRunId)
     const previousTaskRunEndTimeResult = await previousTaskRunEndTimeRequest.query(`
       select
@@ -605,11 +640,18 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         let expectedStartTime
         // expected start and end time are used as creation times for those queries utilising creation times.
         // The actual query start and end times use these times as a basis for the offsets.
+
+        ///
         if (previousTaskRunEndTime) {
-          expectedStartTime = previousTaskRunEndTime
+          if (moment(previousTaskRunEndTime).isBefore((moment(result.recordset[index].task_start_time).subtract(creationTimeOffset, 'hours')))) {
+            expectedStartTime = moment(result.recordset[index].task_start_time).subtract(creationTimeOffset, 'hours')
+          } else {
+            expectedStartTime = previousTaskRunEndTime
+          }
         } else {
           expectedStartTime = moment(result.recordset[index].task_start_time)
         }
+        ///
 
         let expectedEndTime = moment(taskRunCompletionTime)
 
@@ -652,7 +694,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
     // The following check is for when there is an output binding named 'stagedTimeseries' active
     if (isBoolean(process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED) &&
-        JSON.parse(process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED)) {
+      JSON.parse(process.env.IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED)) {
       for (const stagedTimeseries of context.bindings.stagedTimeseries) {
         expect(receivedPrimaryKeys).toContainEqual(stagedTimeseries.id)
       }
