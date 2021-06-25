@@ -12,7 +12,7 @@ const startOfServiceConfigurationUpdateDetectionQueryWhenCheckingWorkflowCsvTabl
 const startOfServiceConfigurationUpdateDetectionQueryWhenCheckingAllCsvTables = `
   select
     1
-  from
+  where
 `
 
 const serviceConfigurationUpdateCompletedMessage = `{
@@ -27,7 +27,7 @@ module.exports = {
     }
 
     await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, false)
-    const result = preparedStatement.execute(parameters)
+    const result = await preparedStatement.execute(parameters)
 
     if (result && result.recordset && result.recordset[0]) {
       await prepareToEnableCoreEngineTaskRunProcessingIfNeeded(context)
@@ -40,6 +40,7 @@ module.exports = {
 
 async function prepareServiceConfigurationUpdateDetectionQuery (context, preparedStatement, checkWorkflowCsvTablesOnly) {
   const detectionSource = `fff_staging.${checkWorkflowCsvTablesOnly ? 'workflow_refresh' : 'v_csv_refresh'}`
+  const requiredNumberOfRowsForDetection = checkWorkflowCsvTablesOnly ? 4 : 9
   const startOfQuery =
     checkWorkflowCsvTablesOnly
       ? startOfServiceConfigurationUpdateDetectionQueryWhenCheckingWorkflowCsvTablesOnly
@@ -47,7 +48,7 @@ async function prepareServiceConfigurationUpdateDetectionQuery (context, prepare
 
   const serviceConfigurationUpdateDetectionQuery = `
     ${startOfQuery}  
-      0 <> (
+      ${requiredNumberOfRowsForDetection} = (
         select
           count(id)
         from
