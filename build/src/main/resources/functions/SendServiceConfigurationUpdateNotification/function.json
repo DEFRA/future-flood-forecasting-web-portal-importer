@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-service-configuration-update-completed-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}
+

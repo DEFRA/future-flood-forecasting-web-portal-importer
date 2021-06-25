@@ -14,6 +14,8 @@ rm -f RefreshCoastalTritonLocationData/function.json
 rm -f RefreshCoastalMVTLocationData/function.json
 rm -f RefreshIgnoredWorkflowData/function.json
 rm -f DeleteExpiredTimeseries/function.json
+rm -f SendServiceConfigurationUpdateNotification/function.json
+
 mvn clean -f build/pom.xml process-resources
 cp build/target/host.json.template host.json
 if [[ "${IMPORT_TIMESERIES_OUTPUT_BINDING_REQUIRED}" == "true" ]]; then
@@ -34,3 +36,4 @@ cp build/src/main/resources/functions/RefreshCoastalMVTForecastLocationData/func
 cp build/src/main/resources/functions/RefreshIgnoredWorkflowData/function.json RefreshIgnoredWorkflowData/
 cp build/src/main/resources/functions/RefreshMVTData/function.json RefreshMVTData/
 cp build/src/main/resources/functions/DeleteExpiredTimeseries/function.json DeleteExpiredTimeseries/
+cp build/src/main/resources/functions/SendServiceConfigurationUpdateNotification/function.json SendServiceConfigurationUpdateNotification/
