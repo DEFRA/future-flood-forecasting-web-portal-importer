@@ -70,9 +70,11 @@ async function prepareToEnableCoreEngineTaskRunProcessingIfNeeded (context) {
   // If the ProcessFewsEventCode or ImportFromFews function is disabled (for example, during a deployment or failover scenario)
   // place a message on the fews-service-configuration-update-completed-queue so that the function(s) can be enabled.
   const messageToLog = 'A full service configuration update has been completed'
-  if (process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || process.env['AzureWebJobs.ImportFromFews.Disabled']) {
+
+  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled']) ||
+      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'])) {
     context.log(`${messageToLog} - preparing to send notification`)
-    context.bindings.serviceConfigurationUpdateCompleted = [serviceConfigurationUpdateCompletedMessage]
+    context.bindings.serviceConfigurationUpdateCompleted = [JSON.parse(serviceConfigurationUpdateCompletedMessage)]
   } else {
     context.log(messageToLog)
   }
