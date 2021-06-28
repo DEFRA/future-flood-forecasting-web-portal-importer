@@ -31,6 +31,18 @@
       "filterId": "Test Filter3"
     }
   ],
+  "singleFilterPreDisasterRecovery": [
+    {
+      "taskRunId": "ukeafffsmc00:000000020",
+      "filterId": "Test Filter Disaster Recovery"
+    }
+  ],
+  "singleFilterPostDisasterRecovery": [
+    {
+      "taskRunId": "ukeafffsmc00:000000021",
+      "filterId": "Test Filter Disaster Recovery"
+    }
+  ],
   "filterAndPlotApprovedForecast": [
     {
       "taskRunId": "ukeafffsmc00:000000013",

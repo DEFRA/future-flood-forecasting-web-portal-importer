@@ -65,15 +65,19 @@ async function buildCreationStartAndEndTimes (context, taskRunData) {
   // are also retrieved, timeseries created between the end of the previous task run and the end of the current task run of
   // the workflow are retrieved. If this is the first task run of the workflow, timeseries created during the current task run
   // of the workflow are retrieved.
-  if (taskRunData.previousTaskRunCompletionTime) {
-    context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run finished at ${taskRunData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
-    taskRunData.startCreationTime = moment(taskRunData.previousTaskRunCompletionTime).toISOString()
-  } else {
-    context.log.info(`This is the first task run processed for the non-display group workflow: '${taskRunData.workflowId}'`)
-    taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).toISOString()
-  }
+  const ndgCreationTimeOffset = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS') || 48
 
-  taskRunData.endCreationTime = moment(taskRunData.taskRunCompletionTime).toISOString()
+  if (taskRunData.previousTaskRunCompletionTime && (moment(taskRunData.previousTaskRunCompletionTime).utc().isBefore((moment(taskRunData.taskRunStartTime).utc().subtract(ndgCreationTimeOffset, 'hours'))))) {
+    context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run completed at ${taskRunData.previousTaskRunCompletionTime}, this exceeds the maximum number of hours permitted (MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS: ${ndgCreationTimeOffset}). The starting date for the next taskrun search (startCreationTime) will therefore be based on the current taskRunStartTime minus the non-display group creation time offset of ${ndgCreationTimeOffset} hours.`)
+    taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).utc().subtract(ndgCreationTimeOffset, 'hours').toISOString()
+  } else if (taskRunData.previousTaskRunCompletionTime) {
+    context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run finished at ${taskRunData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
+    taskRunData.startCreationTime = moment(taskRunData.previousTaskRunCompletionTime).utc().toISOString()
+  } else {
+    context.log.info(`This is the first task run processed for the non-display group workflow: '${taskRunData.workflowId}'.`)
+    taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).utc().toISOString()
+  }
+  taskRunData.endCreationTime = moment(taskRunData.taskRunCompletionTime).utc().toISOString()
 }
 
 async function buildStartAndEndTimes (context, taskRunData) {
@@ -97,8 +101,8 @@ async function buildStartAndEndTimes (context, taskRunData) {
     baseStartTime = moment(taskRunData.startCreationTime)
     baseEndTime = moment(taskRunData.endCreationTime)
   }
-  taskRunData.startTime = baseStartTime.subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-  taskRunData.endTime = baseEndTime.add(truncationOffsetHoursForward, 'hours').toISOString()
+  taskRunData.startTime = baseStartTime.utc().subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+  taskRunData.endTime = baseEndTime.utc().add(truncationOffsetHoursForward, 'hours').toISOString()
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
