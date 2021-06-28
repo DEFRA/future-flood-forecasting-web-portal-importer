@@ -67,19 +67,17 @@ async function buildCreationStartAndEndTimes (context, taskRunData) {
   // of the workflow are retrieved.
   const ndgCreationTimeOffset = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS') || 48
 
-  if (taskRunData.previousTaskRunCompletionTime) {
-    if (moment(taskRunData.previousTaskRunCompletionTime).isBefore((moment(taskRunData.taskRunStartTime).subtract(ndgCreationTimeOffset, 'hours')))) {
-      context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run completed at ${taskRunData.previousTaskRunCompletionTime}, this exceeds the maximum number of hours permitted (MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS: ${ndgCreationTimeOffset}). The starting date for the next taskrun search (startCreationTime) will therefore be based on the current taskRunStartTime minus the non-display group creation time offset of ${ndgCreationTimeOffset} hours.`)
-      taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).subtract(ndgCreationTimeOffset, 'hours').toISOString()
-    } else {
-      context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run finished at ${taskRunData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
-      taskRunData.startCreationTime = moment(taskRunData.previousTaskRunCompletionTime).toISOString()
-    }
+  if (taskRunData.previousTaskRunCompletionTime && (moment(taskRunData.previousTaskRunCompletionTime).utc().isBefore((moment(taskRunData.taskRunStartTime).utc().subtract(ndgCreationTimeOffset, 'hours'))))) {
+    context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run completed at ${taskRunData.previousTaskRunCompletionTime}, this exceeds the maximum number of hours permitted (MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS: ${ndgCreationTimeOffset}). The starting date for the next taskrun search (startCreationTime) will therefore be based on the current taskRunStartTime minus the non-display group creation time offset of ${ndgCreationTimeOffset} hours.`)
+    taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).utc().subtract(ndgCreationTimeOffset, 'hours').toISOString()
+  } else if (taskRunData.previousTaskRunCompletionTime) {
+    context.log.info(`The previous task run had the id: '${taskRunData.previousTaskRunId}'. This task run finished at ${taskRunData.previousTaskRunCompletionTime}, this will be used as the starting date for the next taskrun search.`)
+    taskRunData.startCreationTime = moment(taskRunData.previousTaskRunCompletionTime).utc().toISOString()
   } else {
     context.log.info(`This is the first task run processed for the non-display group workflow: '${taskRunData.workflowId}'.`)
-    taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).toISOString()
+    taskRunData.startCreationTime = moment(taskRunData.taskRunStartTime).utc().toISOString()
   }
-  taskRunData.endCreationTime = moment(taskRunData.taskRunCompletionTime).toISOString()
+  taskRunData.endCreationTime = moment(taskRunData.taskRunCompletionTime).utc().toISOString()
 }
 
 async function buildStartAndEndTimes (context, taskRunData) {
@@ -96,12 +94,12 @@ async function buildStartAndEndTimes (context, taskRunData) {
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     // the time frame search period base time is the current end time for forecast data
-    baseStartTime = moment(taskRunData.taskRunCompletionTime)
-    baseEndTime = moment(taskRunData.taskRunCompletionTime)
+    baseStartTime = moment(taskRunData.taskRunCompletionTime).utc()
+    baseEndTime = moment(taskRunData.taskRunCompletionTime).utc()
   } else {
     // time frame search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
-    baseStartTime = moment(taskRunData.startCreationTime)
-    baseEndTime = moment(taskRunData.endCreationTime)
+    baseStartTime = moment(taskRunData.startCreationTime).utc()
+    baseEndTime = moment(taskRunData.endCreationTime).utc()
   }
   taskRunData.startTime = baseStartTime.subtract(truncationOffsetHoursBackward, 'hours').toISOString()
   taskRunData.endTime = baseEndTime.add(truncationOffsetHoursForward, 'hours').toISOString()
