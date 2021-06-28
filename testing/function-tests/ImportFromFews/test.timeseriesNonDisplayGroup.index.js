@@ -633,7 +633,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       // Check that filter timeseries data has been persisted correctly (plot timeseries data is checked in other unit tests).
       if (result.recordset[index].is_filter) {
-        taskRunCompletionTime = moment(result.recordset[index].task_completion_time)
+        taskRunCompletionTime = moment(result.recordset[index].task_completion_time).utc()
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
         // the task run completion time taking into account that the default values can be overridden by environment variables.
@@ -642,32 +642,32 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         // The actual query start and end times use these times as a basis for the offsets.
 
         if (previousTaskRunEndTime) {
-          if (moment(previousTaskRunEndTime).isBefore((moment(result.recordset[index].task_start_time).subtract(creationTimeOffset, 'hours')))) {
-            expectedStartTime = moment(result.recordset[index].task_start_time).subtract(creationTimeOffset, 'hours')
+          if (moment(previousTaskRunEndTime).utc().isBefore((moment(result.recordset[index].task_start_time).utc().subtract(creationTimeOffset, 'hours')))) {
+            expectedStartTime = moment(result.recordset[index].task_start_time).utc().subtract(creationTimeOffset, 'hours')
           } else {
-            expectedStartTime = previousTaskRunEndTime
+            expectedStartTime = moment(previousTaskRunEndTime).utc()
           }
         } else {
-          expectedStartTime = moment(result.recordset[index].task_start_time)
+          expectedStartTime = moment(result.recordset[index].task_start_time).utc()
         }
 
-        let expectedEndTime = moment(taskRunCompletionTime)
+        let expectedEndTime = taskRunCompletionTime
 
         if (config.overrideValues && config.overrideValues.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
           // expected start and end times are both equal to the taskRunCompletion time for simulated forecasts
-          expectedStartTime = moment(taskRunCompletionTime)
-          expectedEndTime = moment(taskRunCompletionTime)
+          expectedStartTime = taskRunCompletionTime
+          expectedEndTime = taskRunCompletionTime
         }
         let expectedOffsetStartTime
         let expectedOffsetEndTime
 
         if (config.overrideValues && config.overrideValues.startTime) {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(Math.abs(config.overrideValues.startTime), 'hours')
+          expectedOffsetStartTime = moment(expectedStartTime).utc().subtract(Math.abs(config.overrideValues.startTime), 'hours')
         } else {
-          expectedOffsetStartTime = moment(expectedStartTime).subtract(defaultTruncationOffsetHours, 'hours')
+          expectedOffsetStartTime = moment(expectedStartTime).utc().subtract(defaultTruncationOffsetHours, 'hours')
         }
         if (config.overrideValues && config.overrideValues.endTime) {
-          expectedOffsetEndTime = moment(expectedEndTime).add(Math.abs(config.overrideValues.endTime), 'hours')
+          expectedOffsetEndTime = moment(expectedEndTime).utc().add(Math.abs(config.overrideValues.endTime), 'hours')
         } else {
           expectedOffsetEndTime = expectedEndTime
         }
