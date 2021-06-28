@@ -641,7 +641,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         // expected start and end time are used as creation times for those queries utilising creation times.
         // The actual query start and end times use these times as a basis for the offsets.
 
-        ///
         if (previousTaskRunEndTime) {
           if (moment(previousTaskRunEndTime).isBefore((moment(result.recordset[index].task_start_time).subtract(creationTimeOffset, 'hours')))) {
             expectedStartTime = moment(result.recordset[index].task_start_time).subtract(creationTimeOffset, 'hours')
@@ -651,7 +650,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         } else {
           expectedStartTime = moment(result.recordset[index].task_start_time)
         }
-        ///
 
         let expectedEndTime = moment(taskRunCompletionTime)
 
