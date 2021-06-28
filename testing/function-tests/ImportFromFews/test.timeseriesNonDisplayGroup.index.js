@@ -485,11 +485,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const config = [
         {
-          messageKey: 'singleFilterPreDR',
+          messageKey: 'singleFilterPreDisasterRecovery',
           mockResponses: [mockResponses[0]]
         },
         {
-          messageKey: 'singleFilterPostDR',
+          messageKey: 'singleFilterPostDisasterRecovery',
           mockResponses: [mockResponses[1]]
         }
       ]
@@ -502,16 +502,16 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     const request = new sql.Request(pool)
     const laterTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).add(30, 'seconds')
     const laterTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).add(30, 'seconds')
-    const DRTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(5, 'days')
-    const DRTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(5, 'days')
+    const disasterRecoveryTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(5, 'days')
+    const disasterRecoveryTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(5, 'days')
     await request.input('taskRunStartTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.startTime).toISOString())
     await request.input('taskRunCompletionTime', sql.DateTime2, moment.utc(importFromFewsMessages.commonMessageData.completionTime).toISOString())
     await request.input('earlierTaskRunStartTime', sql.DateTime2, earlierTaskRunStartTime.toISOString())
     await request.input('earlierTaskRunCompletionTime', sql.DateTime2, earlierTaskRunCompletionTime.toISOString())
     await request.input('laterTaskRunStartTime', sql.DateTime2, laterTaskRunStartTime.toISOString())
     await request.input('laterTaskRunCompletionTime', sql.DateTime2, laterTaskRunCompletionTime.toISOString())
-    await request.input('drTaskRunStartTime', sql.DateTime2, DRTaskRunStartTime.toISOString())
-    await request.input('drTaskRunCompletionTime', sql.DateTime2, DRTaskRunCompletionTime.toISOString())
+    await request.input('disasterRecoveryTaskRunStartTime', sql.DateTime2, disasterRecoveryTaskRunStartTime.toISOString())
+    await request.input('disasterRecoveryTaskRunCompletionTime', sql.DateTime2, disasterRecoveryTaskRunCompletionTime.toISOString())
 
     await request.batch(`
       insert into
@@ -536,8 +536,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
        (@earlierTaskRunStartTime, @earlierTaskRunCompletionTime, 'ukeafffsmc00:000000016', 'Test_Workflow1', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000017', 'Custom_Offset_Workflow', 0, 0, '{"input": "Test message"}'),
        (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000018', 'Custom_Offset_Workflow_Forecast', 0, 0, '{"input": "Test message"}'),
-       (@drTaskRunStartTime, @drTaskRunCompletionTime, 'ukeafffsmc00:000000020', 'DR_Workflow', 0, 1, '{"input": "Test message"}'),
-       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000021', 'DR_Workflow', 0, 1, '{"input": "Test message"}')
+       (@disasterRecoveryTaskRunStartTime, @disasterRecoveryTaskRunCompletionTime, 'ukeafffsmc00:000000020', 'Disaster_Recovery_Workflow', 0, 1, '{"input": "Test message"}'),
+       (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000021', 'Disaster_Recovery_Workflow', 0, 1, '{"input": "Test message"}')
        `)
   }
 

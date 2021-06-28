@@ -31,13 +31,13 @@
       "filterId": "Test Filter3"
     }
   ],
-  "singleFilterPreDR": [
+  "singleFilterPreDisasterRecovery": [
     {
       "taskRunId": "ukeafffsmc00:000000020",
       "filterId": "Test Filter Disaster Recovery"
     }
   ],
-  "singleFilterPostDR": [
+  "singleFilterPostDisasterRecovery": [
     {
       "taskRunId": "ukeafffsmc00:000000021",
       "filterId": "Test Filter Disaster Recovery"
