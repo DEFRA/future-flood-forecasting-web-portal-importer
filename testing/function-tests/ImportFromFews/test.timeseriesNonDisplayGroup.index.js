@@ -469,7 +469,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const expectedErrorDetails = new Error('Unable to return an integer for an offset value: ten')
       await importFromFewsTestUtils.checkTextOffsetRejectsWithError(offsetValue, expectedErrorDetails)
     })
-    it('in a simulated DR situation, it should import data (for a single filter associated with an approved forecast) building creation time parameters based on the FEWS_MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS default and not the now expired latestTaskRunEndTime', async () => {
+    it('in a simulated disaster recovery situation, it should import data (for a single filter associated with an approved forecast) building creation time parameters based on the FEWS_MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS default and not the now expired latestTaskRunEndTime', async () => {
       const mockResponses = [
         {
           data: {

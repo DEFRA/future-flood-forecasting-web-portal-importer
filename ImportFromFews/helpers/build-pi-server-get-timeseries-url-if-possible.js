@@ -94,15 +94,15 @@ async function buildStartAndEndTimes (context, taskRunData) {
 
   if (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
     // the time frame search period base time is the current end time for forecast data
-    baseStartTime = moment(taskRunData.taskRunCompletionTime).utc()
-    baseEndTime = moment(taskRunData.taskRunCompletionTime).utc()
+    baseStartTime = moment(taskRunData.taskRunCompletionTime)
+    baseEndTime = moment(taskRunData.taskRunCompletionTime)
   } else {
     // time frame search period basis extends to the last observed time (either the previous task run end time or the current task run start time if its the first instance of a task run/workflow)
-    baseStartTime = moment(taskRunData.startCreationTime).utc()
-    baseEndTime = moment(taskRunData.endCreationTime).utc()
+    baseStartTime = moment(taskRunData.startCreationTime)
+    baseEndTime = moment(taskRunData.endCreationTime)
   }
-  taskRunData.startTime = baseStartTime.subtract(truncationOffsetHoursBackward, 'hours').toISOString()
-  taskRunData.endTime = baseEndTime.add(truncationOffsetHoursForward, 'hours').toISOString()
+  taskRunData.startTime = baseStartTime.utc().subtract(truncationOffsetHoursBackward, 'hours').toISOString()
+  taskRunData.endTime = baseEndTime.utc().add(truncationOffsetHoursForward, 'hours').toISOString()
 }
 
 async function buildFewsTimeParameters (context, taskRunData) {
