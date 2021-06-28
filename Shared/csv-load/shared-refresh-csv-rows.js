@@ -20,9 +20,9 @@ module.exports = async function (context, refreshData) {
   await doInTransaction({ fn: refreshInTransaction, context, errorMessage: `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, isolationLevel }, refreshData)
 
   // Transaction 2
-  // If a rollback has not occurred record the time of refresh and perform any additional message processing.
+  // If a rollback has not occurred record the time of refresh and replay messages if needed.
   if (refreshData.refreshRollbackRequested === false) {
-    await doInTransaction({ fn: recordCsvRefreshTimeAndPerformRequiredMessageProcessing, context, errorMessage: 'Service configuration update detection after CSV refresh failed with the following error:', isolationLevel }, refreshData)
+    await doInTransaction({ fn: recordCsvRefreshTimeAndReplayMessagesIfNeeded, context, errorMessage: 'Service configuration update detection after CSV refresh failed with the following error:', isolationLevel }, refreshData)
   }
 
   // Transaction 3
@@ -32,10 +32,14 @@ module.exports = async function (context, refreshData) {
   } else {
     context.log.info('There were no csv exceptions during load.')
   }
+
+  // Transaction 4
+  // Send a notification if a full service configuration update has been detected.
+  await doInTransaction({ fn: performServiceConfigurationUpdateCheckForAllCsvData, context, errorMessage: 'Failed to check for full service configuration update and send notification if needed', isolationLevel })
   // context.done() not required as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function recordCsvRefreshTimeAndPerformRequiredMessageProcessing (transaction, context, refreshData) {
+async function recordCsvRefreshTimeAndReplayMessagesIfNeeded (transaction, context, refreshData) {
   await executePreparedStatementInTransaction(updateCsvRefreshTimeTable, context, transaction, refreshData)
 
   const replayData = {
@@ -50,8 +54,6 @@ async function recordCsvRefreshTimeAndPerformRequiredMessageProcessing (transact
     // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
     await replayEligibleTimeseriesStagingExceptions(context, replayData)
   }
-
-  await executePreparedStatementInTransaction(processServiceConfigurationUpdateForAllCsvDataIfNeeded, context, transaction)
 }
 
 async function refreshInTransaction (transaction, context, refreshData) {
@@ -228,4 +230,8 @@ async function refreshInternal (context, preparedStatement, refreshData) {
     context.log.error(`Refresh ${refreshData.csvSourceFile} data failed: ${err}`)
     throw err
   }
+}
+
+async function performServiceConfigurationUpdateCheckForAllCsvData (transaction, context) {
+  await executePreparedStatementInTransaction(processServiceConfigurationUpdateForAllCsvDataIfNeeded, context, transaction)
 }
