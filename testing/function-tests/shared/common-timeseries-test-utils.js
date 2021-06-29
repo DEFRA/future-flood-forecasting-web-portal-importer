@@ -53,6 +53,7 @@ module.exports = function (pool) {
     await request.batch('delete from fff_staging.fluvial_display_group_workflow')
     await request.batch('delete from fff_staging.non_display_group_workflow')
     await request.batch('delete from fff_staging.ignored_workflow')
+    await request.batch('delete from fff_staging.non_workflow_refresh')
     await request.batch('delete from fff_staging.workflow_refresh')
   }
   const deleteTimeseriesData = async function (request) {

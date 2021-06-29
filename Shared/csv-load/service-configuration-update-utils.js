@@ -71,8 +71,8 @@ async function prepareToEnableCoreEngineTaskRunProcessingIfNeeded (context) {
   // place a message on the fews-service-configuration-update-completed-queue so that the function(s) can be enabled.
   const messageToLog = 'A full service configuration update has been completed'
 
-  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled']) ||
-      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'])) {
+  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || false) ||
+      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'] || false)) {
     context.log(`${messageToLog} - preparing to send notification`)
     context.bindings.serviceConfigurationUpdateCompleted = [JSON.parse(serviceConfigurationUpdateCompletedMessage)]
   } else {

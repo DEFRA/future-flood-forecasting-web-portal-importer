@@ -1,4 +1,6 @@
 const coastalRefreshFunction = require('../../../RefreshCoastalMVTForecastLocationData/index')
+const CommonWorkflowCSVTestUtils = require('../shared/common-workflow-csv-test-utils')
+const Util = require('../shared/common-csv-refresh-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const message = require('../mocks/defaultMessage')
@@ -16,12 +18,15 @@ module.exports = describe('Refresh coastal location data tests', () => {
 
   let context
   let dummyData
+  let commonCSVTestUtils
+  let commonWorkflowCSVTestUtils
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh coastal Multivariate Thresholds forecast location data function:', () => {
+    const ORIGINAL_ENV = process.env
     beforeAll(async () => {
       await pool.connect()
     })
@@ -30,6 +35,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      context.bindings.serviceConfigurationUpdateCompleted = []
+      commonCSVTestUtils = new Util(context, pool)
+      commonWorkflowCSVTestUtils = new CommonWorkflowCSVTestUtils(context, pool)
       dummyData = {
         FFFS_LOC_ID: 'dummy',
         FFFS_LOC_NAME: 'dummy',
@@ -44,13 +52,22 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.coastal_forecast_location')
       await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}', ${dummyData.LOCATION_X}, ${dummyData.LOCATION_Y})`)
+      await request.query('delete from fff_staging.non_workflow_refresh')
+      await request.query('delete from fff_staging.workflow_refresh')
+    })
+
+    afterEach(async () => {
+      process.env = { ...ORIGINAL_ENV }
     })
 
     afterAll(async () => {
       await request.query('delete from fff_staging.coastal_forecast_location')
       await request.query('delete from fff_staging.csv_staging_exception')
+      await request.query('delete from fff_staging.non_workflow_refresh')
+      await request.query('delete from fff_staging.workflow_refresh')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
+      process.env = { ...ORIGINAL_ENV }
     })
     it('should ignore an empty CSV file', async () => {
       const mockResponseData = {
@@ -65,6 +82,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
     })
     it('should refresh given a valid csv with 0 exceptions', async () => {
+      process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] = 'false'
+      process.env['AzureWebJobs.ImportFromFews.Disabled'] = 'false'
+
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid.csv',
@@ -96,7 +116,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
           LOCATION_Y: 123456.111111
         }]
       const expectedNumberOfExceptionRows = 0
-      await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
+      const expectedServiceConfigurationUpdateNotification = false
+      await commonCSVTestUtils.insertNonWorkflowRefreshRecords(-120)
+      await commonWorkflowCSVTestUtils.insertWorkflowRefreshRecords()
+      await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification)
     })
     it('should ignore a csv file with a valid header but no data rows', async () => {
       const mockResponseData = {
@@ -253,10 +276,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
     })
   })
 
-  async function refreshCoastalLocationDataAndCheckExpectedResults (mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows) {
+  async function refreshCoastalLocationDataAndCheckExpectedResults (mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification) {
     await mockFetchResponse(mockResponseData)
     await coastalRefreshFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedCoastalLocationData, expectedNumberOfExceptionRows)
+    await checkExpectedResults(expectedCoastalLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -272,7 +295,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows) {
+  async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification) {
     const coastalLocationCount = await request.query(`
     select 
       count(*) 
@@ -311,6 +334,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
         fff_staging.csv_staging_exception`)
       expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
     }
+
+    // Check the expected service configuration update notification status.
+    await commonCSVTestUtils.checkExpectedServiceConfigurationUpdateNotificationStatus(context, expectedServiceConfigurationUpdateNotification)
   }
 
   async function lockCoastalLocationTableAndCheckMessageCannotBeProcessed (mockResponseData) {
