@@ -1,7 +1,7 @@
 const axios = require('axios')
+const { shouldServiceConfigurationUpdateNotificationBeSent } = require('../Shared/csv-load/service-configuration-update-utils')
 module.exports = async function (context, message) {
-  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || false) ||
-      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'] || false)) {
+  if (shouldServiceConfigurationUpdateNotificationBeSent(context)) {
     const options = {
       method: 'post',
       url: process.env.SERVICE_CONFIGURATION_UPDATE_NOTIFICATION_URL,

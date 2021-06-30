@@ -20,6 +20,9 @@ const serviceConfigurationUpdateCompletedMessage = `{
 }`
 
 module.exports = {
+  shouldServiceConfigurationUpdateNotificationBeSent: function (context) {
+    return shouldServiceConfigurationUpdateNotificationBeSentInternal(context)
+  },
   processServiceConfigurationUpdateForAllCsvDataIfNeeded: async function (context, preparedStatement) {
     // Determine if a service configuration update for all CSV data has occurred.
     const parameters = {
@@ -65,14 +68,18 @@ async function prepareServiceConfigurationUpdateDetectionQuery (context, prepare
   await preparedStatement.prepare(serviceConfigurationUpdateDetectionQuery)
 }
 
+function shouldServiceConfigurationUpdateNotificationBeSentInternal (context) {
+  return (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || false) ||
+         JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'] || false))
+}
+
 async function prepareToEnableCoreEngineTaskRunProcessingIfNeeded (context) {
   // A service configuration update for all CSV data has occurred.
   // If the ProcessFewsEventCode or ImportFromFews function is disabled (for example, during a deployment or failover scenario)
   // place a message on the fews-service-configuration-update-completed-queue so that the function(s) can be enabled.
   const messageToLog = 'A full service configuration update has been completed'
 
-  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || false) ||
-      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'] || false)) {
+  if (shouldServiceConfigurationUpdateNotificationBeSentInternal(context)) {
     context.log(`${messageToLog} - preparing to send notification`)
     context.bindings.serviceConfigurationUpdateCompleted = [JSON.parse(serviceConfigurationUpdateCompletedMessage)]
   } else {
