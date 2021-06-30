@@ -82,6 +82,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
     })
     it('should refresh given a valid csv with 0 exceptions', async () => {
+      // Enable core engine message processing explicitly.
       process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] = 'false'
       process.env['AzureWebJobs.ImportFromFews.Disabled'] = 'false'
 
@@ -117,6 +118,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
         }]
       const expectedNumberOfExceptionRows = 0
       const expectedServiceConfigurationUpdateNotification = false
+      // Ensure a service configuration update is detected.
       await commonCSVTestUtils.insertNonWorkflowRefreshRecords(-120)
       await commonWorkflowCSVTestUtils.insertWorkflowRefreshRecords()
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification)

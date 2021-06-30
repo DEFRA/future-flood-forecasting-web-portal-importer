@@ -205,6 +205,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
     })
     it('should refresh given a valid CSV file', async () => {
+      // Disable core engine message processing explicitly.
       process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] = 'true'
       process.env['AzureWebJobs.ImportFromFews.Disabled'] = 'true'
 
@@ -247,6 +248,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       }]
       const expectedNumberOfExceptionRows = 0
       const expectedServiceConfigurationUpdateNotification = false
+      // Ensure a service configuration update is not detected.
       await commonCSVTestUtils.insertNonWorkflowRefreshRecords(-500)
       await commonWorkflowCSVTestUtils.insertWorkflowRefreshRecords()
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification)

@@ -124,6 +124,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedMVTData, expectedNumberOfExceptionRows)
     })
     it('should ignore a CSV file with a valid header row but no data rows', async () => {
+      // Core engine message processing is enabled implicitly.
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid-header-row-no-data-rows.csv',
@@ -135,6 +136,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       const expectedNumberOfExceptionRows = 0
       const expectedServiceConfigurationUpdateNotification = false
       const expectedErrorDescription = 'row is missing data'
+      // Ensure a service configuration update is detected.
       await commonCSVTestUtils.insertNonWorkflowRefreshRecords()
       await commonWorkflowCSVTestUtils.insertWorkflowRefreshRecords()
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription, expectedServiceConfigurationUpdateNotification, expectedServiceConfigurationUpdateNotification)

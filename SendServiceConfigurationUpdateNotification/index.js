@@ -1,7 +1,7 @@
 const axios = require('axios')
 module.exports = async function (context, message) {
-  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled']) ||
-      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'])) {
+  if (JSON.parse(process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] || false) ||
+      JSON.parse(process.env['AzureWebJobs.ImportFromFews.Disabled'] || false)) {
     const options = {
       method: 'post',
       url: process.env.SERVICE_CONFIGURATION_UPDATE_NOTIFICATION_URL,
