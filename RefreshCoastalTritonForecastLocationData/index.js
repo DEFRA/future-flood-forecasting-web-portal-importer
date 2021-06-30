@@ -13,14 +13,11 @@ module.exports = async function (context) {
         fff_staging.coastal_forecast_location (fffs_loc_id, coastal_order, centre, mfdo_area, ta_name, coastal_type, fffs_loc_name, location_x, location_y)
       values 
         (@fffs_loc_id, @coastal_order, @centre, @mfdo_area, @ta_name, @coastal_type, @fffs_loc_name, @location_x, @location_y)`,
-    functionSpecificData: [
-      { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
-      { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' },
-      { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName', nullValueOverride: true }
-    ]
+    functionSpecificData: []
   }
 
   const refreshData = Object.assign(localRefreshData, commonRefreshData.commonCoastalLocationRefreshData)
   refreshData.functionSpecificData.push(...commonRefreshData.commonCoastalLocationFunctionSpecificData)
+  refreshData.functionSpecificData.push(...commonRefreshData.commonCoastalMVTTritonLocationFunctionSpecificData)
   await refresh(context, refreshData)
 }
