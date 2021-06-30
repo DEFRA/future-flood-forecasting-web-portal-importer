@@ -10,9 +10,9 @@ module.exports = async function (context) {
     countStatement: 'select count(*) as number from fff_staging.fluvial_forecast_location',
     insertPreparedStatement: `
       insert into 
-        fff_staging.fluvial_forecast_location (fffs_location_id, fffs_location_name, drn_order, datum, display_order, centre, plot_id, catchment, catchment_order, mfdo_area)       
+        fff_staging.fluvial_forecast_location (fffs_location_id, fffs_location_name, drn_order, datum, display_order, centre, plot_id, catchment, catchment_order, mfdo_area, location_x, location_y, location_z)       
       values 
-        (@fffs_location_id, @fffs_location_name, @drn_order, @datum, @display_order, @centre, @plot_id, @catchment, @catchment_order, @mfdo_area)`,
+        (@fffs_location_id, @fffs_location_name, @drn_order, @datum, @display_order, @centre, @plot_id, @catchment, @catchment_order, @mfdo_area, @location_x, @location_y, @location_z)`,
     // Column information and corresponding csv information
     functionSpecificData: [
       { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
@@ -24,7 +24,10 @@ module.exports = async function (context) {
       { tableColumnName: 'PLOT_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
       { tableColumnName: 'CATCHMENT', tableColumnType: 'NVarChar', expectedCSVKey: 'Catchment' },
       { tableColumnName: 'CATCHMENT_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CatchmentOrder' },
-      { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' }
+      { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
+      { tableColumnName: 'LOCATION_X', tableColumnType: 'Int', expectedCSVKey: 'LocationX' },
+      { tableColumnName: 'LOCATION_Y', tableColumnType: 'Int', expectedCSVKey: 'LocationY' },
+      { tableColumnName: 'LOCATION_Z', tableColumnType: 'Int', expectedCSVKey: 'LocationZ', nullValueOverride: true }
     ]
   }
   await refresh(context, refreshData)

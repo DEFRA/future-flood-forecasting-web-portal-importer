@@ -1,3 +1,3 @@
-Centre,CoastalOrder,FFFSLocID,FFFSLocName,MFDOArea,TAName,Type
-Birmingham,70.0,CV2,Nearhere,,,Coastal Forecasting
+Centre,CoastalOrder,FFFSLocID,FFFSLocName,MFDOArea,TAName,Type,LocationX,LocationY,LocationZ
+Birmingham,70.0,CV2,Nearhere,,,Coastal Forecasting,121212,232323,343434
 Birmingham,,Nearthere,,,Coastal Forecasting

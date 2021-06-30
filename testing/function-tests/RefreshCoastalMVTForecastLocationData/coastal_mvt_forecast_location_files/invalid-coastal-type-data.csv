@@ -1,2 +1,2 @@
-Centre,CoastalOrder,FFFSLocID,MFDOArea,TAName,Type
-String,1,here,filler,filler,Multivariate Thresholds Wrong Type
+Centre,CoastalOrder,FFFSLocID,MFDOArea,TAName,Type,FFFSLocName,LocationX,LocationY
+String,1,here,filler,filler,Multivariate Thresholds Wrong Type,name,123333,222222

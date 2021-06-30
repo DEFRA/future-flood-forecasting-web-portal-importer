@@ -9,9 +9,9 @@ module.exports = async function (context) {
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'Coastal Forecasting\'',
     insertPreparedStatement: `
       insert into 
-        fff_staging.coastal_forecast_location (fffs_loc_id, fffs_loc_name, coastal_order, centre, coastal_type)
+        fff_staging.coastal_forecast_location (fffs_loc_id, fffs_loc_name, coastal_order, centre, coastal_type, location_x, location_y, location_z)
       values 
-        (@fffs_loc_id, @fffs_loc_name, @coastal_order, @centre, @coastal_type)`,
+        (@fffs_loc_id, @fffs_loc_name, @coastal_order, @centre, @coastal_type, @location_x, @location_y, @location_z)`,
     functionSpecificData: [
       { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' }
     ]

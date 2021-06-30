@@ -37,11 +37,14 @@ module.exports = describe('Refresh coastal location data tests', () => {
         CENTRE: 'dummy',
         MFDO_AREA: 'dummy',
         TA_NAME: 'dummy',
-        COASTAL_TYPE: 'Coastal Forecasting'
+        COASTAL_TYPE: 'Coastal Forecasting',
+        LOCATION_X: 111111,
+        LOCATION_Y: 222222,
+        LOCATION_Z: 333333
       }
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.coastal_forecast_location')
-      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
+      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y, LOCATION_Z) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}', '${dummyData.LOCATION_X}', '${dummyData.LOCATION_Y}', '${dummyData.LOCATION_Z}')`)
     })
 
     afterAll(async () => {
@@ -76,19 +79,25 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearthis TL',
           COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323,
+          LOCATION_Z: 343434
         },
         {
           FFFS_LOC_ID: 'ABVGTO',
           FFFS_LOC_NAME: 'Hembe',
           COASTAL_ORDER: 58,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323,
+          LOCATION_Z: 343434
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
     })
-    it('should refresh given a the normal case csv (missing TA_NAME and MFDO_AREA)', async () => {
+    it('should refresh given a the normal case csv (missing TA_NAME, LOCATION_Z and MFDO_AREA)', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid-standard.csv',
@@ -102,7 +111,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearthis',
           COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -132,7 +143,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearhere',
           COASTAL_ORDER: 70.0,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -301,7 +314,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
          fff_staging.COASTAL_FORECAST_LOCATION
         where 
          FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-      CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
+      CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}' and LOCATION_X = '${row.LOCATION_X}' and LOCATION_Y = '${row.LOCATION_Y}'
       `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
@@ -325,9 +338,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const request = new sql.Request(transaction)
       await request.query(`
       insert into 
-        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)
+        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y, LOCATION_Z)
       values 
-        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting')
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting', 323232, 344343, 454545)
     `)
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')
