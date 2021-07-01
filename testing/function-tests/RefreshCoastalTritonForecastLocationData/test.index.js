@@ -38,8 +38,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
         MFDO_AREA: 'dummy',
         TA_NAME: 'dummy',
         COASTAL_TYPE: 'Triton',
-        LOCATION_X: 123456,
-        LOCATION_Y: 123456
+        LOCATION_X: 123456.123456,
+        LOCATION_Y: 123456.123456
       }
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.coastal_forecast_location')
@@ -81,8 +81,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
           TA_NAME: 'filler',
           COASTAL_TYPE: 'Triton',
           FFFS_LOC_NAME: 'name',
-          LOCATION_X: 123456,
-          LOCATION_Y: 333333
+          LOCATION_X: 123456.123456,
+          LOCATION_Y: 333333.123456
         },
         {
           FFFS_LOC_ID: 'ABVGTO',
@@ -92,8 +92,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
           TA_NAME: 'filler',
           COASTAL_TYPE: 'Triton',
           FFFS_LOC_NAME: 'name',
-          LOCATION_X: 123456,
-          LOCATION_Y: 123456
+          LOCATION_X: 123456.123456,
+          LOCATION_Y: 123456.123456
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -126,8 +126,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
           TA_NAME: 'TANAME',
           COASTAL_TYPE: 'Triton',
           FFFS_LOC_NAME: 'name',
-          LOCATION_X: 123456,
-          LOCATION_Y: 123456
+          LOCATION_X: 123456.123456,
+          LOCATION_Y: 123456.123456
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)

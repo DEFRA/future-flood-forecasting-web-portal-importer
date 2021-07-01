@@ -38,8 +38,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
         MFDO_AREA: 'dummy',
         TA_NAME: 'dummy',
         COASTAL_TYPE: 'Multivariate Thresholds',
-        LOCATION_X: 123456,
-        LOCATION_Y: 123456
+        LOCATION_X: 123456.111111,
+        LOCATION_Y: 123456.111111
       }
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.coastal_forecast_location')
@@ -81,8 +81,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
           TA_NAME: 'filler',
           COASTAL_TYPE: 'Multivariate Thresholds',
           FFFS_LOC_NAME: 'LocName',
-          LOCATION_X: 123456,
-          LOCATION_Y: 123456
+          LOCATION_X: 123456.111111,
+          LOCATION_Y: 123456.111111
         },
         {
           FFFS_LOC_ID: 'ABVGTO',
@@ -92,8 +92,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
           TA_NAME: 'filler',
           COASTAL_TYPE: 'Multivariate Thresholds',
           FFFS_LOC_NAME: 'LocName',
-          LOCATION_X: 123456,
-          LOCATION_Y: 123456
+          LOCATION_X: 123456.111111,
+          LOCATION_Y: 123456.111111
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -126,8 +126,8 @@ module.exports = describe('Refresh coastal location data tests', () => {
           TA_NAME: 'TANAME',
           COASTAL_TYPE: 'Multivariate Thresholds',
           FFFS_LOC_NAME: 'LocName',
-          LOCATION_X: 123456,
-          LOCATION_Y: 123456
+          LOCATION_X: 123456.111111,
+          LOCATION_Y: 123456.111111
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -323,7 +323,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
       insert into fff_staging.coastal_forecast_location 
         (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y) 
       values 
-        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Multivariate Thresholds', 123123, 123345)
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Multivariate Thresholds', 123123.2322, 123345.65765)
     `)
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')
