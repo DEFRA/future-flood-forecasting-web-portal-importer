@@ -13,22 +13,9 @@ const functionSpecificData = [
   { tableColumnName: 'CATCHMENT', tableColumnType: 'NVarChar', expectedCSVKey: 'Catchment' },
   { tableColumnName: 'CATCHMENT_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CatchmentOrder' },
   { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
-  { tableColumnName: 'LOCATION_X', tableColumnType: 'Int', expectedCSVKey: 'LocationX' },
-  { tableColumnName: 'LOCATION_Y', tableColumnType: 'Int', expectedCSVKey: 'LocationY' },
+  { tableColumnName: 'LOCATION_X', tableColumnType: 'Decimal', expectedCSVKey: 'LocationX', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN },
+  { tableColumnName: 'LOCATION_Y', tableColumnType: 'Decimal', expectedCSVKey: 'LocationY', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN },
   { tableColumnName: 'LOCATION_Z', tableColumnType: 'Decimal', expectedCSVKey: 'LocationZ', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN }
-]
-
-const functionSpecificData = [
-  { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
-  { tableColumnName: 'FFFS_LOCATION_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' },
-  { tableColumnName: 'DRN_ORDER', tableColumnType: 'Int', expectedCSVKey: 'DRNOrder' },
-  { tableColumnName: 'DATUM', tableColumnType: 'NVarChar', expectedCSVKey: 'Datum', nullValueOverride: true },
-  { tableColumnName: 'DISPLAY_ORDER', tableColumnType: 'Int', expectedCSVKey: 'Order' },
-  { tableColumnName: 'CENTRE', tableColumnType: 'NVarChar', expectedCSVKey: 'Centre' },
-  { tableColumnName: 'PLOT_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'PlotID' },
-  { tableColumnName: 'CATCHMENT', tableColumnType: 'NVarChar', expectedCSVKey: 'Catchment' },
-  { tableColumnName: 'CATCHMENT_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CatchmentOrder' },
-  { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' }
 ]
 
 module.exports = async function (context) {
