@@ -1,5 +1,6 @@
 
 const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
+const commonRefreshData = require('../Shared/csv-load/common-refresh-data')
 
 const functionSpecificData = [
   { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
@@ -14,7 +15,7 @@ const functionSpecificData = [
   { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
   { tableColumnName: 'LOCATION_X', tableColumnType: 'Int', expectedCSVKey: 'LocationX' },
   { tableColumnName: 'LOCATION_Y', tableColumnType: 'Int', expectedCSVKey: 'LocationY' },
-  { tableColumnName: 'LOCATION_Z', tableColumnType: 'Int', expectedCSVKey: 'LocationZ', nullValueOverride: true }
+  { tableColumnName: 'LOCATION_Z', tableColumnType: 'Decimal', expectedCSVKey: 'LocationZ', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN }
 ]
 
 module.exports = async function (context) {

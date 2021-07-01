@@ -10,11 +10,17 @@ module.exports =
     { tableColumnName: 'COASTAL_TYPE', tableColumnType: 'NVarChar', expectedCSVKey: 'Type' },
     { tableColumnName: 'LOCATION_X', tableColumnType: 'Int', expectedCSVKey: 'LocationX' },
     { tableColumnName: 'LOCATION_Y', tableColumnType: 'Int', expectedCSVKey: 'LocationY' },
-    { tableColumnName: 'LOCATION_Z', tableColumnType: 'Int', expectedCSVKey: 'LocationZ', nullValueOverride: true }
+    { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName', nullValueOverride: true }
   ]),
   commonCoastalMVTTritonLocationFunctionSpecificData: Object.freeze([
     { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
-    { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' },
-    { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName', nullValueOverride: true }
-  ])
+    { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' }
+  ]),
+  returnNullForNaN: function (value) {
+    if (isNaN(value)) {
+      return null
+    } else {
+      return value
+    }
+  }
 }

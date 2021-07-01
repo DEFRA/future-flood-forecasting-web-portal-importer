@@ -9,11 +9,13 @@ module.exports = async function (context) {
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'Coastal Forecasting\'',
     insertPreparedStatement: `
       insert into 
-        fff_staging.coastal_forecast_location (fffs_loc_id, fffs_loc_name, coastal_order, centre, coastal_type, location_x, location_y, location_z)
+        fff_staging.coastal_forecast_location (fffs_loc_id, fffs_loc_name, coastal_order, centre, coastal_type, location_x, location_y, location_z, ta_name, mfdo_area)
       values 
-        (@fffs_loc_id, @fffs_loc_name, @coastal_order, @centre, @coastal_type, @location_x, @location_y, @location_z)`,
+        (@fffs_loc_id, @fffs_loc_name, @coastal_order, @centre, @coastal_type, @location_x, @location_y, @location_z, @ta_name, @mfdo_area)`,
     functionSpecificData: [
-      { tableColumnName: 'FFFS_LOC_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' }
+      { tableColumnName: 'LOCATION_Z', tableColumnType: 'Decimal', expectedCSVKey: 'LocationZ', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN },
+      { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea', nullValueOverride: true },
+      { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName', nullValueOverride: true }
     ]
   }
   const refreshData = Object.assign(localRefreshData, commonRefreshData.commonCoastalLocationRefreshData)

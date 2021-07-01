@@ -30,15 +30,15 @@ module.exports = describe('Refresh forecast location data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchment: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD', CatchmentOrder: 2, LocationX: 111111, LocationY: 222222 }]
+      dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchment: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD', CatchmentOrder: 2, LocationX: 111111, LocationY: 222222, LocationZ: 123456.123456 }]
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.batch('delete from fff_staging.fluvial_forecast_location')
       await request.batch(`
       insert 
         into fff_staging.fluvial_forecast_location
-        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, LOCATION_X, LOCATION_Y) 
+        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, LOCATION_X, LOCATION_Y, LOCATION_Z) 
       values 
-        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222)
+        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222, 123456.123456)
       `)
     })
 
@@ -94,7 +94,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
           Datum: 'mALD',
           CatchmentOrder: 1,
           LocationX: 123456,
-          LocationY: 123456
+          LocationY: 123456,
+          LocationZ: 123456.123456
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
@@ -134,7 +135,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
           Datum: 'mALD',
           CatchmentOrder: 1,
           LocationX: 123456,
-          LocationY: 123456
+          LocationY: 123456,
+          LocationZ: 123456.123456
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
@@ -211,7 +213,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Datum: 'mALD',
         CatchmentOrder: 1,
         LocationX: 123456,
-        LocationY: 123456
+        LocationY: 123456,
+        LocationZ: 123456.123456
       },
       {
         Centre: 'Birmingham',
@@ -225,7 +228,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Datum: 'mALD',
         CatchmentOrder: 1,
         LocationX: 123456,
-        LocationY: 123456
+        LocationY: 123456,
+        LocationZ: 123456.123456
       }]
       const expectedNumberOfExceptionRows = 0
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
@@ -374,6 +378,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         const CatchmentOrder = row.CatchmentOrder
         const LocationX = row.LocationX
         const LocationY = row.LocationY
+        const LocationZ = row.LocationZ
 
         const databaseResult = await request.query(`
           select 
@@ -387,7 +392,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
             and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = '${CatchmentOrder}'
             and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
             and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}' and DATUM = '${Datum}' and DISPLAY_ORDER = '${DisplayOrder}' 
-            and LOCATION_X = '${LocationX}' and LOCATION_Y = '${LocationY}'
+            and LOCATION_X = '${LocationX}' and LOCATION_Y = '${LocationY}' and LOCATION_Z = '${LocationZ}'
         `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }

@@ -1,3 +1,3 @@
-CatchmentOrder,Centre,MFDOArea,Catchment,FFFSLocID,FFFSLocName,PlotID,DRNOrder,Order,Datum
+CatchmentOrder,Centre,MFDOArea,Catchment,FFFSLocID,FFFSLocName,PlotID,DRNOrder,Order,Datum,LocationX,LocationY,LocationZ
 
-1,Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,4043,CHATSWORTH,Fluvial_Gauge_MFDO,123,8888,mALD
+1,Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,4043,CHATSWORTH,Fluvial_Gauge_MFDO,123,8888,mALD,12345,12345,123456.123456
