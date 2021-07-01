@@ -13,14 +13,15 @@ const functionSpecificData = [
   { tableColumnName: 'CATCHMENT', tableColumnType: 'NVarChar', expectedCSVKey: 'Catchment' },
   { tableColumnName: 'CATCHMENT_ORDER', tableColumnType: 'Int', expectedCSVKey: 'CatchmentOrder' },
   { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
-  { tableColumnName: 'LOCATION_X', tableColumnType: 'Int', expectedCSVKey: 'LocationX' },
-  { tableColumnName: 'LOCATION_Y', tableColumnType: 'Int', expectedCSVKey: 'LocationY' },
+  { tableColumnName: 'LOCATION_X', tableColumnType: 'Decimal', expectedCSVKey: 'LocationX', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN },
+  { tableColumnName: 'LOCATION_Y', tableColumnType: 'Decimal', expectedCSVKey: 'LocationY', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN },
   { tableColumnName: 'LOCATION_Z', tableColumnType: 'Decimal', expectedCSVKey: 'LocationZ', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN }
 ]
 
 module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.FLUVIAL_FORECAST_LOCATION_URL,
+    nonWorkflowRefreshCsvType: 'FFL',
     tableName: 'fluvial_forecast_location',
     csvSourceFile: 'fluvial forecast location refresh',
     deleteStatement: 'delete from fff_staging.fluvial_forecast_location',

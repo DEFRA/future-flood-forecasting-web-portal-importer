@@ -4,15 +4,9 @@
       "name": "message",
       "type": "serviceBusTrigger",
       "direction": "in",
-      "queueName": "fews-mvt-queue",
-      "connection": "AzureWebJobsServiceBus"
-    },
-    {
-      "name": "serviceConfigurationUpdateCompleted",
-      "type": "serviceBus",
-      "direction": "out",
       "queueName": "fews-service-configuration-update-completed-queue",
       "connection": "AzureWebJobsServiceBus"
     }
   ]
 }
+

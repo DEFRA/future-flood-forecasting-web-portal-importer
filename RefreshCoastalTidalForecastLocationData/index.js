@@ -4,6 +4,7 @@ const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
 module.exports = async function (context) {
   const localRefreshData = {
     csvUrl: process.env.COASTAL_TIDAL_FORECAST_LOCATION_URL,
+    nonWorkflowRefreshCsvType: 'CTI',
     csvSourceFile: 'tidal coastal location',
     deleteStatement: 'delete from fff_staging.coastal_forecast_location where coastal_type = \'Coastal Forecasting\'',
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'Coastal Forecasting\'',

@@ -3,6 +3,7 @@ const deleteCsvStagingExceptions = require('./failed-csv-load-handler/delete-csv
 const replayEligibleStagingExceptions = require('../message-replay/replay-eligible-staging-exceptions')
 const { doInTransaction, executePreparedStatementInTransaction } = require('../transaction-helper')
 const loadExceptions = require('./failed-csv-load-handler/load-csv-exceptions')
+const { processServiceConfigurationUpdateForAllCsvDataIfNeeded } = require('./service-configuration-update-utils')
 const fetch = require('node-fetch')
 const neatCsv = require('neat-csv')
 const sql = require('mssql')
@@ -10,7 +11,7 @@ const sql = require('mssql')
 module.exports = async function (context, refreshData) {
   const isolationLevel = sql.ISOLATION_LEVEL.SERIALIZABLE
 
-  // Transaction 1
+  // Transaction 1 - Refresh CSV data
   // Refresh with a serializable isolation level so that refresh is prevented if the table is in use.
   // If the table is in use and table lock acquisition fails, the function invocation will fail.
   // In most cases function invocation will be retried automatically and should succeed.  In rare
@@ -19,9 +20,9 @@ module.exports = async function (context, refreshData) {
   await doInTransaction({ fn: refreshInTransaction, context, errorMessage: `The ${refreshData.csvSourceFile} refresh has failed with the following error:`, isolationLevel }, refreshData)
 
   // Transaction 2
-  // If a rollback has occurred, workflow refresh and message replay should not occur.
-  if (refreshData.workflowRefreshCsvType && refreshData.refreshRollbackRequested === false) {
-    await doInTransaction({ fn: workflowRefreshAndReplay, context, errorMessage: 'Workflow data refresh after csv refresh failed with the following error:', isolationLevel }, refreshData)
+  // If a rollback has not occurred record the time of refresh and replay messages if needed.
+  if (refreshData.refreshRollbackRequested === false) {
+    await doInTransaction({ fn: recordCsvRefreshTimeAndReplayMessagesIfNeeded, context, errorMessage: 'Service configuration update detection after CSV refresh failed with the following error:', isolationLevel }, refreshData)
   }
 
   // Transaction 3
@@ -31,20 +32,28 @@ module.exports = async function (context, refreshData) {
   } else {
     context.log.info('There were no csv exceptions during load.')
   }
+
+  // Transaction 4
+  // Send a notification if a full service configuration update has been detected.
+  await doInTransaction({ fn: performServiceConfigurationUpdateCheckForAllCsvData, context, errorMessage: 'Failed to check for full service configuration update and send notification if needed', isolationLevel })
   // context.done() not required as the async function returns the desired result, there is no output binding to be activated.
 }
 
-async function workflowRefreshAndReplay (transaction, context, refreshData) {
-  await executePreparedStatementInTransaction(updateWorkflowRefreshTable, context, transaction, refreshData)
+async function recordCsvRefreshTimeAndReplayMessagesIfNeeded (transaction, context, refreshData) {
+  await executePreparedStatementInTransaction(updateCsvRefreshTimeTable, context, transaction, refreshData)
+
   const replayData = {
-    csvType: refreshData.workflowRefreshCsvType,
+    csvType: refreshData.workflowRefreshCsvType || refreshData.nonWorkflowRefreshCsvType,
     transaction: transaction
   }
-  // Attempt to replay messages with a staging exception linked to the CSV type.
-  await replayEligibleStagingExceptions(context, replayData)
 
-  // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
-  await replayEligibleTimeseriesStagingExceptions(context, replayData)
+  if (refreshData.workflowRefreshCsvType) {
+    // Attempt to replay messages with a staging exception linked to the CSV type.
+    await replayEligibleStagingExceptions(context, replayData)
+
+    // Attempt to replay messages with a timeseries staging exception linked to the CSV type.
+    await replayEligibleTimeseriesStagingExceptions(context, replayData)
+  }
 }
 
 async function refreshInTransaction (transaction, context, refreshData) {
@@ -68,11 +77,12 @@ async function refreshInTransaction (transaction, context, refreshData) {
   }
 }
 
-async function updateWorkflowRefreshTable (context, preparedStatement, refreshData) {
+async function updateCsvRefreshTimeTable (context, preparedStatement, refreshData) {
+  const tableName = `${refreshData.nonWorkflowRefreshCsvType ? 'non_' : ''}workflow_refresh`
   await preparedStatement.input('csvType', sql.NVarChar)
 
   await preparedStatement.prepare(`
-    merge fff_staging.workflow_refresh with (holdlock) as target
+    merge fff_staging.${tableName} with (holdlock) as target
     using (values (@csvType, getutcdate())) as source (csv_type, refresh_time)
     on (target.csv_type = source.csv_type)
     when matched then
@@ -83,7 +93,7 @@ async function updateWorkflowRefreshTable (context, preparedStatement, refreshDa
   `)
 
   const parameters = {
-    csvType: refreshData.workflowRefreshCsvType
+    csvType: refreshData.workflowRefreshCsvType || refreshData.nonWorkflowRefreshCsvType
   }
 
   await preparedStatement.execute(parameters)
@@ -220,4 +230,8 @@ async function refreshInternal (context, preparedStatement, refreshData) {
     context.log.error(`Refresh ${refreshData.csvSourceFile} data failed: ${err}`)
     throw err
   }
+}
+
+async function performServiceConfigurationUpdateCheckForAllCsvData (transaction, context) {
+  await executePreparedStatementInTransaction(processServiceConfigurationUpdateForAllCsvDataIfNeeded, context, transaction)
 }

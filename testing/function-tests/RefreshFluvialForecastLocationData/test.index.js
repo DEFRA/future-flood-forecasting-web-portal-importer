@@ -1,4 +1,6 @@
 const messageFunction = require('../../../RefreshFluvialForecastLocationData/index')
+const CommonWorkflowCSVTestUtils = require('../shared/common-workflow-csv-test-utils')
+const Util = require('../shared/common-csv-refresh-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const message = require('../mocks/defaultMessage')
@@ -16,6 +18,8 @@ module.exports = describe('Refresh forecast location data tests', () => {
 
   let context
   let dummyData
+  let commonCSVTestUtils
+  let commonWorkflowCSVTestUtils
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
@@ -30,6 +34,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      context.bindings.serviceConfigurationUpdateCompleted = []
+      commonCSVTestUtils = new Util(context, pool)
+      commonWorkflowCSVTestUtils = new CommonWorkflowCSVTestUtils(context, pool)
       dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchment: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD', CatchmentOrder: 2, LocationX: 111111, LocationY: 222222, LocationZ: 123456.123456 }]
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.batch('delete from fff_staging.fluvial_forecast_location')
@@ -40,11 +47,15 @@ module.exports = describe('Refresh forecast location data tests', () => {
       values 
         ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222, 123456.123456)
       `)
+      await request.query('delete from fff_staging.non_workflow_refresh')
+      await request.query('delete from fff_staging.workflow_refresh')
     })
 
     afterAll(async () => {
       await request.batch('delete from fff_staging.fluvial_forecast_location')
       await request.batch('delete from fff_staging.csv_staging_exception')
+      await request.query('delete from fff_staging.non_workflow_refresh')
+      await request.query('delete from fff_staging.workflow_refresh')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -194,6 +205,10 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
     })
     it('should refresh given a valid CSV file', async () => {
+      // Disable core engine message processing explicitly.
+      process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] = 'true'
+      process.env['AzureWebJobs.ImportFromFews.Disabled'] = 'true'
+
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid.csv',
@@ -232,7 +247,11 @@ module.exports = describe('Refresh forecast location data tests', () => {
         LocationZ: 123456.123456
       }]
       const expectedNumberOfExceptionRows = 0
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
+      const expectedServiceConfigurationUpdateNotification = false
+      // Ensure a service configuration update is not detected.
+      await commonCSVTestUtils.insertNonWorkflowRefreshRecords(-500)
+      await commonWorkflowCSVTestUtils.insertWorkflowRefreshRecords()
+      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification)
     })
 
     it('should not refresh given a valid CSV file with null values in some of all row cells', async () => {
@@ -331,10 +350,10 @@ module.exports = describe('Refresh forecast location data tests', () => {
     })
   })
 
-  async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck) {
+  async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck, expectedServiceConfigurationUpdateNotification) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck)
+    await checkExpectedResults(expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck, expectedServiceConfigurationUpdateNotification)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -350,7 +369,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck) {
+  async function checkExpectedResults (expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck, expectedServiceConfigurationUpdateNotification) {
     const result = await request.query(`
     select 
       count(*) 
@@ -408,6 +427,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
         fff_staging.csv_staging_exception`)
       expect(exceptionCount.recordset[0].number).toBe(expectedNumberOfExceptionRows)
     }
+
+    // Check the expected service configuration update notification status.
+    await commonCSVTestUtils.checkExpectedServiceConfigurationUpdateNotificationStatus(context, expectedServiceConfigurationUpdateNotification)
   }
 
   async function lockForecastLocationTableAndCheckMessageCannotBeProcessed (mockResponseData) {

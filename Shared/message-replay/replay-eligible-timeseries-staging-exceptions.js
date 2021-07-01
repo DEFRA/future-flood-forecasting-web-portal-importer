@@ -1,4 +1,5 @@
 const { executePreparedStatementInTransaction } = require('../transaction-helper')
+const { prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData } = require('../csv-load/service-configuration-update-utils')
 const sql = require('mssql')
 
 const activeTimeseriesStagingExceptionMessagesByCsvTypeForExistingWorkflowsQuery = `
@@ -49,27 +50,6 @@ const timeseriesHeaderMessagesForActiveTimeseriesStagingExceptionsByCsvTypeForMi
     )
 `
 
-const serviceConfigUpdatedQuery = `
-  select
-    tse.payload as message
-  from
-    fff_staging.v_active_timeseries_staging_exception tse
-  where
-    tse.csv_error = 0 and
-    0 <> (
-      select
-        count(id)
-      from
-        fff_staging.workflow_refresh
-    ) and
-    @secondsSinceCsvRefreshed >= all (
-      select
-        datediff(second, refresh_time, getutcdate())
-      from
-        fff_staging.workflow_refresh
-   )
- `
-
 module.exports = async function (context, replayData) {
   // Replay messages for CSV related timeseries staging exceptions linked to known workflows.
   await executePreparedStatementInTransaction(replayMessagesForCsvRelatedTimeseriesStagingExceptions, context, replayData.transaction, replayData)
@@ -84,8 +64,7 @@ module.exports = async function (context, replayData) {
 }
 
 async function replayMessagesForTimeseriesStagingExceptionsIfServiceConfigUpdateHasBeenProcessed (context, preparedStatement) {
-  await preparedStatement.input('secondsSinceCsvRefreshed', sql.Int)
-  await preparedStatement.prepare(serviceConfigUpdatedQuery)
+  await prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData(context, preparedStatement)
 
   const config = {
     outputBindingName: 'importFromFews',

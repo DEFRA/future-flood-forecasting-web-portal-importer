@@ -1,5 +1,6 @@
 const MVTRefreshFunction = require('../../../RefreshMVTData/index')
 const ConnectionPool = require('../../../Shared/connection-pool')
+const CommonWorkflowCSVTestUtils = require('../shared/common-workflow-csv-test-utils')
 const Util = require('../shared/common-csv-refresh-utils')
 const Context = require('../mocks/defaultContext')
 const message = require('../mocks/defaultMessage')
@@ -18,12 +19,14 @@ module.exports = describe('Refresh mvt data tests', () => {
   let context
   let dummyData
   let commonCSVTestUtils
+  let commonWorkflowCSVTestUtils
 
   const jestConnectionPool = new ConnectionPool()
   const pool = jestConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh Multivariate Thresholds data function:', () => {
+    const ORIGINAL_ENV = process.env
     beforeAll(async () => {
       await pool.connect()
     })
@@ -32,7 +35,9 @@ module.exports = describe('Refresh mvt data tests', () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      commonCSVTestUtils = new Util(context)
+      context.bindings.serviceConfigurationUpdateCompleted = []
+      commonCSVTestUtils = new Util(context, pool)
+      commonWorkflowCSVTestUtils = new CommonWorkflowCSVTestUtils(context, pool)
       dummyData = {
         CENTRE: 'dummy',
         CRITICAL_CONDITION_ID: 'dummy',
@@ -50,11 +55,18 @@ module.exports = describe('Refresh mvt data tests', () => {
       await request.query('delete from fff_staging.multivariate_thresholds')
       await request.query(`insert into fff_staging.multivariate_thresholds (CENTRE, CRITICAL_CONDITION_ID, INPUT_LOCATION_ID, OUTPUT_LOCATION_ID, TARGET_AREA_CODE, INPUT_PARAMETER_ID, LOWER_BOUND, UPPER_BOUND, LOWER_BOUND_INCLUSIVE, UPPER_BOUND_INCLUSIVE, PRIORITY) 
       values ('${dummyData.CENTRE}', '${dummyData.CRITICAL_CONDITION_ID}', '${dummyData.INPUT_LOCATION_ID}', '${dummyData.OUTPUT_LOCATION_ID}', '${dummyData.TARGET_AREA_CODE}', '${dummyData.INPUT_PARAMETER_ID}', '${dummyData.LOWER_BOUND}', '${dummyData.UPPER_BOUND}', '${dummyData.LOWER_BOUND_INCLUSIVE}', '${dummyData.UPPER_BOUND_INCLUSIVE}', '${dummyData.PRIORITY}')`)
+      await request.query('delete from fff_staging.non_workflow_refresh')
+      await request.query('delete from fff_staging.workflow_refresh')
     })
 
+    afterEach(async () => {
+      process.env = { ...ORIGINAL_ENV }
+    })
     afterAll(async () => {
       await request.query('delete from fff_staging.multivariate_thresholds')
       await request.query('delete from fff_staging.csv_staging_exception')
+      await request.query('delete from fff_staging.non_workflow_refresh')
+      await request.query('delete from fff_staging.workflow_refresh')
       // Closing the DB connection allows Jest to exit successfully.
       await pool.close()
     })
@@ -71,6 +83,9 @@ module.exports = describe('Refresh mvt data tests', () => {
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedMVTData, expectedNumberOfExceptionRows)
     })
     it('should refresh given a valid csv, with 0 exceptions', async () => {
+      process.env['AzureWebJobs.ProcessFewsEventCode.Disabled'] = 'true'
+      process.env['AzureWebJobs.ImportFromFews.Disabled'] = 'true'
+
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid.csv',
@@ -109,6 +124,7 @@ module.exports = describe('Refresh mvt data tests', () => {
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedMVTData, expectedNumberOfExceptionRows)
     })
     it('should ignore a CSV file with a valid header row but no data rows', async () => {
+      // Core engine message processing is enabled implicitly.
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid-header-row-no-data-rows.csv',
@@ -118,8 +134,12 @@ module.exports = describe('Refresh mvt data tests', () => {
 
       const expectedIgnoredWorkflowData = [dummyData]
       const expectedNumberOfExceptionRows = 0
+      const expectedServiceConfigurationUpdateNotification = false
       const expectedErrorDescription = 'row is missing data'
-      await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription)
+      // Ensure a service configuration update is detected.
+      await commonCSVTestUtils.insertNonWorkflowRefreshRecords()
+      await commonWorkflowCSVTestUtils.insertWorkflowRefreshRecords()
+      await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription, expectedServiceConfigurationUpdateNotification, expectedServiceConfigurationUpdateNotification)
     })
     it('should ignore rows that contains values exceeding a specified limit', async () => {
       const mockResponseData = {
@@ -386,10 +406,10 @@ module.exports = describe('Refresh mvt data tests', () => {
     })
   })
 
-  async function refreshMVTDataAndCheckExpectedResults (mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck) {
+  async function refreshMVTDataAndCheckExpectedResults (mockResponseData, expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck, expectedServiceConfigurationUpdateNotification) {
     await mockFetchResponse(mockResponseData)
     await MVTRefreshFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck)
+    await checkExpectedResults(expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck, expectedServiceConfigurationUpdateNotification)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -418,7 +438,7 @@ module.exports = describe('Refresh mvt data tests', () => {
     context.log(`Actual data row count: ${MVTCount.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
   }
 
-  async function checkExpectedResults (expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck) {
+  async function checkExpectedResults (expectedMVTData, expectedNumberOfExceptionRows, expectedErrorDescription, skipDetailedCheck, expectedServiceConfigurationUpdateNotification) {
     const expectedNumberOfRows = expectedMVTData.length
     await checkResultCount(expectedNumberOfRows)
     // Check each expected row is in the database
@@ -451,6 +471,9 @@ module.exports = describe('Refresh mvt data tests', () => {
         await checkExceptionIsCorrect(expectedErrorDescription)
       }
     }
+
+    // Check the expected service configuration update notification status.
+    await commonCSVTestUtils.checkExpectedServiceConfigurationUpdateNotificationStatus(context, expectedServiceConfigurationUpdateNotification)
   }
 
   async function lockMultivariateThresholdTableAndCheckMessageCannotBeProcessed (mockResponseData) {
