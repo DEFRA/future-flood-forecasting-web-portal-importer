@@ -10,16 +10,14 @@ module.exports = async function (context) {
     countStatement: 'select count(*) as number from fff_staging.coastal_forecast_location where coastal_type = \'triton\'',
     insertPreparedStatement: `
       insert into 
-        fff_staging.coastal_forecast_location (fffs_loc_id, coastal_order, centre, mfdo_area, ta_name, coastal_type)
+        fff_staging.coastal_forecast_location (fffs_loc_id, coastal_order, centre, mfdo_area, ta_name, coastal_type, fffs_loc_name, location_x, location_y)
       values 
-        (@fffs_loc_id, @coastal_order, @centre, @mfdo_area, @ta_name, @coastal_type)`,
-    functionSpecificData: [
-      { tableColumnName: 'MFDO_AREA', tableColumnType: 'NVarChar', expectedCSVKey: 'MFDOArea' },
-      { tableColumnName: 'TA_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'TAName' }
-    ]
+        (@fffs_loc_id, @coastal_order, @centre, @mfdo_area, @ta_name, @coastal_type, @fffs_loc_name, @location_x, @location_y)`,
+    functionSpecificData: []
   }
 
   const refreshData = Object.assign(localRefreshData, commonRefreshData.commonCoastalLocationRefreshData)
   refreshData.functionSpecificData.push(...commonRefreshData.commonCoastalLocationFunctionSpecificData)
+  refreshData.functionSpecificData.push(...commonRefreshData.commonCoastalMVTTritonLocationFunctionSpecificData)
   await refresh(context, refreshData)
 }

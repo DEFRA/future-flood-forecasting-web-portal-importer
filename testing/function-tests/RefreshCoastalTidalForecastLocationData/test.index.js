@@ -37,11 +37,14 @@ module.exports = describe('Refresh coastal location data tests', () => {
         CENTRE: 'dummy',
         MFDO_AREA: 'dummy',
         TA_NAME: 'dummy',
-        COASTAL_TYPE: 'Coastal Forecasting'
+        COASTAL_TYPE: 'Coastal Forecasting',
+        LOCATION_X: 111111,
+        LOCATION_Y: 222222,
+        LOCATION_Z: 333333.333333
       }
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.coastal_forecast_location')
-      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
+      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y, LOCATION_Z) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}', '${dummyData.LOCATION_X}', '${dummyData.LOCATION_Y}', '${dummyData.LOCATION_Z}')`)
     })
 
     afterAll(async () => {
@@ -76,19 +79,29 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearthis TL',
           COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323,
+          LOCATION_Z: 343434.333333,
+          TA_NAME: 'TANAME',
+          MFDO_AREA: 'MFDOAREA'
         },
         {
           FFFS_LOC_ID: 'ABVGTO',
           FFFS_LOC_NAME: 'Hembe',
           COASTAL_ORDER: 58,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323,
+          LOCATION_Z: 343434.111111,
+          TA_NAME: 'TANAME',
+          MFDO_AREA: 'MFDOAREA'
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
     })
-    it('should refresh given a the normal case csv (missing TA_NAME and MFDO_AREA)', async () => {
+    it('should refresh given a the normal case csv (missing TA_NAME, LOCATION_Z and MFDO_AREA)', async () => {
       const mockResponseData = {
         statusCode: STATUS_CODE_200,
         filename: 'valid-standard.csv',
@@ -102,10 +115,13 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearthis',
           COASTAL_ORDER: 56,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323
         }]
       const expectedNumberOfExceptionRows = 0
-      await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
+      const checkWithoutNullables = true // mssql cannot check nullables
+      await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows, checkWithoutNullables)
     })
     it('should ignore a csv file with a valid header but no data rows', async () => {
       const mockResponseData = {
@@ -132,7 +148,12 @@ module.exports = describe('Refresh coastal location data tests', () => {
           FFFS_LOC_NAME: 'Nearhere',
           COASTAL_ORDER: 70.0,
           CENTRE: 'Birmingham',
-          COASTAL_TYPE: 'Coastal Forecasting'
+          COASTAL_TYPE: 'Coastal Forecasting',
+          LOCATION_X: 121212,
+          LOCATION_Y: 232323,
+          LOCATION_Z: 123456.123456,
+          TA_NAME: 'TANAME',
+          MFDO_AREA: 'MFDO'
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -258,10 +279,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
     })
   })
 
-  async function refreshCoastalLocationDataAndCheckExpectedResults (mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows) {
+  async function refreshCoastalLocationDataAndCheckExpectedResults (mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows, checkWithoutNullables) {
     await mockFetchResponse(mockResponseData)
     await coastalRefreshFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedCoastalLocationData, expectedNumberOfExceptionRows)
+    await checkExpectedResults(expectedCoastalLocationData, expectedNumberOfExceptionRows, checkWithoutNullables)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -277,7 +298,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows) {
+  async function checkExpectedResults (expectedCoastalLocationData, expectedNumberOfExceptionRows, checkWithoutNullables) {
     const coastalLocationCount = await request.query(`
     select 
      count(*) 
@@ -292,17 +313,31 @@ module.exports = describe('Refresh coastal location data tests', () => {
     // Check each expected row is in the database
     if (expectedNumberOfRows > 0) {
       for (const row of expectedCoastalLocationData) {
-        const databaseResult = await request.query(`
-        select 
-         count(*)
-        as 
-         number 
-        from 
-         fff_staging.COASTAL_FORECAST_LOCATION
-        where 
-         FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-      CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'
-      `)
+        // we cant check for nulls with mssql, so when we are checking nullables create a row we need to check without comparing nullables
+        const checkResultsWithoutNullablesQuery = `
+          select 
+           count(*)
+          as 
+           number 
+          from 
+           fff_staging.COASTAL_FORECAST_LOCATION
+          where 
+           FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
+          CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}' and LOCATION_X = '${row.LOCATION_X}' and LOCATION_Y = '${row.LOCATION_Y}'
+        `
+        const checkResultsQuery = `
+          select 
+            count(*)
+          as 
+            number 
+          from 
+            fff_staging.COASTAL_FORECAST_LOCATION
+          where 
+            FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
+            CENTRE = '${row.CENTRE}' and COASTAL_TYPE = '${row.COASTAL_TYPE}' and LOCATION_X = '${row.LOCATION_X}' and LOCATION_Y = '${row.LOCATION_Y}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and LOCATION_Z = '${row.LOCATION_Z}'
+        `
+        const databaseQuery = checkWithoutNullables ? checkResultsWithoutNullablesQuery : checkResultsQuery
+        const databaseResult = await request.query(databaseQuery)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
@@ -325,9 +360,9 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const request = new sql.Request(transaction)
       await request.query(`
       insert into 
-        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)
+        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y, LOCATION_Z)
       values 
-        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting')
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Coastal Forecasting', 323232, 344343, 454545)
     `)
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')

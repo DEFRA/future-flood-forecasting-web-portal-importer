@@ -37,11 +37,13 @@ module.exports = describe('Refresh coastal location data tests', () => {
         CENTRE: 'dummy',
         MFDO_AREA: 'dummy',
         TA_NAME: 'dummy',
-        COASTAL_TYPE: 'Triton'
+        COASTAL_TYPE: 'Triton',
+        LOCATION_X: 123456.123456,
+        LOCATION_Y: 123456.123456
       }
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.coastal_forecast_location')
-      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}')`)
+      await request.query(`insert into fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y) values ('${dummyData.FFFS_LOC_ID}', '${dummyData.FFFS_LOC_NAME}', ${dummyData.COASTAL_ORDER}, '${dummyData.CENTRE}', '${dummyData.MFDO_AREA}', '${dummyData.TA_NAME}', '${dummyData.COASTAL_TYPE}', ${dummyData.LOCATION_X}, ${dummyData.LOCATION_Y})`)
     })
 
     afterAll(async () => {
@@ -77,7 +79,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
           CENTRE: 'Birmingham',
           MFDO_AREA: 'filler',
           TA_NAME: 'filler',
-          COASTAL_TYPE: 'Triton'
+          COASTAL_TYPE: 'Triton',
+          FFFS_LOC_NAME: 'name',
+          LOCATION_X: 123456.123456,
+          LOCATION_Y: 333333.123456
         },
         {
           FFFS_LOC_ID: 'ABVGTO',
@@ -85,7 +90,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
           CENTRE: 'Birmingham',
           MFDO_AREA: 'filler',
           TA_NAME: 'filler',
-          COASTAL_TYPE: 'Triton'
+          COASTAL_TYPE: 'Triton',
+          FFFS_LOC_NAME: 'name',
+          LOCATION_X: 123456.123456,
+          LOCATION_Y: 123456.123456
         }]
       const expectedNumberOfExceptionRows = 0
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -116,7 +124,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
           CENTRE: 'Birmingham',
           MFDO_AREA: 'MFDOAREA',
           TA_NAME: 'TANAME',
-          COASTAL_TYPE: 'Triton'
+          COASTAL_TYPE: 'Triton',
+          FFFS_LOC_NAME: 'name',
+          LOCATION_X: 123456.123456,
+          LOCATION_Y: 123456.123456
         }]
       const expectedNumberOfExceptionRows = 1
       await refreshCoastalLocationDataAndCheckExpectedResults(mockResponseData, expectedCoastalLocationData, expectedNumberOfExceptionRows)
@@ -284,7 +295,7 @@ module.exports = describe('Refresh coastal location data tests', () => {
          fff_staging.COASTAL_FORECAST_LOCATION
         where 
           FFFS_LOC_ID = '${row.FFFS_LOC_ID}' and COASTAL_ORDER = ${row.COASTAL_ORDER} and 
-          CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}'`)
+          CENTRE = '${row.CENTRE}' and MFDO_AREA = '${row.MFDO_AREA}' and TA_NAME = '${row.TA_NAME}' and COASTAL_TYPE = '${row.COASTAL_TYPE}' and FFFS_LOC_NAME = '${row.FFFS_LOC_NAME}' and LOCATION_X = '${row.LOCATION_X}' and LOCATION_Y = '${row.LOCATION_Y}'`)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
     }
@@ -308,9 +319,10 @@ module.exports = describe('Refresh coastal location data tests', () => {
       const request = new sql.Request(transaction)
       await request.query(`
       insert into 
-        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE)
+        fff_staging.coastal_forecast_location (FFFS_LOC_ID, FFFS_LOC_NAME, COASTAL_ORDER, CENTRE, MFDO_AREA, TA_NAME, COASTAL_TYPE, LOCATION_X, LOCATION_Y)
       values 
-        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Triton')`)
+        ('dummyData2', 'dummyData2', 2, 'dummyData2', 'dummyData2', 'dummyData2', 'Triton', 123123, 123345)`
+      )
       await mockFetchResponse(mockResponseData)
       await expect(coastalRefreshFunction(context, message)).rejects.toBeTimeoutError('coastal_forecast_location')
     } finally {
