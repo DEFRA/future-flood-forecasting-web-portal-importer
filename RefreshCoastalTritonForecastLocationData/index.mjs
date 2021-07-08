@@ -22,4 +22,3 @@ export default async function (context) {
   refreshData.functionSpecificData.push(...commonRefreshData.commonCoastalMVTTritonLocationFunctionSpecificData)
   await refresh(context, refreshData)
 }
-
