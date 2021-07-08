@@ -3,6 +3,7 @@ import deleteCsvStagingExceptions from './failed-csv-load-handler/delete-csv-sta
 import replayEligibleStagingExceptions from '../message-replay/replay-eligible-staging-exceptions.js'
 import { doInTransaction, executePreparedStatementInTransaction } from '../transaction-helper.js'
 import loadExceptions from './failed-csv-load-handler/load-csv-exceptions.js'
+import { processServiceConfigurationUpdateForAllCsvDataIfNeeded } from './service-configuration-update-utils.js'
 import fetch from 'node-fetch'
 import neatCsv from 'neat-csv'
 import sql from 'mssql'

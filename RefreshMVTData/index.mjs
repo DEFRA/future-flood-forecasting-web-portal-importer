@@ -37,12 +37,3 @@ export default async function (context) {
 function parseBooleanString (booleanString) {
   return JSON.parse(booleanString.toLowerCase())
 }
-
-function returnNullForNaN (value) {
-  if (isNaN(value)) {
-    return null
-  } else {
-    return value
-  }
-}
-
