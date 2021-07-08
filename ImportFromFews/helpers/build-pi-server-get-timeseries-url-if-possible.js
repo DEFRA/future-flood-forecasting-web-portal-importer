@@ -1,14 +1,14 @@
-const deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter = require('./deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter')
-const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset, addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData } = require('../../Shared/utils')
-const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const isNonDisplayGroupForecast = require('./is-non-display-group-forecast')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const timeseriesTypeConstants = require('./timeseries-type-constants')
-const getFewsTimeParameter = require('./get-fews-time-parameter')
-const processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible = require('./process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible')
-const moment = require('moment')
-const sql = require('mssql')
+import deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter from './deactivate-obsolete-timeseries-staging-exceptions-for-workflow-plot-or-filter.js'
+import { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset, addPreviousTaskRunCompletionPropertiesFromQueryResultToTaskRunData } from '../../Shared/utils.js'
+import isLatestTaskRunForWorkflow from '../../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
+import isNonDisplayGroupForecast from './is-non-display-group-forecast.js'
+import TimeseriesStagingError from '../../Shared/timeseries-functions/timeseries-staging-error.js'
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import { timeseriesTypeConstants } from './timeseries-type-constants.js'
+import getFewsTimeParameter from './get-fews-time-parameter.js'
+import processTaskRunDataForNonForecastOrLatestTaskRunForWorkflowIfPossible from './process-task-run-data-for-non-forecast-or-latest-task-run-for-workflow-if-possible.js'
+import moment from 'moment'
+import sql from 'mssql'
 
 const getWorkflowFilterDataQuery = `
   select
@@ -43,7 +43,7 @@ const getLatestTaskRunEndTimeQuery = `
   order by 
     task_completion_time desc`
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getWorkflowFilterData, context, taskRunData.transaction, taskRunData)
   if (isNonDisplayGroupForecast(context, taskRunData) && await isLatestTaskRunForWorkflow(context, taskRunData)) {
     await deactivateObsoleteTimeseriesStagingExceptionsForWorkflowPlotOrFilter(context, taskRunData)

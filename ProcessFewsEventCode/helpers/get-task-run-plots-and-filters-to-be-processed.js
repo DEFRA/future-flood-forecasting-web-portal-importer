@@ -1,8 +1,8 @@
-const sql = require('mssql')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const getItemsToBeProcessedAsArray = require('./get-items-to-be-processed-as-array')
-const getUnprocessedTaskRunPlotsAndFilters = require('./get-unprocessed-task-run-plots-and-filters')
-const getTaskRunPlotsAndFiltersEligibleForReplay = require('./get-task-run-plots-and-filters-eligible-for-replay')
+import sql from 'mssql'
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import getItemsToBeProcessedAsArray from './get-items-to-be-processed-as-array.js'
+import getUnprocessedTaskRunPlotsAndFilters from './get-unprocessed-task-run-plots-and-filters.js'
+import getTaskRunPlotsAndFiltersEligibleForReplay from './get-task-run-plots-and-filters-eligible-for-replay.js'
 
 // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
 // guard against a workflow table refresh during processing.
@@ -16,7 +16,7 @@ const query = `
     workflow_id = @workflowId
 `
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   if (taskRunData.timeseriesHeaderExistsForTaskRun) {
     await getUnprocessedTaskRunPlotsAndFilters(context, taskRunData)
     await getTaskRunPlotsAndFiltersEligibleForReplay(context, taskRunData)

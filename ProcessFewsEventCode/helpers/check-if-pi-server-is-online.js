@@ -1,6 +1,7 @@
-const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
-const axios = require('axios')
-module.exports = async function (context) {
+import getPiServerErrorMessage from '../../Shared/timeseries-functions/get-pi-server-error-message.js'
+import axios from 'axios'
+
+export default async function (context) {
   try {
     const fewsPiUrl =
       encodeURI(`${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/filters?documentFormat=PI_JSON`)

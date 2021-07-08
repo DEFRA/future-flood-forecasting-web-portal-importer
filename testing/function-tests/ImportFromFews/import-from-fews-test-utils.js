@@ -1,13 +1,14 @@
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const { getAbsoluteIntegerForNonZeroOffset } = require('../../../Shared/utils')
-const messageFunction = require('../../../ImportFromFews/index')
-const { objectToStream } = require('../shared/utils')
-const axios = require('axios')
-const sql = require('mssql')
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js'
+import { getAbsoluteIntegerForNonZeroOffset } from '../../../Shared/utils.js'
+import messageFunction from '../../../ImportFromFews/index.mjs'
+import { objectToStream } from '../shared/utils.js'
+import axios from 'axios'
+import sql from 'mssql'
+import { jest } from '@jest/globals'
 
 jest.mock('axios')
 
-module.exports = function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
+export default function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessages = async function (messageKey, mockResponses) {
     if (mockResponses) {

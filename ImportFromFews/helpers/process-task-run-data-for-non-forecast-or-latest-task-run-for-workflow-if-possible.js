@@ -1,8 +1,8 @@
-const isLatestTaskRunForWorkflow = require('../../Shared/timeseries-functions/is-latest-task-run-for-workflow')
-const isNonDisplayGroupForecast = require('./is-non-display-group-forecast')
-const { logObsoleteTaskRunMessage } = require('../../Shared/utils')
+import isLatestTaskRunForWorkflow from '../../Shared/timeseries-functions/is-latest-task-run-for-workflow.js'
+import isNonDisplayGroupForecast from './is-non-display-group-forecast.js'
+import { logObsoleteTaskRunMessage } from '../../Shared/utils.js'
 
-module.exports = async function (context, taskRunData, checkForNonDisplayGroupForecast, processingFunction) {
+export default async function (context, taskRunData, checkForNonDisplayGroupForecast, processingFunction) {
   if (await isNonForecastOrLatestTaskRunForWorkflow(context, taskRunData, checkForNonDisplayGroupForecast)) {
     await processingFunction(context, taskRunData)
   } else {

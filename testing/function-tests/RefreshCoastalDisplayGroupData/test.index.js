@@ -1,16 +1,17 @@
-const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const message = require('../mocks/defaultMessage')
-const messageFunction = require('../../../RefreshCoastalDisplayGroupData/index')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import CommonWorkflowCsvTestUtils from '../shared/common-workflow-csv-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import message from '../mocks/defaultMessage.js'
+import messageFunction from '../../../RefreshCoastalDisplayGroupData/index.mjs'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { jest } from '@jest/globals'
 
 jest.mock('node-fetch')
 
-module.exports = describe('Insert coastal_display_group_workflow data tests', () => {
+export const refreshCoastalDisplayGroupWorkflowDataTests = () => describe('Refresh coastal display group workflow data tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
@@ -423,37 +424,37 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
   async function insertExceptions (transaction, context) {
     await new sql.Request(transaction).batch(`
-      declare @id1 uniqueidentifier;
-      set @id1 = newid();
-      declare @id2 uniqueidentifier;
-      set @id2 = newid();
-      declare @id3 uniqueidentifier;
-      set @id3 = newid();
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for Workflow2', 'ukeafffsmc00:000000001', 'P', 'Workflow2', getutcdate());
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for Workflow2', 'ukeafffsmc00:000000001', 'P', 'Workflow2', getutcdate())
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate())
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'BE', 'message');
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'BE', 'message')
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'TRITON_outputs_Other', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id2, 'TRITON_outputs_Other', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
     `)
   }
 })
