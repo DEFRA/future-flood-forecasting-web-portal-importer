@@ -340,20 +340,20 @@ module.exports = describe('Refresh forecast location data tests', () => {
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8988,
-        Datum: '',
-        CatchmentOrder: 1
+        CatchmentOrder: 1,
+        LocationX: 123456,
+        LocationY: 123456,
+        LocationZ: 123456.123456
       }]
       const expectedNumberOfExceptionRows = 0
-      // We cannot check for a null value with a WHERE clause, therefore just check the row has successfully inserted into the table.
-      const skipDetailedCheck = true
-      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck)
+      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
     })
   })
 
-  async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck, expectedServiceConfigurationUpdateNotification) {
+  async function refreshForecastLocationDataAndCheckExpectedResults (mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification) {
     await mockFetchResponse(mockResponseData)
     await messageFunction(context, message) // calling actual function here
-    await checkExpectedResults(expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck, expectedServiceConfigurationUpdateNotification)
+    await checkExpectedResults(expectedForecastLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification)
   }
 
   async function mockFetchResponse (mockResponseData) {
@@ -369,7 +369,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     fetch.mockResolvedValue(mockResponse)
   }
 
-  async function checkExpectedResults (expectedForecastLocationData, expectedNumberOfExceptionRows, skipDetailedCheck, expectedServiceConfigurationUpdateNotification) {
+  async function checkExpectedResults (expectedForecastLocationData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification) {
     const result = await request.query(`
     select 
       count(*) 
@@ -383,7 +383,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
     context.log(`Live data row count: ${result.recordset[0].number}, test data row count: ${expectedNumberOfRows}`)
 
-    if (expectedNumberOfRows > 0 && !skipDetailedCheck) {
+    if (expectedNumberOfRows > 0) {
       for (const row of expectedForecastLocationData) {
         const Centre = row.Centre
         const MFDOArea = row.MFDOArea
@@ -393,7 +393,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         const PlotId = row.PlotId
         const DRNOrder = row.DRNOrder
         const DisplayOrder = row.Order
-        const Datum = row.Datum
+        const Datum = row.Datum ? `= '${row.Datum}'` : 'is null'
         const CatchmentOrder = row.CatchmentOrder
         const LocationX = row.LocationX
         const LocationY = row.LocationY
@@ -408,9 +408,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
             fff_staging.fluvial_forecast_location
           where 
             CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
-            and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = '${CatchmentOrder}'
+            and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = ${CatchmentOrder}
             and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
-            and PLOT_ID = '${PlotId}' and DRN_ORDER = '${DRNOrder}' and DATUM = '${Datum}' and DISPLAY_ORDER = '${DisplayOrder}' 
+            and PLOT_ID = '${PlotId}' and DRN_ORDER = ${DRNOrder} and DATUM ${Datum} and DISPLAY_ORDER = ${DisplayOrder}
             and LOCATION_X = '${LocationX}' and LOCATION_Y = '${LocationY}' and LOCATION_Z = '${LocationZ}'
         `)
         expect(databaseResult.recordset[0].number).toEqual(1)
