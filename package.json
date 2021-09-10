@@ -21,7 +21,7 @@
   "devDependencies": {
     "@azure/service-bus": "^7.3.0",
     "jest": "^27.1.1",
-    "markdownlint-cli": "^0.27.1",
+    "markdownlint-cli": "^0.28.1",
     "standard": "^16.0.3"
   },
   "standard": {
