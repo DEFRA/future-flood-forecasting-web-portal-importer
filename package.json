@@ -1,6 +1,6 @@
 {
   "name": "future-flood-forecasting-web-portal-importer",
-  "version": "1.11.9",
+  "version": "1.11.10",
   "description": "A set of Node.js Microsoft Azure functions for the import of flood forecasting data.",
   "scripts": {
     "build": "build/src/main/resources/scripts/build.sh",
@@ -10,18 +10,18 @@
   "author": "Department for Environment, Food and Rural Affairs <https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs>.",
   "license": "OGL-UK-3.0",
   "dependencies": {
-    "axios": "^0.24.0",
+    "axios": "^0.25.0",
     "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#bb51e5b",
     "jsonstream-next": "^3.0.0",
     "moment": "^2.27.0",
-    "mssql": "^7.2.1",
+    "mssql": "^8.0.1",
     "neat-csv": "^5.2.0",
     "node-fetch": "^2.6.7"
   },
   "devDependencies": {
     "@azure/service-bus": "^7.4.0",
-    "jest": "^27.3.1",
-    "markdownlint-cli": "^0.29.0",
+    "jest": "^27.4.7",
+    "markdownlint-cli": "^0.30.0",
     "standard": "^16.0.4"
   },
   "standard": {
