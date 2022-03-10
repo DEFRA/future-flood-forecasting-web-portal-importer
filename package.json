@@ -10,7 +10,7 @@
   "author": "Department for Environment, Food and Rural Affairs <https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs>.",
   "license": "OGL-UK-3.0",
   "dependencies": {
-    "axios": "^0.25.0",
+    "axios": "^0.26.1",
     "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#bb51e5b",
     "jsonstream-next": "^3.0.0",
     "moment": "^2.27.0",
