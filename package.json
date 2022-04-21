@@ -22,7 +22,7 @@
     "@azure/service-bus": "^7.5.1",
     "jest": "^27.5.1",
     "markdownlint-cli": "^0.31.1",
-    "standard": "^16.0.4"
+    "standard": "^17.0.0"
   },
   "standard": {
     "env": [
