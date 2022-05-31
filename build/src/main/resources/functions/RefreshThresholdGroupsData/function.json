@@ -1,0 +1,18 @@
+{
+  "bindings": [
+    {
+      "name": "message",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "fews-threshold-groups-queue",
+      "connection": "AzureWebJobsServiceBus"
+    },
+    {
+      "name": "serviceConfigurationUpdateCompleted",
+      "type": "serviceBus",
+      "direction": "out",
+      "queueName": "fews-service-configuration-update-completed-queue",
+      "connection": "AzureWebJobsServiceBus"
+    }
+  ]
+}
