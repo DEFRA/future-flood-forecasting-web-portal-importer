@@ -117,8 +117,8 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
 
 async function parseMessage (context, transaction, message) {
   const taskRunData = {
-    message,
-    transaction,
+    message: message,
+    transaction: transaction,
     throwStagingErrorFollowingStagingExceptionCreation: true,
     sourceFunction: 'P',
     outgoingMessages: [],
