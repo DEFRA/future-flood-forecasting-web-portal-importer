@@ -335,7 +335,7 @@ module.exports = describe('Refresh threshold groups data tests', () => {
             fff_staging.threshold_groups
           where 
             GROUP_ID = '${groupID}' and GROUP_NAME = '${groupName}'
-            and THRESHOLD_ID = '${thresholdID}' and THRESHOLD_NAME = '${thresholdName}' and SHORT_NAME = ${shortName}
+            and THRESHOLD_ID = '${thresholdID}' and THRESHOLD_NAME = '${thresholdName}' and SHORT_NAME = '${shortName}'
         `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }

@@ -1,4 +1,4 @@
-const messageFunction = require('../../../RefreshFluvialLocationThresholdsData/index')
+const messageFunction = require('../../../RefreshLocationThresholdsData/index')
 const CommonWorkflowCSVTestUtils = require('../shared/common-workflow-csv-test-utils')
 const Util = require('../shared/common-csv-refresh-utils')
 const ConnectionPool = require('../../../Shared/connection-pool')
@@ -362,13 +362,13 @@ module.exports = describe('Refresh location thresholds data tests', () => {
 
   async function checkExpectedResults (expectedLocationThresholdsData, expectedNumberOfExceptionRows, expectedServiceConfigurationUpdateNotification) {
     const result = await request.query(`
-    select 
-      count(*) 
-    as 
-      number
-    from 
-      fff_staging.location_thresholds
-       `)
+      select 
+        count(*) 
+      as
+        number
+      from 
+        fff_staging.location_thresholds
+    `)
     const expectedNumberOfRows = expectedLocationThresholdsData.length
 
     expect(result.recordset[0].number).toBe(expectedNumberOfRows)
@@ -386,17 +386,17 @@ module.exports = describe('Refresh location thresholds data tests', () => {
         const DESCRIPTION = row.DESCRIPTION
 
         const databaseResult = await request.query(`
-          select 
-            count(*) 
-          as 
-            number 
-          from 
-            fff_staging.location_thresholds
-          where 
-            LOCATION_ID = '${LOCATIONID}' and THRESHOLD_ID = '${ID}'
-            and NAME = '${NAME}' and LABEL = '${LABEL}' and VALUE = ${VALUE}
-            and FLUVIAL_TYPE = '${FLUVIALTYPE}' and COMMENT ${COMMENT}
-            and DESCRIPTION = '${DESCRIPTION}'
+        select 
+          count(*) 
+        as 
+          number 
+        from 
+          fff_staging.location_thresholds
+        where 
+          LOCATION_ID = '${LOCATIONID}' and THRESHOLD_ID = '${ID}'
+          and NAME = '${NAME}' and LABEL = '${LABEL}' and VALUE = ${VALUE}
+          and FLUVIAL_TYPE = '${FLUVIALTYPE}' and COMMENT ${COMMENT}
+          and DESCRIPTION = '${DESCRIPTION}'
         `)
         expect(databaseResult.recordset[0].number).toEqual(1)
       }
@@ -425,11 +425,11 @@ module.exports = describe('Refresh location thresholds data tests', () => {
       await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE)
       const request = new sql.Request(transaction)
       await request.batch(`
-      insert into 
-        fff_staging.${tableName} (LOCATION_ID, THRESHOLD_ID, NAME, LABEL, VALUE, FLUVIAL_TYPE, COMMENT, DESCRIPTION) 
-      values 
-        ('0130TH', 'ACT EDF All', 'ACT EDF', 'ACT EDF', 0.79, 'Level', 'Alarm Level', 'ACT EDF')
-    `)
+        insert into 
+          fff_staging.${tableName} (LOCATION_ID, THRESHOLD_ID, NAME, LABEL, VALUE, FLUVIAL_TYPE, COMMENT, DESCRIPTION) 
+        values 
+          ('0130TH', 'ACT EDF All', 'ACT EDF', 'ACT EDF', 0.79, 'Level', 'Alarm Level', 'ACT EDF')
+      `)
       await mockFetchResponse(mockResponseData)
       await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
     } finally {
