@@ -1,4 +1,3 @@
-
 const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
 
 const functionSpecificData = [
