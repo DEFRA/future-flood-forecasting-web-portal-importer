@@ -14,7 +14,7 @@
     "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#bb51e5b",
     "jsonstream-next": "^3.0.0",
     "moment": "^2.29.3",
-    "mssql": "^8.1.0",
+    "mssql": "^9.0.0",
     "neat-csv": "^5.2.0",
     "node-fetch": "^2.6.7"
   },
