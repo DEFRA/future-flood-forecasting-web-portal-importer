@@ -15,7 +15,7 @@ module.exports = async function (context, taskRunData) {
 
 async function buildTimeParameters (context, taskRunData) {
   await buildStartAndEndTimes(context, taskRunData)
-  await buildFewsTimeParameters(context, taskRunData)
+  buildFewsTimeParameters(context, taskRunData)
 }
 
 async function buildStartAndEndTimes (context, taskRunData) {
@@ -35,9 +35,9 @@ async function buildStartAndEndTimes (context, taskRunData) {
   taskRunData.endTime = moment(taskRunData.taskRunCompletionTime).add(endTimeOffsetHours, 'hours').toISOString()
 }
 
-async function buildFewsTimeParameters (context, taskRunData) {
-  taskRunData.fewsStartTime = await getFewsTimeParameter(context, taskRunData.startTime, 'startTime')
-  taskRunData.fewsEndTime = await getFewsTimeParameter(context, taskRunData.endTime, 'endTime')
+function buildFewsTimeParameters (context, taskRunData) {
+  taskRunData.fewsStartTime = getFewsTimeParameter(context, taskRunData.startTime, 'startTime')
+  taskRunData.fewsEndTime = getFewsTimeParameter(context, taskRunData.endTime, 'endTime')
 }
 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
