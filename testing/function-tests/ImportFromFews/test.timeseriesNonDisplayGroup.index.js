@@ -362,6 +362,26 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
+    it('should import data for a single filter associated with external historical data, use a custom end creation time buffer and ensure the query parameters contain start/end times and start/end creation times', async () => {
+      const mockResponse = {
+        data: {
+          key: 'Timeseries non-display groups data'
+        }
+      }
+
+      process.env.FEWS_NON_DISPLAY_GROUP_END_CREATION_OFFSET_SECONDS = '5'
+
+      const config = {
+        messageKey: 'singleFilterApprovedExternalHistorical',
+        mockResponses: [mockResponse],
+        overrideValues: {
+          timeseriesType: timeseriesTypeConstants.EXTERNAL_HISTORICAL,
+          endCreationTime: 5
+        }
+      }
+
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
     it('should import data for a single filter associated with external forecasting data and ensure the query parameters contain start/end times and start/end creation times', async () => {
       const mockResponse = {
         data: {
@@ -652,6 +672,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
 
         let expectedEndTime = taskRunCompletionTime
+        const expectedEndCreationTime = taskRunCompletionTime.clone()
 
         if (config.overrideValues && config.overrideValues.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
           // expected start and end times are both equal to the taskRunCompletion time for simulated forecasts
@@ -660,6 +681,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
         let expectedOffsetStartTime
         let expectedOffsetEndTime
+        let expectedOffsetEndCreationTime
 
         if (config.overrideValues && config.overrideValues.startTime) {
           expectedOffsetStartTime = moment(expectedStartTime).utc().subtract(Math.abs(config.overrideValues.startTime), 'hours')
@@ -671,6 +693,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         } else {
           expectedOffsetEndTime = expectedEndTime
         }
+        if (config.overrideValues && config.overrideValues.endCreationTime) {
+          expectedOffsetEndCreationTime = moment(expectedEndCreationTime).utc().add(Math.abs(config.overrideValues.endCreationTime), 'seconds')
+        } else {
+          expectedOffsetEndCreationTime = moment(expectedEndCreationTime).utc().add(5, 'seconds')
+        }
 
         // Check fews parameters have been captured correctly.
         if (config.overrideValues && config.overrideValues.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
@@ -681,7 +708,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
-          expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedEndTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedOffsetEndCreationTime.toISOString().substring(0, 19)}Z`)
         }
       }
     }
