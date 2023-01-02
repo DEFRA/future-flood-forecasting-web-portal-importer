@@ -93,7 +93,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const expectedNumberofRows = 0
       await checkDeleteResolvesWithDefaultHeaderTableIsolationOnSelect(expectedNumberofRows)
     })
-    it('Should NOT be able to delete timeseries whilst another default level INSERT transaction is taking place on one of the tables involved', async () => {
+    it('Should NOT be able to delete timeseries whilst another default level INSERT transaction with locks is taking place on one of the tables involved', async () => {
       const importDateStatus = 'exceedsHard'
 
       const importDate = await createImportDate(importDateStatus)
@@ -463,7 +463,7 @@ module.exports = describe('Timeseries data deletion tests', () => {
       const query = `
       declare @id1 uniqueidentifier set @id1 = newid()
       insert into
-        fff_staging.timeseries_header (id, task_completion_time, task_run_id, workflow_id, import_time, message)
+        fff_staging.timeseries_header with (tablock holdlock) (id, task_completion_time, task_run_id, workflow_id, import_time, message)
       values
         (@id1, cast('2017-01-24' as datetimeoffset),0,0,cast('${importDate}' as datetimeoffset), '{"key": "value"}')`
       query.replace(/"/g, "'")
