@@ -132,6 +132,6 @@ async function sleep () {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve()
-    }, process.env.PI_SERVER_CALL_DELAY_MILLIS || 5000)
+    }, process.env.PI_SERVER_CALL_DELAY_MILLIS || 2000)
   })
 }
