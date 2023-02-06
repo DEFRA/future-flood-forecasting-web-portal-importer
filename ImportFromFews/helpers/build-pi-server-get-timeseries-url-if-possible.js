@@ -54,12 +54,13 @@ module.exports = async function (context, taskRunData) {
 
 async function buildTimeParameters (context, taskRunData) {
   await executePreparedStatementInTransaction(getLatestTaskRunEndTime, context, taskRunData.transaction, taskRunData)
-  await buildCreationStartAndEndTimes(context, taskRunData)
-  await buildStartAndEndTimes(context, taskRunData)
-  await buildFewsTimeParameters(context, taskRunData)
+  buildCreationStartAndEndTimes(context, taskRunData)
+  buildStartAndEndTimes(context, taskRunData)
+  bufferEndCreationTime(context, taskRunData)
+  buildFewsTimeParameters(context, taskRunData)
 }
 
-async function buildCreationStartAndEndTimes (context, taskRunData) {
+function buildCreationStartAndEndTimes (context, taskRunData) {
   // Retrieval of timeseries associated with a single task run of a non-display group workflow needs to be based on the time
   // at which the timeseries were created in the core engine. To ensure timeseries edited manually since the previous task run
   // are also retrieved, timeseries created between the end of the previous task run and the end of the current task run of
@@ -105,15 +106,23 @@ async function buildStartAndEndTimes (context, taskRunData) {
   taskRunData.endTime = baseEndTime.utc().add(truncationOffsetHoursForward, 'hours').toISOString()
 }
 
-async function buildFewsTimeParameters (context, taskRunData) {
+function buildFewsTimeParameters (context, taskRunData) {
   // Build time parameters in the format expected by the PI Server
-  taskRunData.fewsStartCreationTime = await getFewsTimeParameter(context, taskRunData.startCreationTime, 'startCreationTime')
-  taskRunData.fewsEndCreationTime = await getFewsTimeParameter(context, taskRunData.endCreationTime, 'endCreationTime')
-  taskRunData.fewsStartTime = await getFewsTimeParameter(context, taskRunData.startTime, 'startTime')
-  taskRunData.fewsEndTime = await getFewsTimeParameter(context, taskRunData.endTime, 'endTime')
+  taskRunData.fewsStartCreationTime = getFewsTimeParameter(context, taskRunData.startCreationTime, 'startCreationTime')
+  taskRunData.fewsEndCreationTime = getFewsTimeParameter(context, taskRunData.endCreationTime, 'endCreationTime')
+  taskRunData.fewsStartTime = getFewsTimeParameter(context, taskRunData.startTime, 'startTime')
+  taskRunData.fewsEndTime = getFewsTimeParameter(context, taskRunData.endTime, 'endTime')
 }
 
-async function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) {
+function bufferEndCreationTime (context, taskRunData) {
+  // Workaround for INC1217504 - Buffer the task run completion time to allow data retrieval from the PI Server when
+  // the task run completion time received from the core forecasting engine results in no data being retrieved. While
+  // clock synchronisation is thought to be a potential cause, this is unproven at the point of this workaround.
+  const ndgEndCreationTimeOffset = getEnvironmentVariableAsAbsoluteInteger('FEWS_NON_DISPLAY_GROUP_END_CREATION_OFFSET_SECONDS') || 5
+  taskRunData.endCreationTime = moment(taskRunData.taskRunCompletionTime).add(ndgEndCreationTimeOffset, 'seconds').toISOString()
+}
+
+function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) {
   const filterData = taskRunData.filterData
   if (filterData.timeseriesType && (filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL || filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING)) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
@@ -125,7 +134,7 @@ async function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) 
 async function buildPiServerUrlIfPossible (context, taskRunData) {
   const buildPiServerUrlCall = taskRunData.buildPiServerUrlCalls[taskRunData.piServerUrlCallsIndex]
   await buildTimeParameters(context, taskRunData)
-  await buildFewsParameters(context, taskRunData, buildPiServerUrlCall)
+  buildFewsParameters(context, taskRunData, buildPiServerUrlCall)
 
   if (buildPiServerUrlCall.fewsParameters) {
     buildPiServerUrlCall.fewsPiUrl =
