@@ -13,7 +13,7 @@ trigger:
 steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '14.x' # replace this value with the version that you need for your project
+      versionSpec: '16.x' # replace this value with the version that you need for your project
 
   - script: npm ci
   - script: npm run build
