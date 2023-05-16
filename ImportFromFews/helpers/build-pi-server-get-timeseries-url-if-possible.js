@@ -123,11 +123,23 @@ function bufferEndCreationTime (context, taskRunData) {
 }
 
 function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) {
-  const filterData = taskRunData.filterData
-  if (filterData.timeseriesType && (filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL || filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING)) {
-    buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
-  } else if (filterData.timeseriesType && filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
+  const filterData = taskRunData?.filterData
+
+  // Only populate common FEWS parameters for known timeseries types.
+  // This ensures that a TimeseriesStagingException will be created for an unknown timeseries type.
+  if (timeseriesTypeConstants[filterData?.timeseriesType?.toUpperCase()]) {
     buildPiServerUrlCall.fewsParameters = `&filterId=${taskRunData.filterId}${taskRunData.fewsStartTime}${taskRunData.fewsEndTime}`
+  }
+
+  // INC1253914
+  // To address multiple forecasts at a point in time for a particular location being retrieved, only add creation
+  // time parameters to PI Server queries for task runs of workflows for external historical timeseries that do not
+  // require approval (IMPORTANT - approval refers to the Approved column of the non-display group CSV rather than
+  // the approval status of the task run)
+  if (buildPiServerUrlCall.fewsParameters &&
+      !taskRunData.filterData.approvalRequired &&
+      filterData?.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL) {
+    buildPiServerUrlCall.fewsParameters += `${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
   }
 }
 
@@ -205,6 +217,9 @@ async function throwCsvError (taskRunData, errorDescription, csvType, fewsParame
 }
 
 async function processTaskRunApprovalStatus (context, taskRunData) {
+  // From IWP-542
+  // If the filter does not require approval, data should be retrieved regardless of the task run approval status.
+  // If the filter requires approval, data should only be retrieved if the task run is approved.
   if (!taskRunData.filterData.approvalRequired || taskRunData.approved) {
     Object.is(taskRunData.filterData.approvalRequired, true) && (context.log.info(`Filter ${taskRunData.filterId} does not requires approval.`))
     Object.is(taskRunData.approved, true) && (context.log.info(`Filter ${taskRunData.filterId} requires approval and has been approved.`))
