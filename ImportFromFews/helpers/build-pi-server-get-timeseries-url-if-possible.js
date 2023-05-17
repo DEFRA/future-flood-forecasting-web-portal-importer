@@ -207,11 +207,11 @@ async function throwCsvError (taskRunData, errorDescription, csvType, fewsParame
     sourceId: taskRunData.sourceId,
     sourceType: taskRunData.sourceType,
     csvError: true,
-    csvType: csvType,
-    fewsParameters: fewsParameters,
     payload: taskRunData.message,
     timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-    description: errorDescription
+    description: errorDescription,
+    csvType,
+    fewsParameters
   }
   throw new TimeseriesStagingError(errorData, errorDescription)
 }

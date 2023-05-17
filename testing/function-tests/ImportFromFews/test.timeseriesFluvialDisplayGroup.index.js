@@ -64,7 +64,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       }]
       const config = {
         messageKey: 'multiplePlotApprovedForecast',
-        mockResponses: mockResponses
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -107,7 +107,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const messageKey = 'singlePlotApprovedForecast'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
@@ -142,7 +142,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const config = [
         {
-          messageKey: messageKey,
+          messageKey,
           mockResponses: [badRequestMockResponse, knownLocationsMockReponse],
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[messageKey][0].plotId,
@@ -155,7 +155,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
           expectedNumberOfImportedRecords: 1
         },
         {
-          messageKey: messageKey,
+          messageKey,
           expectedLocationData: [initialLocationData],
           expectedNumberOfImportedRecords: 1
         }
@@ -198,7 +198,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const config = [
         {
-          messageKey: messageKey,
+          messageKey,
           mockResponses: [badRequestMockResponse, knownLocationsMockReponse],
           expectedErrorDetails: {
             sourceId: importFromFewsMessages[messageKey][0].plotId,
@@ -211,7 +211,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
           expectedNumberOfImportedRecords: 1
         },
         {
-          messageKey: messageKey,
+          messageKey,
           mockResponses: [
             {
               data: {
@@ -241,7 +241,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         status: 400
       }
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [badRequestMockResponse, badRequestMockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
@@ -269,8 +269,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
-        mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow2'
+        spanWorkflowId: 'Span_Workflow2',
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -290,8 +290,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastCustomOffset',
-        mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow3'
+        spanWorkflowId: 'Span_Workflow3',
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })

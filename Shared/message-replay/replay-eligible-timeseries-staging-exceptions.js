@@ -72,7 +72,7 @@ async function replayMessagesForTimeseriesStagingExceptionsIfServiceConfigUpdate
       secondsSinceCsvRefreshed: process.env.SERVICE_CONFIG_UPDATE_DETECTION_LIMIT || 300
     },
     parseMessageAsJson: true,
-    preparedStatement: preparedStatement
+    preparedStatement
   }
 
   await replayMessagesForEligibleTimeseriesStagingExceptions(context, config)
@@ -88,7 +88,7 @@ async function replayMessagesForCsvRelatedTimeseriesStagingExceptions (context, 
       csvType: replayData.csvType
     },
     parseMessageAsJson: true,
-    preparedStatement: preparedStatement
+    preparedStatement
   }
 
   await replayMessagesForEligibleTimeseriesStagingExceptions(context, config)
@@ -109,8 +109,8 @@ async function replayTimeseriesHeaderMessagesForEligibleTimeseriesStagingExcepti
 
   const config = {
     outputBindingName: 'processFewsEventCode',
-    parameters: parameters,
-    preparedStatement: preparedStatement
+    parameters,
+    preparedStatement
   }
 
   await replayMessagesForEligibleTimeseriesStagingExceptions(context, config)

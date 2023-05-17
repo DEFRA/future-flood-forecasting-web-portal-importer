@@ -85,7 +85,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse]
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
@@ -106,7 +106,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }]
       const config = {
         messageKey: 'multipleFilterNonForecast',
-        mockResponses: mockResponses
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     }, 11000)
@@ -188,7 +188,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should create a timeseries staging exception when a message contains an unknown filter ID', async () => {
       const messageKey = 'unknownFilterId'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
           sourceType: 'F',
@@ -213,7 +213,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       const messageKey = 'singleFilterNonForecast'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
@@ -327,7 +327,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const config = {
         messageKey: 'filterAndPlotApprovedForecast',
-        mockResponses: mockResponses
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -398,7 +398,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should create a timeseries staging exception for an unknown timeseries type', async () => {
       const messageKey = 'workflowUnknownTimeseriesType'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
           sourceType: 'F',

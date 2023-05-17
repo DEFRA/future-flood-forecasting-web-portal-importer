@@ -83,7 +83,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
         }
       }
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse]
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
@@ -102,7 +102,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }]
       const config = {
         messageKey: 'multiplePlotApprovedForecast',
-        mockResponses: mockResponses
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -201,7 +201,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     it('should create a timeseries staging exception when a message contains an unknown plot or filter ID', async () => {
       const messageKey = 'unknownPlotId'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
           sourceType: 'P',
@@ -215,7 +215,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     it('should create a timeseries staging exception when a workflow plot is defined in multiple display group CSV files', async () => {
       const messageKey = 'workflowPlotDefinedInMultipleDisplayGroupCsvFiles'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
           sourceType: 'P',
@@ -248,7 +248,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
 
       const messageKey = 'singlePlotApprovedForecast'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
@@ -292,8 +292,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecast',
-        mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow'
+        spanWorkflowId: 'Span_Workflow',
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -313,8 +313,8 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastDefaultOffsets',
-        mockResponses: mockResponses,
-        spanWorkflowId: 'Span_Workflow_Default_Offset'
+        spanWorkflowId: 'Span_Workflow_Default_Offset',
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -412,7 +412,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
     it('should create a timeseries staging exception for a spanning workflow plot with multiple different custom offsets specified', async () => {
       const messageKey = 'multipleOffsets'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].plotId,
           sourceType: 'P',

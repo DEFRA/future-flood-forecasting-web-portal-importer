@@ -33,11 +33,11 @@ async function createTimeseriesStagingExceptionData (context, taskRunData, err) 
     transaction: taskRunData.transaction,
     sourceId: taskRunData.sourceId,
     sourceType: taskRunData.sourceType,
-    csvError: csvError,
-    csvType: csvType,
     fewsParameters: taskRunData.fewsParameters || null,
     payload: taskRunData.message,
     timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-    description: errorDescription
+    description: errorDescription,
+    csvError,
+    csvType
   }
 }
