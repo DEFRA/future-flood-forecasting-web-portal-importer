@@ -85,7 +85,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
       }
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse]
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
@@ -106,7 +106,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }]
       const config = {
         messageKey: 'multipleFilterNonForecast',
-        mockResponses: mockResponses
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     }, 11000)
@@ -188,7 +188,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should create a timeseries staging exception when a message contains an unknown filter ID', async () => {
       const messageKey = 'unknownFilterId'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
           sourceType: 'F',
@@ -213,7 +213,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       }
       const messageKey = 'singleFilterNonForecast'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         mockResponses: [mockResponse],
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
@@ -327,7 +327,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const config = {
         messageKey: 'filterAndPlotApprovedForecast',
-        mockResponses: mockResponses
+        mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -357,10 +357,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const config = {
         messageKey: 'singleFilterApprovedExternalHistorical',
-        mockResponses: [mockResponse],
-        overrideValues: {
-          timeseriesType: timeseriesTypeConstants.EXTERNAL_HISTORICAL
-        }
+        mockResponses: [mockResponse]
       }
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
@@ -378,7 +375,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'singleFilterApprovedExternalHistorical',
         mockResponses: [mockResponse],
         overrideValues: {
-          timeseriesType: timeseriesTypeConstants.EXTERNAL_HISTORICAL,
           endCreationTime: 5
         }
       }
@@ -394,10 +390,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const config = {
         messageKey: 'singleFilterApprovedExternalForecasting',
-        mockResponses: [mockResponse],
-        overrideValues: {
-          timeseriesType: timeseriesTypeConstants.EXTERNAL_FORECASTING
-        }
+        mockResponses: [mockResponse]
       }
 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
@@ -405,7 +398,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should create a timeseries staging exception for an unknown timeseries type', async () => {
       const messageKey = 'workflowUnknownTimeseriesType'
       const config = {
-        messageKey: messageKey,
+        messageKey,
         expectedErrorDetails: {
           sourceId: importFromFewsMessages[messageKey][0].filterId,
           sourceType: 'F',
@@ -460,7 +453,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'customOffsetNonForecast',
         mockResponses: [mockResponse],
         overrideValues: {
-          timeseriesType: 'external_historical',
           endTime: 20,
           startTime: 10
         }
@@ -479,7 +471,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         messageKey: 'customOffsetSimulatedForecast',
         mockResponses: [mockResponse],
         overrideValues: {
-          timeseriesType: 'simulated_forecasting',
+          timeseriesType: timeseriesTypeConstants.SIMULATED_FORECASTING,
           endTime: 12,
           startTime: 8
         }
@@ -614,11 +606,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         th.task_start_time,
         th.task_completion_time,
         cast(decompress(t.fews_data) as varchar(max)) as fews_data,
-        convert(bit, case
-          when t.fews_parameters like '&filterId=%' then 1
-          else 0
-          end
-        ) as is_filter  
+        t.source_id,
+        t.source_type
       from
         fff_staging.timeseries_header th,
         fff_staging.timeseries t
@@ -655,7 +644,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       receivedPrimaryKeys.push(result.recordset[index].id)
 
       // Check that filter timeseries data has been persisted correctly (plot timeseries data is checked in other unit tests).
-      if (result.recordset[index].is_filter) {
+      if (result.recordset[index].source_type === 'F') {
         taskRunCompletionTime = moment(result.recordset[index].task_completion_time).utc()
 
         // Check that the persisted values for the forecast start time and end time are based within expected range of
@@ -703,18 +692,33 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         }
 
         // Check fews parameters have been captured correctly.
-        if (config.overrideValues && config.overrideValues.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING) {
-          expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
-          expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
-          expect(result.recordset[index].fews_parameters).not.toContain('Creation')
-        } else {
+        const nonDisplayGroupRequest = new sql.Request(pool)
+        await nonDisplayGroupRequest.input('filterId', sql.VarChar, result.recordset[index].source_id)
+        await nonDisplayGroupRequest.input('workflowId', sql.VarChar, result.recordset[index].workflow_id)
+        const nonDisplayGroupResult = await nonDisplayGroupRequest.query(`
+          select
+            n.approved,
+            n.timeseries_type
+          from
+            fff_staging.non_display_group_workflow n
+          where
+            n.filter_id = @filterId and
+            n.workflow_id = @workflowId
+        `)
+        if (!nonDisplayGroupResult?.recordset[0]?.approved &&
+              nonDisplayGroupResult?.recordset[0].timeseries_type === timeseriesTypeConstants.EXTERNAL_HISTORICAL) {
           expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&endCreationTime=${expectedOffsetEndCreationTime.toISOString().substring(0, 19)}Z`)
+        } else {
+          expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
+          expect(result.recordset[index].fews_parameters).not.toContain('Creation')
         }
       }
     }
+
     // Check that all the expected mocked data is loaded
     for (const mockResponse of config.mockResponses) {
       expect(receivedFewsData).toContainEqual(mockResponse.data)

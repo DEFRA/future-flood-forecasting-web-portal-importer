@@ -24,7 +24,7 @@ async function doTimeseriesExistForTaskRunPlotOrFilter (context, preparedStateme
 
   const parameters = {
     taskRunId: taskRunData.taskRunId,
-    fewsParameters: fewsParameters
+    fewsParameters
   }
 
   const result = await preparedStatement.execute(parameters)

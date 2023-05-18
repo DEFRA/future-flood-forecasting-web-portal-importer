@@ -44,7 +44,7 @@ async function recordCsvRefreshTimeAndReplayMessagesIfNeeded (transaction, conte
 
   const replayData = {
     csvType: refreshData.workflowRefreshCsvType || refreshData.nonWorkflowRefreshCsvType,
-    transaction: transaction
+    transaction
   }
 
   if (refreshData.workflowRefreshCsvType) {

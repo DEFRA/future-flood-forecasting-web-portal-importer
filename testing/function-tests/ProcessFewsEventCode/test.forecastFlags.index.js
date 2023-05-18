@@ -46,7 +46,7 @@ module.exports = describe('Test forecast flags', () => {
 async function testInTransaction (transaction, context) {
   const taskRunData = {
     message: 'input',
-    transaction: transaction
+    transaction
   }
   expect(await getBooleanIndicator(context, taskRunData, 'Approved')).toBe(undefined)
 }

@@ -36,7 +36,7 @@ async function preprocessErroneousMessage (context, transaction, message) {
   } else if (typeof message === 'string' && message.length === 0) {
     context.log.warn('Ignoring message with empty content')
   } else {
-    returnValue = createStagingException(context, { message: message, transaction: transaction, errorMessage: errorMessage, sourceFunction: 'P' })
+    returnValue = createStagingException(context, { message, transaction, errorMessage, sourceFunction: 'P' })
   }
   return returnValue
 }

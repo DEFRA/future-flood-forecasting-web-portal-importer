@@ -95,8 +95,8 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
       const stagingExceptionConfig = {
         sourceFunction: 'I',
-        taskRunId: taskRunId,
-        expectedNumberOfStagingExceptions: config.expectedNumberOfStagingExceptions || 0
+        expectedNumberOfStagingExceptions: config.expectedNumberOfStagingExceptions || 0,
+        taskRunId
       }
 
       await commonTimeseriesTestUtils.checkNumberOfActiveStagingExceptionsForSourceFunctionOfWorkflow(stagingExceptionConfig)
@@ -167,11 +167,11 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
   this.lockWorkflowTableAndCheckMessagesCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
     const config = {
-      context: context,
       message: importFromFewsMessages[messageKey][0],
-      mockResponse: mockResponse,
       processMessageFunction: messageFunction,
-      workflow: workflow
+      workflow,
+      context,
+      mockResponse
     }
     await commonTimeseriesTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed(config)
   }

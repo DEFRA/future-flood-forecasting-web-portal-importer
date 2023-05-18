@@ -197,11 +197,11 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
 
   this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
     const config = {
-      context: context,
       message: taskRunCompleteMessages[messageKey],
-      mockResponse: mockResponse,
       processMessageFunction: messageFunction,
-      workflow: workflow
+      context,
+      mockResponse,
+      workflow
     }
     await commonTimeseriesTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed(config)
   }
