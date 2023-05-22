@@ -4,7 +4,6 @@ const commonRefreshData = require('../Shared/csv-load/common-refresh-data')
 const functionSpecificData = [
   { tableColumnName: 'LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'LOCATIONID' },
   { tableColumnName: 'THRESHOLD_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'ID' },
-  { tableColumnName: 'GROUP_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'GROUPID'},
   { tableColumnName: 'NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'NAME' },
   { tableColumnName: 'LABEL', tableColumnType: 'NVarChar', expectedCSVKey: 'LABEL' },
   { tableColumnName: 'VALUE', tableColumnType: 'Decimal', expectedCSVKey: 'VALUE', precision: 38, scale: 8, nullValueOverride: true, preprocessor: commonRefreshData.returnNullForNaN },
@@ -23,15 +22,14 @@ module.exports = async function (context) {
     countStatement: 'select count(*) as number from fff_staging.location_thresholds',
     insertPreparedStatement: `
       insert into 
-        fff_staging.location_thresholds (location_id, threshold_id, name, label, value, group_id, fluvial_type, comment, description)
+        fff_staging.location_thresholds (location_id, threshold_id, name, label, value, fluvial_type, comment, description)
       values 
-        (@location_id, @threshold_id, @name, @label, @value, @group_id, @fluvial_type, @comment, @description)`,
+        (@location_id, @threshold_id, @name, @label, @value, @fluvial_type, @comment, @description)`,
     // Column information and corresponding csv information
     functionSpecificData
   }
 
   await refresh(context, refreshData)
-
 }
 
 function returnNullForEmptyString (value) {
