@@ -15,6 +15,8 @@ rm -f RefreshCoastalMVTLocationData/function.json
 rm -f RefreshIgnoredWorkflowData/function.json
 rm -f DeleteExpiredTimeseries/function.json
 rm -f SendServiceConfigurationUpdateNotification/function.json
+rm -f RefreshLocationThresholdsData/function.json
+rm -f RefreshThresholdGroupsData/function.json
 
 mvn clean -f build/pom.xml process-resources
 cp build/target/host.json.template host.json
@@ -37,3 +39,5 @@ cp build/src/main/resources/functions/RefreshIgnoredWorkflowData/function.json R
 cp build/src/main/resources/functions/RefreshMVTData/function.json RefreshMVTData/
 cp build/src/main/resources/functions/DeleteExpiredTimeseries/function.json DeleteExpiredTimeseries/
 cp build/src/main/resources/functions/SendServiceConfigurationUpdateNotification/function.json SendServiceConfigurationUpdateNotification/
+cp build/src/main/resources/functions/RefreshLocationThresholdsData/function.json RefreshLocationThresholdsData/
+cp build/src/main/resources/functions/RefreshThresholdGroupsData/function.json RefreshThresholdGroupsData/
