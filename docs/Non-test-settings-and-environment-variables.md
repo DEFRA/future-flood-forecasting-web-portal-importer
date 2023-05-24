@@ -89,6 +89,8 @@ with a system identity.
 | IGNORED_WORKFLOW_URL                             | URL used to provide the ignored workflows                                                      |
 | DELETE_EXPIRED_TIMESERIES_HARD_LIMIT             | The number of hours before the current time before which all timeseries data should be removed |
 | MVT_URL                                          | URL used to provide the multivariate threshold information                                     |
+| LOCATION_THRESHOLDS_URL | URL used to provide the location thresholds information |
+| THRESHOLD_GROUPS_URL | URL used to provide the threshold groups information |
 | AzureWebJobs.ReplayImportFromFews.Disabled       | Disable the ReplayImportFromFews function by default (set to true)                             |
 | AzureWebJobs.ReplayProcessFewsEventCode.Disabled | Disable the ReplayProcessFewsEventCode function by default (set to true)                       |
 | SQLDB_SERVER | [mssql node module](https://www.npmjs.com/package/mssql) server |

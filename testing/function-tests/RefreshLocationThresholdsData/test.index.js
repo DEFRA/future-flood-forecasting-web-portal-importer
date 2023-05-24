@@ -39,10 +39,10 @@ module.exports = describe('Refresh location thresholds data tests', () => {
       commonWorkflowCSVTestUtils = new CommonWorkflowCSVTestUtils(context, pool)
       dummyData = [{ LOCATIONID: 'dummyData', ID: 'dummyData', NAME: 'dummyData', LABEL: 'dummyData', VALUE: 1234, FLUVIALTYPE: 'dummyData', COMMENT: 'dummyData', DESCRIPTION: 'dummyData' }]
       await request.batch('delete from fff_staging.csv_staging_exception')
-      await request.batch('delete from fff_staging.location_thresholds')
+      await request.batch('delete from fff_staging.ungrouped_location_thresholds')
       await request.batch(`
       insert 
-        into fff_staging.location_thresholds
+        into fff_staging.ungrouped_location_thresholds
         (LOCATION_ID, THRESHOLD_ID, NAME, LABEL, VALUE, FLUVIAL_TYPE, COMMENT, DESCRIPTION) 
       values 
         ('dummyData', 'dummyData', 'dummyData', 'dummyData', 1234, 'dummyData', 'dummyData', 'dummyData')
@@ -52,7 +52,7 @@ module.exports = describe('Refresh location thresholds data tests', () => {
     })
 
     afterAll(async () => {
-      await request.batch('delete from fff_staging.location_thresholds')
+      await request.batch('delete from fff_staging.ungrouped_location_thresholds')
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.non_workflow_refresh')
       await request.query('delete from fff_staging.workflow_refresh')
@@ -367,7 +367,7 @@ module.exports = describe('Refresh location thresholds data tests', () => {
       as
         number
       from 
-        fff_staging.location_thresholds
+        fff_staging.ungrouped_location_thresholds
     `)
     const expectedNumberOfRows = expectedLocationThresholdsData.length
 
@@ -391,7 +391,7 @@ module.exports = describe('Refresh location thresholds data tests', () => {
         as 
           number 
         from 
-          fff_staging.location_thresholds
+          fff_staging.ungrouped_location_thresholds
         where 
           LOCATION_ID = '${LOCATIONID}' and THRESHOLD_ID = '${ID}'
           and NAME = '${NAME}' and LABEL = '${LABEL}' and VALUE = ${VALUE}
