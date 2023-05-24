@@ -12,8 +12,8 @@ module.exports = async function (context) {
   const refreshData = {
     csvUrl: process.env.THRESHOLD_GROUPS_URL,
     tableName: 'threshold_groups',
-    nonWorkflowRefreshCsvType: 'TGR',
     csvSourceFile: 'threshold groups refresh',
+    nonWorkflowRefreshCsvType: 'TGR',
     deleteStatement: 'delete from fff_staging.threshold_groups',
     countStatement: 'select count(*) as number from fff_staging.threshold_groups',
     insertPreparedStatement: `
