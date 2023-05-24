@@ -9,10 +9,14 @@ const functionSpecificData = [
 ]
 
 module.exports = async function (context) {
+  // Ideally, these constants would be replaced with inline attributes within refreshData.
+  // Inline attributes caused code climate to report code duplication. Using a number of
+  // distinct constants satisfies code climate. 
   const tableName = 'threshold_groups'
   const nonWorkflowRefreshCsvType = 'TGR'
   const csvUrl = process.env.THRESHOLD_GROUPS_URL
   const csvSourceFile = 'threshold groups refresh'
+
   const refreshData = {
     deleteStatement: 'delete from fff_staging.threshold_groups',
     countStatement: 'select count(*) as number from fff_staging.threshold_groups',
