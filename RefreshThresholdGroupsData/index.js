@@ -9,11 +9,11 @@ const functionSpecificData = [
 ]
 
 module.exports = async function (context) {
+  const tableName = 'threshold_groups'
+  const nonWorkflowRefreshCsvType = 'TGR'
+  const csvUrl = process.env.THRESHOLD_GROUPS_URL
+  const csvSourceFile = 'threshold groups refresh'
   const refreshData = {
-    csvUrl: process.env.THRESHOLD_GROUPS_URL,
-    tableName: 'threshold_groups',
-    csvSourceFile: 'threshold groups refresh',
-    nonWorkflowRefreshCsvType: 'TGR',
     deleteStatement: 'delete from fff_staging.threshold_groups',
     countStatement: 'select count(*) as number from fff_staging.threshold_groups',
     insertPreparedStatement: `
@@ -21,6 +21,10 @@ module.exports = async function (context) {
         fff_staging.threshold_groups (group_id, group_name, threshold_id, threshold_name, short_name)
       values 
         (@group_id, @group_name, @threshold_id, @threshold_name, @short_name)`,
+    tableName,
+    nonWorkflowRefreshCsvType,
+    csvUrl,
+    csvSourceFile,
     // Column information and corresponding csv information
     functionSpecificData
   }
