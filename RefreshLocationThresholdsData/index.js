@@ -13,8 +13,8 @@ const functionSpecificData = [
 
 module.exports = async function (context) {
   const refreshData = {
-    csvUrl: process.env.LOCATION_THRESHOLDS_URL,
     nonWorkflowRefreshCsvType: 'LTH',
+    csvUrl: process.env.LOCATION_THRESHOLDS_URL,
     tableName: 'ungrouped_location_thresholds',
     csvSourceFile: 'location thresholds refresh',
     deleteStatement: 'delete from fff_staging.ungrouped_location_thresholds',
