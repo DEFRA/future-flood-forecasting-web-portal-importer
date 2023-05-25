@@ -56,6 +56,8 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/RefreshCoastalTritonForecastLocationData/test.index')
   require('./function-tests/RefreshCoastalMVTForecastLocationData/test.index')
   require('./function-tests/RefreshMVTData/test.index')
+  require('./function-tests/RefreshLocationThresholdsData/test.index')
+  require('./function-tests/RefreshThresholdGroupsData/test.index')
   require('./function-tests/SendServiceConfigurationUpdateNotification/test.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesNonDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesFluvialDisplayGroup.index')

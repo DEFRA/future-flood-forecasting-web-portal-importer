@@ -27,6 +27,8 @@
   * The URL for retrieving the set of core forecasting engine filters associated with each workflow.
   * The URL for retrieving the set of ignored workflows.
   * The URL for retrieving the set of multivariate thresholds data.
+  * The URL for retrieving the set of location thresholds data.
+  * The URL for retrieving the set of threshold group data.
 
 ### Microsoft Azure Service Bus Queues
 
@@ -58,6 +60,10 @@
   * Messages are placed on this queue when the set of core forecasting engine workflows that should be ignored for staging purposes is updated . Messages are processed by the **RefreshIgnoredWorkflowData** function. Message processing retrieves the updated data and uses it to replace the content of the **IGNORED_WORKFLOW** table.
 * Microsoft Azure service bus queue named **fews-mvt-queue**  
   * Messages are placed on this queue when the set of multivariate thresholds mapping data is updated. Messages are processed by the **RefreshMVTData** function. Message processing retrieves the updated data and uses it to replace the content of the **MULTIVARIATE_THRESHOLDS** table.
+* Microsoft Azure service bus queue named **fews-location-thresholds-queue**
+  * Messages are placed on this queue when the set of location thresholds is updated. Messages are processed by the **RefreshLocationThresholdsData** function. Message processing retrieves the updated data and uses it to replace the content of the **UNGROUPED_LOCATION_THRESHOLDS** table.
+* Microsoft Azure service bus queue named **fews-threshold-groups-queue**
+  * Messages are placed on this queue when the set of thresholds groups is updated. Messages are processed by the **RefreshThresholdGroupsData** function. Message processing retrieves the updated data and uses it to replace the content of the **THRESHOLD_GROUPS** table.
 * Microsoft Azure service bus queue named **replay-fews-eventcode-dead-letter-queue**
   * Messages **must** be forwarded to this queue from the **fews-eventcode-queue/$DeadLetterQueue**. Messages placed on this queue are processed by the **ReplayProcessFewsEventCode** function; this function places each message back onto the **fews-eventcode-queue** for message replay. This additional named replay queue is used instead of **fews-eventcode-queue/$DeadLetterQueue** because it can be configured to remove expired messages (a dead letter queue cannot).
 * Microsoft Azure service bus queue named **replay-fews-import-dead-letter-queue**
