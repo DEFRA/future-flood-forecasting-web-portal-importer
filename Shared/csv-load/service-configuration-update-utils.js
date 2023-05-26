@@ -43,7 +43,7 @@ module.exports = {
 
 async function prepareServiceConfigurationUpdateDetectionQuery (context, preparedStatement, checkWorkflowCsvTablesOnly) {
   const detectionSource = `fff_staging.${checkWorkflowCsvTablesOnly ? 'workflow_refresh' : 'v_csv_refresh'}`
-  const requiredNumberOfRowsForDetection = checkWorkflowCsvTablesOnly ? 4 : 9
+  const requiredNumberOfRowsForDetection = checkWorkflowCsvTablesOnly ? 4 : 11
   const startOfQuery =
     checkWorkflowCsvTablesOnly
       ? startOfServiceConfigurationUpdateDetectionQueryWhenCheckingWorkflowCsvTablesOnly
