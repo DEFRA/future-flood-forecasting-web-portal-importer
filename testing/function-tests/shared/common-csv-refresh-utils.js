@@ -26,7 +26,9 @@ module.exports = function (context, pool) {
           ('CTI', dateadd(second, @nonWorkflowRefreshOffset, getutcdate())),
           ('CTR', dateadd(second, @nonWorkflowRefreshOffset, getutcdate())),
           ('FFL', dateadd(second, @nonWorkflowRefreshOffset, getutcdate())),
-          ('MVT', dateadd(second, @nonWorkflowRefreshOffset, getutcdate()))
+          ('MVT', dateadd(second, @nonWorkflowRefreshOffset, getutcdate())),
+          ('LTH', dateadd(second, @nonWorkflowRefreshOffset, getutcdate())),
+          ('TGR', dateadd(second, @nonWorkflowRefreshOffset, getutcdate()))
       `)
     } else {
       await request.batch(`
@@ -37,7 +39,9 @@ module.exports = function (context, pool) {
           ('CTI'),
           ('CTR'),
           ('FFL'),
-          ('MVT')
+          ('MVT'),
+          ('LTH'),
+          ('TGR')
       `)
     }
   }
