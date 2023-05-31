@@ -705,8 +705,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
             n.filter_id = @filterId and
             n.workflow_id = @workflowId
         `)
-        if (!nonDisplayGroupResult?.recordset[0]?.approved &&
-              nonDisplayGroupResult?.recordset[0].timeseries_type === timeseriesTypeConstants.EXTERNAL_HISTORICAL) {
+        if (nonDisplayGroupResult?.recordset[0].timeseries_type === timeseriesTypeConstants.EXTERNAL_HISTORICAL) {
           expect(result.recordset[index].fews_parameters).toContain(`&startTime=${expectedOffsetStartTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&endTime=${expectedOffsetEndTime.toISOString().substring(0, 19)}Z`)
           expect(result.recordset[index].fews_parameters).toContain(`&startCreationTime=${expectedStartTime.toISOString().substring(0, 19)}Z`)

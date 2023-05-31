@@ -133,11 +133,8 @@ function buildFewsParameters (context, taskRunData, buildPiServerUrlCall) {
 
   // INC1253914
   // To address multiple forecasts at a point in time for a particular location being retrieved, only add creation
-  // time parameters to PI Server queries for task runs of workflows for external historical timeseries that do not
-  // require approval (IMPORTANT - approval refers to the Approved column of the non-display group CSV rather than
-  // the approval status of the task run)
+  // time parameters to PI Server queries for task runs of workflows for external historical timeseries.
   if (buildPiServerUrlCall.fewsParameters &&
-      !taskRunData.filterData.approvalRequired &&
       filterData?.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL) {
     buildPiServerUrlCall.fewsParameters += `${taskRunData.fewsStartCreationTime}${taskRunData.fewsEndCreationTime}`
   }
