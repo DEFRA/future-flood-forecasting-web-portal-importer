@@ -1,4 +1,3 @@
-
 import sql from 'mssql'
 import { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange, loadJsonFile } from './utils.js'
 import loggingFacade from 'defra-logging-facade'
