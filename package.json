@@ -4,7 +4,7 @@
   "description": "A set of Node.js Microsoft Azure functions for the import of flood forecasting data.",
   "type": "module",
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "scripts": {
     "build": "build/src/main/resources/scripts/build.sh",
