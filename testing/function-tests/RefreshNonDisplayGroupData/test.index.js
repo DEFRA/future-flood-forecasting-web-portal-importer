@@ -1,16 +1,17 @@
-const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const message = require('../mocks/defaultMessage')
-const messageFunction = require('../../../RefreshNonDisplayGroupData/index')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import CommonWorkflowCsvTestUtils from '../shared/common-workflow-csv-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import message from '../mocks/defaultMessage'
+import messageFunction from '../../../RefreshNonDisplayGroupData/index'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { jest } from '@jest/globals'
 
 jest.mock('node-fetch')
 
-module.exports = describe('Insert non_display_group_workflow data tests', () => {
+export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh non-display group workflow data tests', () => {
   const JSONFILE = 'application/javascript'
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
@@ -504,44 +505,44 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
 
   async function insertExceptions (transaction, context) {
     await new sql.Request(transaction).batch(`
-      declare @id1 uniqueidentifier;
-      set @id1 = newid();
-      declare @id2 uniqueidentifier;
-      set @id2 = newid();
-      declare @id3 uniqueidentifier;
-      set @id3 = newid();
-      declare @id4 uniqueidentifier;
-      set @id4 = newid();
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      declare @id4 uniqueidentifier
+      set @id4 = newid()
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for test_non_display_workflow_2', 'ukeafffsmc00:000000001', 'P', 'test_non_display_workflow_2', getutcdate());
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for test_non_display_workflow_2', 'ukeafffsmc00:000000001', 'P', 'test_non_display_workflow_2', getutcdate())
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate())
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'test_non_display_workflow_1', 'message');
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'test_non_display_workflow_1', 'message')
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'test_filter_1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id2, 'test_filter_1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'test_filter_1a', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id3, 'test_filter_1a', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id4, 'test_filter_1', 'F', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "filterId": "test_filter_3"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id4, 'test_filter_1', 'F', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "filterId": "test_filter_3"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
     `)
   }
 })

@@ -1,10 +1,13 @@
-const axios = require('axios')
-const moment = require('moment')
-const sql = require('mssql')
-const messageFunction = require('../../../ProcessFewsEventCode/index')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+import axios from 'axios'
+import moment from 'moment'
+import sql from 'mssql'
+import messageFunction from '../../../ProcessFewsEventCode/index'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils'
+import { jest } from '@jest/globals'
+
 jest.mock('axios')
-module.exports = function (context, pool, taskRunCompleteMessages) {
+
+export default function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessage = async function (messageKey, sendMessageAsString, mockResponse) {
     if (mockResponse) {

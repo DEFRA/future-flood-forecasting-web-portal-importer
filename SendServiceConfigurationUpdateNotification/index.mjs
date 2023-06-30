@@ -1,6 +1,6 @@
-const axios = require('axios')
-const { shouldServiceConfigurationUpdateNotificationBeSent } = require('../Shared/csv-load/service-configuration-update-utils')
-module.exports = async function (context, message) {
+import axios from 'axios'
+import { shouldServiceConfigurationUpdateNotificationBeSent } from '../Shared/csv-load/service-configuration-update-utils.js'
+export default async function (context, message) {
   if (shouldServiceConfigurationUpdateNotificationBeSent(context)) {
     const options = {
       method: 'post',

@@ -1,7 +1,7 @@
-const { doInTransaction, executePreparedStatementInTransaction } = require('../../../Shared/transaction-helper')
-const sql = require('mssql')
+import { doInTransaction, executePreparedStatementInTransaction } from '../../../Shared/transaction-helper.js'
+import sql from 'mssql'
 
-module.exports = function (context, pool, config) {
+export default function (context, pool, config) {
   this.insertWorkflowRefreshRecords = async function (workflowRefreshOffset) {
     const request = new sql.Request(pool)
     if (workflowRefreshOffset && Number.isInteger(workflowRefreshOffset)) {
@@ -60,7 +60,7 @@ async function checkWorkflowRefreshDataInternal (context, preparedStatement, con
       fff_staging.workflow_refresh
     where
       csv_type = @csvType and
-      refresh_time < getutcdate();
+      refresh_time < getutcdate()
   `)
 
   const parameters = {

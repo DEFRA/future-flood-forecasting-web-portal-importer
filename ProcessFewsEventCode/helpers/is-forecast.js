@@ -1,5 +1,5 @@
-const getBooleanIndicator = require('./get-boolean-indicator')
+import getBooleanIndicator from './get-boolean-indicator.js'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   return getBooleanIndicator(context, taskRunData, 'Forecast')
 }

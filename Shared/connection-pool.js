@@ -1,9 +1,10 @@
-const sql = require('mssql')
-const { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange } = require('./utils')
-const { logger } = require('defra-logging-facade')
-const hostJson = require('../host.json')
+import sql from 'mssql'
+import { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange, loadJsonFile } from './utils.js'
+import loggingFacade from 'defra-logging-facade'
+const logger = loggingFacade.logger
+const hostJson = loadJsonFile('./host.json')
 
-module.exports = function () {
+export default function () {
   // Configure database connectivity using:
   // - some mssql defaults
   // - some custom defaults

@@ -1,11 +1,13 @@
-const taskRunCompleteMessages = require('./messages/task-run-complete/coastal-display-group-messages')
-const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonCoastalTimeseriesTestUtils from '../shared/common-coastal-timeseries-test-utils'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
+import sql from 'mssql'
 
-module.exports = describe('Tests for import timeseries display groups', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/coastal-display-group-messages.json')
+
+export const coastalDisplayGroupProcessFewsEventCodeTests = () => describe('Coastal display group process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 

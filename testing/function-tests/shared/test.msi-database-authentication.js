@@ -1,6 +1,6 @@
-const ConnectionPool = require('../../../Shared/connection-pool')
+import ConnectionPool from '../../../Shared/connection-pool.js'
 
-module.exports = describe('Test configuration for MSI database authentication', () => {
+export const msiDatabaseAuthenticationTests = () => describe('Test configuration for MSI database authentication', () => {
   describe('MSI database authentication', () => {
     it('should be configured when enabled', async () => {
       let pool
