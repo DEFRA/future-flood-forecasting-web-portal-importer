@@ -16,7 +16,7 @@
     "moment": "^2.29.4",
     "mssql": "^9.1.1",
     "neat-csv": "^5.2.0",
-    "node-fetch": "^2.6.11"
+    "node-fetch": "^2.6.12"
   },
   "devDependencies": {
     "@azure/service-bus": "^7.9.0",
