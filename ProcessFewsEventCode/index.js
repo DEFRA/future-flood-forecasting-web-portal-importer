@@ -7,7 +7,7 @@ const createStagingException = require('../Shared/timeseries-functions/create-st
 const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
 const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
-const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
+// const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
 const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
@@ -19,6 +19,7 @@ const getTaskRunId = require('./helpers/get-task-run-id')
 const isForecast = require('./helpers/is-forecast')
 const { logObsoleteTaskRunMessage } = require('../Shared/utils')
 const moment = require('moment')
+const getLastRefreshTime = require('./helpers/get-last-refresh-time')
 
 const sourceTypeLookup = {
   F: {
@@ -107,7 +108,8 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
 
     // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
     // being placed on a dead letter queue.
-    await checkIfPiServerIsOnline(context)
+    // await checkIfPiServerIsOnline(context)
+    await getLastRefreshTime(context)
     // Prepare to send a message for each plot/filter associated with the task run.
     context.bindings.importFromFews = taskRunData.outgoingMessages
   } else {
