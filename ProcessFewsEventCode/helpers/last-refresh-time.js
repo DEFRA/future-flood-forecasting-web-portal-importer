@@ -39,6 +39,18 @@ const getLastRefreshTimeFromDatabase = async () =>{
     }
 }
 
+const compareLastRefreshTime = (valueA, valueB){
+    const dateTimeA = new Date(valueA)
+    const dateTimeB = new Date(valueB)
+    if(dateTimeA > dateTimeB){
+        return 1;
+    }else if(dateTimeA < dateTimeB){
+        return -1;
+    }else{
+        return 0;
+    }
+}
+
 module.exports = async function (context, lastRefreshTime){
     try {
         const lastRefreshTimeFromFewsAPI = await getLastRefreshTimeFromAPI();
@@ -46,10 +58,14 @@ module.exports = async function (context, lastRefreshTime){
 
         const latestRefreshTimeValueFromDatabase = await getLastRefreshTimeFromDatabase();
 
-        if(lastRefreshTimeFromFewsAPI > latestRefreshTimeValue){
+        const lastRefreshTimeComparisonResult = compareLastRefreshTime(lastRefreshTimeFromFewsAPI, latestRefreshTimeValue)
+
+        if(lastRefreshTimeComparisonResult === 1){
             context.log('Last refresh time is greater than the last value from the database ====> proceed')
-        }else{
+        }else if(lastRefreshTimeComparisonResult === -1){
             context.log('otherwise Do nothing ')
+        }else{
+            context.log('the values are the same')
         }
         
     } catch (error) {
