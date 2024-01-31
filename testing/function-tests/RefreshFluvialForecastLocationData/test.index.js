@@ -43,9 +43,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
       await request.batch(`
       insert 
         into fff_staging.fluvial_forecast_location
-        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, LOCATION_X, LOCATION_Y, LOCATION_Z) 
+        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, RIVER_LOCAL, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, LOCATION_X, LOCATION_Y, LOCATION_Z) 
       values 
-        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222, 123456.123456)
+        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222, 123456.123456)
       `)
       await request.query('delete from fff_staging.non_workflow_refresh')
       await request.query('delete from fff_staging.workflow_refresh')
@@ -95,13 +95,14 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const expectedForecastLocationData = [
         {
           Centre: 'Birmingham',
-          MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
+          MFDOArea: 'East Midlands',
           Catchment: 'Derwent',
           FFFSLocID: '40443',
-          FFFSLocName: 'CHATSWORTH',
-          PlotId: 'Fluvial_Gauge_MFDO',
-          DRNOrder: 123,
-          Order: 8988,
+          FFFSLocName: 'Ladybower Reservoir Level',
+          RiverLocal: 'Ladybower Reservoir',
+          PlotId: 'WP_Fluvial_Level_Gauge_MFDO',
+          DRNOrder: 427074,
+          Order: 0,
           Datum: 'mALD',
           CatchmentOrder: 1,
           LocationX: 123456,
@@ -140,6 +141,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
           Catchment: 'Derwent',
           FFFSLocID: '4043',
           FFFSLocName: 'CHATSWORTH',
+          RiverLocal: 'Ladybower Reservoir',
           PlotId: 'Fluvial_Gauge_MFDO',
           DRNOrder: 123,
           Order: 8888,
@@ -222,6 +224,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchment: 'Derwent',
         FFFSLocID: 'Ashford+Chatsworth',
         FFFSLocName: 'Ashford+Chatsworth UG Derwent Derb to Wye confl',
+        RiverLocal: 'Ladybower Reservoir',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8888,
@@ -237,6 +240,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchment: 'Derwent',
         FFFSLocID: '40443',
         FFFSLocName: 'CHATSWORTH',
+        RiverLocal: 'Ladybower Reservoir',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8988,
@@ -337,6 +341,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchment: 'Derwent',
         FFFSLocID: '40443',
         FFFSLocName: 'CHATSWORTH',
+        RiverLocal: 'Ladybower Reservoir',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8988,
@@ -390,6 +395,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         const Catchment = row.Catchment
         const FFFSLocID = row.FFFSLocID
         const FFFSLocName = row.FFFSLocName
+        const RiverLocal = row.RiverLocal
         const PlotId = row.PlotId
         const DRNOrder = row.DRNOrder
         const DisplayOrder = row.Order
@@ -410,6 +416,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
             CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
             and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = ${CatchmentOrder}
             and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
+            and RIVER_NAME = '${RiverLocal}'
             and PLOT_ID = '${PlotId}' and DRN_ORDER = ${DRNOrder} and DATUM ${Datum} and DISPLAY_ORDER = ${DisplayOrder}
             and LOCATION_X = '${LocationX}' and LOCATION_Y = '${LocationY}' and LOCATION_Z = '${LocationZ}'
         `)
@@ -441,9 +448,9 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
       insert into 
-        fff_staging.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, CATCHMENT_ORDER, LOCATION_X, LOCATION_Y) 
+        fff_staging.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, RIVER_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, CATCHMENT_ORDER, LOCATION_X, LOCATION_Y) 
       values 
-        ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'plotid', 123, 0, 'mALD', 5, 123445, 123456)
+        ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'riverlocal', 'plotid', 123, 0, 'mALD', 5, 123445, 123456)
     `)
       await mockFetchResponse(mockResponseData)
       await expect(messageFunction(context, message)).rejects.toBeTimeoutError(tableName)
