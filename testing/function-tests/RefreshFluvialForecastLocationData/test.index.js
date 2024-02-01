@@ -416,7 +416,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
             CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
             and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = ${CatchmentOrder}
             and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
-            and RIVERNAME = '${RiverLocal}'
+            and RIVER_NAME = '${RiverLocal}'
             and PLOT_ID = '${PlotId}' and DRN_ORDER = ${DRNOrder} and DATUM ${Datum} and DISPLAY_ORDER = ${DisplayOrder}
             and LOCATION_X = '${LocationX}' and LOCATION_Y = '${LocationY}' and LOCATION_Z = '${LocationZ}'
         `)
@@ -448,7 +448,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
       const request = new sql.Request(transaction)
       await request.batch(`
       insert into 
-        fff_staging.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, RIVERNAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, CATCHMENT_ORDER, LOCATION_X, LOCATION_Y) 
+        fff_staging.${tableName} (CENTRE, MFDO_AREA, CATCHMENT, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, RIVER_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, CATCHMENT_ORDER, LOCATION_X, LOCATION_Y) 
       values 
         ('centre', 'mfdo_area', 'catchement', 'loc_id', 'locname', 'riverlocal', 'plotid', 123, 0, 'mALD', 5, 123445, 123456)
     `)
