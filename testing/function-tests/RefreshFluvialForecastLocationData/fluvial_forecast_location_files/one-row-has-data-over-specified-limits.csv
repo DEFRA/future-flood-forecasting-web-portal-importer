@@ -1,3 +1,3 @@
-Centre,MFDOArea,Catchment,CatchmentOrder,FFFSLocID,FFFSLocName,RiverLocal,DRNOrder,PlotID,Datum,Order,LocationX,LocationY,LocationZ
-Birmingham,East Midlands,Derwent,1,4092,Ladybower Reservoir Level,Ladybower Reservoirovercharacterlimitofsixtyfourcharacter,427074,WP_Fluvial_Level_Gauge_MFDO,mALD,0,420100,385500,203.610
-Birmingham,East Midlands,Derwent,1,4001,Yorkshire Bridge,River Derwent,427079,WP_Fluvial_Level_Gauge_MFDO,mALD,1,419820,385090,159.410
+CatchmentOrder,Centre,MFDOArea,Catchment,FFFSLocID,FFFSLocName,PlotID,DRNOrder,Order,Datum,LocationX,LocationY,LocationZ
+1,BirminghamovercharacterlimitofsixtyfourcharactersBirminghamovercharacterlimitofsixtyfourcharacters,Derbyshire Nottinghamshire and Leicestershire,Derwent,Ashford+Chatsworth,Ashford+Chatsworth UG Derwent Derb to Wye confl,Fluvial_Gauge_MFDO,123,8888,mALD,123456,123456,123456.123456
+1,Birmingham,Derbyshire Nottinghamshire and Leicestershire,Derwent,4043,CHATSWORTH,Fluvial_Gauge_MFDO,123,8888,mALD,123456,123456,123456.123456
