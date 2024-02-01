@@ -4,7 +4,7 @@ const commonRefreshData = require('../Shared/csv-load/common-refresh-data')
 const functionSpecificData = [
   { tableColumnName: 'FFFS_LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocID' },
   { tableColumnName: 'FFFS_LOCATION_NAME', tableColumnType: 'NVarChar', expectedCSVKey: 'FFFSLocName' },
-  { tableColumnName: 'RIVERNAME', tableColumnType: 'NVarChar', expectedCSVKey: 'RiverLocal' },  
+  { tableColumnName: 'RIVER_LOCAL', tableColumnType: 'NVarChar', expectedCSVKey: 'RiverLocal', nullValueOverride: true },
   { tableColumnName: 'DRN_ORDER', tableColumnType: 'Int', expectedCSVKey: 'DRNOrder' },
   { tableColumnName: 'DATUM', tableColumnType: 'NVarChar', expectedCSVKey: 'Datum', nullValueOverride: true },
   { tableColumnName: 'DISPLAY_ORDER', tableColumnType: 'Int', expectedCSVKey: 'Order' },
@@ -27,9 +27,9 @@ module.exports = async function (context) {
     countStatement: 'select count(*) as number from fff_staging.fluvial_forecast_location',
     insertPreparedStatement: `
       insert into 
-        fff_staging.fluvial_forecast_location (fffs_location_id, fffs_location_name, river_name, drn_order, datum, display_order, centre, plot_id, catchment, catchment_order, mfdo_area, location_x, location_y, location_z)       
+        fff_staging.fluvial_forecast_location (fffs_location_id, fffs_location_name, river_local, drn_order, datum, display_order, centre, plot_id, catchment, catchment_order, mfdo_area, location_x, location_y, location_z)
       values 
-        (@fffs_location_id, @fffs_location_name,  @river_name, @drn_order, @datum, @display_order, @centre, @plot_id, @catchment, @catchment_order, @mfdo_area, @location_x, @location_y, @location_z)`,
+        (@fffs_location_id, @fffs_location_name, @river_local, @drn_order, @datum, @display_order, @centre, @plot_id, @catchment, @catchment_order, @mfdo_area, @location_x, @location_y, @location_z)`,
     // Column information and corresponding csv information
     functionSpecificData
   }
