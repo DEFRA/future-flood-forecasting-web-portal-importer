@@ -37,15 +37,15 @@ module.exports = describe('Refresh forecast location data tests', () => {
       context.bindings.serviceConfigurationUpdateCompleted = []
       commonCSVTestUtils = new Util(context, pool)
       commonWorkflowCSVTestUtils = new CommonWorkflowCSVTestUtils(context, pool)
-      dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchment: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD', CatchmentOrder: 2, LocationX: 111111, LocationY: 222222, LocationZ: 123456.123456 }]
+      dummyData = [{ Centre: 'dummyData', MFDOArea: 'dummyData', Catchment: 'dummyData', FFFSLocID: 'dummyData', FFFSLocName: 'dummyData', RiverLocal: 'dummyData', PlotId: 'dummyData', DRNOrder: 123, Order: 8888, Datum: 'mALD', CatchmentOrder: 2, LocationX: 111111, LocationY: 222222, LocationZ: 123456.123456 }]
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.batch('delete from fff_staging.fluvial_forecast_location')
       await request.batch(`
       insert 
         into fff_staging.fluvial_forecast_location
-        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, LOCATION_X, LOCATION_Y, LOCATION_Z) 
+        (CENTRE, MFDO_AREA, CATCHMENT, CATCHMENT_ORDER, FFFS_LOCATION_ID, FFFS_LOCATION_NAME, RIVER_LOCAL, PLOT_ID, DRN_ORDER, DISPLAY_ORDER, DATUM, LOCATION_X, LOCATION_Y, LOCATION_Z)
       values 
-        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222, 123456.123456)
+        ('dummyData', 'dummyData', 'dummyData', 2, 'dummyData', 'dummyData', 'dummyData', 'dummyData', 123, 8888, 'mALD', 111111, 222222, 123456.123456)
       `)
       await request.query('delete from fff_staging.non_workflow_refresh')
       await request.query('delete from fff_staging.workflow_refresh')
@@ -99,6 +99,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
           Catchment: 'Derwent',
           FFFSLocID: '40443',
           FFFSLocName: 'CHATSWORTH',
+          RiverLocal: 'River Derwent',
           PlotId: 'Fluvial_Gauge_MFDO',
           DRNOrder: 123,
           Order: 8988,
@@ -140,6 +141,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
           Catchment: 'Derwent',
           FFFSLocID: '4043',
           FFFSLocName: 'CHATSWORTH',
+          RiverLocal: 'River Derwent',
           PlotId: 'Fluvial_Gauge_MFDO',
           DRNOrder: 123,
           Order: 8888,
@@ -222,6 +224,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchment: 'Derwent',
         FFFSLocID: 'Ashford+Chatsworth',
         FFFSLocName: 'Ashford+Chatsworth UG Derwent Derb to Wye confl',
+        RiverLocal: 'River Derwent',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8888,
@@ -237,6 +240,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchment: 'Derwent',
         FFFSLocID: '40443',
         FFFSLocName: 'CHATSWORTH',
+        RiverLocal: 'River Derwent',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8988,
@@ -337,9 +341,37 @@ module.exports = describe('Refresh forecast location data tests', () => {
         Catchment: 'Derwent',
         FFFSLocID: '40443',
         FFFSLocName: 'CHATSWORTH',
+        RiverLocal: 'River Derwent',
         PlotId: 'Fluvial_Gauge_MFDO',
         DRNOrder: 123,
         Order: 8988,
+        CatchmentOrder: 1,
+        LocationX: 123456,
+        LocationY: 123456,
+        LocationZ: 123456.123456
+      }]
+      const expectedNumberOfExceptionRows = 0
+      await refreshForecastLocationDataAndCheckExpectedResults(mockResponseData, expectedForecastLocationData, expectedNumberOfExceptionRows)
+    })
+
+    it('should refresh given a valid CSV file with a null river name value', async () => {
+      const mockResponseData = {
+        statusCode: STATUS_CODE_200,
+        filename: 'valid-null-river-name.csv',
+        statusText: STATUS_TEXT_OK,
+        contentType: TEXT_CSV
+      }
+
+      const expectedForecastLocationData = [{
+        Centre: 'Birmingham',
+        MFDOArea: 'Derbyshire Nottinghamshire and Leicestershire',
+        Catchment: 'Derwent',
+        FFFSLocID: '40443',
+        FFFSLocName: 'CHATSWORTH',
+        PlotId: 'Fluvial_Gauge_MFDO',
+        DRNOrder: 123,
+        Order: 8988,
+        Datum: 'mALD',
         CatchmentOrder: 1,
         LocationX: 123456,
         LocationY: 123456,
@@ -390,6 +422,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
         const Catchment = row.Catchment
         const FFFSLocID = row.FFFSLocID
         const FFFSLocName = row.FFFSLocName
+        const RiverLocal = row.RiverLocal ? `= '${row.RiverLocal}'` : 'is null'
         const PlotId = row.PlotId
         const DRNOrder = row.DRNOrder
         const DisplayOrder = row.Order
@@ -410,7 +443,7 @@ module.exports = describe('Refresh forecast location data tests', () => {
             CENTRE = '${Centre}' and MFDO_AREA = '${MFDOArea}'
             and CATCHMENT = '${Catchment}' and FFFS_LOCATION_ID = '${FFFSLocID}' and CATCHMENT_ORDER = ${CatchmentOrder}
             and FFFS_LOCATION_NAME = '${FFFSLocName}' and FFFS_LOCATION_ID = '${FFFSLocID}'
-            and PLOT_ID = '${PlotId}' and DRN_ORDER = ${DRNOrder} and DATUM ${Datum} and DISPLAY_ORDER = ${DisplayOrder}
+            and RIVER_LOCAL ${RiverLocal} and PLOT_ID = '${PlotId}' and DRN_ORDER = ${DRNOrder} and DATUM ${Datum} and DISPLAY_ORDER = ${DisplayOrder}
             and LOCATION_X = '${LocationX}' and LOCATION_Y = '${LocationY}' and LOCATION_Z = '${LocationZ}'
         `)
         expect(databaseResult.recordset[0].number).toEqual(1)
