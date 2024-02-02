@@ -13,7 +13,7 @@
     "axios": "^1.4.0",
     "defra-logging-facade": "git+https://github.com/DEFRA/defra-logging-facade.git#b11d97e",
     "jsonstream-next": "^3.0.0",
-    "moment": "^2.29.4",
+    "moment": "^2.30.1",
     "mssql": "^9.1.1",
     "neat-csv": "^5.2.0",
     "node-fetch": "^2.6.12"
