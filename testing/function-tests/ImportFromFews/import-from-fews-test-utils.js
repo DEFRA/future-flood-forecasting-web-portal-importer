@@ -160,7 +160,7 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
 
   this.processMessagesAndCheckExceptionIsThrown = async function (messageKey, mockError, mockResponse) {
     // If there is no mock response to return, ensure the mocked PI Server call responds by
-    // rejecting a promise using mockError. This mocks when the PI Server returns an error.
+    // rejecting a promise using mockError.
     if (!mockResponse) {
       axios.mockRejectedValue(mockError)
     }
