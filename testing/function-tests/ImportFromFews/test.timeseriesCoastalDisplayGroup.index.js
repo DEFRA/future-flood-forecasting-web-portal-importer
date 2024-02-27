@@ -423,6 +423,52 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       }
       await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
     })
+    it('should send a message for replay when the PI Server response indicates that partial data has been returned', async () => {
+      const expectedError = new Error('Partial PI Server response received for plot Test Coastal Plot of task run ukeafffsmc00:000000001 (workflow Test_Coastal_Workflow)')
+      const mockResponse = {
+        data: 'Partial response data',
+        status: 206
+      }
+
+      const messageKey = 'singlePlotApprovedForecast'
+      await importFromFewsTestUtils.processMessagesAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
+    })
+    it('should send a message for replay after a customised pause when the PI Server response indicates that partial data has been returned', async () => {
+      const originalEnvironment = process.env
+      try {
+        process.env.PI_SERVER_CALL_DELAY_MILLIS = '1000'
+        const expectedError = new Error('Partial PI Server response received for plot Test Coastal Plot of task run ukeafffsmc00:000000001 (workflow Test_Coastal_Workflow)')
+        const mockResponse = {
+          data: 'Partial response data',
+          status: 206
+        }
+
+        const messageKey = 'singlePlotApprovedForecast'
+        await importFromFewsTestUtils.processMessagesAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
+      } finally {
+        process.env = originalEnvironment
+      }
+    })
+    it('should create a timeseries staging exception when the PI Server returns a HTTP 206 status code and a Content-Range header', async () => {
+      const messageKey = 'singlePlotApprovedForecast'
+      const mockResponse = {
+        headers: { 'Content-Range': 'Mock content range' },
+        data: 'Partial response data',
+        status: 206
+      }
+      const config = {
+        messageKey,
+        mockResponses: [mockResponse],
+        expectedErrorDetails: {
+          sourceId: importFromFewsMessages[messageKey][0].plotId,
+          sourceType: 'P',
+          csvError: false,
+          csvType: null,
+          description: 'Received unexpected Content-Range header in PI Server response'
+        }
+      }
+      await importFromFewsTestUtils.processMessagesCheckTimeseriesStagingExceptionIsCreatedAndNoDataIsImported(config)
+    })
   })
 
   async function insertTimeseriesHeadersAndTimeseriesStagingExceptions (pool) {

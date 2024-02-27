@@ -5,8 +5,6 @@ if (process.env.TEST_TIMEOUT) {
 }
 
 describe('Run all unit tests in sequence', () => {
-  // As the PI Server is mocked in unit tests, a small delay before each call is suitable as a default.
-  process.env.PI_SERVER_CALL_DELAY_MILLIS = 100
   const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
