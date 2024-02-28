@@ -158,10 +158,26 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     await checkImportedDataFunction(config, context, pool)
   }
 
-  this.processMessagesAndCheckExceptionIsThrown = async function (messageKey, mockErrorResponse) {
-    axios.mockRejectedValue(mockErrorResponse)
+  this.processMessagesAndCheckExceptionIsThrown = async function (messageKey, mockError, mockResponse) {
+    // If there is no mock response to return, ensure the mocked PI Server call responds by
+    // rejecting a promise using mockError.
+    if (!mockResponse) {
+      axios.mockRejectedValue(mockError)
+    }
+
     for (const message of importFromFewsMessages[messageKey]) {
-      await expect(messageFunction(context, message)).rejects.toThrow(mockErrorResponse)
+      if (!mockResponse) {
+        // If there is no mock response to return, ensure the mocked PI Server call responds by
+        // rejecting a promise using mockError.
+        await expect(messageFunction(context, message)).rejects.toThrow(mockError)
+      } else {
+        // If there is a mock response to return (such as when the handling of a HTTP 206 response
+        // code indicating incomplete PI Server indexing is being tested), call processMessages
+        // to ensure the PI Server response is mocked correctly. The mocked PI Server response
+        // should cause the rejection of a promise using mockError (in the case of a HTTP 206
+        // response code, the error causes message replay to be attempted).
+        await expect(processMessages(messageKey, [mockResponse])).rejects.toThrow(mockError)
+      }
     }
   }
 
