@@ -92,6 +92,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported(messageKey, 1)
     })
     it('should import data for multiple filters associated with a non-forecast task run', async () => {
+      // Use the default delay for PI Server calls to increase test coverage.
+      delete process.env.PI_SERVER_CALL_DELAY_MILLIS
       const mockResponses = [{
         data: {
           key: 'First filter timeseries non-display groups data'
@@ -107,7 +109,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         mockResponses
       }
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
-    })
+    }, 11000)
     it('should import data for a single filter associated with an approved forecast', async () => {
       const mockResponse = {
         data: {
