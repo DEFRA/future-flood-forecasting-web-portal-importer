@@ -5,7 +5,6 @@ const { executePreparedStatementInTransaction } = require('../../Shared/transact
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const { minifyAndGzip } = require('../../Shared/utils')
 const processImportError = require('./process-import-error')
-const timeseriesTypeConstants = require('./timeseries-type-constants')
 
 module.exports = async function (context, taskRunData) {
   await retrieveFewsData(context, taskRunData)
@@ -48,12 +47,6 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
     }
   }
   await logTaskRunProgress(context, taskRunData, 'Retrieving data')
-  // INC1217504 - Delay calls to the PI server for external historical timeseries in case task run
-  // completion triggered processing results in an attempt to call the PI Server before the PI Server
-  // is aware that data for the task run is available.
-  if (taskRunData.filterData && taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_HISTORICAL) {
-    await sleep()
-  }
   const fewsResponse = await axios(axiosConfig)
   await logTaskRunProgress(context, taskRunData, 'Retrieved data')
   taskRunData.fewsData = await minifyAndGzip(fewsResponse.data)
@@ -126,12 +119,4 @@ async function loadFewsData (context, preparedStatement, taskRunData) {
 
 async function logTaskRunProgress (context, taskRunData, messageContext) {
   context.log(`${messageContext} for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
-}
-
-async function sleep () {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve()
-    }, process.env.PI_SERVER_CALL_DELAY_MILLIS || 2000)
-  })
 }

@@ -7,7 +7,7 @@ const createStagingException = require('../Shared/timeseries-functions/create-st
 const isIgnoredWorkflow = require('../Shared/timeseries-functions/is-ignored-workflow')
 const isSpanWorkflow = require('../Shared/timeseries-functions/check-spanning-workflow')
 const getTaskRunCompletionDate = require('./helpers/get-task-run-completion-date')
-const checkIfPiServerIsOnline = require('./helpers/check-if-pi-server-is-online')
+const checkIfPiServerHasAllDataForTaskRunIfPossible = require('./helpers/check-if-pi-server-has-all-data-for-task-run-if-possible')
 const StagingError = require('../Shared/timeseries-functions/staging-error')
 const createTimeseriesHeader = require('./helpers/create-timeseries-header')
 const getTaskRunStartDate = require('./helpers/get-task-run-start-date')
@@ -47,9 +47,9 @@ async function buildAndProcessOutgoingWorkflowMessagesIfPossible (context, trans
 
   // Create a message for each plot/filter to be processed for the task run.
   // (see https://medium.com/@antonioval/making-array-iteration-easy-when-using-async-await-6315c3225838)
-  await Promise.all(taskRunData.itemsToBeProcessed.map(async itemToBeProcessed =>
+  await Promise.all(taskRunData.itemsToBeProcessed.map(async itemToBeProcessed => {
     await createOutgoingMessageIfPossible(context, taskRunData, itemToBeProcessed)
-  ))
+  }))
 
   await processOutgoingMessagesIfPossible(context, taskRunData)
 }
@@ -105,9 +105,11 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
     await deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters(context, taskRunData)
 
-    // If the PI Server is offline an exception is thrown. The message is  eligible for replay a certain number of times before
+    // Throw an exception to cause attempted message replay if the PI Server is offline
+    // or it can be determined that all data for the task run is not available from the
+    // PI Server yet. The message is eligible for replay a certain number of times before
     // being placed on a dead letter queue.
-    await checkIfPiServerIsOnline(context)
+    await checkIfPiServerHasAllDataForTaskRunIfPossible(context, taskRunData)
     // Prepare to send a message for each plot/filter associated with the task run.
     context.bindings.importFromFews = taskRunData.outgoingMessages
   } else {

@@ -86,6 +86,9 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
           ('description: invalid message', 'Error', 'ukeafffsmc00:000000003', 'P', 'Test_Workflow1', @exceptionTime);
       `)
       const messageKey = 'singleFilterNonForecast'
+      // Use the default delay when checking if all task run data is available from the
+      // PI Server to increase test coverage.
+      delete process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should create a timeseries header and create messages for multiple filters associated with a non-forecast task run', async () => {
@@ -147,6 +150,26 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       `)
       const messageKey = 'filterAndPlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+    })
+    it('should send a message for replay when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been exceeded', async () => {
+      const expectedError = new Error('All data is not available for task run ukeafffsmc00:000000001 (workflow Test_Workflow1)')
+      const mockResponse = {
+        data: 'Partial response data',
+        status: 206
+      }
+
+      const messageKey = 'singleFilterNonForecast'
+      await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
+    })
+    it('should create a staging exception when the PI Server returns a HTTP 206 status code and a Content-Range header', async () => {
+      const messageKey = 'singleFilterNonForecast'
+      const mockResponse = {
+        headers: { 'Content-Range': 'Mock content range' },
+        data: 'Partial response data',
+        status: 206
+      }
+      const expectedErrorDescription = 'Received unexpected Content-Range header when checking PI Server data availability for task run ukeafffsmc00:000000001'
+      await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(messageKey, expectedErrorDescription, mockResponse)
     })
   })
 })

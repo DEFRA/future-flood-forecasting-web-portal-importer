@@ -5,8 +5,16 @@ if (process.env.TEST_TIMEOUT) {
 }
 
 describe('Run all unit tests in sequence', () => {
-  // As the PI Server is mocked in unit tests, a small delay before each call is suitable as a default.
-  process.env.PI_SERVER_CALL_DELAY_MILLIS = 100
+  // As the PI Server is mocked in unit tests, small delays for the following are
+  // suitable as default values:
+  //
+  // - The amount of time to wait before checking if all filter based data for a task run
+  //   is available from the PI Server.
+  // - The amount of time to wait before sending messages for plot based PI Server data
+  //   retrieval for a task run.
+  process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS = 100
+  process.env.WAIT_FOR_TASK_RUN_DATA_AVAILABILITY_MILLIS = 100
+
   const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
