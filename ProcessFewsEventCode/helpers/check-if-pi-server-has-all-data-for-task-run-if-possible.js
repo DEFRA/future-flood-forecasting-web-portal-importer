@@ -35,8 +35,26 @@ module.exports = async function (context, taskRunData) {
 }
 
 async function checkIfPiServerIsOnline (context, taskRunData) {
-  let errorMessageFragment
   const fewsPiUrlRoot = `${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/`
+  const { errorMessageFragment, fewsPiUrlFragment } = getFragments(context, taskRunData)
+
+  try {
+    const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
+    return axios.get(fewsPiUrl)
+  } catch (err) {
+    if (typeof err.response === 'undefined') {
+      context.log.error('PI Server is unavailable')
+    } else {
+      const piServerErrorMessage = getPiServerErrorMessage(context, err)
+      context.log.error(`An unexpected error occurred when checking if ${errorMessageFragment} - ${err.message} (${piServerErrorMessage})`)
+    }
+    // Attempt message replay.
+    throw err
+  }
+}
+
+function getFragments (context, taskRunData) {
+  let errorMessageFragment
   let fewsPiUrlFragment
 
   if (taskRunData.filterMessageCreated) {
@@ -52,20 +70,7 @@ async function checkIfPiServerIsOnline (context, taskRunData) {
     fewsPiUrlFragment = 'filters?'
     errorMessageFragment = 'PI Server is available'
   }
-
-  try {
-    const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
-    return axios.get(fewsPiUrl)
-  } catch (err) {
-    if (typeof err.response === 'undefined') {
-      context.log.error('PI Server is unavailable')
-    } else {
-      const piServerErrorMessage = getPiServerErrorMessage(context, err)
-      context.log.error(`An unexpected error occurred when checking if ${errorMessageFragment} - ${err.message} (${piServerErrorMessage})`)
-    }
-    // Attempt message replay.
-    throw err
-  }
+  return { errorMessageFragment, fewsPiUrlFragment }
 }
 
 async function checkIfAllDataForTaskRunIsAvailable (context, taskRunData, fewsResponse) {
