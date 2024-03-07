@@ -17,42 +17,8 @@ const sleepTypeConfig = {
 }
 
 module.exports = async function (context, taskRunData) {
-  let errorMessageFragment
-  try {
-    checkOutgoingMessages(context, taskRunData)
-    const fewsPiUrlRoot = `${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/`
-    let fewsPiUrlFragment
-
-    if (taskRunData.filterMessageCreated) {
-      // INC1338365 - If data needs to be retrieved using one or more filters prepare to check
-      // if all data for the task run is available from the PI Server before sending outgoing
-      // messages.
-      fewsPiUrlFragment = `timeseries?taskRunIds=${taskRunData.taskRunId}&onlyHeaders=true&`
-      errorMessageFragment = `all data for ${taskRunData.taskRunId} is available`
-    } else {
-      // INC1338365 - If data needs to be retrieved using one or more plots, the PI Server
-      // cannot indicate if all data for the task run is available yet, so just prepare
-      // to check if the PI Server is online.
-      fewsPiUrlFragment = 'filters?'
-      errorMessageFragment = 'PI Server is available'
-    }
-
-    const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
-    const fewsResponse = await axios.get(fewsPiUrl)
-    await checkIfAllDataIsAvailableForTaskRunIfPossible(context, taskRunData, fewsResponse)
-  } catch (err) {
-    if (typeof err.response === 'undefined') {
-      context.log.error('PI Server is unavailable')
-    } else {
-      const piServerErrorMessage = getPiServerErrorMessage(context, err)
-      context.log.error(`An unexpected error occurred when checking if ${errorMessageFragment} - ${err.message} (${piServerErrorMessage})`)
-    }
-    // Attempt message replay.
-    throw err
-  }
-}
-
-async function checkIfAllDataIsAvailableForTaskRunIfPossible (context, taskRunData, fewsResponse) {
+  checkOutgoingMessages(context, taskRunData)
+  const fewsResponse = await checkIfPiServerIsOnline(context, taskRunData)
   if (taskRunData.filterMessageCreated) {
     await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
   }
@@ -65,6 +31,40 @@ async function checkIfAllDataIsAvailableForTaskRunIfPossible (context, taskRunDa
     // This should prevent incomplete data retrieval in most cases and is a workaround
     // until a more robust long term solution can be implemented.
     await sleep(sleepTypeConfig[PAUSE_BEFORE_SENDING_OUTGOING_MESSAGES])
+  }
+}
+
+async function checkIfPiServerIsOnline (context, taskRunData) {
+  let errorMessageFragment
+  const fewsPiUrlRoot = `${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/`
+  let fewsPiUrlFragment
+
+  if (taskRunData.filterMessageCreated) {
+    // INC1338365 - If data needs to be retrieved using one or more filters prepare to check
+    // if all data for the task run is available from the PI Server before sending outgoing
+    // messages.
+    fewsPiUrlFragment = `timeseries?taskRunIds=${taskRunData.taskRunId}&onlyHeaders=true&`
+    errorMessageFragment = `all data for ${taskRunData.taskRunId} is available`
+  } else {
+    // INC1338365 - If data needs to be retrieved using one or more plots, the PI Server
+    // cannot indicate if all data for the task run is available yet, so just prepare
+    // to check if the PI Server is online.
+    fewsPiUrlFragment = 'filters?'
+    errorMessageFragment = 'PI Server is available'
+  }
+
+  try {
+    const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
+    return axios.get(fewsPiUrl)
+  } catch (err) {
+    if (typeof err.response === 'undefined') {
+      context.log.error('PI Server is unavailable')
+    } else {
+      const piServerErrorMessage = getPiServerErrorMessage(context, err)
+      context.log.error(`An unexpected error occurred when checking if ${errorMessageFragment} - ${err.message} (${piServerErrorMessage})`)
+    }
+    // Attempt message replay.
+    throw err
   }
 }
 
