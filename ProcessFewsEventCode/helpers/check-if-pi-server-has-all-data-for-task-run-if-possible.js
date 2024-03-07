@@ -39,20 +39,7 @@ module.exports = async function (context, taskRunData) {
 
     const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
     const fewsResponse = await axios.get(fewsPiUrl)
-
-    if (taskRunData.filterMessageCreated) {
-      await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
-    }
-    if (taskRunData.plotMessageCreated) {
-      // INC1338365 - The PI Server is online but cannot indicate if all data for the task run is
-      // available. Try and prevent incomplete data from being returned from the PI Server
-      // by pausing to allow PI Server indexing to complete before sending a message for each plot
-      // for which data is to be retrieved.
-      //
-      // This should prevent incomplete data retrieval in most cases and is a workaround
-      // until a more robust long term solution can be implemented.
-      await sleep(sleepTypeConfig[PAUSE_BEFORE_SENDING_OUTGOING_MESSAGES])
-    }
+    await checkIfAllDataIsAvailableForTaskRunIfPossible(context, taskRunData, fewsResponse)
   } catch (err) {
     if (typeof err.response === 'undefined') {
       context.log.error('PI Server is unavailable')
@@ -62,6 +49,22 @@ module.exports = async function (context, taskRunData) {
     }
     // Attempt message replay.
     throw err
+  }
+}
+
+async function checkIfAllDataIsAvailableForTaskRunIfPossible (context, taskRunData, fewsResponse) {
+  if (taskRunData.filterMessageCreated) {
+    await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
+  }
+  if (taskRunData.plotMessageCreated) {
+    // INC1338365 - The PI Server is online but cannot indicate if all data for the task run is
+    // available. Try and prevent incomplete data from being returned from the PI Server
+    // by pausing to allow PI Server indexing to complete before sending a message for each plot
+    // for which data is to be retrieved.
+    //
+    // This should prevent incomplete data retrieval in most cases and is a workaround
+    // until a more robust long term solution can be implemented.
+    await sleep(sleepTypeConfig[PAUSE_BEFORE_SENDING_OUTGOING_MESSAGES])
   }
 }
 
