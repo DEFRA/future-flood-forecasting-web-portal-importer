@@ -40,7 +40,8 @@ async function checkIfPiServerIsOnline (context, taskRunData) {
 
   try {
     const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
-    return axios.get(fewsPiUrl)
+    const fewsResponse = await axios.get(fewsPiUrl)
+    return fewsResponse
   } catch (err) {
     if (typeof err.response === 'undefined') {
       context.log.error('PI Server is unavailable')
