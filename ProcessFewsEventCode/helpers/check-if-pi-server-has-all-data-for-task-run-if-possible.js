@@ -1,5 +1,7 @@
+const { getEnvironmentVariableAsAbsoluteInteger } = require('../../Shared/utils')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+
 const axios = require('axios')
 
 const PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE = 'pauseBeforeReplayingIncomingMessage'
@@ -23,13 +25,22 @@ module.exports = async function (context, taskRunData) {
     await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
   }
   if (taskRunData.plotMessageCreated) {
-    // INC1338365 - The PI Server is online but cannot indicate if all data for the task run is
-    // available. Try and prevent incomplete data from being returned from the PI Server
-    // by pausing to allow PI Server indexing to complete before sending a message for each plot
-    // for which data is to be retrieved.
-    //
-    // This should prevent incomplete data retrieval in most cases and is a workaround
-    // until a more robust long term solution can be implemented.
+    await pauseBeforeSendingOutgoingMessagesIfNeeded(context, taskRunData)
+  }
+}
+
+async function pauseBeforeSendingOutgoingMessagesIfNeeded (context, taskRunData) {
+  // INC1338365 - The PI Server is online but cannot indicate if all data for a task run
+  // involving one or more plots is available. If no TIMESERIES_HEADER record existed for the
+  // task run at the start of the current message processing attempt, try and prevent incomplete
+  // data from being returned from the PI Server by pausing to allow PI Server indexing to
+  // complete before sending a message for each plot for which data is to be retrieved.
+  // A pause for PI Server indexing to complete has happened already if a TIMESERIES_HEADER
+  // record existed for the task run at the start of the current message processing attempt,
+  //
+  // This should prevent incomplete data retrieval in most cases and is a workaround
+  // until a more robust long term solution can be implemented.
+  if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
     await sleep(sleepTypeConfig[PAUSE_BEFORE_SENDING_OUTGOING_MESSAGES])
   }
 }
@@ -104,7 +115,7 @@ async function sleep (sleepType) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve()
-    }, process.env[sleepType.environmentVariableName] || sleepType.defaultDuration)
+    }, getEnvironmentVariableAsAbsoluteInteger(sleepType.environmentVariableName) || sleepType.defaultDuration)
   })
 }
 

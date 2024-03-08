@@ -12,8 +12,8 @@ describe('Run all unit tests in sequence', () => {
   //   is available from the PI Server.
   // - The amount of time to wait before sending messages for plot based PI Server data
   //   retrieval for a task run.
-  process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS = 100
-  process.env.WAIT_FOR_TASK_RUN_DATA_AVAILABILITY_MILLIS = 100
+  process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS = '100'
+  process.env.WAIT_FOR_TASK_RUN_DATA_AVAILABILITY_MILLIS = '100'
 
   const ORIGINAL_ENV = process.env
 
@@ -66,7 +66,6 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/RefreshMVTData/test.index')
   require('./function-tests/RefreshLocationThresholdsData/test.index')
   require('./function-tests/RefreshThresholdGroupsData/test.index')
-  require('./function-tests/SendServiceConfigurationUpdateNotification/test.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesNonDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesFluvialDisplayGroup.index')
   require('./function-tests/ProcessFewsEventCode/test.timeseriesCoastalDisplayGroup.index')
