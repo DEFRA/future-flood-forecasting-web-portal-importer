@@ -72,8 +72,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(result.recordset[0].count).toBe(expectedNumberOfStagingExceptions)
   }
 
-  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
-    await processMessage(messageKey, sendMessageAsString)
+  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString, mockResponse) {
+    await processMessage(messageKey, sendMessageAsString, mockResponse)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
     const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages.commonMessageData.startTime} UTC`))

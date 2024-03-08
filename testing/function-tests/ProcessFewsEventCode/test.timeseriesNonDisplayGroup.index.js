@@ -6,6 +6,8 @@ const Context = require('../mocks/defaultContext')
 const moment = require('moment')
 const sql = require('mssql')
 
+jest.mock('@azure/service-bus')
+
 module.exports = describe('Tests for import timeseries non-display groups', () => {
   let context
   let processFewsEventCodeTestUtils
@@ -69,6 +71,18 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
       await commonNonDisplayGroupTimeseriesTestUtils.beforeEach(pool)
+      const azureServiceBus = require('@azure/service-bus')
+      azureServiceBus.ServiceBusAdministrationClient = jest.fn().mockImplementation(() => {
+        return {
+          getQueue: async queueName => {
+            return new Promise((resolve, reject) => {
+              resolve({
+                maxDeliveryCount: 2
+              })
+            })
+          }
+        }
+      })
     })
 
     afterAll(async () => {
@@ -161,7 +175,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
     })
-    it('should send a message for replay after a customised pause when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been exceeded', async () => {
+    it('should send a message for replay after a customised pause when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been reached', async () => {
       const expectedError = new Error('All data is not available for task run ukeafffsmc00:000000001 (workflow Test_Workflow1)')
       const mockResponse = {
         data: 'Partial response data',
@@ -170,6 +184,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
+    })
+    it('should create a timeseries header and create a message for a single filter based task run after a customised pause when the PI Server indicates that all data for the task run is not available and the maximum number of replays has been reached', async () => {
+      const mockResponse = {
+        data: 'Partial response data',
+        status: 206
+      }
+      context.bindingData.deliveryCount = 1
+      const messageKey = 'singleFilterTaskRun'
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey], null, mockResponse)
     })
     it('should create a staging exception when the PI Server returns a HTTP 206 status code and a Content-Range header', async () => {
       const messageKey = 'singleFilterNonForecast'

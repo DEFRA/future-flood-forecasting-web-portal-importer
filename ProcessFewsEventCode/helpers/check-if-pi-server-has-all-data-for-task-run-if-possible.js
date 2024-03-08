@@ -1,8 +1,8 @@
 const { getEnvironmentVariableAsAbsoluteInteger } = require('../../Shared/utils')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
-
 const axios = require('axios')
+const azureServiceBus = require('@azure/service-bus')
 
 const PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE = 'pauseBeforeReplayingIncomingMessage'
 const PAUSE_BEFORE_SENDING_OUTGOING_MESSAGES = 'pauseBeforeSendingOutgoingMessages'
@@ -98,8 +98,26 @@ async function checkIfAllDataForTaskRunIsAvailable (context, taskRunData, fewsRe
   context.log(`Checking PI Server data availability for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
   if (fewsResponse.status === 206) {
     await checkResponseHeaders(context, taskRunData, fewsResponse)
+    await replayMessageIfNeeded(context, taskRunData)
+  }
+}
+
+async function replayMessageIfNeeded (context, taskRunData) {
+  const serviceBusAdministrationClient =
+    new azureServiceBus.ServiceBusAdministrationClient(process.env.AzureWebJobsServiceBus)
+
+  const fewsEventCodeQueue =
+    await serviceBusAdministrationClient.getQueue('fews-eventcode-queue')
+
+  if (context.bindingData.deliveryCount < (fewsEventCodeQueue.maxDeliveryCount - 1)) {
+    // INC1338365 - The message delivery count (zero based) is less than the maximum delivery count,
+    // so pause before replaying the message.
     await sleep(sleepTypeConfig[PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE])
     throw new Error(`All data is not available for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+  } else {
+    // INC1338365 -This is the final attempt at replaying the message and all data for the filter based
+    // task run is not available. Allow message processing to continue so that available
+    // data can be loaded.
   }
 }
 
