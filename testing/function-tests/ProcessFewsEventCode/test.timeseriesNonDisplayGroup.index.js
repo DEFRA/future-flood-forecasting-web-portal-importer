@@ -184,6 +184,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
       const messageKey = 'singleFilterNonForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
+      // Perform the test again to provide test coverage for lazy instantiation of ServiceBusAdministrationClient.
+      await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown(messageKey, expectedError, mockResponse)
     })
     it('should create a timeseries header and create a message for a single filter based task run after a customised pause when the PI Server indicates that all data for the task run is not available and the maximum number of replays has been reached', async () => {
       const mockResponse = {
