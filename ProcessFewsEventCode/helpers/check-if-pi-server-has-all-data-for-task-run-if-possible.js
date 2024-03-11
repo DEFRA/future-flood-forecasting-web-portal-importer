@@ -56,6 +56,7 @@ async function pauseBeforeSendingOutgoingMessagesIfNeeded (context, taskRunData)
   // This should prevent incomplete data retrieval in most cases and is a workaround
   // until a more robust long term solution can be implemented.
   if (!taskRunData.timeseriesHeaderExistsForTaskRun) {
+    context.log(`Pausing to allow PI Server indexing to complete before sending outgoing message(s) for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
     await sleep(sleepTypeConfig[PAUSE_BEFORE_SENDING_OUTGOING_MESSAGES])
   }
 }
@@ -93,7 +94,7 @@ function getFragments (context, taskRunData) {
     // if all data for the task run is available from the PI Server before sending outgoing
     // messages.
     fewsPiUrlFragment = `timeseries?taskRunIds=${taskRunData.taskRunId}&onlyHeaders=true&`
-    errorMessageFragment = `all data for ${taskRunData.taskRunId} is available`
+    errorMessageFragment = `all data for task run ${taskRunData.taskRunId} is available`
   } else {
     // If data needs to be retrieved using one or more plots, the PI Server
     // cannot indicate if all data for the task run is available yet, so just prepare
