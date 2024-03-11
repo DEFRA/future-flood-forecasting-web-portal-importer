@@ -5,7 +5,6 @@ const { executePreparedStatementInTransaction } = require('../../Shared/transact
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const { minifyAndGzip } = require('../../Shared/utils')
 const processImportError = require('./process-import-error')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 
 module.exports = async function (context, taskRunData) {
   await retrieveFewsData(context, taskRunData)
@@ -50,7 +49,6 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
   await logTaskRunProgress(context, taskRunData, 'Retrieving data')
   const fewsResponse = await axios(axiosConfig)
   await logTaskRunProgress(context, taskRunData, 'Retrieved data')
-  await checkForPartialResponseFromPiServer(context, taskRunData, fewsResponse)
   taskRunData.fewsData = await minifyAndGzip(fewsResponse.data)
   await logTaskRunProgress(context, taskRunData, 'Compressed data')
 }
@@ -119,50 +117,6 @@ async function loadFewsData (context, preparedStatement, taskRunData) {
   await logTaskRunProgress(context, taskRunData, 'Loaded data')
 }
 
-async function checkForPartialResponseFromPiServer (context, taskRunData, fewsResponse) {
-  // INC1338365 - If the PI Server indicates that a partial response has been returned, this
-  // should mean that PI Server indexing has not completed. Use defensive programming to check
-  // for the Content-Range HTTP response header included with standard use of a HTTP 206 response.
-  // If the header is not present, pause for a configurable amount of time (to try and prevent
-  // the PI Server being overloaded) and then send the message for replay.
-  //
-  // If the Content-Range HTTP response header is present, this is unexpecteed (and should never
-  // happen because PI Server requests never include a Range HTTP request header). In this case
-  // throw a TimeseriesStagingError so that a TIMESERIES_STAGING_EXCEPTION record is created.
-  await logTaskRunProgress(context, taskRunData, 'Checking for partial response data')
-  if (fewsResponse.status === 206) {
-    checkResponseHeaders(context, taskRunData, fewsResponse)
-    await sleep()
-    throw new Error(`Partial PI Server response received for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
-  }
-}
-
-function checkResponseHeaders (context, taskRunData, fewsResponse) {
-  if (fewsResponse?.headers?.['Content-Range']) {
-    const errorDescription = 'Received unexpected Content-Range header in PI Server response'
-    const errorData = {
-      transaction: taskRunData.transaction,
-      sourceId: taskRunData.sourceId,
-      sourceType: taskRunData.sourceType,
-      csvError: false,
-      csvType: null,
-      fewsParameters: taskRunData.fewsParameters,
-      timeseriesHeaderId: taskRunData.timeseriesHeaderId,
-      payload: taskRunData.message,
-      description: errorDescription
-    }
-    throw new TimeseriesStagingError(errorData, errorDescription)
-  }
-}
-
 async function logTaskRunProgress (context, taskRunData, messageContext) {
   context.log(`${messageContext} for ${taskRunData.sourceTypeDescription} ID ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
-}
-
-async function sleep () {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve()
-    }, process.env.PI_SERVER_CALL_DELAY_MILLIS || 2000)
-  })
 }

@@ -12,6 +12,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     } else {
       // Ensure the mocked PI Server is online.
       axios.get.mockReturnValueOnce({
+        status: 200,
         data: {
           key: 'Filter data'
         }
@@ -71,8 +72,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(result.recordset[0].count).toBe(expectedNumberOfStagingExceptions)
   }
 
-  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString) {
-    await processMessage(messageKey, sendMessageAsString)
+  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString, mockResponse) {
+    await processMessage(messageKey, sendMessageAsString, mockResponse)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
     const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages.commonMessageData.startTime} UTC`))
@@ -158,8 +159,12 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     await checkExpectedActiveStagingExceptionsForTaskRun(taskRunId, expectedNumberOfStagingExceptions || 0)
   }
 
-  this.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated = async function (messageKey, expectedErrorDescription) {
-    await processMessage(messageKey)
+  this.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated = async function (messageKey, expectedErrorDescription, mockResponse) {
+    if (mockResponse) {
+      await processMessage(messageKey, taskRunCompleteMessages[messageKey], mockResponse)
+    } else {
+      await processMessage(messageKey)
+    }
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input ? taskRunCompleteMessages[messageKey].input.source : null
     const request = new sql.Request(pool)
     const result = await request.query(`
@@ -190,9 +195,25 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
   }
 
-  this.processMessageAndCheckExceptionIsThrown = async function (messageKey, mockErrorResponse) {
-    axios.get.mockRejectedValue(mockErrorResponse)
-    await expect(messageFunction(context, taskRunCompleteMessages[messageKey])).rejects.toThrow(mockErrorResponse)
+  this.processMessageAndCheckExceptionIsThrown = async function (messageKey, mockError, mockResponse) {
+    // If there is no mock response to return, ensure the mocked PI Server call responds by
+    // rejecting a promise using mockError.
+    if (!mockResponse) {
+      axios.get.mockRejectedValue(mockError)
+    }
+
+    if (!mockResponse) {
+      // If there is no mock response to return, ensure the mocked PI Server call responds by
+      // rejecting a promise using mockError.
+      await expect(messageFunction(context, taskRunCompleteMessages[messageKey])).rejects.toThrow(mockError)
+    } else {
+      // If there is a mock response to return (such as when the handling of a HTTP 206 response
+      // code indicating incomplete PI Server indexing is being tested), call processMessages
+      // to ensure the PI Server response is mocked correctly. The mocked PI Server response
+      // should cause the rejection of a promise using mockError (in the case of a HTTP 206
+      // response code, the error causes message replay to be attempted).
+      await expect(processMessage(messageKey, mockError, mockResponse)).rejects.toThrow(mockError)
+    }
   }
 
   this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
