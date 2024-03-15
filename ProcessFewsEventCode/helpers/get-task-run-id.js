@@ -1,6 +1,7 @@
 const extract = require('./extraction-utils')
 
-const taskRunIdRegex = /\sid(?:\s*=?\s*)([^\s)]*)(?:\s*\)?)/i
+// INC2158095 - Allow correct matching when a workflow ID begins with the characters id (case insensitive).
+const taskRunIdRegex = /\s(?:(?:with\s+id\s*)|(?:id\s*=\s*))([^\s)]*)(?:\s*\)?)/i
 const taskRunIdText = 'task run ID'
 
 module.exports = async function (context, taskRunData) {
