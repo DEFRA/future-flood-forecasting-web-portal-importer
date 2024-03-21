@@ -1,6 +1,9 @@
 const { logger } = require('defra-logging-facade')
 
 module.exports = function () {
+  this.bindingData = {
+    deliveryCount: 0
+  }
   this.bindings = {}
   this.bindingDefinitions = []
   this.done = jest.fn(logger.info('context.done() called'))

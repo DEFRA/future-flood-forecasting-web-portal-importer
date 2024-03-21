@@ -73,6 +73,11 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       approved: true,
       outgoingPlotIds: ['Test_Partial_Taskrun_Span_Plot'],
       outgoingFilterIds: ['Span_Filter']
+    },
+    idleWorkflowForecast: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Idle Test Workflow Plot']
     }
   }
 
@@ -202,6 +207,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
         sourceType: 'P'
       }]
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, updatedExpectedData)
+    })
+    it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run of a workflow with an identifer beginning with the characters id (case insensitive)', async () => {
+      const messageKey = 'idleWorkflowForecast'
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
   })
 

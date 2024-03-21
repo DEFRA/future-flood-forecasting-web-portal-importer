@@ -25,7 +25,8 @@ module.exports = function (pool, messages) {
         ('Partial_Load_Span_Workflow', 'Test Span Plot 9c', 'Test_Location 9b'),
         ('Span_Workflow_Default_Offset', 'SpanPlot', 'Test_Location'),
         ('Span_Workflow_Multiple_Offsets', 'Multiple Offsets Plot', 'Test_Location'),
-        ('Test_Partial_Taskrun_Span_Workflow', 'Test_Partial_Taskrun_Span_Plot', 'Test_Partial_Taskrun_Location')
+        ('Test_Partial_Taskrun_Span_Workflow', 'Test_Partial_Taskrun_Span_Plot', 'Test_Partial_Taskrun_Location'),
+        ('Idle_Test_Workflow', 'Idle Test Workflow Plot', 'Test Idle Workflow Location')
     `)
   }
   this.beforeEach = async function () {
