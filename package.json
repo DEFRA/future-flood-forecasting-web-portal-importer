@@ -17,7 +17,7 @@
     "moment": "^2.29.4",
     "mssql": "^9.1.1",
     "neat-csv": "^5.2.0",
-    "node-fetch": "^2.6.12"
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "jest": "^29.5.0",
