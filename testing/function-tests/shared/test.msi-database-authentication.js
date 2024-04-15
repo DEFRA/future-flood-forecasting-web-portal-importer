@@ -2,7 +2,7 @@ module.exports = describe('Test configuration for MSI database authentication', 
   describe('MSI database authentication', () => {
     beforeAll(async () => {
       // Reset modules so that ../../../Shared/utils.js is reloaded without the
-      // NODE_ENV environment set. This increases test coverage.
+      // NODE_ENV environment variable set. This increases test coverage.
       jest.resetModules()
     })
     it('should be configured when enabled', async () => {
