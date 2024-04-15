@@ -1,5 +1,5 @@
 const ConnectionPool = require('../Shared/connection-pool')
-const { logger } = require('defra-logging-facade')
+const { logger } = require('../Shared/utils')
 const sql = require('mssql')
 const lockValue = parseInt(process.env.SQLDB_LOCK_TIMEOUT)
 const connectionPoolClosedMessage = 'Connection pool is closed'

@@ -1,13 +1,18 @@
-const ConnectionPool = require('../../../Shared/connection-pool')
-
 module.exports = describe('Test configuration for MSI database authentication', () => {
   describe('MSI database authentication', () => {
+    beforeAll(async () => {
+      // Reset modules so that ../../../Shared/utils.js is reloaded without the
+      // NODE_ENV environment set. This increases test coverage.
+      jest.resetModules()
+    })
     it('should be configured when enabled', async () => {
       let pool
+      delete process.env.NODE_ENV
       process.env.AUTHENTICATE_WITH_MSI = true
       process.env.MSI_ENDPOINT = 'msi-endopoint-id'
       process.env.MSI_SECRET = 'msi-secret'
       try {
+        const ConnectionPool = require('../../../Shared/connection-pool')
         const connectionPool = new ConnectionPool()
         pool = connectionPool.pool
         // Attempting MSI based authentication in a unit test environment

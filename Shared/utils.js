@@ -1,6 +1,6 @@
 const JSONStream = require('jsonstream-next')
 const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
-const { logger } = require('defra-logging-facade')
+const pino = require('pino')
 const { pipeline, Transform } = require('stream')
 const { createGzip } = require('zlib')
 const { promisify } = require('util')
@@ -9,6 +9,21 @@ const moment = require('moment')
 
 const LATEST = 'latest'
 const PREVIOUS = 'previous'
+
+const nonProductionLoggerOptions = {
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true
+    }
+  }
+}
+const loggerOptions =
+  process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+    ? nonProductionLoggerOptions
+    : {}
+
+const logger = pino(loggerOptions)
 
 const self = module.exports = {
   isBoolean: function (value) {
@@ -75,7 +90,7 @@ const self = module.exports = {
   },
   getEnvironmentVariableAsPositiveIntegerInRange: function (config) {
     let environmentVariableAsInteger = self.getEnvironmentVariableAsAbsoluteInteger(config.environmentVariableName)
-    const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : logger.warn.bind(logger)
+    const loggingFunction = config.context ? config.context.log.warn.bind(config.context) : self.logger.warn.bind(self.logger)
     if (!isNumericEnvironmentVariableRangeDefined(config, loggingFunction)) {
       environmentVariableAsInteger = undefined
     }
@@ -109,7 +124,8 @@ const self = module.exports = {
   },
   logMessageForTaskRunPlotOrFilter: function (context, taskRunData, prefix, suffix) {
     context.log(`${prefix} for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) ${suffix || ''}`)
-  }
+  },
+  logger
 }
 
 function addTaskRunCompletionPropertiesFromQueryResultToTaskRunData (taskRunData, result, propertyNamePrefix, fallbackFunction) {

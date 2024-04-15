@@ -1,4 +1,4 @@
-const { logger } = require('defra-logging-facade')
+const { logger } = require('../../../Shared/utils')
 
 module.exports = function () {
   this.bindingData = {
