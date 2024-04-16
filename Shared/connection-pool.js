@@ -1,6 +1,5 @@
 const sql = require('mssql')
-const { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange } = require('./utils')
-const { logger } = require('defra-logging-facade')
+const { getEnvironmentVariableAsBoolean, getEnvironmentVariableAsPositiveIntegerInRange, logger } = require('./utils')
 const hostJson = require('../host.json')
 
 module.exports = function () {
