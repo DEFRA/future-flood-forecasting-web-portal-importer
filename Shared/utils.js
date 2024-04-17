@@ -1,3 +1,4 @@
+const axios = require('axios')
 const JSONStream = require('jsonstream-next')
 const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
 const pino = require('pino')
@@ -181,3 +182,7 @@ function isInteger (label, value, loggingFunction) {
   }
   return returnValue
 }
+
+// Set a default timeout for all PI Server calls in case the PI Server is online
+// but unresponsive.
+axios.defaults.timeout = self.getEnvironmentVariableAsAbsoluteInteger('PI_SERVER_CALL_TIMEOUT') || 30000

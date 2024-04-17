@@ -15,6 +15,11 @@ describe('Run all unit tests in sequence', () => {
   process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS = '100'
   process.env.WAIT_FOR_TASK_RUN_DATA_AVAILABILITY_MILLIS = '100'
 
+  // Configure a custom PI Server call timeout to increase test coverage.
+  // This will not be used by PI Server invocations made during unit tests
+  // as PI Server responses are mocked.
+  process.env.PI_SERVER_CALL_TIMEOUT = '10000'
+
   const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
