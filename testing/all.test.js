@@ -82,8 +82,13 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ImportFromFews/test.timeseriesCoastalDisplayGroup.index')
   require('./function-tests/ImportFromFews/test.timeseriesIgnoredWorkflow.index')
   require('./function-tests/ReplayImportFromFews/test.index')
+  require('./function-tests/shared/test.transaction-helper')
   require('./function-tests/shared/test.connection-analysis.index')
-  require('./function-tests/shared/test.connection-pool-management.index')
   require('./function-tests/shared/test.invalid-environment-variable-based-configuration')
   require('./function-tests/shared/test.msi-database-authentication')
+  // Run connection pool management tests last as the connection pool closure function is tested.
+  // This resets module variables that cause subsequent tests using pooled connection based queries
+  // to fail even if modules are reset by Jest. Resetting modules does not appear to cause Jest
+  // to run the IIFE that initialises the connection pool.
+  require('./function-tests/shared/test.connection-pool-management.index')
 })

@@ -83,7 +83,10 @@ async function endTransaction (context, transaction) {
     if (transaction && !transaction._aborted && !transaction._rollbackRequested) {
       await resetConnectionAndEndTransaction(context, transaction, transaction.commit.bind(transaction))
     }
-  } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
+  } catch (err) {
+    context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
+    throw err
+  }
 }
 
 async function closeConnectionPoolInternal () {
