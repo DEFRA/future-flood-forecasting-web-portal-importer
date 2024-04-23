@@ -29,7 +29,7 @@ module.exports = describe('Test connection pool management', () => {
 
     afterAll(async () => {
       if (pool) {
-        pool.close()
+        await pool.close()
       }
     })
 

@@ -43,11 +43,9 @@ module.exports = {
       context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`)
       throw err
     } finally {
-      try {
-        if (preparedStatement && preparedStatement.prepared) {
-          await preparedStatement.unprepare()
-        }
-      } catch (err) { context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`) }
+      if (preparedStatement && preparedStatement.prepared) {
+        await preparedStatement.unprepare()
+      }
     }
   }
 }
@@ -70,8 +68,8 @@ async function endTransactionIfNeeded (context, transaction) {
   if (transaction._aborted) {
     context.log.warn('The transaction has been aborted.')
   } else if (transaction._rollbackRequested) {
-    await resetConnectionAndEndTransaction(context, transaction)
     context.log.warn('Transaction rollback has been requested.')
+    await resetConnectionAndEndTransaction(context, transaction)
   } else {
     await resetConnectionAndEndTransaction(context, transaction, transaction.rollback.bind(transaction))
     context.log.warn('The transaction has been rolled back.')
@@ -83,7 +81,10 @@ async function endTransaction (context, transaction) {
     if (transaction && !transaction._aborted && !transaction._rollbackRequested) {
       await resetConnectionAndEndTransaction(context, transaction, transaction.commit.bind(transaction))
     }
-  } catch (err) { context.log.error(`Transaction-helper cleanup error: '${err.message}'.`) }
+  } catch (err) {
+    context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
+    throw err
+  }
 }
 
 async function closeConnectionPoolInternal () {
