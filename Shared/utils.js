@@ -185,4 +185,4 @@ function isInteger (label, value, loggingFunction) {
 
 // Set a default timeout for all PI Server calls in case the PI Server is online
 // but unresponsive.
-axios.defaults.timeout = self.getEnvironmentVariableAsAbsoluteInteger('PI_SERVER_CALL_TIMEOUT') || 30000
+axios.defaults.timeout = self.getEnvironmentVariableAsAbsoluteInteger('PI_SERVER_CALL_TIMEOUT') || 60000
