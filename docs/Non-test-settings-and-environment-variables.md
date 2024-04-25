@@ -163,4 +163,4 @@ accordingly.
 | CONFIG_AUTHORIZATION | If resources specified through URL related app settings are protected, this app setting must be used to provide access. The value provides access to a token used in a HTTP Authorization header. |
 | SERVICE_CONFIG_UPDATE_DETECTION_LIMIT | The maximum number of seconds (in total) since all or workflow configuration data has been updated for a core forecasting engine service configuration update to be detected (defaults to 300). Detection for all configuration data causes a message to be placed on **fews-service-configuration-update-completed-queue**. Detection for workflow configuration data causes replay of failed messages not caused by workflow CSV related configuration errors. |
 | SERVICE_CONFIGURATION_UPDATE_NOTIFICATION_URL | The URL that service configuration update notifications should be sent to. |
-| PI_SERVER_CALL_TIMEOUT | Timeout in milliseconds for calls to to the core forecasting engine REST API (defaults to 30000) |
+| PI_SERVER_CALL_TIMEOUT | Timeout in milliseconds for calls to the core forecasting engine REST API (defaults to 60000) |
