@@ -68,14 +68,15 @@ async function checkIfPiServerIsOnline (context, taskRunData) {
   // is calculated by the getFragments function.
   const fewsPiUrlRoot = `${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/`
   const { errorMessageFragment, fewsPiUrlFragment } = getFragments(context, taskRunData)
-
+  const messageFragment = `for ${taskRunData.taskRunId} of workflow ${taskRunData.workflowId}`
   try {
     const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
     const fewsResponse = await axios.get(fewsPiUrl)
+    context.log(`PI Server is online ${messageFragment}`)
     return fewsResponse
   } catch (err) {
     if (typeof err.response === 'undefined') {
-      context.log.error('PI Server is unavailable')
+      context.log.error(`PI Server is unavailable ${messageFragment}`)
     } else {
       const piServerErrorMessage = getPiServerErrorMessage(context, err)
       context.log.error(`An unexpected error occurred when checking if ${errorMessageFragment} - ${err.message} (${piServerErrorMessage})`)
