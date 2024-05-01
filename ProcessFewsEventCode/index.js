@@ -104,6 +104,7 @@ async function processOutgoingMessagesIfPossible (context, taskRunData) {
     await deactivateObsoleteStagingExceptionsBySourceFunctionAndWorkflowId(context, taskRunData)
     await deactivateStagingExceptionBySourceFunctionAndTaskRunId(context, taskRunData)
     await deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters(context, taskRunData)
+    context.log(`Completed exception deactivation processing for task run ${taskRunData.taskRunId} of workflow ${taskRunData.workflowId}`)
 
     // Throw an exception to cause attempted message replay if the PI Server is offline
     // or it can be determined that all data for the task run is not available from the
