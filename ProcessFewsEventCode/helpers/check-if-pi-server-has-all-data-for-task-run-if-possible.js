@@ -63,7 +63,7 @@ async function pauseBeforeSendingOutgoingMessagesIfNeeded (context, taskRunData)
 
 async function checkIfPiServerIsOnline (context, taskRunData) {
   // Chek if the PI Server is online by calling a specific PI Server endpoint
-  // dependent on whether plot and/or filter data needs to be retrieved for a task run.
+  // dependent on whether plot and/or filter data needs to be retrieved for the task run.
   // The PI Server endpoint to be called and any associated endpoint specific error messaging
   // is calculated by the getFragments function.
   const fewsPiUrlRoot = `${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/`
@@ -72,7 +72,11 @@ async function checkIfPiServerIsOnline (context, taskRunData) {
   try {
     const fewsPiUrl = encodeURI(`${fewsPiUrlRoot}${fewsPiUrlFragment}documentFormat=PI_JSON`)
     context.log(`Checking if PI Server is online ${messageFragment}`)
-    const fewsResponse = await axios.get(fewsPiUrl)
+    // INC2182094 - Use a HTTP HEAD request in preference to a HTTP GET request because
+    // response data is not needed to determine if the PI Server is online. Additionally,
+    // if filter data needs to be retrieved for the task run, only the HTTP response code is
+    // required to determine if all data for the task run is avaliable.
+    const fewsResponse = await axios.head(fewsPiUrl)
     context.log(`PI Server is online ${messageFragment}`)
     return fewsResponse
   } catch (err) {
@@ -95,7 +99,11 @@ function getFragments (context, taskRunData) {
     // If data needs to be retrieved using one or more filters, prepare to check
     // if all data for the task run is available from the PI Server before sending outgoing
     // messages.
-    fewsPiUrlFragment = `timeseries?taskRunIds=${taskRunData.taskRunId}&onlyHeaders=true&`
+    // INC2182094 - The archive server is queried by default when asking if all data for
+    // the task run is available. As response times can be slow when querying the archive
+    // server using a task run ID, use the importFromExternalDataSource parameter to prevent
+    // the archive server from being queried.
+    fewsPiUrlFragment = `timeseries?taskRunIds=${taskRunData.taskRunId}&importFromExternalDataSource=false&`
     errorMessageFragment = `all data for task run ${taskRunData.taskRunId} is available`
   } else {
     // If data needs to be retrieved using one or more plots, the PI Server

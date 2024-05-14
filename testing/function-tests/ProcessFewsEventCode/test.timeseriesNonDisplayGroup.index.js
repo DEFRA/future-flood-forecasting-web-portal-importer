@@ -168,7 +168,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       delete process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS
       const expectedError = new Error('All data is not available for task run ukeafffsmc00:000000001 (workflow Test_Workflow1)')
       const mockResponse = {
-        data: 'Partial response data',
         status: 206
       }
 
@@ -178,7 +177,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should send a message for replay after a customised pause when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been reached', async () => {
       const expectedError = new Error('All data is not available for task run ukeafffsmc00:000000001 (workflow Test_Workflow1)')
       const mockResponse = {
-        data: 'Partial response data',
         status: 206
       }
 
@@ -189,7 +187,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
     it('should create a timeseries header and create a message for a single filter based task run after a customised pause when the PI Server indicates that all data for the task run is not available and the maximum number of replays has been reached', async () => {
       const mockResponse = {
-        data: 'Partial response data',
         status: 206
       }
       context.bindingData.deliveryCount = 1
@@ -200,7 +197,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecast'
       const mockResponse = {
         headers: { 'Content-Range': 'Mock content range' },
-        data: 'Partial response data',
         status: 206
       }
       const expectedErrorDescription = 'Received unexpected Content-Range header when checking PI Server data availability for task run ukeafffsmc00:000000001'

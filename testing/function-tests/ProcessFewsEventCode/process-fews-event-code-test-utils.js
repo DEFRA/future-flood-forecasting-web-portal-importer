@@ -8,14 +8,11 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessage = async function (messageKey, sendMessageAsString, mockResponse) {
     if (mockResponse) {
-      axios.get.mockReturnValueOnce(mockResponse)
+      axios.head.mockReturnValueOnce(mockResponse)
     } else {
       // Ensure the mocked PI Server is online.
-      axios.get.mockReturnValueOnce({
-        status: 200,
-        data: {
-          key: 'Filter data'
-        }
+      axios.head.mockReturnValueOnce({
+        status: 200
       })
     }
     const message = sendMessageAsString ? JSON.stringify(taskRunCompleteMessages[messageKey]) : taskRunCompleteMessages[messageKey]
@@ -199,7 +196,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     // If there is no mock response to return, ensure the mocked PI Server call responds by
     // rejecting a promise using mockError.
     if (!mockResponse) {
-      axios.get.mockRejectedValue(mockError)
+      axios.head.mockRejectedValue(mockError)
     }
 
     if (!mockResponse) {
