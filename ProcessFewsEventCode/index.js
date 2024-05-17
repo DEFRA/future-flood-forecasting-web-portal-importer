@@ -18,6 +18,7 @@ const getWorkflowId = require('./helpers/get-workflow-id')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const isForecast = require('./helpers/is-forecast')
 const { logObsoleteTaskRunMessage } = require('../Shared/utils')
+const { publishMessages } = require('../Shared/service-bus-helper')
 const moment = require('moment')
 
 const sourceTypeLookup = {
@@ -38,6 +39,7 @@ module.exports = async function (context, message) {
   const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
   context.log(`Processing core engine message: ${messageToLog}`)
   await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message)
+  await publishScheduledMessagesIfNeeded(context)
   // context.done() not required in async functions
 }
 
@@ -186,5 +188,23 @@ async function processReasonForNoOutgoingMessages (context, taskRunData) {
     // - staging has no reference data listed for the taskRun workflowId
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
     await createStagingException(context, taskRunData)
+  }
+}
+
+async function publishScheduledMessagesIfNeeded (context) {
+  const scheduledMessages = context.bindings.importFromFews.filter(message => message.scheduledEnqueueTimeUtc)
+
+  if (scheduledMessages?.length > 0) {
+    // https://github.com/Azure/Azure-Functions/issues/454
+    // Scheduled messages cannot be published to Azure Service Bus using an Azure Function
+    // output binding. Scheduled messages need to be published manually.
+    context.log('Publishing scheduled messages manually')
+    await publishMessages({
+      context,
+      destinationName: 'fews-import-queue',
+      fn: () => context.bindings.importFromFews
+    })
+    // Prevent outgoing messages from being published using the output binding.
+    context.bindings.importFromFews = []
   }
 }
