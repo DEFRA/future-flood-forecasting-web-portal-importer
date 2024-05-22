@@ -1,14 +1,17 @@
 const axios = require('axios')
 const moment = require('moment')
 const sql = require('mssql')
+const { getEnvironmentVariableAsAbsoluteInteger } = require('../../../Shared/utils')
 const messageFunction = require('../../../ProcessFewsEventCode/index')
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+const TASK_RUN_COMPLETION_MESSAGE_DATE_AND_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+
 jest.mock('axios')
 module.exports = function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
-  const processMessage = async function (messageKey, sendMessageAsString, mockResponse) {
-    if (mockResponse) {
-      axios.head.mockReturnValueOnce(mockResponse)
+  const processMessage = async function (messageKey, sendMessageAsString, axiosMockResponse) {
+    if (axiosMockResponse) {
+      axios.head.mockReturnValueOnce(axiosMockResponse)
     } else {
       // Ensure the mocked PI Server is online.
       axios.head.mockReturnValueOnce({
@@ -16,7 +19,27 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       })
     }
     const message = sendMessageAsString ? JSON.stringify(taskRunCompleteMessages[messageKey]) : taskRunCompleteMessages[messageKey]
+
+    if (message?.taskRunTimesMillisAdjustmentToRelectTimeOfTest) {
+      const nowUtc = moment().utc()
+
+      const adjustedTaskRunStartTime =
+        moment(nowUtc).subtract(message.taskRunTimesMillisAdjustmentToRelectTimeOfTest, 'milliseconds').format(TASK_RUN_COMPLETION_MESSAGE_DATE_AND_TIME_FORMAT)
+
+      const adjustedTaskRunCompletionTime =
+        moment(nowUtc).add(message.taskRunTimesMillisAdjustmentToRelectTimeOfTest, 'milliseconds').format(TASK_RUN_COMPLETION_MESSAGE_DATE_AND_TIME_FORMAT)
+
+      message.input.description =
+        message.input.description.replace(`Start time: ${taskRunCompleteMessages.commonMessageData.startTime}`, `Start time: ${adjustedTaskRunStartTime}`)
+
+      message.input.description =
+        message.input.description.replace(`End time: ${taskRunCompleteMessages.commonMessageData.completionTime}`, `End time: ${adjustedTaskRunCompletionTime}`)
+
+      message.input.startTime = adjustedTaskRunStartTime
+      message.input.endTime = adjustedTaskRunCompletionTime
+    }
     await messageFunction(context, message)
+    return message
   }
 
   const checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated = async function (expectedNumberOfTimeseriesHeaderRecords, expectedNumberOfOutgoingMessages) {
@@ -69,12 +92,39 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     expect(result.recordset[0].count).toBe(expectedNumberOfStagingExceptions)
   }
 
-  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString, mockResponse) {
-    await processMessage(messageKey, sendMessageAsString, mockResponse)
+  this.processMessageAndCheckDataIsCreated = async function (messageKey, expectedData, sendMessageAsString, axiosMockResponse) {
+    const outgoingMessageFilterDelay =
+      getEnvironmentVariableAsAbsoluteInteger(process.env.WAIT_FOR_TASK_RUN_FILTER_DATA_AVAILABILITY_MILLIS) || 5000
+
+    const outgoingMessagePlotDelay =
+      getEnvironmentVariableAsAbsoluteInteger(process.env.WAIT_FOR_TASK_RUN_PLOT_DATA_AVAILABILITY_MILLIS) || 15000
+
+    const azureServiceBus = require('@azure/service-bus')
+    const sendMessages = jest.fn().mockImplementation(messages => {})
+    const serviceBusClientClose = jest.fn()
+    const serviceBusSenderClose = jest.fn()
+
+    azureServiceBus.ServiceBusClient = jest.fn().mockImplementation(connectionString => {
+      return {
+        close: serviceBusClientClose,
+        createSender: jest.fn().mockImplementation(destinationName => {
+          return {
+            close: serviceBusSenderClose,
+            sendMessages
+          }
+        })
+      }
+    })
+
+    const message = await processMessage(messageKey, sendMessageAsString, axiosMockResponse)
     const messageDescription = taskRunCompleteMessages[messageKey].input.description
     const messageDescriptionIndex = messageDescription.match(/Task\s+run/) ? 2 : 1
-    const expectedTaskRunStartTime = moment(new Date(`${taskRunCompleteMessages.commonMessageData.startTime} UTC`))
-    const expectedTaskRunCompletionTime = moment(new Date(`${taskRunCompleteMessages.commonMessageData.completionTime} UTC`))
+
+    const expectedTaskRunStartTime =
+      moment(new Date(`${message?.input?.startTime ?? taskRunCompleteMessages.commonMessageData.startTime} UTC`))
+    const expectedTaskRunCompletionTime =
+      moment(new Date(`${message?.input?.endTime ?? taskRunCompleteMessages.commonMessageData.completionTime} UTC`))
+
     const expectedTaskRunId = taskRunCompleteMessages[messageKey].input.source
     const expectedWorkflowId = taskRunCompleteMessages[messageKey].input.description.split(/\s+/)[messageDescriptionIndex]
     const request = new sql.Request(pool)
@@ -105,16 +155,31 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       // Check the incoming message has been captured correctly.
       expect(JSON.parse(result.recordset[0].message)).toEqual(taskRunCompleteMessages[messageKey])
 
-      const outgoingPlotIds =
-        context.bindings.importFromFews.filter(message => message.plotId)
-          .map(message => message.plotId)
+      // Check for correct outgoing message processing.
+      // - If outgoing messages are scheduled they should have been published to fews-import-queue manually.
+      // - If outgoing messages are not scheduled they should be on the context binding for fews-import-queue.
+      const expectedNumberOfAzureServiceBusMockCalls = expectedData.scheduledMessages ? 1 : 0
+      expect(azureServiceBus.ServiceBusClient).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+      expect(sendMessages).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+      expect(serviceBusSenderClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+      expect(serviceBusClientClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
 
-      const outgoingFilterIds =
-        context.bindings.importFromFews.filter(message => message.filterId)
-          .map(message => message.filterId)
+      const messageSource =
+        expectedData.scheduledMessages ? sendMessages.mock.calls[0][0] : context.bindings.importFromFews
 
-      for (const outgoingMessage of context.bindings.importFromFews) {
-        expect(outgoingMessage.taskRunId).toBe(expectedTaskRunId)
+      const outgoingPlotIdFunction =
+        expectedData.scheduledMessages ? message => message.body.plotId : message => message.plotId
+
+      const outgoingFilterIdFunction =
+        expectedData.scheduledMessages ? message => message.body.filterId : message => message.filterId
+
+      const outgoingPlotIds = messageSource.filter(outgoingPlotIdFunction).map(outgoingPlotIdFunction)
+
+      const outgoingFilterIds = messageSource.filter(outgoingFilterIdFunction).map(outgoingFilterIdFunction)
+
+      for (const outgoingMessage of messageSource) {
+        const messageBody = expectedData.scheduledMessages ? outgoingMessage.body : outgoingMessage
+        expect(messageBody.taskRunId).toBe(expectedTaskRunId)
       }
 
       expect(outgoingPlotIds.length).toBe((expectedData.outgoingPlotIds || []).length)
@@ -127,6 +192,27 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
 
       for (const expectedOutgoingFilterId of expectedData.outgoingFilterIds || []) {
         expect(outgoingFilterIds).toContainEqual(expectedOutgoingFilterId)
+      }
+
+      if (expectedData.scheduledMessages) {
+        // As scheduled messages are published manually the context binding for fews-import-queue
+        // should be an empty array.
+        expect(context.bindings.importFromFews.length).toBe(0)
+
+        // Check the scheduling of outgoing messages.
+        for (const outgoingMessage of messageSource) {
+          const outgoingMessageDelayMillis =
+            outgoingMessage.body.filterId ? outgoingMessageFilterDelay : outgoingMessagePlotDelay
+
+          const minimumScheduledEnqueueTimeUtc =
+            moment(taskRunCompletionTime).utc().subtract(message.taskRunTimesMillisAdjustmentToRelectTimeOfTest, 'milliseconds')
+              .add(outgoingMessageDelayMillis, 'milliseconds')
+
+          const maximumScheduledEnqueueTimeUtc = moment(minimumScheduledEnqueueTimeUtc).utc().add(2000, 'milliseconds')
+
+          expect(moment(outgoingMessage.scheduledEnqueueTimeUtc).utc()
+            .isBetween(minimumScheduledEnqueueTimeUtc, maximumScheduledEnqueueTimeUtc)).toBe(true)
+        }
       }
 
       const stagingExceptionConfig = {
@@ -156,9 +242,9 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     await checkExpectedActiveStagingExceptionsForTaskRun(taskRunId, expectedNumberOfStagingExceptions || 0)
   }
 
-  this.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated = async function (messageKey, expectedErrorDescription, mockResponse) {
-    if (mockResponse) {
-      await processMessage(messageKey, taskRunCompleteMessages[messageKey], mockResponse)
+  this.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated = async function (messageKey, expectedErrorDescription, axiosMockResponse) {
+    if (axiosMockResponse) {
+      await processMessage(messageKey, taskRunCompleteMessages[messageKey], axiosMockResponse)
     } else {
       await processMessage(messageKey)
     }
@@ -192,14 +278,14 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
   }
 
-  this.processMessageAndCheckExceptionIsThrown = async function (messageKey, mockError, mockResponse) {
+  this.processMessageAndCheckExceptionIsThrown = async function (messageKey, mockError, axiosMockResponse) {
     // If there is no mock response to return, ensure the mocked PI Server call responds by
     // rejecting a promise using mockError.
-    if (!mockResponse) {
+    if (!axiosMockResponse) {
       axios.head.mockRejectedValue(mockError)
     }
 
-    if (!mockResponse) {
+    if (!axiosMockResponse) {
       // If there is no mock response to return, ensure the mocked PI Server call responds by
       // rejecting a promise using mockError.
       await expect(messageFunction(context, taskRunCompleteMessages[messageKey])).rejects.toThrow(mockError)
@@ -209,16 +295,16 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       // to ensure the PI Server response is mocked correctly. The mocked PI Server response
       // should cause the rejection of a promise using mockError (in the case of a HTTP 206
       // response code, the error causes message replay to be attempted).
-      await expect(processMessage(messageKey, mockError, mockResponse)).rejects.toThrow(mockError)
+      await expect(processMessage(messageKey, mockError, axiosMockResponse)).rejects.toThrow(mockError)
     }
   }
 
-  this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, mockResponse) {
+  this.lockWorkflowTableAndCheckMessageCannotBeProcessed = async function (workflow, messageKey, axiosMockResponse) {
     const config = {
       message: taskRunCompleteMessages[messageKey],
       processMessageFunction: messageFunction,
       context,
-      mockResponse,
+      axiosMockResponse,
       workflow
     }
     await commonTimeseriesTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed(config)
