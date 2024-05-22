@@ -17,7 +17,7 @@ const axios = require('axios')
 const azureServiceBus = require('@azure/service-bus')
 const moment = require('moment')
 
-const MAXIMUM_DELAY_FOR_PI_SERVER_INDEXING_AFTER_TASK_RUN_COMPLETION_KEY = 'maximumDelayForPiServerIndexingAfterTaskRunCompletion'
+const MAXIMUM_DELAY_FOR_PI_SERVER_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_KEY = 'maximumDelayForPiServerDataAvailabilityAfterTaskRunCompletion'
 const PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE_KEY = 'pauseBeforeReplayingIncomingMessage'
 const OUTGOING_FILTER_MESSAGE_DELAY_KEY = 'outgoingFilterMessageDelay'
 const OUTGOING_PLOT_MESSAGE_DELAY_KEY = 'outgoingPlotMessageDelay'
@@ -35,14 +35,14 @@ const durationTypeConfig = {
     environmentVariableName: 'WAIT_FOR_TASK_RUN_PLOT_DATA_AVAILABILITY_MILLIS',
     defaultDuration: 15000
   },
-  [MAXIMUM_DELAY_FOR_PI_SERVER_INDEXING_AFTER_TASK_RUN_COMPLETION_KEY]: {
-    environmentVariableName: 'SCHEDULE_IMPORT_FROM_FEWS_MESSAGES_AFTER_TASK_RUN_COMPLETION_MILLIS',
-    defaultDuration: 60000
+  [MAXIMUM_DELAY_FOR_PI_SERVER_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_KEY]: {
+    environmentVariableName: 'MAXIMUM_DELAY_FOR_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_MILLIS',
+    defaultDuration: 120000
   }
 }
 
-const MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_INDEXING =
-  getDuration(durationTypeConfig[MAXIMUM_DELAY_FOR_PI_SERVER_INDEXING_AFTER_TASK_RUN_COMPLETION_KEY])
+const MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_DATA_AVAILABILITY =
+  getDuration(durationTypeConfig[MAXIMUM_DELAY_FOR_PI_SERVER_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_KEY])
 
 const OUTGOING_FILTER_MESSAGE_DELAY_MILLIS =
   getDuration(durationTypeConfig[OUTGOING_FILTER_MESSAGE_DELAY_KEY])
@@ -51,7 +51,7 @@ const OUTGOING_PLOT_MESSAGE_DELAY_MILLIS =
   getDuration(durationTypeConfig[OUTGOING_PLOT_MESSAGE_DELAY_KEY])
 
 const TASK_RUN_COMPLETION_MESSAGE_FRAGMENT =
- `the task run completed more than ${MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_INDEXING / 1000} second(s) ago`
+ `the task run completed more than ${MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_DATA_AVAILABILITY / 1000} second(s) ago`
 
 // Use lazy instantiation for an insance of ServiceBusAdministrationClient to allow mocking.
 let serviceBusAdministrationClient
@@ -201,7 +201,7 @@ function scheduleOutgoingMessagesIfNeeded (context, taskRunData) {
 
   // Outgoing messages need to be scheduled if a reasonable amount of tume for PI Server indexing to complete on all available
   // instances has not passed since task run completion.
-  if (millisecondsSinceTaskRunCompletion < MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_INDEXING) {
+  if (millisecondsSinceTaskRunCompletion < MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_DATA_AVAILABILITY) {
     context.log(`Scheduling outgoing message(s) to allow PI Server indexing to complete for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
     // Schedule outgoing filter based messages to minimise the risk of data retrieval being attempted using an available PI Server
     // instance for which indexing has not completed. As indexing has completed on at least one available PI Server instance, it
