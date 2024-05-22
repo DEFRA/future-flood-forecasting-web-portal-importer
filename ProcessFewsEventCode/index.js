@@ -39,6 +39,8 @@ module.exports = async function (context, message) {
   const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
   context.log(`Processing core engine message: ${messageToLog}`)
   await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message)
+  // In common with messages published using the importFromFews context binding, publish scheduled messages outside of the
+  // transaction used during message processing.
   await publishScheduledMessagesIfNeeded(context)
   // context.done() not required in async functions
 }
