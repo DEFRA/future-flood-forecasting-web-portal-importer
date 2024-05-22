@@ -192,13 +192,14 @@ async function processReasonForNoOutgoingMessages (context, taskRunData) {
 }
 
 async function publishScheduledMessagesIfNeeded (context) {
-  const scheduledMessages = context.bindings.importFromFews.filter(message => message.scheduledEnqueueTimeUtc)
+  const scheduledMessages = context.bindings.importFromFews?.filter(message => message.scheduledEnqueueTimeUtc)
 
   if (scheduledMessages?.length > 0) {
+    const taskRunId = scheduledMessages[0].body.taskRunId
     // https://github.com/Azure/Azure-Functions/issues/454
     // Scheduled messages cannot be published to Azure Service Bus using an Azure Function
     // output binding. Scheduled messages need to be published manually.
-    context.log('Publishing scheduled messages manually')
+    context.log(`Publishing ${scheduledMessages.length} scheduled message(s) manually for task run ${taskRunId}`)
     await publishMessages({
       context,
       destinationName: 'fews-import-queue',
