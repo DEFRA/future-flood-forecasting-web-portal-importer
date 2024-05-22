@@ -5,6 +5,8 @@ const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const sql = require('mssql')
 
+jest.mock('@azure/service-bus')
+
 module.exports = describe('Tests for import timeseries display groups', () => {
   let context
   let processFewsEventCodeTestUtils
@@ -45,6 +47,13 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       outgoingPlotIds: ['SpanPlot'],
       outgoingFilterIds: ['SpanFilter']
     },
+    singlePlotAndFilterApprovedForecastWithScheduledOutputMessaging: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['SpanPlot'],
+      outgoingFilterIds: ['SpanFilter'],
+      scheduledMessages: true
+    },
     taskRunWithStagingException: {
       forecast: true,
       approved: true,
@@ -83,7 +92,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   describe('Message processing for coastal display group task run completion', () => {
     beforeAll(async () => {
-      await commonCoastalTimeseriesTestUtils.beforeAll(pool)
+      await commonCoastalTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -91,10 +100,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonCoastalTimeseriesTestUtils.beforeEach(pool)
+      await commonCoastalTimeseriesTestUtils.beforeEach()
+      const request = new sql.Request(pool)
+      await request.batch('delete from fff_staging.non_display_group_workflow')
     })
     afterAll(async () => {
-      await commonCoastalTimeseriesTestUtils.afterAll(pool)
+      await commonCoastalTimeseriesTestUtils.afterAll()
     })
     it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'
@@ -210,6 +221,17 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     })
     it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run of a workflow with an identifer beginning with the characters id (case insensitive)', async () => {
       const messageKey = 'idleWorkflowForecast'
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+    })
+    it('should create a timeseries header and create scheduled messages for a workflow task run associated with a single plot and a single filter when the maximum amount of time to allow for PI Server indexing has not been reached', async () => {
+      const request = new sql.Request(pool)
+      await request.batch(`
+        insert into
+          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+        values
+          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+      `)
+      const messageKey = 'singlePlotAndFilterApprovedForecastWithScheduledOutputMessaging'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
   })

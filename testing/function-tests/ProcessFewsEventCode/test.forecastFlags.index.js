@@ -13,17 +13,17 @@ let context
 module.exports = describe('Test forecast flags', () => {
   describe('Forecast flag testing ', () => {
     beforeAll(async () => {
-      await commonTimeseriesTestUtils.beforeAll(pool)
+      await commonTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonTimeseriesTestUtils.beforeEach()
     })
 
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonTimeseriesTestUtils.afterAll()
     })
     it('should return undefined when a message does not contain an unexpected boolean value', async () => {
       await doInTransaction({ fn: testInTransaction, context, errorMessage: 'Error' })

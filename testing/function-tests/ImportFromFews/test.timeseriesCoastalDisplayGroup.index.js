@@ -18,7 +18,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
   describe('Message processing for coastal display group timeseries import', () => {
     beforeAll(async () => {
       const request = new sql.Request(pool)
-      await commonCoastalTimeseriesTestUtils.beforeAll(pool)
+      await commonCoastalTimeseriesTestUtils.beforeAll()
       await request.batch(`
         insert into
           fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
@@ -35,11 +35,11 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       context = new Context()
       context.bindings.importFromFews = []
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
-      await commonCoastalTimeseriesTestUtils.beforeEach(pool)
+      await commonCoastalTimeseriesTestUtils.beforeEach()
       await insertTimeseriesHeadersAndTimeseriesStagingExceptions(pool)
     })
     afterAll(async () => {
-      await commonCoastalTimeseriesTestUtils.afterAll(pool)
+      await commonCoastalTimeseriesTestUtils.afterAll()
     })
     it('should import data for a single plot associated with an approved forecast task run', async () => {
       const mockResponse = {

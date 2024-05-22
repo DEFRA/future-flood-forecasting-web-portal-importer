@@ -4,7 +4,7 @@ const CommonTimeseriesTestUtils = require('./common-timeseries-test-utils')
 module.exports = function (pool, messages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   this.beforeAll = async function () {
-    await commonTimeseriesTestUtils.beforeAll(pool)
+    await commonTimeseriesTestUtils.beforeAll()
     const request = new sql.Request(pool)
     await request.batch(`
         insert into
@@ -22,9 +22,9 @@ module.exports = function (pool, messages) {
       `)
   }
   this.beforeEach = async function () {
-    await commonTimeseriesTestUtils.beforeEach(pool)
+    await commonTimeseriesTestUtils.beforeEach()
   }
   this.afterAll = async function () {
-    await commonTimeseriesTestUtils.afterAll(pool)
+    await commonTimeseriesTestUtils.afterAll()
   }
 }

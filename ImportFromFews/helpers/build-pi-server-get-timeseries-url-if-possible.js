@@ -147,8 +147,9 @@ async function buildPiServerUrlIfPossible (context, taskRunData) {
 
   if (buildPiServerUrlCall.fewsParameters) {
     buildPiServerUrlCall.fewsPiUrl =
+      // INC2182094 - Set importFromExternalDataSource to false to ensure the archive server is not queried when retrieving timeseries.
       encodeURI(`${process.env.FEWS_PI_API}/FewsWebServices/rest/fewspiservice/v1/timeseries?useDisplayUnits=false&showThresholds=false&showProducts=false
-        &omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&documentFormat=PI_JSON&forecastCount=1${buildPiServerUrlCall.fewsParameters}`)
+        &omitMissing=true&onlyHeaders=false&showEnsembleMemberIds=false&importFromExternalDataSource=false&documentFormat=PI_JSON&forecastCount=1${buildPiServerUrlCall.fewsParameters}`)
   } else {
     // FEWS parameters must be specified otherwise the data return is likely to be very large
     const errorDescription = `There is no recognizable timeseries type specified for the filter ${taskRunData.filterId} in the non-display group CSV`

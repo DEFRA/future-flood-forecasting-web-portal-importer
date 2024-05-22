@@ -14,7 +14,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
 
   describe('Message processing for ignored workflows', () => {
     beforeAll(async () => {
-      await commonTimeseriesTestUtils.beforeAll(pool)
+      await commonTimeseriesTestUtils.beforeAll()
     })
 
     beforeEach(async () => {
@@ -23,11 +23,11 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonTimeseriesTestUtils.beforeEach()
     })
 
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonTimeseriesTestUtils.afterAll()
     })
 
     it('should reject an ignored workflow', async () => {

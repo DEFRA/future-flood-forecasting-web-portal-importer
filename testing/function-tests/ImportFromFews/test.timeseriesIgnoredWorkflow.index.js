@@ -19,7 +19,7 @@ module.exports = describe('Tests for preventing ignored workflow import', () => 
     beforeAll(async () => {
       await pool.connect()
       commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool, importFromFewsMessages)
-      await commonTimeseriesTestUtils.beforeAll(pool)
+      await commonTimeseriesTestUtils.beforeAll()
       await insertTimeseriesHeaders(pool)
     })
     beforeEach(async () => {
@@ -28,11 +28,11 @@ module.exports = describe('Tests for preventing ignored workflow import', () => 
       context = new Context()
       context.bindings.importFromFews = []
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonTimeseriesTestUtils.beforeEach()
       await insertTimeseriesHeaders(pool)
     })
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonTimeseriesTestUtils.afterAll()
     })
     it('should not import data for an ignored forecast task run', async () => {
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('ignoredWorkflowPlot')
