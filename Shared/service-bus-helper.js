@@ -11,7 +11,7 @@ module.exports = {
       await sender.sendMessages(messages)
       await sender.close()
     } finally {
-      await sbClient.close()
+      await sbClient?.close()
     }
   }
 }
