@@ -54,7 +54,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
 
   describe('Message processing for non display group task run completion', () => {
     beforeAll(async () => {
-      await commonNonDisplayGroupTimeseriesTestUtils.beforeAll(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.beforeAll()
       await request.batch(`
         insert into
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
@@ -70,7 +70,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonNonDisplayGroupTimeseriesTestUtils.beforeEach(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.beforeEach()
       const azureServiceBus = require('@azure/service-bus')
       azureServiceBus.ServiceBusAdministrationClient = jest.fn().mockImplementation(() => {
         return {
@@ -86,7 +86,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     })
 
     afterAll(async () => {
-      await commonNonDisplayGroupTimeseriesTestUtils.afterAll(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.afterAll()
     })
 
     it('should create a timeseries header and create a message for a single filter associated with a non-forecast task run', async () => {
@@ -163,7 +163,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
     it('should send a message for replay after a default pause when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been exceeded', async () => {
-      // Use the default delay when checking if all task run data is available from the
+      // Use the default delays when checking if all task run data is available from the
       // PI Server to increase test coverage.
       delete process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS
       const expectedError = new Error('All data is not available for task run ukeafffsmc00:000000001 (workflow Test_Workflow1)')

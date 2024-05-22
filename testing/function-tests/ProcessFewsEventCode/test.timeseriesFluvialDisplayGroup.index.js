@@ -43,7 +43,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   describe('Message processing for fluvial display group task run completion', () => {
     beforeAll(async () => {
-      await commonFluvialTimeseriesTestUtils.beforeAll(pool)
+      await commonFluvialTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
@@ -51,10 +51,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       context = new Context()
       context.bindings.importFromFews = []
       processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
-      await commonFluvialTimeseriesTestUtils.beforeEach(pool)
+      await commonFluvialTimeseriesTestUtils.beforeEach()
     })
     afterAll(async () => {
-      await commonFluvialTimeseriesTestUtils.afterAll(pool)
+      await commonFluvialTimeseriesTestUtils.afterAll()
     })
     it('should import data for a single plot associated with an approved forecast task run', async () => {
       const messageKey = 'singlePlotApprovedForecast'

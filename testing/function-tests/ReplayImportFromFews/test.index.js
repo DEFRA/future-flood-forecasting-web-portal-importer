@@ -12,18 +12,18 @@ module.exports = describe('Tests for replaying messages on the ImportFromFews de
 
   describe('Message processing for the ImportFromFews dead letter queue', () => {
     beforeAll(async () => {
-      await commonTimeseriesTestUtils.beforeAll(pool)
+      await commonTimeseriesTestUtils.beforeAll()
     })
 
     beforeEach(async () => {
       // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
-      await commonTimeseriesTestUtils.beforeEach(pool)
+      await commonTimeseriesTestUtils.beforeEach()
     })
 
     afterAll(async () => {
-      await commonTimeseriesTestUtils.afterAll(pool)
+      await commonTimeseriesTestUtils.afterAll()
     })
 
     it('should transfer object messages to the fews-import-queue', async () => {

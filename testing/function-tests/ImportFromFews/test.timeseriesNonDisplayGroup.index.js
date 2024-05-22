@@ -20,7 +20,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
   describe('Message processing for non-display group timeseries import', () => {
     beforeAll(async () => {
       const request = new sql.Request(pool)
-      await commonNonDisplayGroupTimeseriesTestUtils.beforeAll(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.beforeAll()
       await request.batch(`
         insert into
           fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
@@ -33,11 +33,11 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // function implementation for the function context needs creating for each test.
       context = new Context()
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
-      await commonNonDisplayGroupTimeseriesTestUtils.beforeEach(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.beforeEach()
       await insertTimeseriesHeaders(pool)
     })
     afterAll(async () => {
-      await commonNonDisplayGroupTimeseriesTestUtils.afterAll(pool)
+      await commonNonDisplayGroupTimeseriesTestUtils.afterAll()
     })
     it('should import data for a single filter associated with a non-forecast task run', async () => {
       const mockResponse = {
