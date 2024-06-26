@@ -93,7 +93,8 @@ module.exports = {
       }
     }
 
-    const nonErrorMockResponses = config.mockResponses.filter(mockResponse => !(mockResponse instanceof Error))
+    const nonErrorMockResponses =
+      config.expectedFewsData || config.mockResponses.filter(mockResponse => !(mockResponse instanceof Error))
 
     for (const mockResponse of nonErrorMockResponses) {
       expect(receivedFewsData).toContainEqual(mockResponse.data)

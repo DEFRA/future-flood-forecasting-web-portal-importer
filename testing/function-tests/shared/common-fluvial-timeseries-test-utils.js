@@ -18,7 +18,13 @@ module.exports = function (pool, messages) {
           ('Test_Fluvial_Workflow5', 'Test Fluvial Plot5', 'Test Location3a;Test Location3b;Test Location3c;Test Location3d'),
           ('Span_Workflow2', 'SpanPlot2', 'Test_Location'),
           ('Span_Workflow3', 'SpanPlot3', 'Test_Location;Test_Location2'),
-          ('Test_Partial_Taskrun_Workflow', 'Test_Partial_Taskrun_Plot', 'Test_Partial_Taskrun_Location')
+          ('Test_Partial_Taskrun_Workflow', 'Test_Partial_Taskrun_Plot', 'Test_Partial_Taskrun_Location'),
+          ('Test_Fluvial_Workflow6_OP', 'Test Fluvial Plot6a', 'Test Location6a'),
+          ('Test_Fluvial_Workflow6_OP', 'Test Fluvial Plot6b', 'Test Location6b'),
+          ('Test_Fluvial_Workflow7_BE', 'Test Fluvial Plot7a', 'Test Location7a'),
+          ('Test_Fluvial_Workflow7_BE', 'Test Fluvial Plot7b', 'Test Location7b'),
+          ('Test_Fluvial_Workflow8_RWC', 'Test Fluvial Plot8a', 'Test Location8a'),
+          ('Test_Fluvial_Workflow8_RWC', 'Test Fluvial Plot8b', 'Test Location8b')
       `)
   }
   this.beforeEach = async function () {

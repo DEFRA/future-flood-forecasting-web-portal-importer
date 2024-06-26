@@ -62,5 +62,35 @@
       "taskRunId": "ukeafffsmc00:000000007",
       "plotId": "Test Fluvial Plot5"
     }
+  ],
+  "multiplePlotApprovedOperationalForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000008",
+      "plotId": "Test Fluvial Plot6a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000008",
+      "plotId": "Test Fluvial Plot6b"
+    }
+  ],
+  "multiplePlotApprovedBestEstimateForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Fluvial Plot7a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Test Fluvial Plot7b"
+    }
+  ],
+  "multiplePlotApprovedReasonableWorstCaseForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000010",
+      "plotId": "Test Fluvial Plot8a"
+    },
+    {
+      "taskRunId": "ukeafffsmc00:000000010",
+      "plotId": "Test Fluvial Plot8b"
+    }
   ]
 }

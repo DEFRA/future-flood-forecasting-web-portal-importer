@@ -15,6 +15,83 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
   const pool = jestConnectionPool.pool
   const commonFluvialTimeseriesTestUtils = new CommonFluvialTimeseriesTestUtils(pool, importFromFewsMessages)
 
+  const multiplePlotMockResponsesToBeFiltered = [{
+    data: {
+      timeSeries: [
+        {
+          header: {
+            ensembleId: 'FMROP'
+          },
+          events: [{
+            key: 'First plot FMROP event data'
+          }]
+        },
+        {
+          header: {
+            ensembleId: 'FMRBE'
+          },
+          events: [{
+            key: 'First plot FMRBE event data'
+          }]
+        },
+        {
+          header: {
+            ensembleId: 'FMRRWC'
+          },
+          events: [{
+            key: 'First plot FMRRWC event data'
+          }]
+        },
+        {
+          header: {
+            parameterId: 'H.hist.sim'
+          },
+          events: [{
+            key: 'First plot historical event data'
+          }]
+        }
+      ]
+    }
+  },
+  {
+    data: {
+      timeSeries: [
+        {
+          header: {
+            ensembleId: 'FMROP'
+          },
+          events: [{
+            key: 'Second plot FMROP event data'
+          }]
+        },
+        {
+          header: {
+            ensembleId: 'FMRBE'
+          },
+          events: [{
+            key: 'Second plot FMRBE event data'
+          }]
+        },
+        {
+          header: {
+            ensembleId: 'FMRRWC'
+          },
+          events: [{
+            key: 'Second plot FMRRWC event data'
+          }]
+        },
+        {
+          header: {
+            parameterId: 'H.hist.sim'
+          },
+          events: [{
+            key: 'Second plot historical event data'
+          }]
+        }
+      ]
+    }
+  }]
+
   describe('Message processing for fluvial display group timeseries import ', () => {
     beforeAll(async () => {
       const request = new sql.Request(pool)
@@ -306,6 +383,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
+    it('should import data for multiple plots associated with an approved task run of a fluvial operational forecast workflow', async () => {
+      await testMultiplePlotApprovedForecastRequiringFilteringByEnsembleId('multiplePlotApprovedOperationalForecast', 'FMROP')
+    })
+    it('should import data for multiple plots associated with an approved task run of a fluvial best estimate forecast workflow', async () => {
+      await testMultiplePlotApprovedForecastRequiringFilteringByEnsembleId('multiplePlotApprovedBestEstimateForecast', 'FMRBE')
+    })
+    it('should import data for multiple plots associated with an approved task run of a fluvial reasonable worst case forecast workflow', async () => {
+      await testMultiplePlotApprovedForecastRequiringFilteringByEnsembleId('multiplePlotApprovedReasonableWorstCaseForecast', 'FMRRWC')
+    })
   })
 
   async function insertTimeseriesHeaders (pool) {
@@ -329,7 +415,33 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000004b', 'Span_Workflow3', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000005', 'Test_Fluvial_Workflow3', 1, 1, '{"input": "Test message"}'),
          (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000006', 'Test_Fluvial_Workflow4', 1, 1, '{"input": "Test message"}'),
-         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Test_Fluvial_Workflow5', 1, 1, '{"input": "Test message"}')
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000007', 'Test_Fluvial_Workflow5', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000008', 'Test_Fluvial_Workflow6_OP', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000009', 'Test_Fluvial_Workflow7_BE', 1, 1, '{"input": "Test message"}'),
+         (@taskRunStartTime, @taskRunCompletionTime, 'ukeafffsmc00:000000010', 'Test_Fluvial_Workflow8_RWC', 1, 1, '{"input": "Test message"}')
     `)
+  }
+
+  async function testMultiplePlotApprovedForecastRequiringFilteringByEnsembleId (messageKey, ensembleId) {
+    const mockResponses = JSON.parse(JSON.stringify(multiplePlotMockResponsesToBeFiltered))
+    const expectedFewsData = getExpectedFewsData(mockResponses, ensembleId)
+    const config = {
+      messageKey,
+      mockResponses,
+      expectedFewsData
+    }
+    await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+  }
+
+  function getExpectedFewsData (mockResponsesForPlots, ensembleId) {
+    const expectedFewsData = new Array(mockResponsesForPlots.length)
+    for (const [index, mockResponsesForPlot] of mockResponsesForPlots.entries()) {
+      expectedFewsData[index] = {
+        data: {
+          timeSeries: mockResponsesForPlot.data.timeSeries.filter(mockResponseForPlot => mockResponseForPlot.header.ensembleId === ensembleId)
+        }
+      }
+    }
+    return expectedFewsData
   }
 })
