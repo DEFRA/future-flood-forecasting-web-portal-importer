@@ -3,7 +3,7 @@ const sql = require('mssql')
 const deactivateTimeseriesStagingExceptionsForTaskRunPlotOrFilter = require('./deactivate-timeseries-staging-exceptions-for-task-run-plot-or-filter')
 const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
-const { prepareFewsDataForImport } = require('../../Shared/utils')
+const prepareFewsDataForImport = require('./prepare-fews-data-for-import')
 const processImportError = require('./process-import-error')
 
 module.exports = async function (context, taskRunData) {
@@ -50,7 +50,7 @@ async function retrieveAndCompressFewsData (context, taskRunData) {
   const fewsResponse = await axios(axiosConfig)
   await logTaskRunProgress(context, taskRunData, 'Retrieved data')
   taskRunData.fewsData = await prepareFewsDataForImport(fewsResponse.data, taskRunData)
-  await logTaskRunProgress(context, taskRunData, 'Compressed data')
+  await logTaskRunProgress(context, taskRunData, 'Prepared data for import')
 }
 
 async function processFewsDataRetrievalResults (context, taskRunData) {
