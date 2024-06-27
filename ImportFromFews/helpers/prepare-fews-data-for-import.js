@@ -24,6 +24,20 @@ async function runPipe (jsonStream, transforms) {
   )
 }
 
+function filterFewsData (fewsData, taskRunData) {
+  // CI-373 - Filter plot based timeseries data for task runs of fluvial forecast workflows so that only:
+  // - FMROP ensemble data is loaded for operational forecasts.
+  // - FMRBE ensemble data is loaded for best estimate forecasts.
+  // - FMRRWC ensemble data is loaded for reasonable worst case forecasts.
+  //
+  // This approach also filters out historical fluvial data.
+  fewsData.value =
+    taskRunData.csvType === 'F' && taskRunData.plotId && fewsData.key === 'timeSeries' &&
+    (taskRunData.workflowId?.endsWith('_OP') || taskRunData.workflowId?.endsWith('_BE') || taskRunData.workflowId?.endsWith('_RWC'))
+      ? fewsData.value.filter(v => v?.header?.ensembleId === `FMR${taskRunData.workflowId.split('_')[taskRunData.workflowId.split('_').length - 1]}`)
+      : fewsData.value
+}
+
 module.exports = async function (jsonStream, taskRunData) {
   const buffers = []
   let buffersLength = 0
@@ -32,17 +46,7 @@ module.exports = async function (jsonStream, taskRunData) {
     // Object mode is required to manipulate JSON.
     objectMode: true,
     transform: (object, encoding, done) => {
-      // Filter plot based timeseries data for task runs of fluvial forecast workflows so that only:
-      // - FMROP ensemble data is loaded for operational forecasts.
-      // - FMRBE ensemble data is loaded for best estimate forecasts.
-      // - FMRRWC ensemble data is loaded for reasonable worst case forecasts.
-      //
-      // This approach also filters out historical data.
-      object.value =
-        taskRunData.csvType === 'F' && taskRunData.plotId && object.key === 'timeSeries' &&
-        (taskRunData.workflowId?.endsWith('_OP') || taskRunData.workflowId?.endsWith('_BE') || taskRunData.workflowId?.endsWith('_RWC'))
-          ? object.value.filter(v => v?.header?.ensembleId === `FMR${taskRunData.workflowId.split('_')[taskRunData.workflowId.split('_').length - 1]}`)
-          : object.value
+      filterFewsData(object, taskRunData)
       done(null, object)
     }
   })
@@ -63,12 +67,7 @@ module.exports = async function (jsonStream, taskRunData) {
     }
   })
 
-  const transforms = {
-    filterTransform,
-    preStringifyObjectTransform,
-    byteArrayTransform
-  }
-
+  const transforms = { filterTransform, preStringifyObjectTransform, byteArrayTransform }
   await runPipe(jsonStream, transforms)
   return Buffer.concat(buffers, buffersLength)
 }
