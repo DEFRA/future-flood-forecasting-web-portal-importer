@@ -6,6 +6,7 @@ import ConnectionPool from '../../../Shared/connection-pool.js'
 import Context from '../mocks/defaultContext.js'
 import moment from 'moment'
 import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/fluvial-display-group-messages.json')
 
@@ -13,8 +14,8 @@ export const fluvialDisplayGroupImportFromFewsTests = () => describe('Tests for 
   let context
   let importFromFewsTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonFluvialTimeseriesTestUtils = new CommonFluvialTimeseriesTestUtils(pool, importFromFewsMessages)
 
   describe('Message processing for fluvial display group timeseries import ', () => {
@@ -30,7 +31,7 @@ export const fluvialDisplayGroupImportFromFewsTests = () => describe('Tests for 
       `)
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []

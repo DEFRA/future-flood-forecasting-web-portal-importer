@@ -7,9 +7,7 @@ import messageFunction from '../../../RefreshIgnoredWorkflowData/index.mjs'
 import fetch from 'node-fetch'
 import sql from 'mssql'
 import fs from 'fs'
-import { jest } from '@jest/globals'
-
-jest.mock('node-fetch')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored workflow data tests', () => {
   const STATUS_CODE_200 = 200
@@ -21,8 +19,8 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
   let context
   let dummyData
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh ignored workflow data function:', () => {
@@ -31,7 +29,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       const config = {
@@ -51,7 +49,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
     afterAll(async () => {
       await request.batch('delete from fff_staging.ignored_workflow')
       await request.batch('delete from fff_staging.csv_staging_exception')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
 
@@ -143,7 +141,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
     it('should throw an exception when the ignored workflow table is in use', async () => {
       // If the ignored workflow table is being refreshed messages are eligible for replay a certain number of times
@@ -179,7 +177,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         ignoredWorkflowData: dummyData,
@@ -187,7 +185,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
       }
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -198,7 +196,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         ignoredWorkflowData: dummyData,
@@ -207,7 +205,7 @@ export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored w
 
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should allow optional use of a HTTP Authorization header ', async () => {

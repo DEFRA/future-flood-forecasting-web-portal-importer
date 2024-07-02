@@ -5,11 +5,12 @@ import { timer } from '../mocks/defaultTimer.js'
 import { getEnvironmentVariableAsAbsoluteInteger } from '../../../Shared/utils.js'
 import moment from 'moment'
 import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const timeseriesDataDeletionTests = () => describe('Timeseries data deletion tests', () => {
   let context
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
   let hardLimit
   let withinLimit // the withinLimit (only has context in the tests) is a set amount of time less than the hard limit
@@ -26,8 +27,8 @@ export const timeseriesDataDeletionTests = () => describe('Timeseries data delet
 
     // Clear down all staging timeseries data tables. Due to referential integrity, query order must be preserved!
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
-      // function implementation for context needs creating for each test, jest.fn() mocks are contained within the Context class.
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
+      // function implementation for context needs creating for each test, vi.fn() mocks are contained within the Context class.
       context = new Context()
       delete process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT
       process.env.DELETE_EXPIRED_TIMESERIES_HARD_LIMIT = '240'
@@ -432,7 +433,7 @@ export const timeseriesDataDeletionTests = () => describe('Timeseries data delet
   async function checkDeleteResolvesWithDefaultHeaderTableIsolationOnSelect (expectedLength) {
     let transaction
     try {
-      transaction = new sql.Transaction(pool) // using Jest pool
+      transaction = new sql.Transaction(pool) // using Vitest pool
       await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED) // the isolation level used by other transactions on the three tables concerned
       const newRequest = new sql.Request(transaction)
 

@@ -1,6 +1,7 @@
 import ConnectionPool from '../../../Shared/connection-pool.js'
 import Context from '../mocks/defaultContext.js'
 import { getEnvironmentVariableAsPositiveIntegerInRange, loadJsonFile } from '../../../Shared/utils.js'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 const hostJson = loadJsonFile('./host.json')
 
 export const invalidEnvironmentVariableBasedConfigurationTests = () => describe('Test invalid environment variable based configuration', () => {

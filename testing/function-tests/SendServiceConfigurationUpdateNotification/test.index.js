@@ -1,15 +1,15 @@
 import Context from '../mocks/defaultContext.js'
 import sendServiceConfigurationUpdateNotification from '../../../SendServiceConfigurationUpdateNotification/index.mjs'
 import axios from 'axios'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-jest.mock('axios')
 export const sendServiceConfigurationUpdateNotificationTests = () => describe('Tests for replaying messages on the ProcessFewsEventCode dead letter queue', () => {
   const ORIGINAL_ENV = process.env
   let context
 
   describe('Message processing for the SendServiceConfigurationUpdateNotification dead letter queue', () => {
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
     })

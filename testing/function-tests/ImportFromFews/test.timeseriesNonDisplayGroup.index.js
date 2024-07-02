@@ -6,14 +6,15 @@ import Context from '../mocks/defaultContext.js'
 import { timeseriesTypeConstants } from '../../../ImportFromFews/helpers/timeseries-type-constants.js'
 import moment from 'moment'
 import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/non-display-group-messages.json')
 
 export const nonDisplayGroupImportFromFewsTests = () => describe('Tests for import non-display group timeseries', () => {
   let context
   let importFromFewsTestUtils
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool, importFromFewsMessages)
   const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
   const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
@@ -30,7 +31,7 @@ export const nonDisplayGroupImportFromFewsTests = () => describe('Tests for impo
       `)
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)

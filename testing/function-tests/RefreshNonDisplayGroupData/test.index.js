@@ -7,9 +7,7 @@ import messageFunction from '../../../RefreshNonDisplayGroupData/index'
 import fetch from 'node-fetch'
 import sql from 'mssql'
 import fs from 'fs'
-import { jest } from '@jest/globals'
-
-jest.mock('node-fetch')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh non-display group workflow data tests', () => {
   const JSONFILE = 'application/javascript'
@@ -24,8 +22,8 @@ export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh n
 
   const EXTERNAL_HISTORICAL = 'external_historical'
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh non_display_group_workflow data function', () => {
@@ -34,7 +32,7 @@ export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh n
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       const config = {
@@ -62,7 +60,7 @@ export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh n
     afterAll(async () => {
       await request.batch('delete from fff_staging.non_display_group_workflow')
       await request.batch('delete from fff_staging.csv_staging_exception')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
     it('should ignore an empty CSV file', async () => {
@@ -289,7 +287,7 @@ export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh n
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponseData)
+      fetch.mockResolvedValue(mockResponseData)
 
       const expectedError = new Error('No csv file detected')
       const expectedData = {
@@ -297,7 +295,7 @@ export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh n
         numberOfExceptionRows: 0
       }
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
@@ -305,7 +303,7 @@ export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh n
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
     it('should throw an exception when the non_display_group_workflow table is being used', async () => {
       // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times

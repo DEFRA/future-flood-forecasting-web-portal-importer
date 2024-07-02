@@ -3,6 +3,7 @@ import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils'
 import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils'
 import ConnectionPool from '../../../Shared/connection-pool'
 import Context from '../mocks/defaultContext'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/ignored-workflow-messages.json')
 
@@ -10,8 +11,8 @@ export const ignoredWorkflowProcessFewsEventCodeTests = () => describe('Ignored 
   let context
   let processFewsEventCodeTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
 
   describe('Message processing for ignored workflows', () => {
@@ -20,7 +21,7 @@ export const ignoredWorkflowProcessFewsEventCodeTests = () => describe('Ignored 
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []

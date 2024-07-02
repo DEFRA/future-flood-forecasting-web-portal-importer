@@ -1,6 +1,7 @@
 import * as transactionHelper from '../../../Shared/transaction-helper.js'
 import ConnectionPool from '../../../Shared/connection-pool.js'
 import Context from '../mocks/defaultContext.js'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 export const connectionPoolManagementTests = () => describe('Test connection pool management', () => {
   let pool
