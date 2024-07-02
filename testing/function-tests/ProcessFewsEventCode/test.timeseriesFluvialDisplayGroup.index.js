@@ -4,6 +4,7 @@ import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils.
 import ConnectionPool from '../../../Shared/connection-pool.js'
 import Context from '../mocks/defaultContext.js'
 import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/fluvial-display-group-messages.json')
 
@@ -11,8 +12,8 @@ export const fluvialDisplayGroupProcessFewsEventCodeTests = () => describe('Fluv
   let context
   let processFewsEventCodeTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonFluvialTimeseriesTestUtils = new CommonFluvialTimeseriesTestUtils(pool, taskRunCompleteMessages)
 
   const expectedData = {
@@ -48,7 +49,7 @@ export const fluvialDisplayGroupProcessFewsEventCodeTests = () => describe('Fluv
       await commonFluvialTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []

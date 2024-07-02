@@ -1,5 +1,6 @@
 import { doInTransaction } from '../../../Shared/transaction-helper.js'
 import sql from 'mssql'
+import { expect } from 'vitest'
 
 export default function (context, pool) {
   this.checkExpectedServiceConfigurationUpdateNotificationStatus = async function (context, expectedServiceConfigurationUpdateNotification) {

@@ -3,11 +3,12 @@ import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js
 import ConnectionPool from '../../../Shared/connection-pool.js'
 import Context from '../mocks/defaultContext.js'
 import replayImportFromFews from '../../../ReplayImportFromFews/index.mjs'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const replayDeadLetteredImportFromFewsMessageTests = () => describe('Tests for replaying dead lettered ImportFromFews messages', () => {
   let context
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
 
   const messages = loadJsonFile('testing/function-tests/ImportFromFews/messages/fluvial-display-group-messages.json')
@@ -18,7 +19,7 @@ export const replayDeadLetteredImportFromFewsMessageTests = () => describe('Test
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       await commonTimeseriesTestUtils.beforeEach()

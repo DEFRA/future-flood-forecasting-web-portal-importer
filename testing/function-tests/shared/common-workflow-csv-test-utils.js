@@ -1,5 +1,6 @@
 import { doInTransaction, executePreparedStatementInTransaction } from '../../../Shared/transaction-helper.js'
 import sql from 'mssql'
+import { expect } from 'vitest'
 
 export default function (context, pool, config) {
   this.insertWorkflowRefreshRecords = async function (workflowRefreshOffset) {

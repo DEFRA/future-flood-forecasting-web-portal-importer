@@ -6,6 +6,7 @@ import ConnectionPool from '../../../Shared/connection-pool.js'
 import Context from '../mocks/defaultContext.js'
 import moment from 'moment'
 import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/ignored-workflow-messages.json')
 
@@ -13,8 +14,8 @@ export const ignoredWorkflowImportFromFewsTests = () => describe('Tests for prev
   let context
   let importFromFewsTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   let commonTimeseriesTestUtils
 
   describe('Message processing for ignored workflow timeseries import ', () => {
@@ -25,7 +26,7 @@ export const ignoredWorkflowImportFromFewsTests = () => describe('Tests for prev
       await insertTimeseriesHeaders(pool)
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []

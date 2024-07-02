@@ -7,9 +7,7 @@ import messageFunction from '../../../RefreshFluvialDisplayGroupData/index.mjs'
 import fetch from 'node-fetch'
 import sql from 'mssql'
 import fs from 'fs'
-import { jest } from '@jest/globals'
-
-jest.mock('node-fetch')
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refresh fluvial display group workflow data tests', () => {
   const STATUS_CODE_200 = 200
@@ -21,8 +19,8 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
   let context
   let dummyData
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh fluvial_display_group_workflow data function:', () => {
@@ -31,7 +29,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       const config = {
@@ -60,7 +58,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
     afterAll(async () => {
       await request.batch('delete from fff_staging.fluvial_display_group_workflow')
       await request.batch('delete from fff_staging.csv_staging_exception')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
 
@@ -242,7 +240,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
 
     it('should throw an exception when the fluvial_display_group_workflow table is being used', async () => {
@@ -281,7 +279,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         displayGroupData: dummyData,
@@ -290,7 +288,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
 
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -301,7 +299,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         displayGroupData: dummyData,
@@ -310,7 +308,7 @@ export const refreshFluvialDisplayGroupWorkflowDataTests = () => describe('Refre
 
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
   })

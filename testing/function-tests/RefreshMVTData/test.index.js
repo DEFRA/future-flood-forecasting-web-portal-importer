@@ -7,9 +7,7 @@ import message from '../mocks/defaultMessage'
 import fetch from 'node-fetch'
 import sql from 'mssql'
 import fs from 'fs'
-import { jest } from '@jest/globals'
-
-jest.mock('node-fetch')
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () => {
   const STATUS_CODE_200 = 200
@@ -22,8 +20,8 @@ export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () =
   let commonCSVTestUtils
   let commonWorkflowCSVTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh Multivariate Thresholds data function:', () => {
@@ -33,7 +31,7 @@ export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () =
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.serviceConfigurationUpdateCompleted = []
@@ -68,7 +66,7 @@ export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () =
       await request.query('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.non_workflow_refresh')
       await request.query('delete from fff_staging.workflow_refresh')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
     it('should ignore an empty CSV file', async () => {
@@ -223,7 +221,7 @@ export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () =
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(MVTRefreshFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(MVTRefreshFunction(context, message)).rejects.toThrow(expectedError)
     })
     it('should throw an exception when the multivariate threshold table is in use', async () => {
       // If the multivariate threshold table is being refreshed, messages are eligible for replay a certain number of times
@@ -247,13 +245,13 @@ export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () =
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
       const expectedError = new Error('No csv file detected')
 
-      await expect(MVTRefreshFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(MVTRefreshFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -264,13 +262,13 @@ export const refreshMVTDataTests = () => describe('Refresh MVT data tests', () =
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = [dummyData]
       const expectedNumberOfExceptionRows = 0
       const expectedError = new Error('No csv file detected')
 
-      await expect(MVTRefreshFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(MVTRefreshFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
     it('should refresh a valid csv containing empty values for decimal columns', async () => {

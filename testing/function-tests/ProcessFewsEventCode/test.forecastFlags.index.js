@@ -4,9 +4,10 @@ import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils'
 import ConnectionPool from '../../../Shared/connection-pool'
 import { isBoolean } from '../../../Shared/utils'
 import Context from '../mocks/defaultContext'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const jestConnectionPool = new ConnectionPool()
-const pool = jestConnectionPool.pool
+const viConnectionPool = new ConnectionPool()
+const pool = viConnectionPool.pool
 const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
 
 let context
@@ -17,7 +18,7 @@ export const forecastFlagTests = () => describe('Coastal display group process F
       await commonTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       await commonTimeseriesTestUtils.beforeEach()

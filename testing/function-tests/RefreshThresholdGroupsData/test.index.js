@@ -7,9 +7,7 @@ import message from '../mocks/defaultMessage.js'
 import fetch from 'node-fetch'
 import sql from 'mssql'
 import fs from 'fs'
-import { jest } from '@jest/globals'
-
-jest.mock('node-fetch')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold groups data tests', () => {
   const STATUS_CODE_200 = 200
@@ -22,8 +20,8 @@ export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold
   let commonCSVTestUtils
   let commonWorkflowCSVTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh threshold groups data function:', () => {
@@ -32,7 +30,7 @@ export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.serviceConfigurationUpdateCompleted = []
@@ -57,7 +55,7 @@ export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold
       await request.batch('delete from fff_staging.csv_staging_exception')
       await request.query('delete from fff_staging.non_workflow_refresh')
       await request.query('delete from fff_staging.workflow_refresh')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
 
@@ -231,7 +229,7 @@ export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
 
     it('should throw an exception when the forecast location table is in use', async () => {
@@ -257,13 +255,13 @@ export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = dummyData
       const expectedNumberOfExceptionRows = 0
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
 
@@ -275,13 +273,13 @@ export const refreshThresholdGroupsDataTests = () => describe('Refresh threshold
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = dummyData
       const expectedNumberOfExceptionRows = 0
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData, expectedNumberOfExceptionRows)
     })
   })
