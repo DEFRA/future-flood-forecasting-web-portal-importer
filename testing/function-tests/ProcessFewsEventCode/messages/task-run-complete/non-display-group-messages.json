@@ -36,6 +36,18 @@
       "endTime": "2019-09-13 13:06:00"
     }
   },
+  "singleFilterNonForecastWithScheduledOutputMessaging": {
+    "input": {
+      "code": "TASKRUN.Complete",
+      "entryTime": 1568379065,
+      "description": "Task Test_Workflow1 with ID ukeafffsmc00:000000001 completed in 5s Forecast: False Approved: False Start time: 2019-09-13 13:05:00 End time: 2019-09-13 13:06:00 More text",
+      "source": "ukeafffsmc00:000000001",
+      "level": "INFO",
+      "startTime": "2019-09-13 13:05:00",
+      "endTime": "2019-09-13 13:06:00"
+    },
+    "taskRunTimesMillisAdjustmentToRelectTimeOfTest": 3000
+  },
   "multipleFilterNonForecast": {
     "input": {
       "code": "TASKRUN.Complete",

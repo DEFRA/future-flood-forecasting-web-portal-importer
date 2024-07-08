@@ -1,3 +1,4 @@
+const moment = require('moment')
 const sql = require('mssql')
 
 const COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
@@ -165,5 +166,47 @@ module.exports = function (pool) {
         config.context.log.warn('The transaction has been rolled back.')
       }
     }
+  }
+
+  this.mockAzureServiceBusClient = function () {
+    const azureServiceBus = require('@azure/service-bus')
+    const sendMessages = jest.fn().mockImplementation(messages => {})
+    const serviceBusClientClose = jest.fn()
+    const serviceBusSenderClose = jest.fn()
+
+    azureServiceBus.ServiceBusClient = jest.fn().mockImplementation(connectionString => {
+      return {
+        close: serviceBusClientClose,
+        createSender: jest.fn().mockImplementation(destinationName => {
+          return {
+            close: serviceBusSenderClose,
+            sendMessages
+          }
+        })
+      }
+    })
+
+    return { azureServiceBus, sendMessages, serviceBusClientClose, serviceBusSenderClose }
+  }
+
+  this.checkServiceBusClientCalls = function (config) {
+    const expectedNumberOfAzureServiceBusMockCalls = config.messageSchedulingExpected ? 1 : 0
+    expect(config.azureServiceBus.ServiceBusClient).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.sendMessages).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.serviceBusSenderClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.serviceBusClientClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+  }
+
+  this.checkMessageScheduling = function (originalMessage, scheduledMessage, taskRunCompletionTime, delayMillis) {
+    const minimumScheduledEnqueueTimeUtc =
+      moment(taskRunCompletionTime).utc().subtract(originalMessage.taskRunTimesMillisAdjustmentToRelectTimeOfTest, 'milliseconds')
+        .add(delayMillis, 'milliseconds')
+
+    const maximumScheduledEnqueueTimeUtc = moment(minimumScheduledEnqueueTimeUtc).utc()
+      .add(2000, 'milliseconds')
+
+    const scheduledEnqueueTimeUtc = moment(scheduledMessage.scheduledEnqueueTimeUtc).utc()
+
+    expect(scheduledEnqueueTimeUtc.isBetween(minimumScheduledEnqueueTimeUtc, maximumScheduledEnqueueTimeUtc)).toBe(true)
   }
 }

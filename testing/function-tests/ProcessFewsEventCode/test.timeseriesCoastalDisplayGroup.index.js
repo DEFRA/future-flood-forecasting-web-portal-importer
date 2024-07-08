@@ -52,7 +52,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       approved: true,
       outgoingPlotIds: ['SpanPlot'],
       outgoingFilterIds: ['SpanFilter'],
-      scheduledMessages: true
+      scheduledMessaging: true
     },
     taskRunWithStagingException: {
       forecast: true,
