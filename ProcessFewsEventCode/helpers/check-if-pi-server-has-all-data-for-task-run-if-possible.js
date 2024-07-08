@@ -160,7 +160,7 @@ function checkOutgoingMessages (context, taskRunData) {
 }
 
 function scheduleOutgoingMessagesIfNeeded (context, taskRunData) {
-  if (taskRunData.scheduleOutgoingMessages && !context.bindings.processFewsEventCode) {
+  if (taskRunData.scheduleOutgoingMessages) {
     // The task run needs data retrieving for one or more plots and/or a PI Server instance has
     // confirmed it can provide all filter based data for the task run.
     // As a PI Server cannot indicate if all data for a task run involving one or more plots
