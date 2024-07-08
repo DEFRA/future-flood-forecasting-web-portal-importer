@@ -62,7 +62,14 @@ module.exports = async function (context, taskRunData) {
   if (taskRunData.scheduleOutgoingMessages && taskRunData.filterMessageCreated) {
     await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
   }
-  scheduleOutgoingMessagesIfNeeded(context, taskRunData)
+
+  if (taskRunData.scheduleOutgoingMessages && !context.bindings.processFewsEventCode) {
+    scheduleOutgoingMessages(context, taskRunData)
+  } else {
+    const noSchedulingMessageFragment =
+      `Outgoing messages for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) are being output without scheduling`
+    context.log(`${noSchedulingMessageFragment} because ${TASK_RUN_COMPLETION_MESSAGE_FRAGMENT}`)
+  }
 }
 
 async function checkIfPiServerIsOnline (context, taskRunData) {
@@ -159,38 +166,32 @@ function checkOutgoingMessages (context, taskRunData) {
   taskRunData.plotMessageCreated = plotMessages.length > 0
 }
 
-function scheduleOutgoingMessagesIfNeeded (context, taskRunData) {
-  if (taskRunData.scheduleOutgoingMessages && !context.bindings.processFewsEventCode) {
-    // The task run needs data retrieving for one or more plots and/or a PI Server instance has
-    // confirmed it can provide all filter based data for the task run.
-    // As a PI Server cannot indicate if all data for a task run involving one or more plots
-    // is available, more time could be required for PI Server indexing to complete.
-    // Similarly, if multiple PI Servers instances are available, more time could be
-    // required for PI Server indexing to complete on ALL available instances before
-    // data retrieval is attempted. Outgoing messages need to be scheduled accordingly.
-    context.log(`Scheduling outgoing message(s) to allow PI Server indexing to complete for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+function scheduleOutgoingMessages (context, taskRunData) {
+  // The task run needs data retrieving for one or more plots and/or a PI Server instance has
+  // confirmed it can provide all filter based data for the task run.
+  // As a PI Server cannot indicate if all data for a task run involving one or more plots
+  // is available, more time could be required for PI Server indexing to complete.
+  // Similarly, if multiple PI Servers instances are available, more time could be
+  // required for PI Server indexing to complete on ALL available instances before
+  // data retrieval is attempted. Outgoing messages need to be scheduled accordingly.
+  context.log(`Scheduling outgoing message(s) to allow PI Server indexing to complete for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 
-    // Schedule outgoing filter based messages to minimise the risk of data retrieval being attempted using an available PI Server
-    // instance for which indexing has not completed. As indexing has completed on at least one available PI Server instance, it
-    // should not take too long for indexing to complete on all available instances.
-    const filterScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_FILTER_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
+  // Schedule outgoing filter based messages to minimise the risk of data retrieval being attempted using an available PI Server
+  // instance for which indexing has not completed. As indexing has completed on at least one available PI Server instance, it
+  // should not take too long for indexing to complete on all available instances.
+  const filterScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_FILTER_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
 
-    // A PI Server instance cannot indicate if it can provide all plot based data for a task run so prepare to schedule outgoing
-    // plot based messages so that indexing has more time to complete.
-    const plotScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_PLOT_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
+  // A PI Server instance cannot indicate if it can provide all plot based data for a task run so prepare to schedule outgoing
+  // plot based messages so that indexing has more time to complete.
+  const plotScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_PLOT_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
 
-    taskRunData.outgoingMessages = taskRunData.outgoingMessages.map(outgoingMessage => {
-      const scheduledEnqueueTimeUtc =
-        outgoingMessage.filterId ? filterScheduledEnqueueTimeUtc : plotScheduledEnqueueTimeUtc
+  taskRunData.outgoingMessages = taskRunData.outgoingMessages.map(outgoingMessage => {
+    const scheduledEnqueueTimeUtc =
+      outgoingMessage.filterId ? filterScheduledEnqueueTimeUtc : plotScheduledEnqueueTimeUtc
 
-      return {
-        body: outgoingMessage,
-        scheduledEnqueueTimeUtc
-      }
-    })
-  } else {
-    const noSchedulingMessageFragment =
-      `Outgoing messages for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) are being output without scheduling`
-    context.log(`${noSchedulingMessageFragment} because ${TASK_RUN_COMPLETION_MESSAGE_FRAGMENT}`)
-  }
+    return {
+      body: outgoingMessage,
+      scheduledEnqueueTimeUtc
+    }
+  })
 }
