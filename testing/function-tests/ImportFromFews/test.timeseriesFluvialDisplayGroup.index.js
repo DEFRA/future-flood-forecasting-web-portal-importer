@@ -42,7 +42,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     it('should import data for a single plot associated with an approved forecast task run', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -54,12 +62,28 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const mockResponses = [{
         data: {
-          key: 'First plot timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'First plot timeseries display groups data'
+              }]
+            }
+          ]
         }
       },
       {
         data: {
-          key: 'Second plot timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Second plot timeseries display groups data'
+              }]
+            }
+          ]
         }
       }]
       const config = {
@@ -71,7 +95,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     it('should not import data for an approved out-of-date forecast task run', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -130,7 +162,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const knownLocationsMockReponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -186,7 +226,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const knownLocationsMockReponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -212,13 +260,19 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         },
         {
           messageKey,
-          mockResponses: [
-            {
-              data: {
-                key: 'Timeseries data'
-              }
+          mockResponses: [{
+            data: {
+              timeSeries: [
+                {
+                  header: {
+                  },
+                  events: [{
+                    key: 'Timeseries data'
+                  }]
+                }
+              ]
             }
-          ],
+          }],
           expectedLocationData: [
             {
               plotId: importFromFewsMessages[messageKey][0].plotId,
@@ -275,18 +329,32 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should load a single plot associated with a workflow that is also associated with non display group data, inheriting the specified offsets for the ndg data', async () => {
-      const mockResponses = [
-        {
-          data: {
-            key: 'Timeseries data'
-          }
-        },
-        {
-          data: {
-            key: 'Timeseries data'
-          }
+      const mockResponses = [{
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries data'
+              }]
+            }
+          ]
         }
-      ]
+      },
+      {
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries data'
+              }]
+            }
+          ]
+        }
+      }]
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastCustomOffset',
@@ -300,7 +368,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)

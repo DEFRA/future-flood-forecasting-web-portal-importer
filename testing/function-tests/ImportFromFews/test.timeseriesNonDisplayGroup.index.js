@@ -42,7 +42,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with a non-forecast task run', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -81,7 +89,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecast'
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -94,12 +110,28 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for multiple filters associated with a non-forecast task run', async () => {
       const mockResponses = [{
         data: {
-          key: 'First filter timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'First filter timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       },
       {
         data: {
-          key: 'Second filter timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Second filter timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }]
       const config = {
@@ -111,7 +143,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with an approved forecast', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -123,12 +163,28 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for plots and filters associated with the same workflow', async () => {
       const displayMockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const nonDisplayMockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -140,7 +196,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should not import data for a standard forecast task run that is out-of-date compared with data in staging ', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -153,7 +217,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should not import data for an external forecasting task run that is out-of-date compared with data in staging ', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -228,25 +300,47 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('nonDisplayGroupWorkflow', 'singleFilterNonForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
     it('should use previous task run end time as creation start time for a single filter associated with a non-forecast', async () => {
-      const mockResponses = [
-        {
-          data: {
-            key: 'Timeseries non-display groups data'
-          }
-        },
-        {
-          data: {
-            key: 'Timeseries non-display groups data'
-          }
+      const mockResponses = [{
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
-      ]
+      },
+      {
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
+        }
+      }]
       const config = [
         {
           messageKey: 'singleFilterNonForecastEarlier',
@@ -264,7 +358,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should adopt the start-time-offset environment setting for a single filter associated with a non-forecast', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -280,7 +382,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with a non-forecast and with output binding set to true, check timeseries id has been captured in output binding', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -296,7 +406,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with custom time period offsets', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -314,12 +432,28 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should load a single filter associated with a workflow that is also associated with display group data', async () => {
       const mockResponses = [{
         data: {
-          key: 'Timeseries data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries data'
+              }]
+            }
+          ]
         }
       },
       {
         data: {
-          key: 'Timeseries data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries data'
+              }]
+            }
+          ]
         }
       }]
 
@@ -332,7 +466,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with a simulated-forecast data and ensure the query parameters contain only start/end times (no start/end creation times)', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -349,7 +491,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with external historical data and ensure the query parameters contain start/end times and start/end creation times', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -363,7 +513,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with external historical data, use a custom end creation time buffer and ensure the query parameters contain start/end times and start/end creation times', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -382,7 +540,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for a single filter associated with external forecasting data and ensure the query parameters contain start/end times and start/end creation times', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -410,7 +576,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should import data for an approved:false message associated with a timeseries type not requiring approval', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -427,7 +601,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should adopt the default start-time offset setting not an env var text start-time-offset setting, for a single filter associated with a non-forecast', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -443,7 +625,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should adopt the custom offset values for a single filter associated with an external_historical non-forecast, using creation times when calculating offsets', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -461,7 +651,15 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should adopt the custom offset values for a single filter associated with a simulated forecast, ignoring creation times when calculating offsets', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries non-display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -483,18 +681,32 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.checkTextOffsetRejectsWithError(offsetValue, expectedErrorDetails)
     })
     it('in a simulated disaster recovery situation, it should import data (for a single filter associated with an approved forecast) building creation time parameters based on the FEWS_MAXIMUM_NON_DISPLAY_GROUP_CREATION_OFFSET_HOURS default and not the now expired latestTaskRunEndTime', async () => {
-      const mockResponses = [
-        {
-          data: {
-            key: 'Timeseries non-display groups data'
-          }
-        },
-        {
-          data: {
-            key: 'Timeseries non-display groups data'
-          }
+      const mockResponses = [{
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
         }
-      ]
+      },
+      {
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
+        }
+      }]
 
       const config = [
         {
