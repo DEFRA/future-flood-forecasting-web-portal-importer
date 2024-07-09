@@ -261,7 +261,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException (pool) {
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast)
+    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
@@ -290,7 +290,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingExceptionPartialBadLocation (pool) {
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast)
+    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
@@ -320,7 +320,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   async function insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv (pool, exceptionTimeOffset) {
     const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions)
+    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
@@ -347,7 +347,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     // the workflow (reference data) refresh table updates at the start of this test file
     const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions)
+    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `

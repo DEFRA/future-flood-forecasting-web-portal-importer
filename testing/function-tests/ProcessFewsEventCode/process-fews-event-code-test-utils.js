@@ -21,7 +21,9 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       })
     }
     const message = sendMessageAsString && typeof taskRunCompleteMessages[messageKey] !== 'string'
-      ? JSON.stringify((taskRunCompleteMessages[messageKey]))
+      ? JSON.stringify(taskRunCompleteMessages[messageKey]?.input
+        ? taskRunCompleteMessages[messageKey].input
+        : taskRunCompleteMessages[messageKey])
       : taskRunCompleteMessages[messageKey]
 
     if (message?.taskRunTimesMillisAdjustmentToRelectTimeOfTest) {
@@ -42,7 +44,7 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       message.input.startTime = adjustedTaskRunStartTime
       message.input.endTime = adjustedTaskRunCompletionTime
     }
-    await messageFunction(context, message)
+    await messageFunction(context, message?.input ? message.input : message)
     return message
   }
 
@@ -163,7 +165,9 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       expect(result.recordset[0].approved).toBe(expectedData.approved)
 
       // Check the incoming message has been captured correctly.
-      expect(JSON.parse(result.recordset[0].message)).toEqual(taskRunCompleteMessages[messageKey])
+      expect(JSON.parse(result.recordset[0].message)).toEqual(taskRunCompleteMessages[messageKey]?.input
+        ? taskRunCompleteMessages[messageKey].input
+        : taskRunCompleteMessages[messageKey])
 
       // Check for correct outgoing message processing.
       // - If outgoing messages are scheduled they should have been published to fews-import-queue manually.
@@ -287,7 +291,10 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
     `)
 
     // Check the problematic message has been captured correctly.
-    expect(JSON.parse(result.recordset[0].payload)).toEqual(taskRunCompleteMessages[messageKey])
+    expect(JSON.parse(result.recordset[0].payload))
+      .toEqual(taskRunCompleteMessages[messageKey]?.input
+        ? taskRunCompleteMessages[messageKey].input
+        : taskRunCompleteMessages[messageKey])
 
     if (expectedTaskRunId) {
       // If the message is associated with a task run ID check it has been persisted.
