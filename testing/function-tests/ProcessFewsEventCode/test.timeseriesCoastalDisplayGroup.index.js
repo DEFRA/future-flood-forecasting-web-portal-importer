@@ -5,8 +5,6 @@ const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const sql = require('mssql')
 
-jest.mock('@azure/service-bus')
-
 module.exports = describe('Tests for import timeseries display groups', () => {
   let context
   let processFewsEventCodeTestUtils
