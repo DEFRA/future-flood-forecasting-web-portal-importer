@@ -126,6 +126,21 @@ const self = module.exports = {
   logMessageForTaskRunPlotOrFilter: function (context, taskRunData, prefix, suffix) {
     context.log(`${prefix} for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) ${suffix || ''}`)
   },
+  // durationType parameters must be an object of the folowing form:
+  // {
+  //    environmentVariableName: '<<Environment variable name specifying a numeric duration in milliseconds>>',
+  //    defaultDuration: <<default duration in milliseconds if the environment variable is not present>>
+  //  }
+  getDuration: function (durationType) {
+    return self.getEnvironmentVariableAsAbsoluteInteger(durationType.environmentVariableName) || durationType.defaultDuration
+  },
+  sleep: async function (durationType) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve()
+      }, self.getDuration(durationType))
+    })
+  },
   logger
 }
 

@@ -10,7 +10,7 @@
 // completed when a task run completion message is received. This results in client
 // code attempting to delay subsequent processing until PI Server indexing has completed
 // to minimise the risk of data gaps.
-const { getEnvironmentVariableAsAbsoluteInteger } = require('../../Shared/utils')
+const { getDuration } = require('../../Shared/utils.js')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
 const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
@@ -146,10 +146,6 @@ async function checkResponseHeaders (context, taskRunData, fewsResponse) {
     taskRunData.errorMessage = `${errorText} ${taskRunData.taskRunId}`
     await createStagingException(context, taskRunData)
   }
-}
-
-function getDuration (durationType) {
-  return getEnvironmentVariableAsAbsoluteInteger(durationType.environmentVariableName) || durationType.defaultDuration
 }
 
 function checkOutgoingMessages (context, taskRunData) {
