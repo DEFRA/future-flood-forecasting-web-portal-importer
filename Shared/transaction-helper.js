@@ -1,8 +1,13 @@
 const ConnectionPool = require('../Shared/connection-pool')
-const { logger } = require('../Shared/utils')
+const { logger, sleep } = require('../Shared/utils')
 const sql = require('mssql')
 const lockValue = parseInt(process.env.SQLDB_LOCK_TIMEOUT)
 const connectionPoolClosedMessage = 'Connection pool is closed'
+
+const pauseBeforeThrowingErrorConfig = {
+  environmentVariableName: 'PAUSE_BEFORE_POTENTIAL_MESSAGE_REPLAY_MILLIS',
+  defaultDuration: 5000
+}
 
 let connectionPool
 let pool
@@ -61,6 +66,7 @@ async function processTransactionException (context, transaction, err, errorMess
   } catch (err) {
     context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
   }
+  await sleep(context, pauseBeforeThrowingErrorConfig)
   throw err
 }
 
@@ -83,6 +89,7 @@ async function endTransaction (context, transaction) {
     }
   } catch (err) {
     context.log.error(`Transaction-helper cleanup error: '${err.message}'.`)
+    await sleep(context, pauseBeforeThrowingErrorConfig)
     throw err
   }
 }

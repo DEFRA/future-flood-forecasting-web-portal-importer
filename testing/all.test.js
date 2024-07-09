@@ -5,6 +5,9 @@ if (process.env.TEST_TIMEOUT) {
 }
 
 describe('Run all unit tests in sequence', () => {
+  // In unit tests, use a small delay before throwing an error
+  // following a transaction failure that could cause message replay.
+  process.env.PAUSE_BEFORE_POTENTIAL_MESSAGE_REPLAY_MILLIS = '500'
   // As the PI Server is mocked in unit tests, a small delay is required for the
   // amount of time to wait before checking if all filter based data for a task
   // run is available from the PI Server.

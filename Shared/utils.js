@@ -134,11 +134,13 @@ const self = module.exports = {
   getDuration: function (durationType) {
     return self.getEnvironmentVariableAsAbsoluteInteger(durationType.environmentVariableName) || durationType.defaultDuration
   },
-  sleep: async function (durationType) {
+  sleep: async function (context, durationType) {
+    const duration = self.getDuration(durationType)
+    context.log(`Sleeping for ${duration} millisecond(s)`)
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         resolve()
-      }, self.getDuration(durationType))
+      }, duration)
     })
   },
   logger
