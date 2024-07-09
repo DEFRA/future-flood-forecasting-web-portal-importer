@@ -10,7 +10,7 @@
 // completed when a task run completion message is received. This results in client
 // code attempting to delay subsequent processing until PI Server indexing has completed
 // to minimise the risk of data gaps.
-const { getDuration } = require('../../Shared/utils.js')
+const { getDuration } = require('../../Shared/utils')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
 const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
