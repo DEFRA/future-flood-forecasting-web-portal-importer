@@ -44,7 +44,9 @@ async function runPipe (jsonStream, transforms) {
     jsonStream,
     // Emit keys and values from the stream.
     JSONStream.parse('$*'),
-    // Check for missing events and transform the keys and values into the form required by JSONStream.stringifyObject
+    // Check for missing events and transform the keys and values into the form required by JSONStream.stringifyObject.
+    // NOTE - Missing event processing is performed using asynchronous functions because the utility function
+    // used during processng (doIfMaximumDelayForPiServerIndexingIsNotExceeded) is asynchronous.
     await transforms.preStringifyObjectTransform,
     // Minify the contents of the stream through the removal of new lines and use of
     // JSON.stringify with no indentation.
@@ -63,6 +65,11 @@ async function checkForMissingEventsIfNeeded (context, taskRunData, fewsData) {
 }
 
 async function checkForMissingEvents (context, taskRunData, fewsData) {
+  // NOTE - This function is asynchronous because it is called asynchronously by the
+  // utility function doIfMaximumDelayForPiServerIndexingIsNotExceeded. This function
+  // could be enhanced to include asynchronous processng (for example, to record missing
+  // event details in the staging database), but this is not required currently.
+  //
   // Missing events occur when timeSeries header data has an empty array of associated
   // events rather than no associated events. Missing events can be an indication that
   // PI Server indexing for a task run has not completed yet, so prepare to schedule
