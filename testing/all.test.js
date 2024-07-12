@@ -8,6 +8,11 @@ describe('Run all unit tests in sequence', () => {
   // In unit tests, use a small delay before throwing an error
   // following a transaction failure that could cause message replay.
   process.env.PAUSE_BEFORE_POTENTIAL_MESSAGE_REPLAY_MILLIS = '500'
+
+  // In unit tests, use a small delay before propagating message
+  // publication errors.
+  process.env.PAUSE_BEFORE_PROPAGATING_MESSAGE_PUBLICATION_ERROR_MILLIS = '200'
+
   // As the PI Server is mocked in unit tests, a small delay is required for the
   // amount of time to wait before checking if all filter based data for a task
   // run is available from the PI Server.
@@ -81,6 +86,7 @@ describe('Run all unit tests in sequence', () => {
   require('./function-tests/ImportFromFews/test.timeseriesCoastalDisplayGroup.index')
   require('./function-tests/ImportFromFews/test.timeseriesIgnoredWorkflow.index')
   require('./function-tests/ReplayImportFromFews/test.index')
+  require('./function-tests/shared/test.service-bus-helper')
   require('./function-tests/shared/test.transaction-helper')
   require('./function-tests/shared/test.connection-analysis.index')
   require('./function-tests/shared/test.invalid-environment-variable-based-configuration')
