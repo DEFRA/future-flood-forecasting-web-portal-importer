@@ -214,7 +214,15 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
           const outgoingMessageDelayMillis =
             outgoingMessage.body.filterId ? outgoingMessageFilterDelay : outgoingMessagePlotDelay
 
-          commonTimeseriesTestUtils.checkMessageScheduling(message, outgoingMessage, taskRunCompletionTime, outgoingMessageDelayMillis)
+          const messageSchedulingConfig = {
+            delayMillis: outgoingMessageDelayMillis,
+            millisAdjustmentToRelectTimeOfTest: message.taskRunTimesMillisAdjustmentToRelectTimeOfTest,
+            originalMessage: message,
+            scheduledMessage: outgoingMessage,
+            taskRunCompletionTime
+          }
+
+          commonTimeseriesTestUtils.checkMessageScheduling(messageSchedulingConfig)
         }
       }
 
@@ -264,10 +272,18 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       messageSchedulingExpected: true
     }
 
+    const messageSchedulingConfig = {
+      delayMillis: messageReplayDelay,
+      millisAdjustmentToRelectTimeOfTest: message.taskRunTimesMillisAdjustmentToRelectTimeOfTest,
+      originalMessage: message,
+      taskRunCompletionTime
+    }
+
     await processMessage(messageKey, sendMessageAsString, axiosMockResponse)
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
+    messageSchedulingConfig.scheduledMessage = sendMessages.mock.calls[0][0]
     commonTimeseriesTestUtils.checkServiceBusClientCalls(serviceBusClientCallsConfig)
-    commonTimeseriesTestUtils.checkMessageScheduling(message, sendMessages.mock.calls[0][0], taskRunCompletionTime, messageReplayDelay)
+    commonTimeseriesTestUtils.checkMessageScheduling(messageSchedulingConfig)
   }
 
   this.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated = async function (messageKey, expectedErrorDescription, axiosMockResponse) {

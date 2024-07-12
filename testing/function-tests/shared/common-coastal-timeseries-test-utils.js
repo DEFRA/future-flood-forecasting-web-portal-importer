@@ -26,7 +26,9 @@ module.exports = function (pool, messages) {
         ('Span_Workflow_Default_Offset', 'SpanPlot', 'Test_Location'),
         ('Span_Workflow_Multiple_Offsets', 'Multiple Offsets Plot', 'Test_Location'),
         ('Test_Partial_Taskrun_Span_Workflow', 'Test_Partial_Taskrun_Span_Plot', 'Test_Partial_Taskrun_Location'),
-        ('Idle_Test_Workflow', 'Idle Test Workflow Plot', 'Test Idle Workflow Location')
+        ('Idle_Test_Workflow', 'Idle Test Workflow Plot', 'Test Idle Workflow Location'),
+        ('Coastal_Missing_Event_Workflow', 'Coastal_Plot_With_Missing_Events', 'Test Coastal Missing Events Workflow Location'),
+        ('Coastal_No_Missing_Events_Workflow', 'Coastal_Plot_Without_Missing_Events', 'Test Coastal No Missing Events Workflow Location')
     `)
   }
   this.beforeEach = async function () {

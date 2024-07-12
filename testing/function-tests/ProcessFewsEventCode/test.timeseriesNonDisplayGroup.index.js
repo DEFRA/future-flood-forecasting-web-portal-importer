@@ -154,8 +154,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'filterAndPlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should send a message for replay after a default pause when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been exceeded', async () => {
-      // Use the default delays when checking if all task run data is available from the
+    it('should send a message for replay after a default pause when the PI Server indicates that all data for a task run is not available and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      // Use the default delay when checking if all task run data is available from the
       // PI Server to increase test coverage.
       delete process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS
       const mockResponse = {
@@ -165,7 +165,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecastWithScheduledOutputMessaging'
       await processFewsEventCodeTestUtils.processMessageAndCheckMessageIsSentForReplay(messageKey, false, mockResponse)
     })
-    it('should send a message for replay after a customised pause when the PI Server indicates that all data for a task run is not available and the maximum number of replays has not been reached', async () => {
+    it('should send a message for replay after a customised pause when the PI Server indicates that all data for a task run is not available and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
       const mockResponse = {
         status: 206
       }
@@ -173,7 +173,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecastWithScheduledOutputMessaging'
       await processFewsEventCodeTestUtils.processMessageAndCheckMessageIsSentForReplay(messageKey, false, mockResponse)
     })
-    it('should create a timeseries header and create a message for a single filter based task run after a customised pause when the PI Server indicates that all data for the task run is not available and the maximum number of replays has been reached', async () => {
+    it('should create a timeseries header and create a message for a single filter based task run after a customised pause when the PI Server indicates that all data for the task run is not available and the maximum amount of time allowed for PI Server indexing to complete has been exceeded', async () => {
       const mockResponse = {
         status: 206
       }

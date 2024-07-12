@@ -197,16 +197,15 @@ module.exports = function (pool) {
     expect(config.serviceBusClientClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
   }
 
-  this.checkMessageScheduling = function (originalMessage, scheduledMessage, taskRunCompletionTime, delayMillis) {
+  this.checkMessageScheduling = function (config) {
     const minimumScheduledEnqueueTimeUtc =
-      moment(taskRunCompletionTime).utc().subtract(originalMessage.taskRunTimesMillisAdjustmentToRelectTimeOfTest, 'milliseconds')
-        .add(delayMillis, 'milliseconds')
+      moment(config.taskRunCompletionTime).utc().subtract(config.millisAdjustmentToRelectTimeOfTest, 'milliseconds')
+        .add(config.delayMillis, 'milliseconds')
 
     const maximumScheduledEnqueueTimeUtc = moment(minimumScheduledEnqueueTimeUtc).utc()
       .add(2000, 'milliseconds')
 
-    const scheduledEnqueueTimeUtc = moment(scheduledMessage.scheduledEnqueueTimeUtc).utc()
-
+    const scheduledEnqueueTimeUtc = moment(config.scheduledMessage.scheduledEnqueueTimeUtc).utc()
     expect(scheduledEnqueueTimeUtc.isBetween(minimumScheduledEnqueueTimeUtc, maximumScheduledEnqueueTimeUtc)).toBe(true)
   }
 }

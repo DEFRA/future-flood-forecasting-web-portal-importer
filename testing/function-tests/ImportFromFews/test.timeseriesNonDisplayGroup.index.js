@@ -721,6 +721,104 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[0])
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config[1])
     })
+    it('should send a message for replay after a default pause when data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      // Use the default amount of time to allow for PI Server indexing completion to increase test coverage.
+      delete process.env.MAXIMUM_DELAY_FOR_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_MILLIS
+
+      const config = {
+        messageKey: 'nonForecastWithMissingEvents',
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000022',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'Missing_Event_Workflow'
+      }
+
+      await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
+    })
+    it('should send a message for replay after a customised pause when data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const config = {
+        messageKey: 'nonForecastWithMissingEvents',
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000022',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'Missing_Event_Workflow'
+      }
+
+      await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
+    })
+    it('should import data for a single filter with no missing events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const messageKey = 'currentSingleFilterApprovedForecast'
+
+      const mockResponse = {
+        data: {
+          version: 'mock version number',
+          timeZone: 'mock time zone',
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
+        }
+      }
+      const messageProcessingConfig = {
+        messageKey,
+        mockResponses: [mockResponse]
+      }
+
+      const timeseriesHeaderConfig = {
+        approved: 1,
+        forecast: 1,
+        messageKey,
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000023',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'No_Missing_Events_Workflow'
+      }
+
+      await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
+    })
+    it('should import data for a single filter with no events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const messageKey = 'currentSingleFilterApprovedForecast'
+
+      const mockResponse = {
+        data: {
+          version: 'mock version number',
+          timeZone: 'mock time zone',
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries non-display groups data'
+              }]
+            }
+          ]
+        }
+      }
+      const messageProcessingConfig = {
+        messageKey,
+        mockResponses: [mockResponse]
+      }
+
+      const timeseriesHeaderConfig = {
+        approved: 1,
+        deleteEvents: true,
+        forecast: 1,
+        messageKey,
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000023',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'No_Missing_Events_Workflow'
+      }
+
+      await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
+    })
   })
 
   async function insertTimeseriesHeaders (pool) {

@@ -1,11 +1,6 @@
 const axios = require('axios')
-const JSONStream = require('jsonstream-next')
 const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
 const pino = require('pino')
-const { pipeline, Transform } = require('stream')
-const { createGzip } = require('zlib')
-const { promisify } = require('util')
-const pipe = promisify(pipeline)
 const moment = require('moment')
 
 const LATEST = 'latest'
@@ -35,43 +30,6 @@ const self = module.exports = {
     } else {
       return false
     }
-  },
-  minifyAndGzip: async function (jsonStream) {
-    const gzip = createGzip()
-    const buffers = []
-    let buffersLength = 0
-
-    const preStringifyObjectTransform = new Transform({
-      // Object mode is required to manipulate JSON.
-      objectMode: true,
-      transform: (object, encoding, done) => {
-        done(null, [object.key, object.value])
-      }
-    })
-
-    const byteArrayTransform = new Transform({
-      transform: (chunk, encoding, done) => {
-        buffers.push(chunk)
-        buffersLength += chunk.length
-        done()
-      }
-    })
-
-    // Minification is achieved using a stream compatible version of JSON.stringify(JSON.parse(jsonString)).
-    await pipe(
-      jsonStream,
-      // Emit keys and values from the stream.
-      JSONStream.parse('$*'),
-      // Transform the keys and values into the form required by JSONStream.stringifyObject
-      preStringifyObjectTransform,
-      // Minify the contents of the stream through the removal of new lines and use of
-      // JSON.stringify with no indentation.
-      JSONStream.stringifyObject('{', ',', '}', 0),
-      gzip,
-      byteArrayTransform
-    )
-
-    return Buffer.concat(buffers, buffersLength)
   },
   getEnvironmentVariableAsAbsoluteInteger: function (environmentVariableName) {
     let environmentVariableAsInteger

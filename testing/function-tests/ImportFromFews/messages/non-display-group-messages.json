@@ -136,5 +136,17 @@
       "taskRunId": "ukeafffsmc00:000000018",
       "filterId": "Custom_Offset_Filter_Forecast"
     }
+  ],
+  "nonForecastWithMissingEvents": [
+    {
+      "taskRunId": "ukeafffsmc00:000000022",
+      "filterId": "Filter_With_Missing_Events"
+    }
+  ],
+  "currentSingleFilterApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000023",
+      "filterId": "Filter_Without_Missing_Events"
+    }
   ]
 }

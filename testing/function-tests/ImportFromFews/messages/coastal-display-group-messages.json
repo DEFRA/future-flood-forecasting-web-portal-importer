@@ -119,5 +119,17 @@
       "taskRunId": "ukeafffsmc00:0000000011",
       "plotId": "Multiple Offsets Plot"
     }
+  ],
+  "forecastWithMissingEvents": [
+    {
+      "taskRunId": "ukeafffsmc00:000000012",
+      "plotId": "Coastal_Plot_With_Missing_Events"
+    }
+  ],
+  "currentSinglePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000013",
+      "plotId": "Coastal_Plot_Without_Missing_Events"
+    }
   ]
 }

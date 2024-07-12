@@ -13,11 +13,12 @@
 const { getDuration } = require('../../Shared/utils')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
 const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+const doIfMaximumDelayForPiServerIndexingIsNotExceeded =
+  require('../../Shared/timeseries-functions/do-if-maximum-delay-for-pi-server-indexing-is-not-exceeded')
 const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
 const axios = require('axios')
 const moment = require('moment')
 
-const MAXIMUM_DELAY_FOR_PI_SERVER_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_KEY = 'maximumDelayForPiServerDataAvailabilityAfterTaskRunCompletion'
 const OUTGOING_FILTER_MESSAGE_DELAY_KEY = 'outgoingFilterMessageDelay'
 const OUTGOING_PLOT_MESSAGE_DELAY_KEY = 'outgoingPlotMessageDelay'
 
@@ -29,15 +30,8 @@ const durationTypeConfig = {
   [OUTGOING_PLOT_MESSAGE_DELAY_KEY]: {
     environmentVariableName: 'WAIT_FOR_TASK_RUN_PLOT_DATA_AVAILABILITY_MILLIS',
     defaultDuration: 15000
-  },
-  [MAXIMUM_DELAY_FOR_PI_SERVER_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_KEY]: {
-    environmentVariableName: 'MAXIMUM_DELAY_FOR_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_MILLIS',
-    defaultDuration: 120000
   }
 }
-
-const MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_DATA_AVAILABILITY =
-  getDuration(durationTypeConfig[MAXIMUM_DELAY_FOR_PI_SERVER_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_KEY])
 
 const OUTGOING_FILTER_MESSAGE_DELAY_MILLIS =
   getDuration(durationTypeConfig[OUTGOING_FILTER_MESSAGE_DELAY_KEY])
@@ -45,24 +39,16 @@ const OUTGOING_FILTER_MESSAGE_DELAY_MILLIS =
 const OUTGOING_PLOT_MESSAGE_DELAY_MILLIS =
   getDuration(durationTypeConfig[OUTGOING_PLOT_MESSAGE_DELAY_KEY])
 
-const TASK_RUN_COMPLETION_MESSAGE_FRAGMENT =
- `the task run completed more than ${MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_DATA_AVAILABILITY / 1000} second(s) ago`
-
 module.exports = async function (context, taskRunData) {
-  // Outgoing messages need to be scheduled if a reasonable amount of tume for PI Server indexing to complete on all available
-  // instances has not passed since task run completion.
-  const millisecondsSinceTaskRunCompletion =
-    moment.utc().diff(moment.utc(new Date(`${taskRunData.taskRunCompletionTime}`)), 'milliseconds')
-
-  taskRunData.scheduleOutgoingMessages =
-    millisecondsSinceTaskRunCompletion < MAXIMUM_NUMBER_OF_MILLISECONDS_AFTER_TASK_RUN_COMPLETION_TO_ALLOW_FOR_PI_SERVER_DATA_AVAILABILITY
-
   checkOutgoingMessages(context, taskRunData)
   const fewsResponse = await checkIfPiServerIsOnline(context, taskRunData)
-  if (taskRunData.scheduleOutgoingMessages && taskRunData.filterMessageCreated) {
-    await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
+  const noActionTakenMessage =
+    `Outgoing messages for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) are being output without scheduling`
+  if (taskRunData.filterMessageCreated) {
+    await doIfMaximumDelayForPiServerIndexingIsNotExceeded(
+      { fn: checkIfAllDataForTaskRunIsAvailableAndScheduleOutgoingMessages, context, taskRunData, noActionTakenMessage }, fewsResponse
+    )
   }
-  scheduleOutgoingMessagesIfNeeded(context, taskRunData)
 }
 
 async function checkIfPiServerIsOnline (context, taskRunData) {
@@ -119,6 +105,11 @@ function getFragments (context, taskRunData) {
   return { errorMessageFragment, fewsPiUrlFragment }
 }
 
+async function checkIfAllDataForTaskRunIsAvailableAndScheduleOutgoingMessages (context, taskRunData, fewsResponse) {
+  await checkIfAllDataForTaskRunIsAvailable(context, taskRunData, fewsResponse)
+  await scheduleOutgoingMessages(context, taskRunData)
+}
+
 async function checkIfAllDataForTaskRunIsAvailable (context, taskRunData, fewsResponse) {
   // If the PI Server indicates that a partial response has been returned, this
   // should mean that PI Server indexing has not completed. Use defensive programming to check
@@ -155,38 +146,32 @@ function checkOutgoingMessages (context, taskRunData) {
   taskRunData.plotMessageCreated = plotMessages.length > 0
 }
 
-function scheduleOutgoingMessagesIfNeeded (context, taskRunData) {
-  if (taskRunData.scheduleOutgoingMessages) {
-    // The task run needs data retrieving for one or more plots and/or a PI Server instance has
-    // confirmed it can provide all filter based data for the task run.
-    // As a PI Server cannot indicate if all data for a task run involving one or more plots
-    // is available, more time could be required for PI Server indexing to complete.
-    // Similarly, if multiple PI Servers instances are available, more time could be
-    // required for PI Server indexing to complete on ALL available instances before
-    // data retrieval is attempted. Outgoing messages need to be scheduled accordingly.
-    context.log(`Scheduling outgoing message(s) to allow PI Server indexing to complete for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
+function scheduleOutgoingMessages (context, taskRunData) {
+  // The task run needs data retrieving for one or more plots and/or a PI Server instance has
+  // confirmed it can provide all filter based data for the task run.
+  // As a PI Server cannot indicate if all data for a task run involving one or more plots
+  // is available, more time could be required for PI Server indexing to complete.
+  // Similarly, if multiple PI Servers instances are available, more time could be
+  // required for PI Server indexing to complete on ALL available instances before
+  // data retrieval is attempted. Outgoing messages need to be scheduled accordingly.
+  context.log(`Scheduling outgoing message(s) to allow PI Server indexing to complete for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId})`)
 
-    // Schedule outgoing filter based messages to minimise the risk of data retrieval being attempted using an available PI Server
-    // instance for which indexing has not completed. As indexing has completed on at least one available PI Server instance, it
-    // should not take too long for indexing to complete on all available instances.
-    const filterScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_FILTER_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
+  // Schedule outgoing filter based messages to minimise the risk of data retrieval being attempted using an available PI Server
+  // instance for which indexing has not completed. As indexing has completed on at least one available PI Server instance, it
+  // should not take too long for indexing to complete on all available instances.
+  const filterScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_FILTER_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
 
-    // A PI Server instance cannot indicate if it can provide all plot based data for a task run so prepare to schedule outgoing
-    // plot based messages so that indexing has more time to complete.
-    const plotScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_PLOT_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
+  // A PI Server instance cannot indicate if it can provide all plot based data for a task run so prepare to schedule outgoing
+  // plot based messages so that indexing has more time to complete.
+  const plotScheduledEnqueueTimeUtc = moment.utc().add(OUTGOING_PLOT_MESSAGE_DELAY_MILLIS, 'milliseconds').toDate()
 
-    taskRunData.outgoingMessages = taskRunData.outgoingMessages.map(outgoingMessage => {
-      const scheduledEnqueueTimeUtc =
-        outgoingMessage.filterId ? filterScheduledEnqueueTimeUtc : plotScheduledEnqueueTimeUtc
+  taskRunData.outgoingMessages = taskRunData.outgoingMessages.map(outgoingMessage => {
+    const scheduledEnqueueTimeUtc =
+      outgoingMessage.filterId ? filterScheduledEnqueueTimeUtc : plotScheduledEnqueueTimeUtc
 
-      return {
-        body: outgoingMessage,
-        scheduledEnqueueTimeUtc
-      }
-    })
-  } else {
-    const noSchedulingMessageFragment =
-      `Outgoing messages for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) are being output without scheduling`
-    context.log(`${noSchedulingMessageFragment} because ${TASK_RUN_COMPLETION_MESSAGE_FRAGMENT}`)
-  }
+    return {
+      body: outgoingMessage,
+      scheduledEnqueueTimeUtc
+    }
+  })
 }
