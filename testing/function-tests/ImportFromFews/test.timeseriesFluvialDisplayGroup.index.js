@@ -42,7 +42,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     it('should import data for a single plot associated with an approved forecast task run', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -54,12 +62,28 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     it('should import data for multiple plots associated with an approved forecast task run', async () => {
       const mockResponses = [{
         data: {
-          key: 'First plot timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'First plot timeseries display groups data'
+              }]
+            }
+          ]
         }
       },
       {
         data: {
-          key: 'Second plot timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Second plot timeseries display groups data'
+              }]
+            }
+          ]
         }
       }]
       const config = {
@@ -71,7 +95,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
     it('should not import data for an approved out-of-date forecast task run', async () => {
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       const config = {
@@ -130,7 +162,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const knownLocationsMockReponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -186,7 +226,15 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       const knownLocationsMockReponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
 
@@ -212,13 +260,19 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         },
         {
           messageKey,
-          mockResponses: [
-            {
-              data: {
-                key: 'Timeseries data'
-              }
+          mockResponses: [{
+            data: {
+              timeSeries: [
+                {
+                  header: {
+                  },
+                  events: [{
+                    key: 'Timeseries data'
+                  }]
+                }
+              ]
             }
-          ],
+          }],
           expectedLocationData: [
             {
               plotId: importFromFewsMessages[messageKey][0].plotId,
@@ -275,18 +329,32 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
     it('should load a single plot associated with a workflow that is also associated with non display group data, inheriting the specified offsets for the ndg data', async () => {
-      const mockResponses = [
-        {
-          data: {
-            key: 'Timeseries data'
-          }
-        },
-        {
-          data: {
-            key: 'Timeseries data'
-          }
+      const mockResponses = [{
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries data'
+              }]
+            }
+          ]
         }
-      ]
+      },
+      {
+        data: {
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries data'
+              }]
+            }
+          ]
+        }
+      }]
 
       const config = {
         messageKey: 'singlePlotAndFilterApprovedForecastCustomOffset',
@@ -300,12 +368,122 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       // so check that an exception is thrown to facilitate this process.
       const mockResponse = {
         data: {
-          key: 'Timeseries display groups data'
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
         }
       }
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
+    it('should send a message for replay after a default pause when data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      // Use the default amount of time to allow for PI Server indexing completion to increase test coverage.
+      delete process.env.MAXIMUM_DELAY_FOR_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_MILLIS
+
+      const config = {
+        approved: 1,
+        forecast: 1,
+        messageKey: 'forecastWithMissingEvents',
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000008',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'Fluvial_Missing_Event_Workflow'
+      }
+
+      await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
+    })
+    it('should send a message for replay after a customised pause when data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const config = {
+        approved: 1,
+        forecast: 1,
+        messageKey: 'forecastWithMissingEvents',
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000008',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'Fluvial_Missing_Event_Workflow'
+      }
+
+      await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
+    })
+    it('should import data for a single plot with no missing events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const messageKey = 'currentSinglePlotApprovedForecast'
+
+      const mockResponse = {
+        data: {
+          version: 'mock version number',
+          timeZone: 'mock time zone',
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
+        }
+      }
+      const messageProcessingConfig = {
+        messageKey,
+        mockResponses: [mockResponse]
+      }
+
+      const timeseriesHeaderConfig = {
+        approved: 1,
+        forecast: 1,
+        messageKey,
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000009',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'Fluvial_No_Missing_Events_Workflow'
+      }
+
+      await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
+    })
+    it('should import data for a single plot with no events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const messageKey = 'currentSinglePlotApprovedForecast'
+
+      const mockResponse = {
+        data: {
+          version: 'mock version number',
+          timeZone: 'mock time zone',
+          timeSeries: [
+            {
+              header: {
+              },
+              events: [{
+                key: 'Timeseries display groups data'
+              }]
+            }
+          ]
+        }
+      }
+      const messageProcessingConfig = {
+        messageKey,
+        mockResponses: [mockResponse]
+      }
+
+      const timeseriesHeaderConfig = {
+        approved: 1,
+        forecast: 1,
+        deleteEvents: true,
+        messageKey,
+        taskRunCompletionTimeOffsetMillis: 30000,
+        taskRunId: 'ukeafffsmc00:000000009',
+        taskRunStartTimeOffsetMillis: 30000,
+        workflowId: 'Fluvial_No_Missing_Events_Workflow'
+      }
+
+      await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
+    })
   })
 
   async function insertTimeseriesHeaders (pool) {

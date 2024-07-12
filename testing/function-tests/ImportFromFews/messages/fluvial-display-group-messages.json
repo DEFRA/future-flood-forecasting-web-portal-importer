@@ -62,5 +62,17 @@
       "taskRunId": "ukeafffsmc00:000000007",
       "plotId": "Test Fluvial Plot5"
     }
+  ],
+  "forecastWithMissingEvents": [
+    {
+      "taskRunId": "ukeafffsmc00:000000008",
+      "plotId": "Fluvial_Plot_With_Missing_Events"
+    }
+  ],
+  "currentSinglePlotApprovedForecast": [
+    {
+      "taskRunId": "ukeafffsmc00:000000009",
+      "plotId": "Fluvial_Plot_Without_Missing_Events"
+    }
   ]
 }

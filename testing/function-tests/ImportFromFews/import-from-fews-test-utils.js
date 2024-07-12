@@ -1,10 +1,12 @@
 const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const { getAbsoluteIntegerForNonZeroOffset } = require('../../../Shared/utils')
+const { getAbsoluteIntegerForNonZeroOffset, getEnvironmentVariableAsAbsoluteInteger } = require('../../../Shared/utils')
 const messageFunction = require('../../../ImportFromFews/index')
 const { objectToStream } = require('../shared/utils')
 const axios = require('axios')
 const sql = require('mssql')
+const moment = require('moment')
 
+jest.mock('@azure/service-bus')
 jest.mock('axios')
 
 module.exports = function (context, pool, importFromFewsMessages, checkImportedDataFunction) {
@@ -190,5 +192,78 @@ module.exports = function (context, pool, importFromFewsMessages, checkImportedD
     }
 
     await expect(assignVariableToFunction(offsetValue, taskRunData)).rejects.toThrow(expectedErrorDetails)
+  }
+
+  this.insertCurrentTimeseriesHeader = async function (config) {
+    const now = moment.utc()
+    const taskRunStartTime = now.subtract(config.taskRunStartTimeOffsetMillis, 'milliseconds')
+    const taskRunCompletionTime = now.add(config.taskRunCompletionTimeOffsetMillis, 'milliseconds')
+    const request = new sql.Request(pool)
+    await request.input('forecast', sql.Bit, config.forecast || 0)
+    await request.input('approved', sql.Bit, config.approved || 0)
+    await request.input('taskRunId', sql.NVarChar, config.taskRunId)
+    await request.input('workflowId', sql.NVarChar, config.workflowId)
+    await request.input('taskRunStartTime', sql.DateTime2, taskRunStartTime.toISOString())
+    await request.input('taskRunCompletionTime', sql.DateTime2, taskRunCompletionTime.toISOString())
+    await request.batch(`
+      insert into
+        fff_staging.timeseries_header
+          (task_start_time, task_completion_time, task_run_id, workflow_id, forecast, approved, message)
+      values
+       (@taskRunStartTime, @taskRunCompletionTime, @taskRunId, @workflowId, @forecast, @approved, '{"input": "Test message"}')
+    `)
+  }
+
+  this.processMessageAndCheckMessageIsSentForReplay = async function (config) {
+    await this.insertCurrentTimeseriesHeader(config)
+
+    const mockResponses = [{
+      data: {
+        version: 'mock version number',
+        timeZone: 'mock time zone',
+        timeSeries: [
+          {
+            header: {
+            },
+            events: [
+            ]
+          }
+        ]
+      }
+    }]
+
+    if (config.deleteEvents) {
+      delete mockResponses[0].data.timeSeries.events
+    }
+
+    const message = importFromFewsMessages[config.messageKey][0]
+
+    const messageReplayDelay =
+      getEnvironmentVariableAsAbsoluteInteger(process.env.CHECK_FOR_TASK_RUN_MISSING_EVENTS_DELAY_MILLIS) || 30000
+
+    const { azureServiceBus, sendMessages, serviceBusClientClose, serviceBusSenderClose } =
+      commonTimeseriesTestUtils.mockAzureServiceBusClient()
+
+    const serviceBusClientCallsConfig = {
+      azureServiceBus,
+      sendMessages,
+      serviceBusClientClose,
+      serviceBusSenderClose,
+      messageSchedulingExpected: true
+    }
+
+    const messageSchedulingConfig = {
+      delayMillis: messageReplayDelay,
+      millisAdjustmentToRelectTimeOfTest: 2000,
+      originalMessage: message,
+      taskRunCompletionTime: config.taskRunCompletionTime
+    }
+
+    await processMessages(config.messageKey, mockResponses)
+    // Three dimensional array access is needed to reference the scheduled message.
+    messageSchedulingConfig.scheduledMessage = sendMessages.mock.calls[0][0][0]
+    expect(messageSchedulingConfig.scheduledMessage.body).toBe(message)
+    commonTimeseriesTestUtils.checkServiceBusClientCalls(serviceBusClientCallsConfig)
+    commonTimeseriesTestUtils.checkMessageScheduling(messageSchedulingConfig)
   }
 }

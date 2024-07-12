@@ -1,11 +1,6 @@
 const axios = require('axios')
-const JSONStream = require('jsonstream-next')
 const TimeseriesStagingError = require('./timeseries-functions/timeseries-staging-error')
 const pino = require('pino')
-const { pipeline, Transform } = require('stream')
-const { createGzip } = require('zlib')
-const { promisify } = require('util')
-const pipe = promisify(pipeline)
 const moment = require('moment')
 
 const LATEST = 'latest'
@@ -35,43 +30,6 @@ const self = module.exports = {
     } else {
       return false
     }
-  },
-  minifyAndGzip: async function (jsonStream) {
-    const gzip = createGzip()
-    const buffers = []
-    let buffersLength = 0
-
-    const preStringifyObjectTransform = new Transform({
-      // Object mode is required to manipulate JSON.
-      objectMode: true,
-      transform: (object, encoding, done) => {
-        done(null, [object.key, object.value])
-      }
-    })
-
-    const byteArrayTransform = new Transform({
-      transform: (chunk, encoding, done) => {
-        buffers.push(chunk)
-        buffersLength += chunk.length
-        done()
-      }
-    })
-
-    // Minification is achieved using a stream compatible version of JSON.stringify(JSON.parse(jsonString)).
-    await pipe(
-      jsonStream,
-      // Emit keys and values from the stream.
-      JSONStream.parse('$*'),
-      // Transform the keys and values into the form required by JSONStream.stringifyObject
-      preStringifyObjectTransform,
-      // Minify the contents of the stream through the removal of new lines and use of
-      // JSON.stringify with no indentation.
-      JSONStream.stringifyObject('{', ',', '}', 0),
-      gzip,
-      byteArrayTransform
-    )
-
-    return Buffer.concat(buffers, buffersLength)
   },
   getEnvironmentVariableAsAbsoluteInteger: function (environmentVariableName) {
     let environmentVariableAsInteger
@@ -125,6 +83,23 @@ const self = module.exports = {
   },
   logMessageForTaskRunPlotOrFilter: function (context, taskRunData, prefix, suffix) {
     context.log(`${prefix} for ${taskRunData.sourceTypeDescription} ${taskRunData.sourceId} of task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) ${suffix || ''}`)
+  },
+  // durationType parameters must be an object of the folowing form:
+  // {
+  //    environmentVariableName: '<<Environment variable name specifying a numeric duration in milliseconds>>',
+  //    defaultDuration: <<default duration in milliseconds if the environment variable is not present>>
+  //  }
+  getDuration: function (durationType) {
+    return self.getEnvironmentVariableAsAbsoluteInteger(durationType.environmentVariableName) || durationType.defaultDuration
+  },
+  sleep: async function (context, durationType) {
+    const duration = self.getDuration(durationType)
+    context.log(`Sleeping for ${duration} millisecond(s)`)
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve()
+      }, duration)
+    })
   },
   logger
 }

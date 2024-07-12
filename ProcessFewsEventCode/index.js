@@ -18,7 +18,9 @@ const getWorkflowId = require('./helpers/get-workflow-id')
 const getTaskRunId = require('./helpers/get-task-run-id')
 const isForecast = require('./helpers/is-forecast')
 const { logObsoleteTaskRunMessage } = require('../Shared/utils')
-const { publishMessages } = require('../Shared/service-bus-helper')
+const PartialFewsDataError = require('../Shared/message-replay/partial-fews-data-error')
+const processPartialFewsDataError = require('../Shared/message-replay/process-partial-fews-data-error')
+const publishScheduledMessagesIfNeeded = require('../Shared/timeseries-functions/publish-scheduled-messages-if-needed')
 const moment = require('moment')
 
 const sourceTypeLookup = {
@@ -39,9 +41,21 @@ module.exports = async function (context, message) {
   const messageToLog = typeof message === 'string' ? message : JSON.stringify(message)
   context.log(`Processing core engine message: ${messageToLog}`)
   await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message)
-  // In common with messages published using the importFromFews context binding, publish scheduled messages outside of the
+
+  // If context.bindings.processFewsEventCode exists, this indicates that all data
+  // is not available for the task run and the message needs to be replayed.
+  // If context.bindings.processFewsEventCode does not exist, either of the following is true
+  // and message processing (scheduled or not) should proceed:
+  // - All data is available for the task run
+  // - Data availability for the task run cannot be determined
+  const scheduledMessageConfig = {
+    destinationName: context.bindings.processFewsEventCode ? 'fews-eventcode-queue' : 'fews-import-queue',
+    outputBinding: context.bindings.processFewsEventCode ? 'processFewsEventCode' : 'importFromFews'
+  }
+
+  // In common with messages published using context bindings, publish scheduled messages outside of the
   // transaction used during message processing.
-  await publishScheduledMessagesIfNeeded(context)
+  await publishScheduledMessagesIfNeeded(context, scheduledMessageConfig)
   // context.done() not required in async functions
 }
 
@@ -81,6 +95,9 @@ async function parseMessageAndProcessTaskRunDataIfPossible (context, transaction
 }
 
 async function processTaskRunDataIfPossible (context, transaction, taskRunData) {
+  // Store the task run ID in the cpntext so it can be logged if scheduled messages
+  // have to be published manually.
+  context.taskRunId = taskRunData.taskRunId
   // Do not import out of date forecast data.
   if (!taskRunData.forecast || await isLatestTaskRunForWorkflow(context, taskRunData)) {
     await processTaskRunData(context, transaction, taskRunData)
@@ -133,6 +150,7 @@ async function parseMessage (context, transaction, message) {
     unprocessedItems: [],
     itemsEligibleForReplay: []
   }
+
   taskRunData.taskRunId = await getTaskRunId(context, taskRunData)
   taskRunData.workflowId = await getWorkflowId(context, taskRunData)
   taskRunData.sourceDetails = `task run ${taskRunData.taskRunId}`
@@ -145,6 +163,7 @@ async function parseMessage (context, transaction, message) {
     moment(new Date(`${await getTaskRunCompletionDate(context, taskRunData)} UTC`)).toISOString()
   taskRunData.forecast = await isForecast(context, taskRunData)
   taskRunData.approved = await isTaskRunApproved(context, taskRunData)
+
   return taskRunData
 }
 
@@ -156,7 +175,9 @@ async function processMessage (transaction, context, message) {
       await parseMessageAndProcessTaskRunDataIfPossible(context, transaction, preprocessedMessage)
     }
   } catch (err) {
-    if (!(err instanceof StagingError)) {
+    if (err instanceof PartialFewsDataError) {
+      processPartialFewsDataError(err.context, err.incomingMessage, 'processFewsEventCode')
+    } else if (!(err instanceof StagingError)) {
       // A StagingError is thrown when message replay is not possible without manual intervention.
       // In this case a staging exception record has been created and the message should be consumed.
       // Propagate other errors to facilitate message replay.
@@ -190,24 +211,5 @@ async function processReasonForNoOutgoingMessages (context, taskRunData) {
     // - staging has no reference data listed for the taskRun workflowId
     taskRunData.errorMessage = `Missing PI Server input data for ${taskRunData.workflowId}`
     await createStagingException(context, taskRunData)
-  }
-}
-
-async function publishScheduledMessagesIfNeeded (context) {
-  const scheduledMessages = context.bindings.importFromFews?.filter(message => message.scheduledEnqueueTimeUtc)
-
-  if (scheduledMessages?.length > 0) {
-    const taskRunId = scheduledMessages[0].body.taskRunId
-    // https://github.com/Azure/Azure-Functions/issues/454
-    // Scheduled messages cannot be published to Azure Service Bus using an Azure Function
-    // output binding. Scheduled messages need to be published manually.
-    context.log(`Publishing ${scheduledMessages.length} scheduled message(s) manually for task run ${taskRunId}`)
-    await publishMessages({
-      context,
-      destinationName: 'fews-import-queue',
-      fn: () => context.bindings.importFromFews
-    })
-    // Prevent outgoing messages from being published using the output binding.
-    context.bindings.importFromFews = []
   }
 }

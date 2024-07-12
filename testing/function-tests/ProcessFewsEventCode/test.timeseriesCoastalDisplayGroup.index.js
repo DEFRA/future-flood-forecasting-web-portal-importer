@@ -5,8 +5,6 @@ const ConnectionPool = require('../../../Shared/connection-pool')
 const Context = require('../mocks/defaultContext')
 const sql = require('mssql')
 
-jest.mock('@azure/service-bus')
-
 module.exports = describe('Tests for import timeseries display groups', () => {
   let context
   let processFewsEventCodeTestUtils
@@ -52,7 +50,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       approved: true,
       outgoingPlotIds: ['SpanPlot'],
       outgoingFilterIds: ['SpanFilter'],
-      scheduledMessages: true
+      scheduledMessaging: true
     },
     taskRunWithStagingException: {
       forecast: true,
@@ -261,7 +259,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException (pool) {
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast)
+    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
@@ -290,7 +288,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
 
   async function insertTimeseriesHeaderTimeseriesAndTimeseriesStagingExceptionPartialBadLocation (pool) {
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast)
+    const message = JSON.stringify(taskRunCompleteMessages.multiplePlotApprovedForecast.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
@@ -320,7 +318,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
   async function insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv (pool, exceptionTimeOffset) {
     const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions)
+    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `
@@ -347,7 +345,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     // the workflow (reference data) refresh table updates at the start of this test file
     const exceptionTime = `dateadd(hour, ${exceptionTimeOffset}, getutcdate())`
     const request = new sql.Request(pool)
-    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions)
+    const message = JSON.stringify(taskRunCompleteMessages.taskRunWithTimeseriesStagingExceptions.input)
     const taskRunStartTime = taskRunCompleteMessages.commonMessageData.startTime
     const taskRunCompletionTime = taskRunCompleteMessages.commonMessageData.completionTime
     const query = `

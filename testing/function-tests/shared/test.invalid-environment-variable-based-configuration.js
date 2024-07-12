@@ -47,8 +47,8 @@ module.exports = describe('Test invalid environment variable based configuration
         expect(connection.config.options.maxRetriesOnTransientErrors).not.toBe(parseInt(process.env.SQLDB_MAX_RETRIES_ON_TRANSIENT_ERRORS))
         expect(connection.config.options.packetSize).not.toBe(parseInt(process.env.SQLDB_PACKET_SIZE))
         // If the connection pool size is invalid, the default size should be configured.
-        expect(pool.pool.max).toBe(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls * 2)
-        expect(pool.pool.min).toBe(hostJson.extensions.serviceBus.messageHandlerOptions.maxConcurrentCalls + 1)
+        expect(pool.pool.max).toBe(hostJson.extensions.serviceBus.maxConcurrentCalls * 2)
+        expect(pool.pool.min).toBe(hostJson.extensions.serviceBus.maxConcurrentCalls + 1)
         expect(pool.pool.acquireTimeoutMillis).not.toBe(parseInt(process.env.SQLDB_ACQUIRE_TIMEOUT_MILLIS))
         expect(pool.pool.createTimeoutMillis).not.toBe(parseInt(process.env.SQLDB_CREATE_TIMEOUT_MILLIS))
         expect(pool.pool.destroyTimeoutMillis).not.toBe(parseInt(process.env.SQLDB_DESTROY_TIMEOUT_MILLIS))
