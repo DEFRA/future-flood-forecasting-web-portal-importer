@@ -5,7 +5,8 @@ const moment = require('moment')
 const MESSAGE_REPLAY_DELAY_MILLIS =
   getEnvironmentVariableAsAbsoluteInteger('CHECK_FOR_TASK_RUN_MISSING_EVENTS_DELAY_MILLIS') || 30000
 
-module.exports = function (context, message, bindingName) {
+module.exports = function (context, message, bindingName, warningToLog) {
+  context.log.warn(warningToLog)
   // Schedule the message being processed for replay on a NON-EXISTENT output binding for the same
   // queue from which the message being processed was received.
   // Use of a non-existent output binding allows common code to be used when ensuring scheduled messages placed on output bindings

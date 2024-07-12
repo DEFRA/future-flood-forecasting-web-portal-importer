@@ -176,7 +176,7 @@ async function processMessage (transaction, context, message) {
     }
   } catch (err) {
     if (err instanceof PartialFewsDataError) {
-      processPartialFewsDataError(err.context, err.incomingMessage, 'processFewsEventCode')
+      processPartialFewsDataError(err.context, err.incomingMessage, 'processFewsEventCode', err.message)
     } else if (!(err instanceof StagingError)) {
       // A StagingError is thrown when message replay is not possible without manual intervention.
       // In this case a staging exception record has been created and the message should be consumed.
