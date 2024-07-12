@@ -23,7 +23,7 @@ module.exports = async function (context, message) {
   const isolationLevel = null
 
   const taskRunData = Object.assign({}, message)
-  await doInTransaction({ fn: processMessage, context, errorMessage, isolationLevel }, message, taskRunData)
+  await doInTransaction({ fn: processMessageAndHandleMissingEvents, context, errorMessage, isolationLevel }, message, taskRunData)
   // If all plots/filters for the task run have been processed, associated staging exceptions can be deactivated.
   // This is performed in a new transaction to avoid deadlocks when plots/filters are processed concurrently.
   await doInTransaction({ fn: deactivateStagingExceptionBySourceFunctionAndTaskRunIdIfPossible, context, errorMessage, isolationLevel }, taskRunData)
@@ -67,16 +67,20 @@ async function processMessage (transaction, context, message, taskRunData) {
   taskRunData.sourceFunction = 'I'
   taskRunData.getAllLocationsForWorkflowPlotWhenNoTimeseriesExist = true
 
+  if (message.taskRunId && (!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId)) {
+    await getTimeseriesHeaderData(context, taskRunData)
+    await setSourceConfig(taskRunData)
+    await processMessageIfPossible(taskRunData, context, message)
+  } else {
+    taskRunData.errorMessage =
+      'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
+    await createStagingException(context, taskRunData)
+  }
+}
+
+async function processMessageAndHandleMissingEvents (transaction, context, message, taskRunData) {
   try {
-    if (message.taskRunId && (!!message.plotId || !!message.filterId) && !(!!message.plotId && !!message.filterId)) {
-      await getTimeseriesHeaderData(context, taskRunData)
-      await setSourceConfig(taskRunData)
-      await processMessageIfPossible(taskRunData, context, message)
-    } else {
-      taskRunData.errorMessage =
-        'Messages processed by the ImportFromFews endpoint require must contain taskRunId and either plotId or filterId attributes'
-      await createStagingException(context, taskRunData)
-    }
+    await processMessage(transaction, context, message, taskRunData)
   } catch (err) {
     if (err instanceof PartialFewsDataError) {
       processPartialFewsDataError(err.context, err.incomingMessage, 'importFromFews')
