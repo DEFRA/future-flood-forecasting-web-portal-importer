@@ -1,9 +1,11 @@
 // Adapted from https://medium.com/@xjamundx/custom-javascript-errors-in-es6-aa891b173f87
 module.exports = class PartialFewsDataError extends Error {
-  constructor (context, incomingMessage, ...args) {
+  constructor (config, ...args) {
     super(...args)
     Error.captureStackTrace(this, PartialFewsDataError)
-    this.context = context
-    this.incomingMessage = incomingMessage
+    this.context = config.context
+    this.messageToReplay = config.messageToReplay
+    this.replayDelayMillis = config.replayDelayMillis
+    this.bindingName = config.bindingName
   }
 }

@@ -281,7 +281,8 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
 
     await processMessage(messageKey, sendMessageAsString, axiosMockResponse)
     await checkTimeseriesHeaderAndNumberOfOutgoingMessagesCreated(0, 0)
-    messageSchedulingConfig.scheduledMessage = sendMessages.mock.calls[0][0]
+    // Three dimensional array access is needed to reference the scheduled message.
+    messageSchedulingConfig.scheduledMessage = sendMessages.mock.calls[0][0][0]
     commonTimeseriesTestUtils.checkServiceBusClientCalls(serviceBusClientCallsConfig)
     commonTimeseriesTestUtils.checkMessageScheduling(messageSchedulingConfig)
   }

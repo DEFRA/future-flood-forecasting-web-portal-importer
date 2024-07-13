@@ -154,10 +154,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'filterAndPlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
-    it('should send a message for replay after a default pause when the PI Server indicates that all data for a task run is not available and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
-      // Use the default delay when checking if all task run data is available from the
-      // PI Server to increase test coverage.
-      delete process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS
+    it('should send a message for replay using default scheduling when custom scheduling is not configured, the PI Server indicates that all data for a task run is not available and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
       const mockResponse = {
         status: 206
       }
@@ -165,7 +162,8 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const messageKey = 'singleFilterNonForecastWithScheduledOutputMessaging'
       await processFewsEventCodeTestUtils.processMessageAndCheckMessageIsSentForReplay(messageKey, false, mockResponse)
     })
-    it('should send a message for replay after a customised pause when the PI Server indicates that all data for a task run is not available and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+    it('should send a message for replay using custom scheduling when custom scheduling is configured, the PI Server indicates that all data for a task run is not available and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS = '5000'
       const mockResponse = {
         status: 206
       }

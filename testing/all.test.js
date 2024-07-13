@@ -13,11 +13,6 @@ describe('Run all unit tests in sequence', () => {
   // publication errors.
   process.env.PAUSE_BEFORE_PROPAGATING_MESSAGE_PUBLICATION_ERROR_MILLIS = '200'
 
-  // As the PI Server is mocked in unit tests, a small delay is required for the
-  // amount of time to wait before checking if all filter based data for a task
-  // run is available from the PI Server.
-  process.env.CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS = '100'
-
   // Configure a custom PI Server call timeout to increase test coverage.
   // This will not be used by PI Server invocations made during unit tests
   // as PI Server responses are mocked.

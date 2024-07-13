@@ -382,10 +382,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       await importFromFewsTestUtils.lockWorkflowTableAndCheckMessagesCannotBeProcessed('fluvialDisplayGroupWorkflow', 'singlePlotApprovedForecast', mockResponse)
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
-    it('should send a message for replay after a default pause when data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
-      // Use the default amount of time to allow for PI Server indexing completion to increase test coverage.
-      delete process.env.MAXIMUM_DELAY_FOR_DATA_AVAILABILITY_AFTER_TASK_RUN_COMPLETION_MILLIS
-
+    it('should send a message for replay using default scheduling when custom scheduling is not configured, data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
       const config = {
         approved: 1,
         forecast: 1,
@@ -398,7 +395,8 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
 
       await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
     })
-    it('should send a message for replay after a customised pause when data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+    it('should send a message for replay using custom scheduling when custom scheduling is configured, data returned from the PI Server has missing events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      process.env.CHECK_FOR_TASK_RUN_MISSING_EVENTS_DELAY_MILLIS = '5000'
       const config = {
         approved: 1,
         forecast: 1,
