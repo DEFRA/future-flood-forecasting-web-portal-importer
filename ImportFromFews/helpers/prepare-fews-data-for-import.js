@@ -1,11 +1,16 @@
 const doIfMaximumDelayForPiServerIndexingIsNotExceeded =
   require('../../Shared/timeseries-functions/do-if-maximum-delay-for-pi-server-indexing-is-not-exceeded')
+const { getEnvironmentVariableAsAbsoluteInteger } = require('../../Shared/utils')
 const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
 const JSONStream = require('jsonstream-next')
 const { pipeline, Transform } = require('stream')
 const { createGzip } = require('zlib')
 const { promisify } = require('util')
 const pipe = promisify(pipeline)
+
+// Delay message replay for thirty seconds by default to mitigate the risk of PI Server overload.
+const MESSAGE_REPLAY_DELAY_MILLIS =
+  getEnvironmentVariableAsAbsoluteInteger('CHECK_FOR_TASK_RUN_MISSING_EVENTS_DELAY_MILLIS') || 30000
 
 module.exports = async function (context, taskRunData, jsonStream) {
   const buffers = []
@@ -75,9 +80,14 @@ async function checkForMissingEvents (context, taskRunData, fewsData) {
   // PI Server indexing for a task run has not completed yet, so prepare to schedule
   // replay of the message.
   if (fewsData.key === 'timeSeries' && fewsData.value.filter(data => data?.events?.length === 0).length > 0) {
-    throw new PartialFewsDataError(
+    const config = {
       context,
-      taskRunData.message,
+      messageToReplay: taskRunData.message,
+      replayDelayMillis: MESSAGE_REPLAY_DELAY_MILLIS,
+      bindingName: 'importFromFews'
+    }
+    throw new PartialFewsDataError(
+      config,
       `Missing events detected for ${taskRunData.sourceDetails} - preparing to schedule message replay`
     )
   } else if (fewsData.key === 'timeSeries') {

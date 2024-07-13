@@ -19,10 +19,15 @@ const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-d
 const axios = require('axios')
 const moment = require('moment')
 
+const PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE_KEY = 'pauseBeforeReplayingIncomingMessage'
 const OUTGOING_FILTER_MESSAGE_DELAY_KEY = 'outgoingFilterMessageDelay'
 const OUTGOING_PLOT_MESSAGE_DELAY_KEY = 'outgoingPlotMessageDelay'
 
 const durationTypeConfig = {
+  [PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE_KEY]: {
+    environmentVariableName: 'CHECK_FOR_TASK_RUN_DATA_AVAILABILITY_DELAY_MILLIS',
+    defaultDuration: 2000
+  },
   [OUTGOING_FILTER_MESSAGE_DELAY_KEY]: {
     environmentVariableName: 'WAIT_FOR_TASK_RUN_FILTER_DATA_AVAILABILITY_MILLIS',
     defaultDuration: 5000
@@ -32,6 +37,9 @@ const durationTypeConfig = {
     defaultDuration: 15000
   }
 }
+
+const MESSAGE_REPLAY_DELAY_MILLIS =
+  getDuration(durationTypeConfig[PAUSE_BEFORE_REPLAYING_INCOMING_MESSAGE_KEY])
 
 const OUTGOING_FILTER_MESSAGE_DELAY_MILLIS =
   getDuration(durationTypeConfig[OUTGOING_FILTER_MESSAGE_DELAY_KEY])
@@ -123,9 +131,14 @@ async function checkIfAllDataForTaskRunIsAvailable (context, taskRunData, fewsRe
   if (fewsResponse.status === 206) {
     await checkResponseHeaders(context, taskRunData, fewsResponse)
     await taskRunData.transaction.rollback()
-    throw new PartialFewsDataError(
+    const config = {
       context,
-      taskRunData.message,
+      messageToReplay: taskRunData.message,
+      replayDelayMillis: MESSAGE_REPLAY_DELAY_MILLIS,
+      bindingName: 'processFewsEventCode'
+    }
+    throw new PartialFewsDataError(
+      config,
       `All data is not available for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) - preparing to schedule message replay`
     )
   }

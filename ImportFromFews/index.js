@@ -83,7 +83,7 @@ async function processMessageAndHandleMissingEvents (transaction, context, messa
     await processMessage(transaction, context, message, taskRunData)
   } catch (err) {
     if (err instanceof PartialFewsDataError) {
-      processPartialFewsDataError(err.context, err.incomingMessage, 'importFromFews', err.message)
+      processPartialFewsDataError(err)
     } else {
       throw err
     }
