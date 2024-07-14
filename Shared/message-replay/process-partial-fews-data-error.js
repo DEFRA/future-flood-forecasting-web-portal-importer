@@ -1,6 +1,6 @@
-const moment = require('moment')
+import moment from 'moment'
 
-module.exports = function (err) {
+export default function (err) {
   const context = err.context
   context.log.warn(err.message)
   // Schedule the message being processed for replay on a NON-EXISTENT output binding for the same

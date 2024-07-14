@@ -1,6 +1,6 @@
-const { publishMessages } = require('../service-bus-helper')
+import { publishMessages } from '../service-bus-helper.js'
 
-module.exports = async function (context, config) {
+export default async function (context, config) {
   const scheduledMessages = context.bindings[config.outputBinding]?.filter(message => message.scheduledEnqueueTimeUtc)
 
   if (scheduledMessages?.length > 0) {
