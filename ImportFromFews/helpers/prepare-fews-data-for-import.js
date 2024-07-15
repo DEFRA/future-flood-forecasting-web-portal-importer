@@ -75,11 +75,10 @@ async function checkForMissingEvents (context, taskRunData, fewsData) {
   // could be enhanced to include asynchronous processng (for example, to record missing
   // event details in the staging database), but this is not required currently.
   //
-  // Missing events occur when timeSeries header data has an empty array of associated
-  // events rather than no associated events. Missing events can be an indication that
-  // PI Server indexing for a task run has not completed yet, so prepare to schedule
-  // replay of the message.
-  if (fewsData.key === 'timeSeries' && fewsData.value.filter(data => data?.events?.length === 0).length > 0) {
+  // Missing events can be an indication that PI Server indexing for a task run has not completed yet.
+  // If there is no events attribute or the events attribute contains an empty array, prepare to
+  // schedule replay of the message.
+  if (fewsData.key === 'timeSeries' && fewsData.value.filter(data => !data.events || data?.events?.length === 0).length > 0) {
     const config = {
       context,
       messageToReplay: taskRunData.message,

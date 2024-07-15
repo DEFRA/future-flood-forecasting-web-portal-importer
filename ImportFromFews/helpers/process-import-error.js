@@ -1,9 +1,12 @@
 const createTimeseriesStagingException = require('./create-timeseries-staging-exception')
 const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
+const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
 const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
 
 module.exports = async function (context, taskRunData, err) {
-  if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
+  if (err instanceof PartialFewsDataError) {
+    throw err
+  } else if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {
     context.log.error(`Failed to connect to ${process.env.FEWS_PI_API}`)
     // If connection to the PI Server fails propagate the failure so that standard Azure message replay
     // functionality is used.
