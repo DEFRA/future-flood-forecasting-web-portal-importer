@@ -175,7 +175,6 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       const mockResponse = {
         status: 206
       }
-      context.bindingData.deliveryCount = 1
       const messageKey = 'singleFilterTaskRun'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey], null, mockResponse)
     })

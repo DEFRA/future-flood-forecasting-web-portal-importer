@@ -610,42 +610,36 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
     })
-    it('should import data for a single plot with no events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
-      const messageKey = 'currentSinglePlotApprovedForecast'
-
+    it('should import data for a single plot with no events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has been exceeded', async () => {
       const mockResponse = {
         data: {
-          version: 'mock version number',
-          timeZone: 'mock time zone',
           timeSeries: [
             {
               header: {
-              },
-              events: [{
-                key: 'Timeseries display groups data'
-              }]
+              }
             }
           ]
         }
       }
-      const messageProcessingConfig = {
-        messageKey,
+      const config = {
+        messageKey: 'singlePlotApprovedForecast',
         mockResponses: [mockResponse]
       }
-
-      const timeseriesHeaderConfig = {
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should send a message for replay using default scheduling when custom scheduling is not configured, data returned from the PI Server has no events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const config = {
         approved: 1,
         forecast: 1,
         deleteEvents: true,
-        messageKey,
+        messageKey: 'forecastWithMissingEvents',
         taskRunCompletionTimeOffsetMillis: 30000,
-        taskRunId: 'ukeafffsmc00:000000013',
+        taskRunId: 'ukeafffsmc00:000000012',
         taskRunStartTimeOffsetMillis: 30000,
-        workflowId: 'Coastal_No_Missing_Events_Workflow'
+        workflowId: 'Coastal_Missing_Event_Workflow'
       }
 
-      await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
+      await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
     })
   })
 

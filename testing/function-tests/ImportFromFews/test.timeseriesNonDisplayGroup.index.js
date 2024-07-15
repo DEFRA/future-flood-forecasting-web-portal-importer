@@ -781,42 +781,34 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
     })
-    it('should import data for a single filter with no events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
-      const messageKey = 'currentSingleFilterApprovedForecast'
-
+    it('should import data for a single filter with no events for an approved forecast when the maximum amount of time allowed for PI Server indexing to complete has been exceeded', async () => {
       const mockResponse = {
         data: {
-          version: 'mock version number',
-          timeZone: 'mock time zone',
           timeSeries: [
             {
               header: {
-              },
-              events: [{
-                key: 'Timeseries non-display groups data'
-              }]
+              }
             }
           ]
         }
       }
-      const messageProcessingConfig = {
-        messageKey,
+      const config = {
+        messageKey: 'singleFilterApprovedForecast',
         mockResponses: [mockResponse]
       }
-
-      const timeseriesHeaderConfig = {
-        approved: 1,
+      await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
+    })
+    it('should send a message for replay using default scheduling when custom scheduling is not configured, data returned from the PI Server has no events and the maximum amount of time allowed for PI Server indexing to complete has not been exceeded', async () => {
+      const config = {
         deleteEvents: true,
-        forecast: 1,
-        messageKey,
+        messageKey: 'nonForecastWithMissingEvents',
         taskRunCompletionTimeOffsetMillis: 30000,
-        taskRunId: 'ukeafffsmc00:000000023',
+        taskRunId: 'ukeafffsmc00:000000022',
         taskRunStartTimeOffsetMillis: 30000,
-        workflowId: 'No_Missing_Events_Workflow'
+        workflowId: 'Missing_Event_Workflow'
       }
 
-      await importFromFewsTestUtils.insertCurrentTimeseriesHeader(timeseriesHeaderConfig)
-      await importFromFewsTestUtils.processMessagesAndCheckImportedData(messageProcessingConfig)
+      await importFromFewsTestUtils.processMessageAndCheckMessageIsSentForReplay(config)
     })
   })
 
