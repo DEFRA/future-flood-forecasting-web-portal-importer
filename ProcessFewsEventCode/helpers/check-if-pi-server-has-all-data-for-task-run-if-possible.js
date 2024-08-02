@@ -52,11 +52,9 @@ module.exports = async function (context, taskRunData) {
   const fewsResponse = await checkIfPiServerIsOnline(context, taskRunData)
   const noActionTakenMessage =
     `Outgoing messages for task run ${taskRunData.taskRunId} (workflow ${taskRunData.workflowId}) are being output without scheduling`
-  if (taskRunData.filterMessageCreated) {
-    await doIfMaximumDelayForPiServerIndexingIsNotExceeded(
-      { fn: checkIfAllDataForTaskRunIsAvailableAndScheduleOutgoingMessages, context, taskRunData, noActionTakenMessage }, fewsResponse
-    )
-  }
+  await doIfMaximumDelayForPiServerIndexingIsNotExceeded(
+    { fn: checkIfAllDataForTaskRunIsAvailableAndScheduleOutgoingMessages, context, taskRunData, noActionTakenMessage }, fewsResponse
+  )
 }
 
 async function checkIfPiServerIsOnline (context, taskRunData) {

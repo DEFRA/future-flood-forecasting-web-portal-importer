@@ -19,6 +19,12 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       approved: true,
       outgoingPlotIds: ['Test Coastal Plot']
     },
+    singlePlotApprovedForecastWithScheduledOutputMessaging: {
+      forecast: true,
+      approved: true,
+      outgoingPlotIds: ['Test Coastal Plot'],
+      scheduledMessaging: true
+    },
     earlierSinglePlotApprovedForecast: {
       forecast: true,
       approved: true,
@@ -230,6 +236,10 @@ module.exports = describe('Tests for import timeseries display groups', () => {
           ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
       `)
       const messageKey = 'singlePlotAndFilterApprovedForecastWithScheduledOutputMessaging'
+      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+    })
+    it('should create a timeseries header and create a scheduled message for a workflow task run associated with a single plot to allow time for PI Server indexing to complete', async () => {
+      const messageKey = 'singlePlotApprovedForecastWithScheduledOutputMessaging'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
     })
   })
