@@ -1,16 +1,18 @@
-const taskRunCompleteMessages = require('./messages/task-run-complete/coastal-display-group-messages')
-const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonCoastalTimeseriesTestUtils from '../shared/common-coastal-timeseries-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
+import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it, vi } from 'vitest'
 
-module.exports = describe('Tests for import timeseries display groups', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/coastal-display-group-messages.json')
+
+export const coastalDisplayGroupProcessFewsEventCodeTests = () => describe('Coastal display group process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonCoastalTimeseriesTestUtils = new CommonCoastalTimeseriesTestUtils(pool, taskRunCompleteMessages)
 
   const expectedData = {
@@ -98,145 +100,182 @@ module.exports = describe('Tests for import timeseries display groups', () => {
     beforeAll(async () => {
       await commonCoastalTimeseriesTestUtils.beforeAll()
     })
+    afterAll(async () => {
+      await commonCoastalTimeseriesTestUtils.afterAll()
+    })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []
-      processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
       await commonCoastalTimeseriesTestUtils.beforeEach()
       const request = new sql.Request(pool)
       await request.batch('delete from fff_staging.non_display_group_workflow')
     })
-    afterAll(async () => {
-      await commonCoastalTimeseriesTestUtils.afterAll()
-    })
-    it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run', async () => {
-      const messageKey = 'singlePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should create a timeseries header and create messages for multiple plots associated with an approved forecast task run', async () => {
-      const messageKey = 'multiplePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should ignore an unapproved forecast task run', async () => {
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedForecast')
-    })
-    it('should ignore an approved out of date forecast task run', async () => {
-      const messageKey = 'laterSinglePlotApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-      context.bindings.importFromFews = [] // reset the context bindings as it stays in test memory
-      const expectedNumberOfHeaderRecords = 1
-      const expectedNumberOfNewOutgoingMessages = 0
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages)
-    })
-    it('should create a timeseries header and create a message for a single plot associated with a forecast task run approved manually', async () => {
-      const messageKey = 'forecastApprovedManually'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction. The staging exception should be deactivated', async () => {
-      const taskRunWithStagingExceptionMessageKey = 'taskRunWithStagingException'
-      const unknownWorkflowMessageKey = 'unknownWorkflow'
-      const workflowId = taskRunCompleteMessages[unknownWorkflowMessageKey].input.description.split(/\s+/)[1]
-      await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflowMessageKey, `Missing PI Server input data for ${workflowId}`)
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(taskRunWithStagingExceptionMessageKey, expectedData[taskRunWithStagingExceptionMessageKey])
-    })
-    it('should prevent replay of a task run when all plots/filers have been processed', async () => {
-      const messageKey = 'singlePlotApprovedForecast'
-      await insertTimeseriesHeaderAndTimeseries(pool)
-      const expectedNumberOfHeaderRecords = 1
-      const expectedNumberOfNewOutgoingMessages = 0
-      const expectedNumberOfStagingExceptions = 0
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages, expectedNumberOfStagingExceptions)
-    })
-    it('should prevent replay of a task run plot following NO resolution of invalid configuration. The timeseries staging exception should still be active', async () => {
-      const messageKey = 'taskRunWithTimeseriesStagingExceptions'
-      await insertTimeseriesHeaderAndTimeseriesStagingExceptions(pool, 1) // timeseries staging exception inserted after workflow refresh date
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData.taskRunWithUnresolvedTimeseriesStagingExceptions)
-    })
-    it('should allow replay of a task run following invalid resolution of a partial load failure. Invalid resolution is caused by a workflow plot being defined in multiple display group CSV files. The original timeseries staging exception should be deactivated', async () => {
-      const messageKey = 'multiplePlotApprovedForecast'
-      const request = new sql.Request(pool)
-      await request.batch(`
-        insert into
-          fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
-        values
-          ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a-1')
-      `)
-      await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should allow replay of a task run following resolution of a partial load failure caused by a workflow plot being defined in multiple display group CSV files. The timeseries staging exception should NOT be deactivated until the resolution is processed by the ImportFromFews function', async () => {
-      const messageKey = 'taskRunWithTimeseriesStagingExceptions'
-      await insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv(pool, -1)
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in no timeseries data being loaded for a plot. The associated timeseries staging exception should be deactivated. Other timeseries staging exceptions should remain active', async () => {
-      const messageKey = 'taskRunWithTimeseriesStagingExceptions'
-      await insertTimeseriesHeaderAndTimeseriesStagingExceptions(pool, -1) // timeseries staging exception inserted before workflow refresh date
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should be deactivated', async () => {
-      const messageKey = 'multiplePlotApprovedForecast'
-      await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should create a staging exception for a message missing task run approval information', async () => {
-      await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
-    })
-    it('should create a timeseries header and create messages for a workflow task run associated with a single plot and a single filter', async () => {
-      const request = new sql.Request(pool)
-      await request.batch(`
-        insert into
-          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-        values
-          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
-      `)
-      const messageKey = 'singlePlotAndFilterApprovedForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should throw an exception when the coastal display group workflow table locks due to refresh', async () => {
-      // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
-      // so check that an exception is thrown to facilitate this process.
-      await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast')
+    it('should throw an exception when an unexpected error occurs when retrieving locations associted with a plot', async () => {
+      const axiosMockResponse = {
+        status: 200
+      }
+
+      const mockError = new Error('mock error')
+
+      const getLocationsToImportForTaskRunPlotModulePath =
+        '../../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot.js'
+
+      // Reset modules so that ../../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot.js can be
+      // mocked for this test to increase test coverage.
+      vi.resetModules()
+      vi.doMock(getLocationsToImportForTaskRunPlotModulePath)
+      const getLocationsToImportForTaskRunPlot =
+        (await import(getLocationsToImportForTaskRunPlotModulePath)).default
+      getLocationsToImportForTaskRunPlot.mockRejectedValue(mockError)
+      try {
+        const ProcessFewsEventCodeTestUtils = (await import('./process-fews-event-code-test-utils')).default
+        processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
+        const messageKey = 'multiplePlotApprovedForecast'
+        await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
+        await processFewsEventCodeTestUtils.processMessageAndCheckExceptionIsThrown(messageKey, mockError, axiosMockResponse)
+      } finally {
+        vi.doUnmock(getLocationsToImportForTaskRunPlotModulePath)
+        // Reset modules so that ../../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot.js is not mocked
+        // in remaining tests.
+        vi.resetModules()
+      }
       // Set the test timeout higher than the database request timeout.
     }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
-    it('should not import data (with no staging exceptions present) for an unapproved forecast spanning task run until approved', async () => {
-      const request = new sql.Request(pool)
-      await request.batch(`
-        insert into
-          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-        values
-          ('Test_Partial_Taskrun_Span_Workflow', 'Span_Filter', 1, 0, 0, 'external_historical')
-      `)
-      await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunSpan')
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunSpan', expectedData.approvedPartialTaskRunSpan)
-    })
-    it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration of some location names, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should NOT be deactivated by the ProcessEventCode function', async () => {
-      const messageKey = 'multiplePlotApprovedForecast'
-      await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingExceptionPartialBadLocation(pool)
-      const updatedExpectedData = expectedData[messageKey]
-      // The plot is not misspelled so ProcessEventCode will not remove this timeseries staging exception
-      updatedExpectedData.remainingTimeseriesStagingExceptions = [{
-        sourceId: 'Test Coastal Plot 2a',
-        sourceType: 'P'
-      }]
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, updatedExpectedData)
-    })
-    it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run of a workflow with an identifer beginning with the characters id (case insensitive)', async () => {
-      const messageKey = 'idleWorkflowForecast'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
-    it('should create a timeseries header and create scheduled messages for a workflow task run associated with a single plot and a single filter when the maximum amount of time to allow for PI Server indexing has not been reached', async () => {
-      const request = new sql.Request(pool)
-      await request.batch(`
-        insert into
-          fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
-        values
-          ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
-      `)
-      const messageKey = 'singlePlotAndFilterApprovedForecastWithScheduledOutputMessaging'
-      await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+    describe('without mocked internal modules', () => {
+      beforeEach(async () => {
+        // Use a new instance of ProcessFewsEventCodeTestUtils with no internal module mocking.
+        const ProcessFewsEventCodeTestUtils = (await import('./process-fews-event-code-test-utils')).default
+        processFewsEventCodeTestUtils = new ProcessFewsEventCodeTestUtils(context, pool, taskRunCompleteMessages)
+      })
+      it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run', async () => {
+        const messageKey = 'singlePlotApprovedForecast'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should create a timeseries header and create messages for multiple plots associated with an approved forecast task run', async () => {
+        const messageKey = 'multiplePlotApprovedForecast'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should ignore an unapproved forecast task run', async () => {
+        await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedForecast')
+      })
+      it('should ignore an approved out of date forecast task run', async () => {
+        const messageKey = 'laterSinglePlotApprovedForecast'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+        context.bindings.importFromFews = [] // reset the context bindings as it stays in test memory
+        const expectedNumberOfHeaderRecords = 1
+        const expectedNumberOfNewOutgoingMessages = 0
+        await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('earlierSinglePlotApprovedForecast', expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages)
+      })
+      it('should create a timeseries header and create a message for a single plot associated with a forecast task run approved manually', async () => {
+        const messageKey = 'forecastApprovedManually'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should create a staging exception for an unknown forecast approved workflow and allow message replay following correction. The staging exception should be deactivated', async () => {
+        const taskRunWithStagingExceptionMessageKey = 'taskRunWithStagingException'
+        const unknownWorkflowMessageKey = 'unknownWorkflow'
+        const workflowId = taskRunCompleteMessages[unknownWorkflowMessageKey].input.description.split(/\s+/)[1]
+        await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated(unknownWorkflowMessageKey, `Missing PI Server input data for ${workflowId}`)
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(taskRunWithStagingExceptionMessageKey, expectedData[taskRunWithStagingExceptionMessageKey])
+      })
+      it('should prevent replay of a task run when all plots/filers have been processed', async () => {
+        const messageKey = 'singlePlotApprovedForecast'
+        await insertTimeseriesHeaderAndTimeseries(pool)
+        const expectedNumberOfHeaderRecords = 1
+        const expectedNumberOfNewOutgoingMessages = 0
+        const expectedNumberOfStagingExceptions = 0
+        await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated(messageKey, expectedNumberOfHeaderRecords, expectedNumberOfNewOutgoingMessages, expectedNumberOfStagingExceptions)
+      })
+      it('should prevent replay of a task run plot following NO resolution of invalid configuration. The timeseries staging exception should still be active', async () => {
+        const messageKey = 'taskRunWithTimeseriesStagingExceptions'
+        await insertTimeseriesHeaderAndTimeseriesStagingExceptions(pool, 1) // timeseries staging exception inserted after workflow refresh date
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData.taskRunWithUnresolvedTimeseriesStagingExceptions)
+      })
+      it('should allow replay of a task run following invalid resolution of a partial load failure. Invalid resolution is caused by a workflow plot being defined in multiple display group CSV files. The original timeseries staging exception should be deactivated', async () => {
+        const messageKey = 'multiplePlotApprovedForecast'
+        const request = new sql.Request(pool)
+        await request.batch(`
+          insert into
+            fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
+          values
+            ('Test_Coastal_Workflow2', 'Test Coastal Plot 2a', 'Test Coastal Location 2a-1')
+        `)
+        await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should allow replay of a task run following resolution of a partial load failure caused by a workflow plot being defined in multiple display group CSV files. The timeseries staging exception should NOT be deactivated until the resolution is processed by the ImportFromFews function', async () => {
+        const messageKey = 'taskRunWithTimeseriesStagingExceptions'
+        await insertTimeseriesHeaderAndTimeseriesStagingExceptionForUnknownCsv(pool, -1)
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in no timeseries data being loaded for a plot. The associated timeseries staging exception should be deactivated. Other timeseries staging exceptions should remain active', async () => {
+        const messageKey = 'taskRunWithTimeseriesStagingExceptions'
+        await insertTimeseriesHeaderAndTimeseriesStagingExceptions(pool, -1) // timeseries staging exception inserted before workflow refresh date
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should be deactivated', async () => {
+        const messageKey = 'multiplePlotApprovedForecast'
+        await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingException(pool)
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should create a staging exception for a message missing task run approval information', async () => {
+        await processFewsEventCodeTestUtils.processMessageCheckStagingExceptionIsCreatedAndNoDataIsCreated('forecastWithoutApprovalStatus', 'Unable to extract task run Approved status from message')
+      })
+      it('should create a timeseries header and create messages for a workflow task run associated with a single plot and a single filter', async () => {
+        const request = new sql.Request(pool)
+        await request.batch(`
+          insert into
+            fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+          values
+            ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+        `)
+        const messageKey = 'singlePlotAndFilterApprovedForecast'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should throw an exception when the coastal display group workflow table locks due to refresh', async () => {
+        // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
+        // so check that an exception is thrown to facilitate this process.
+        await processFewsEventCodeTestUtils.lockWorkflowTableAndCheckMessageCannotBeProcessed('coastalDisplayGroupWorkflow', 'singlePlotApprovedForecast')
+        // Set the test timeout higher than the database request timeout.
+      }, parseInt(process.env.SQLTESTDB_REQUEST_TIMEOUT || 15000) + 5000)
+      it('should not import data (with no staging exceptions present) for an unapproved forecast spanning task run until approved', async () => {
+        const request = new sql.Request(pool)
+        await request.batch(`
+          insert into
+            fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+          values
+            ('Test_Partial_Taskrun_Span_Workflow', 'Span_Filter', 1, 0, 0, 'external_historical')
+        `)
+        await processFewsEventCodeTestUtils.processMessageAndCheckNoDataIsCreated('unapprovedPartialTaskRunSpan')
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated('approvedPartialTaskRunSpan', expectedData.approvedPartialTaskRunSpan)
+      })
+      it('should allow replay of a task run following resolution of a partial load failure due to invalid configuration of some location names, resulting in timeseries data being loaded for a subset of plot locations. The timeseries staging exception should NOT be deactivated by the ProcessEventCode function', async () => {
+        const messageKey = 'multiplePlotApprovedForecast'
+        await insertTimeseriesHeaderTimeseriesAndTimeseriesStagingExceptionPartialBadLocation(pool)
+        const updatedExpectedData = expectedData[messageKey]
+        // The plot is not misspelled so ProcessEventCode will not remove this timeseries staging exception
+        updatedExpectedData.remainingTimeseriesStagingExceptions = [{
+          sourceId: 'Test Coastal Plot 2a',
+          sourceType: 'P'
+        }]
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, updatedExpectedData)
+      })
+      it('should create a timeseries header and create a message for a single plot associated with an approved forecast task run of a workflow with an identifer beginning with the characters id (case insensitive)', async () => {
+        const messageKey = 'idleWorkflowForecast'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
+      it('should create a timeseries header and create scheduled messages for a workflow task run associated with a single plot and a single filter when the maximum amount of time to allow for PI Server indexing has not been reached', async () => {
+        const request = new sql.Request(pool)
+        await request.batch(`
+          insert into
+            fff_staging.non_display_group_workflow (workflow_id, filter_id, approved, start_time_offset_hours, end_time_offset_hours, timeseries_type)
+          values
+            ('Span_Workflow', 'SpanFilter', 1, 0, 0, 'external_historical')
+        `)
+        const messageKey = 'singlePlotAndFilterApprovedForecastWithScheduledOutputMessaging'
+        await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
+      })
     })
     it('should create a timeseries header and create a scheduled message for a workflow task run associated with a single plot to allow time for PI Server indexing to complete', async () => {
       const messageKey = 'singlePlotApprovedForecastWithScheduledOutputMessaging'

@@ -1,15 +1,16 @@
-const axios = require('axios')
-const moment = require('moment')
-const sql = require('mssql')
-const { getEnvironmentVariableAsAbsoluteInteger } = require('../../../Shared/utils')
-const messageFunction = require('../../../ProcessFewsEventCode/index')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
+import axios from 'axios'
+import moment from 'moment'
+import sql from 'mssql'
+import { getEnvironmentVariableAsAbsoluteInteger } from '../../../Shared/utils.js'
+import messageFunction from '../../../ProcessFewsEventCode/index.mjs'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils.js'
+import { expect, vi } from 'vitest'
+
 const TASK_RUN_COMPLETION_MESSAGE_DATE_AND_TIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
-jest.mock('@azure/service-bus')
-jest.mock('axios')
+vi.mock('axios')
 
-module.exports = function (context, pool, taskRunCompleteMessages) {
+export default function (context, pool, taskRunCompleteMessages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   const processMessage = async function (messageKey, sendMessageAsString, axiosMockResponse) {
     if (axiosMockResponse) {
@@ -116,10 +117,10 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
       messageSchedulingExpected: expectedData.scheduledMessaging
     }
 
-    azureServiceBus.ServiceBusClient = jest.fn().mockImplementation(connectionString => {
+    vi.spyOn(azureServiceBus, 'ServiceBusClient').mockImplementation(connectionString => {
       return {
         close: serviceBusClientClose,
-        createSender: jest.fn().mockImplementation(destinationName => {
+        createSender: vi.fn().mockImplementation(destinationName => {
           return {
             close: serviceBusSenderClose,
             sendMessages
@@ -329,13 +330,14 @@ module.exports = function (context, pool, taskRunCompleteMessages) {
   this.processMessageAndCheckExceptionIsThrown = async function (messageKey, mockError, axiosMockResponse) {
     // If there is no mock response to return, ensure the mocked PI Server call responds by
     // rejecting a promise using mockError.
-    if (!axiosMockResponse) {
-      axios.head.mockRejectedValue(mockError)
-    }
+    // if (mockError && !axiosMockResponse) {
+    //   axios.head.mockRejectedValue(mockError)
+    // }
 
-    if (!axiosMockResponse) {
+    if (mockError && !axiosMockResponse) {
       // If there is no mock response to return, ensure the mocked PI Server call responds by
       // rejecting a promise using mockError.
+      axios.head.mockRejectedValue(mockError)
       await expect(messageFunction(context, taskRunCompleteMessages[messageKey])).rejects.toThrow(mockError)
     } else {
       // If there is a mock response to return (such as when the handling of a HTTP 206 response

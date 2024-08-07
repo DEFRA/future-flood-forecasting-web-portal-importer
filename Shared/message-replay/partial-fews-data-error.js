@@ -1,5 +1,5 @@
 // Adapted from https://medium.com/@xjamundx/custom-javascript-errors-in-es6-aa891b173f87
-module.exports = class PartialFewsDataError extends Error {
+export default class PartialFewsDataError extends Error {
   constructor (config, ...args) {
     super(...args)
     Error.captureStackTrace(this, PartialFewsDataError)

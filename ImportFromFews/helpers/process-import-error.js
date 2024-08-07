@@ -1,9 +1,9 @@
-const createTimeseriesStagingException = require('./create-timeseries-staging-exception')
-const getPiServerErrorMessage = require('../../Shared/timeseries-functions/get-pi-server-error-message')
-const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
+import createTimeseriesStagingException from './create-timeseries-staging-exception.js'
+import getPiServerErrorMessage from '../../Shared/timeseries-functions/get-pi-server-error-message.js'
+import PartialFewsDataError from '../../Shared/message-replay/partial-fews-data-error.js'
+import TimeseriesStagingError from '../../Shared/timeseries-functions/timeseries-staging-error.js'
 
-module.exports = async function (context, taskRunData, err) {
+export default async function (context, taskRunData, err) {
   if (err instanceof PartialFewsDataError) {
     throw err
   } else if (!(err instanceof TimeseriesStagingError) && typeof err.response === 'undefined') {

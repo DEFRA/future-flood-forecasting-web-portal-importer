@@ -1,5 +1,5 @@
-const sql = require('mssql')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
+import sql from 'mssql'
+import TimeseriesStagingError from '../../Shared/timeseries-functions/timeseries-staging-error.js'
 
 const findOffsetQuery = `
   select distinct
@@ -12,7 +12,7 @@ const findOffsetQuery = `
   where
     workflow_id = @workflowId`
 
-module.exports = async function (context, preparedStatement, taskRunData) {
+export default async function (context, preparedStatement, taskRunData) {
   // Run the query within a transaction with a table lock held for the duration of the transaction to guard
   // against a non display group data refresh during data retrieval.
   await preparedStatement.input('workflowId', sql.NVarChar)

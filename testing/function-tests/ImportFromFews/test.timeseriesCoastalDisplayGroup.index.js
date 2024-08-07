@@ -1,18 +1,21 @@
-const CommonCoastalTimeseriesTestUtils = require('../shared/common-coastal-timeseries-test-utils')
-const importFromFewsMessages = require('./messages/coastal-display-group-messages')
-const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-const { checkImportedData } = require('./display-group-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const moment = require('moment')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonCoastalTimeseriesTestUtils from '../shared/common-coastal-timeseries-test-utils.js'
+import ImportFromFewsTestUtils from './import-from-fews-test-utils.js'
+import { checkImportedData } from './display-group-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import moment from 'moment'
+import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
-module.exports = describe('Tests for import coastal timeseries display groups', () => {
+const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/coastal-display-group-messages.json')
+
+export const coastalDisplayGroupImportFromFewsTests = () => describe('Tests for import coastal timeseries display groups', () => {
   let context
   let importFromFewsTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonCoastalTimeseriesTestUtils = new CommonCoastalTimeseriesTestUtils(pool, importFromFewsMessages)
 
   describe('Message processing for coastal display group timeseries import', () => {
@@ -30,7 +33,7 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       `)
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []
@@ -67,19 +70,19 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
 
       await request.batch(`
-        declare @id1 uniqueidentifier;
+        declare @id1 uniqueidentifier
         select
           @id1 = id
         from
           fff_staging.timeseries_header
         where
-          task_run_id = 'ukeafffsmc00:000000001';
+          task_run_id = 'ukeafffsmc00:000000001'
 
         insert into
           fff_staging.timeseries_staging_exception
             (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
           values
-            (@id1, 'Test Coastal Plot', 'P', 1, 'U', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000001", "plotId": "Test Coastal Plot"}', @id1, 'Error plot text');
+            (@id1, 'Test Coastal Plot', 'P', 1, 'U', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000001", "plotId": "Test Coastal Plot"}', @id1, 'Error plot text')
      `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })
@@ -167,24 +170,24 @@ module.exports = describe('Tests for import coastal timeseries display groups', 
       await request.input('exceptionTime', sql.DateTimeOffset, exceptionTime.toISOString())
 
       await request.batch(`
-        declare @id1 uniqueidentifier;
+        declare @id1 uniqueidentifier
         select
           @id1 = id
         from
           fff_staging.timeseries_header
         where
-          task_run_id = 'ukeafffsmc00:000000003';
+          task_run_id = 'ukeafffsmc00:000000003'
 
         insert into
           fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
         values
-          ('taskRunId invalid message', 'Error', 'ukeafffsmc00:000000003', 'I', 'Test_Coastal_Workflow5', @exceptionTime);
+          ('taskRunId invalid message', 'Error', 'ukeafffsmc00:000000003', 'I', 'Test_Coastal_Workflow5', @exceptionTime)
 
         insert into
           fff_staging.timeseries_staging_exception
             (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description)
           values
-            (@id1, 'Test Coastal Plot 1', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 1"}', @id1, 'Error plot text');
+            (@id1, 'Test Coastal Plot 1', 'P', 1, 'C', 'error_plot_fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "Test Coastal Plot 1"}', @id1, 'Error plot text')
       `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast')

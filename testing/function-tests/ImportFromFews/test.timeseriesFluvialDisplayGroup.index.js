@@ -1,18 +1,21 @@
-const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-timeseries-test-utils')
-const importFromFewsMessages = require('./messages/fluvial-display-group-messages')
-const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-const { checkImportedData } = require('./display-group-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const moment = require('moment')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonFluvialTimeseriesTestUtils from '../shared/common-fluvial-timeseries-test-utils.js'
+import ImportFromFewsTestUtils from './import-from-fews-test-utils.js'
+import { checkImportedData } from './display-group-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import moment from 'moment'
+import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
-module.exports = describe('Tests for import fluvial timeseries display groups', () => {
+const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/fluvial-display-group-messages.json')
+
+export const fluvialDisplayGroupImportFromFewsTests = () => describe('Tests for import fluvial timeseries display groups', () => {
   let context
   let importFromFewsTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonFluvialTimeseriesTestUtils = new CommonFluvialTimeseriesTestUtils(pool, importFromFewsMessages)
 
   describe('Message processing for fluvial display group timeseries import ', () => {
@@ -28,7 +31,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
       `)
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []
@@ -119,7 +122,7 @@ module.exports = describe('Tests for import fluvial timeseries display groups', 
         insert into
           fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
         values
-          ('taskRunId invalid message', 'Error', 'ukeafffsmc00:000000003', 'I', 'Test_Fluvial_Workflow1', @exceptionTime);
+          ('taskRunId invalid message', 'Error', 'ukeafffsmc00:000000003', 'I', 'Test_Fluvial_Workflow1', @exceptionTime)
       `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
       await importFromFewsTestUtils.processMessagesAndCheckNoDataIsImported('earlierSinglePlotApprovedForecast')

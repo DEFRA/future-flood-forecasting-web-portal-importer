@@ -1,7 +1,7 @@
-const sql = require('mssql')
-const CommonTimeseriesTestUtils = require('./common-timeseries-test-utils')
+import sql from 'mssql'
+import CommonTimeseriesTestUtils from './common-timeseries-test-utils'
 
-module.exports = function (pool, messages) {
+export default function (pool, messages) {
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
   this.beforeAll = async function () {
     await commonTimeseriesTestUtils.beforeAll()

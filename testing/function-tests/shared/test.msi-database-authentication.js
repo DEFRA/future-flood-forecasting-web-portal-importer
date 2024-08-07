@@ -1,9 +1,11 @@
-module.exports = describe('Test configuration for MSI database authentication', () => {
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+export const msiDatabaseAuthenticationTests = () => describe('Test configuration for MSI database authentication', () => {
   describe('MSI database authentication', () => {
-    beforeAll(async () => {
+    beforeAll(() => {
       // Reset modules so that ../../../Shared/utils.js is reloaded without the
       // PI_SERVER_CALL_TIMEOUT environment variable set. This increases test coverage.
-      jest.resetModules()
+      vi.resetModules()
     })
     it('should be configured when enabled', async () => {
       let pool
@@ -13,7 +15,7 @@ module.exports = describe('Test configuration for MSI database authentication', 
       process.env.MSI_ENDPOINT = 'msi-endopoint-id'
       process.env.MSI_SECRET = 'msi-secret'
       try {
-        const ConnectionPool = require('../../../Shared/connection-pool')
+        const ConnectionPool = (await import('../../../Shared/connection-pool.js')).default
         const connectionPool = new ConnectionPool()
         pool = connectionPool.pool
         // Attempting MSI based authentication in a unit test environment

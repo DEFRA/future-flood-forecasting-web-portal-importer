@@ -1,15 +1,18 @@
-const taskRunCompleteMessages = require('./messages/task-run-complete/ignored-workflow-messages')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
-module.exports = describe('Tests for import timeseries ignored workflows', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/ignored-workflow-messages.json')
+
+export const ignoredWorkflowProcessFewsEventCodeTests = () => describe('Ignored workflow process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
 
   describe('Message processing for ignored workflows', () => {
@@ -18,7 +21,7 @@ module.exports = describe('Tests for import timeseries ignored workflows', () =>
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []

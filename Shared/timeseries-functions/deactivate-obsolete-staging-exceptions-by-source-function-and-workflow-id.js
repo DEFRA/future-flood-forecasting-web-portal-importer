@@ -1,6 +1,6 @@
-const sql = require('mssql')
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
-const isLatestTaskRunForWorkflow = require('./is-latest-task-run-for-workflow')
+import sql from 'mssql'
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
+import isLatestTaskRunForWorkflow from './is-latest-task-run-for-workflow.js'
 
 const isForecastWorkflowQuery = `
 select
@@ -62,7 +62,7 @@ where
     )
 `
 
-module.exports = async function (context, stagingExceptionData) {
+export default async function (context, stagingExceptionData) {
   const transaction = stagingExceptionData.transaction
   const forecastWorkflow = await executePreparedStatementInTransaction(isForecastWorkflow, context, transaction, stagingExceptionData)
 

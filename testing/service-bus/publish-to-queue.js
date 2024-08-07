@@ -1,5 +1,4 @@
-const { publishMessages } = require('../../Shared/service-bus-helper')
-
+import { publishMessages } from '../../Shared/service-bus-helper.js'
 const destinationName = process.env.AZURE_SERVICE_BUS_QUEUE
 
 function getMessages () {

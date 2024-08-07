@@ -1,22 +1,24 @@
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const getBooleanIndicator = require('../../../ProcessFewsEventCode/helpers/get-boolean-indicator')
-const CommonTimeseriesTestUtils = require('../shared/common-timeseries-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const { isBoolean } = require('../../../Shared/utils')
-const Context = require('../mocks/defaultContext')
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import getBooleanIndicator from '../../../ProcessFewsEventCode/helpers/get-boolean-indicator'
+import CommonTimeseriesTestUtils from '../shared/common-timeseries-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import { isBoolean } from '../../../Shared/utils'
+import Context from '../mocks/defaultContext'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const jestConnectionPool = new ConnectionPool()
-const pool = jestConnectionPool.pool
+const viConnectionPool = new ConnectionPool()
+const pool = viConnectionPool.pool
 const commonTimeseriesTestUtils = new CommonTimeseriesTestUtils(pool)
 
 let context
-module.exports = describe('Test forecast flags', () => {
+
+export const forecastFlagTests = () => describe('Coastal display group process FEWS event code tests', () => {
   describe('Forecast flag testing ', () => {
     beforeAll(async () => {
       await commonTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       await commonTimeseriesTestUtils.beforeEach()
