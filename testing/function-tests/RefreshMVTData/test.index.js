@@ -188,7 +188,7 @@ module.exports = describe('Refresh mvt data tests', () => {
         PRIORITY: 6
       }]
       const expectedNumberOfExceptionRows = 1
-      const expectedErrorDescription = 'Unexpected token o in JSON at position 1'
+      const expectedErrorDescription = 'Unexpected token \'o\', "nonbit" is not valid JSON'
       await refreshMVTDataAndCheckExpectedResults(mockResponseData, expectedIgnoredWorkflowData, expectedNumberOfExceptionRows, expectedErrorDescription)
     })
     it('should ignore a csv that has no header row, only data rows', async () => {
