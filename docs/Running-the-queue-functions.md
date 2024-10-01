@@ -15,12 +15,14 @@
 * Messages placed on the fews-import-queue must be in JSON format and conform to either of the following:
 
   * ```yaml
+
     {
       "taskRunId": "<<Core forecasting engine task run ID>>",
       "filterId": "<<Core forecasting engine filter ID>>"
     }
 
   * ```yaml
+
     {
       "taskRunId": "<<Core forecasting engine task run ID>>",
       "plotId": "<<Core forecasting engine plot ID>>"
@@ -29,6 +31,7 @@
 * If the output binding is implemented, messages placed on the fews-staged-timeseries-queue **must** conform to the following format:
 
   * ```yaml
+
     {
       "id": "<<Primary key of the staging database record holding data obtained from the core forecasting engine>>"
     }
