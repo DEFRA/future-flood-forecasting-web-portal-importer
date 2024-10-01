@@ -1,6 +1,6 @@
 {
   "name": "future-flood-forecasting-web-portal-importer",
-  "version": "1.23.2",
+  "version": "1.23.3",
   "description": "A set of Node.js Microsoft Azure functions for the import of flood forecasting data.",
   "scripts": {
     "build": "build/src/main/resources/scripts/build.sh",
@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "markdownlint-cli": "^0.41.0",
+    "markdownlint-cli": "^0.42.0",
     "pino-pretty": "^11.2.2",
     "standard": "^17.1.2"
   },
