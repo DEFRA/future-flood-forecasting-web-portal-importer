@@ -1,5 +1,5 @@
-const timeseriesTypeConstants = require('./timeseries-type-constants')
+import { timeseriesTypeConstants } from './timeseries-type-constants.js'
 
-module.exports = function (context, taskRunData) {
+export default function (context, taskRunData) {
   return taskRunData.filterData && (taskRunData.filterData.timeseriesType === timeseriesTypeConstants.SIMULATED_FORECASTING || taskRunData.filterData.timeseriesType === timeseriesTypeConstants.EXTERNAL_FORECASTING)
 }

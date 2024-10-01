@@ -1,4 +1,4 @@
-const sql = require('mssql')
+import sql from 'mssql'
 
 const deleteCSVStagingExceptionsQuery = `
 -- csv exceptions to be deleted
@@ -11,7 +11,7 @@ where
 select 
   @@rowcount as deleted`
 
-module.exports = async function deleteInactiveStagingExceptions (context, preparedStatement, csvSourceFile) {
+export default async function deleteInactiveStagingExceptions (context, preparedStatement, csvSourceFile) {
   await preparedStatement.input('csvSourceFile', sql.NVarChar)
   await preparedStatement.prepare(deleteCSVStagingExceptionsQuery)
   const parameters = {

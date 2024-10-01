@@ -1,8 +1,8 @@
-const { doInTransaction, executePreparedStatementInTransaction } = require('../Shared/transaction-helper')
-const deleteStagingExceptions = require('./deleteStagingExceptions')
-const insertDataIntoTemp = require('./insertDataIntoTempTable')
-const moment = require('moment')
-const sql = require('mssql')
+import { doInTransaction, executePreparedStatementInTransaction } from '../Shared/transaction-helper.js'
+import deleteStagingExceptions from './deleteStagingExceptions.js'
+import insertDataIntoTemp from './insertDataIntoTempTable.js'
+import moment from 'moment'
+import sql from 'mssql'
 const dropTempTableSql = 'drop table if exists #deletion_job_temp;'
 
 const deleteQueries = {
@@ -38,7 +38,7 @@ const deleteQueries = {
     `
 }
 
-module.exports = async function (context, myTimer) {
+export default async function (context, myTimer) {
   // current time
   const timeStamp = moment().format()
 

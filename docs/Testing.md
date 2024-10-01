@@ -44,4 +44,4 @@ directory of this project.
 
 ### Unit Test Coverage
 
-Unit test coverage is provided by Istanbul, a test coverage tool built into Jest. Unit test coverage config is handled directly by Jest in the jestconfig file. A LCOV report is created for a unit test script run, it is placed in the testing/coverage directory. LCOV is a graphical front-end for gcov. It collects gcov data for multiple source files and creates HTML pages containing the source code annotated with coverage information. LCOV supports statement, function and branch coverage measurement.
+Unit test coverage is provided by Istanbul. Unit test coverage config is handled directly by Vitest in the Vitest config file. A LCOV report is created for a unit test script run, it is placed in the testing/coverage directory. LCOV is a graphical front-end for gcov. It collects gcov data for multiple source files and creates HTML pages containing the source code annotated with coverage information. LCOV supports statement, function and branch coverage measurement.

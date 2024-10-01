@@ -1,16 +1,15 @@
-const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const message = require('../mocks/defaultMessage')
-const messageFunction = require('../../../RefreshNonDisplayGroupData/index')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import CommonWorkflowCsvTestUtils from '../shared/common-workflow-csv-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import message from '../mocks/defaultMessage'
+import messageFunction from '../../../RefreshNonDisplayGroupData/index'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-jest.mock('node-fetch')
-
-module.exports = describe('Insert non_display_group_workflow data tests', () => {
+export const refreshNonDisplayGroupWorkflowDataTests = () => describe('Refresh non-display group workflow data tests', () => {
   const JSONFILE = 'application/javascript'
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
@@ -23,8 +22,8 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
 
   const EXTERNAL_HISTORICAL = 'external_historical'
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh non_display_group_workflow data function', () => {
@@ -33,7 +32,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       const config = {
@@ -61,7 +60,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
     afterAll(async () => {
       await request.batch('delete from fff_staging.non_display_group_workflow')
       await request.batch('delete from fff_staging.csv_staging_exception')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
     it('should ignore an empty CSV file', async () => {
@@ -288,7 +287,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponseData)
+      fetch.mockResolvedValue(mockResponseData)
 
       const expectedError = new Error('No csv file detected')
       const expectedData = {
@@ -296,7 +295,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
         numberOfExceptionRows: 0
       }
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should throw an exception when the csv server is unavailable', async () => {
@@ -304,7 +303,7 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
     it('should throw an exception when the non_display_group_workflow table is being used', async () => {
       // If the non_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
@@ -504,44 +503,44 @@ module.exports = describe('Insert non_display_group_workflow data tests', () => 
 
   async function insertExceptions (transaction, context) {
     await new sql.Request(transaction).batch(`
-      declare @id1 uniqueidentifier;
-      set @id1 = newid();
-      declare @id2 uniqueidentifier;
-      set @id2 = newid();
-      declare @id3 uniqueidentifier;
-      set @id3 = newid();
-      declare @id4 uniqueidentifier;
-      set @id4 = newid();
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
+      declare @id4 uniqueidentifier
+      set @id4 = newid()
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for test_non_display_workflow_2', 'ukeafffsmc00:000000001', 'P', 'test_non_display_workflow_2', getutcdate());
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for test_non_display_workflow_2', 'ukeafffsmc00:000000001', 'P', 'test_non_display_workflow_2', getutcdate())
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate())
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'test_non_display_workflow_1', 'message');
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'test_non_display_workflow_1', 'message')
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'test_filter_1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id2, 'test_filter_1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'test_filter_1a', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id3, 'test_filter_1a', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "filterId": "test_filter_1a"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id4, 'test_filter_1', 'F', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "filterId": "test_filter_3"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id4, 'test_filter_1', 'F', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000004", "filterId": "test_filter_3"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
     `)
   }
 })

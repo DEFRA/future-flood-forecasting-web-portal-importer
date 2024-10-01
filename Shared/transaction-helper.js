@@ -1,6 +1,6 @@
-const ConnectionPool = require('../Shared/connection-pool')
-const { logger, sleep } = require('../Shared/utils')
-const sql = require('mssql')
+import ConnectionPool from '../Shared/connection-pool.js'
+import sql from 'mssql'
+import { logger, sleep } from '../Shared/utils.js'
 const lockValue = parseInt(process.env.SQLDB_LOCK_TIMEOUT)
 const connectionPoolClosedMessage = 'Connection pool is closed'
 
@@ -12,45 +12,45 @@ const pauseBeforeThrowingErrorConfig = {
 let connectionPool
 let pool
 
-module.exports = {
-  closeConnectionPool: async function () {
-    await closeConnectionPoolInternal()
-  },
-  doInTransaction: async function (config, ...args) {
-    const context = config.context
-    if (connectionPool) {
-      let transaction
+export const closeConnectionPool = async function () {
+  await closeConnectionPoolInternal()
+}
 
-      try {
-        transaction = await beginTransaction(context, config.isolationLevel)
+export const doInTransaction = async function (config, ...args) {
+  const context = config.context
+  if (connectionPool) {
+    let transaction
 
-        // Call the function to be executed in the transaction passing
-        // through the transaction, context and arguments from the caller.
-        context.log(`Connection pool: size=${pool.size}, available=${pool.available}, borrowed=${pool.borrowed} pending=${pool.pending}`)
-        return await config.fn(transaction, context, ...args)
-      } catch (err) {
-        await processTransactionException(context, transaction, err, config.errorMessage)
-      } finally {
-        await endTransaction(context, transaction)
-      }
-    } else {
-      throw new Error(`${connectionPoolClosedMessage} - please restart the function app`)
-    }
-  },
-  executePreparedStatementInTransaction: async function (fn, context, transaction, ...args) {
-    let preparedStatement
     try {
-      preparedStatement = new sql.PreparedStatement(transaction)
-      // Call the function that prepares and executes the prepared statement passing
-      // through the arguments from the caller.
-      return await fn(context, preparedStatement, ...args)
+      transaction = await beginTransaction(context, config.isolationLevel)
+
+      // Call the function to be executed in the transaction passing
+      // through the transaction, context and arguments from the caller.
+      context.log(`Connection pool: size=${pool.size}, available=${pool.available}, borrowed=${pool.borrowed} pending=${pool.pending}`)
+      return await config.fn(transaction, context, ...args)
     } catch (err) {
-      context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`)
-      throw err
+      await processTransactionException(context, transaction, err, config.errorMessage)
     } finally {
-      if (preparedStatement && preparedStatement.prepared) {
-        await preparedStatement.unprepare()
-      }
+      await endTransaction(context, transaction)
+    }
+  } else {
+    throw new Error(`${connectionPoolClosedMessage} - please restart the function app`)
+  }
+}
+
+export const executePreparedStatementInTransaction = async function (fn, context, transaction, ...args) {
+  let preparedStatement
+  try {
+    preparedStatement = new sql.PreparedStatement(transaction)
+    // Call the function that prepares and executes the prepared statement passing
+    // through the arguments from the caller.
+    return await fn(context, preparedStatement, ...args)
+  } catch (err) {
+    context.log.error(`${fn.name} - PreparedStatement Transaction-helper error: '${err.message}'.`)
+    throw err
+  } finally {
+    if (preparedStatement && preparedStatement.prepared) {
+      await preparedStatement.unprepare()
     }
   }
 }

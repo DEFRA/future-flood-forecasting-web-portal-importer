@@ -1,18 +1,20 @@
-const CommonNonDisplayGroupTimeseriesTestUtils = require('../shared/common-non-display-group-timeseries-test-utils')
-const importFromFewsMessages = require('./messages/non-display-group-messages')
-const ImportFromFewsTestUtils = require('./import-from-fews-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { isBoolean } = require('../../../Shared/utils')
-const timeseriesTypeConstants = require('../../../ImportFromFews/helpers/timeseries-type-constants')
-const moment = require('moment')
-const sql = require('mssql')
+import { isBoolean, loadJsonFile } from '../../../Shared/utils.js'
+import CommonNonDisplayGroupTimeseriesTestUtils from '../shared/common-non-display-group-timeseries-test-utils.js'
+import ImportFromFewsTestUtils from './import-from-fews-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { timeseriesTypeConstants } from '../../../ImportFromFews/helpers/timeseries-type-constants.js'
+import moment from 'moment'
+import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-module.exports = describe('Tests for import timeseries non-display groups', () => {
+const importFromFewsMessages = loadJsonFile('testing/function-tests/ImportFromFews/messages/non-display-group-messages.json')
+
+export const nonDisplayGroupImportFromFewsTests = () => describe('Tests for import non-display group timeseries', () => {
   let context
   let importFromFewsTestUtils
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonNonDisplayGroupTimeseriesTestUtils = new CommonNonDisplayGroupTimeseriesTestUtils(pool, importFromFewsMessages)
   const earlierTaskRunStartTime = moment.utc(importFromFewsMessages.commonMessageData.startTime).subtract(30, 'seconds')
   const earlierTaskRunCompletionTime = moment.utc(importFromFewsMessages.commonMessageData.completionTime).subtract(30, 'seconds')
@@ -29,7 +31,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
       `)
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       importFromFewsTestUtils = new ImportFromFewsTestUtils(context, pool, importFromFewsMessages, checkImportedData)
@@ -69,19 +71,19 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
         insert into
           fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
         values
-          ('Invalid message', 'Error', 'ukeafffsmc00:000000016', 'I', 'Test_Workflow1', @exceptionTime);
+          ('Invalid message', 'Error', 'ukeafffsmc00:000000016', 'I', 'Test_Workflow1', @exceptionTime)
       `)
 
       // Check that a timeseries staging exception associated with an earlier task run of the same workflow is not deactivated.
       const timeseriesStagingExceptionRequest = new sql.Request(pool)
       await timeseriesStagingExceptionRequest.batch(`
-        declare @id1 uniqueidentifier;
-        select @id1 = id from fff_staging.timeseries_header where task_run_id = 'ukeafffsmc00:000000016';
+        declare @id1 uniqueidentifier
+        select @id1 = id from fff_staging.timeseries_header where task_run_id = 'ukeafffsmc00:000000016'
 
         insert into fff_staging.timeseries_staging_exception
           (source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
         values
-          ('Test Filter1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000016", @id1, "filterId": "Test Filter1"}', @id1, 'Error text', dateadd(second, -10, getutcdate()));
+          ('Test Filter1', 'F', 1, 'N', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000016", @id1, "filterId": "Test Filter1"}', @id1, 'Error text', dateadd(second, -10, getutcdate()))
       `)
       await importFromFewsTestUtils.processMessagesAndCheckImportedData(config)
     })

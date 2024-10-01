@@ -1,11 +1,11 @@
-const moment = require('moment')
-const getLocationsToImportForTaskRunPlot = require('../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot')
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } = require('../../Shared/utils')
-const getFewsTimeParameter = require('./get-fews-time-parameter')
-const getCustomOffsets = require('./get-workflow-offset-data')
+import moment from 'moment'
+import getLocationsToImportForTaskRunPlot from '../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot.js'
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import { getEnvironmentVariableAsAbsoluteInteger, getAbsoluteIntegerForNonZeroOffset } from '../../Shared/utils.js'
+import getFewsTimeParameter from './get-fews-time-parameter.js'
+import getCustomOffsets from './get-workflow-offset-data.js'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   if (taskRunData.approved) {
     await buildPiServerUrlIfPossible(context, taskRunData)
   } else {

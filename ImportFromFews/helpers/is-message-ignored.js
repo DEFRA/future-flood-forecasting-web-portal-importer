@@ -1,9 +1,9 @@
-const doTimeseriesExistForTaskRunPlotOrFilter = require('../../Shared/timeseries-functions/do-timeseries-exist-for-task-run-plot-or-filter')
-const doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter = require('./do-active-timeseries-staging-exceptions-exist-for-task-run-plot-or-filter')
-const isIgnoredWorkflow = require('../../Shared/timeseries-functions/is-ignored-workflow')
-const { logMessageForTaskRunPlotOrFilter } = require('../../Shared/utils')
+import doTimeseriesExistForTaskRunPlotOrFilter from '../../Shared/timeseries-functions/do-timeseries-exist-for-task-run-plot-or-filter.js'
+import doActiveTimeseriesStagingExceptionsExistForTaskRunPlotOrFilter from './do-active-timeseries-staging-exceptions-exist-for-task-run-plot-or-filter.js'
+import isIgnoredWorkflow from '../../Shared/timeseries-functions/is-ignored-workflow.js'
+import { logMessageForTaskRunPlotOrFilter } from '../../Shared/utils.js'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   let ignoreMessage = false
   if (await isIgnoredWorkflow(context, taskRunData)) {
     context.log(`${taskRunData.workflowId} is an ignored workflow`)

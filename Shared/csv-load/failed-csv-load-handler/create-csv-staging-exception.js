@@ -1,7 +1,7 @@
-const { executePreparedStatementInTransaction } = require('../../transaction-helper')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../transaction-helper.js'
+import sql from 'mssql'
 
-module.exports = async function (context, transaction, csvStagingExceptionData) {
+export default async function (context, transaction, csvStagingExceptionData) {
   await executePreparedStatementInTransaction(createCsvStagingException, context, transaction, csvStagingExceptionData)
 }
 

@@ -1,16 +1,15 @@
-const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const message = require('../mocks/defaultMessage')
-const messageFunction = require('../../../RefreshCoastalDisplayGroupData/index')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import CommonWorkflowCsvTestUtils from '../shared/common-workflow-csv-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import message from '../mocks/defaultMessage.js'
+import messageFunction from '../../../RefreshCoastalDisplayGroupData/index.mjs'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-jest.mock('node-fetch')
-
-module.exports = describe('Insert coastal_display_group_workflow data tests', () => {
+export const refreshCoastalDisplayGroupWorkflowDataTests = () => describe('Refresh coastal display group workflow data tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
@@ -20,8 +19,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
   let context
   let dummyData
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh coastal_display_group_workflow data function:', () => {
@@ -30,7 +29,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       const config = {
@@ -52,7 +51,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     })
 
     afterEach(async () => {
-      // As the jestConnectionPool pool is only closed at the end of the test suite the global temporary table used by each function
+      // As the viConnectionPool pool is only closed at the end of the test suite the global temporary table used by each function
       // invocation needs to be dropped manually between each test case.
       await request.batch('delete from fff_staging.staging_exception')
       await request.batch('delete from fff_staging.timeseries_staging_exception')
@@ -63,7 +62,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
     afterAll(async () => {
       await request.query('delete from fff_staging.coastal_display_group_workflow')
       await request.query('delete from fff_staging.csv_staging_exception')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
     it('should ignore an empty CSV file', async () => {
@@ -245,7 +244,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
     it('should throw an exception when the coastal_display_group_workflow table is being used', async () => {
       // If the coastal_display_group_workflow table is being refreshed messages are eligible for replay a certain number of times
@@ -268,7 +267,8 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
       }
-      await fetch.mockResolvedValue(mockResponse)
+
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         coastalDisplayGroupData: dummyData,
@@ -276,7 +276,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
       }
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -287,7 +287,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         coastalDisplayGroupData: dummyData,
@@ -296,7 +296,7 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
   })
@@ -423,37 +423,37 @@ module.exports = describe('Insert coastal_display_group_workflow data tests', ()
 
   async function insertExceptions (transaction, context) {
     await new sql.Request(transaction).batch(`
-      declare @id1 uniqueidentifier;
-      set @id1 = newid();
-      declare @id2 uniqueidentifier;
-      set @id2 = newid();
-      declare @id3 uniqueidentifier;
-      set @id3 = newid();
+      declare @id1 uniqueidentifier
+      set @id1 = newid()
+      declare @id2 uniqueidentifier
+      set @id2 = newid()
+      declare @id3 uniqueidentifier
+      set @id3 = newid()
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for Workflow2', 'ukeafffsmc00:000000001', 'P', 'Workflow2', getutcdate());
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for Workflow2', 'ukeafffsmc00:000000001', 'P', 'Workflow2', getutcdate())
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate())
 
       insert into fff_staging.timeseries_header
         (id, task_start_time, task_completion_time, forecast, approved, task_run_id, workflow_id, message)
       values
-        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'BE', 'message');
+        (@id1, getutcdate(), getutcdate(), 1, 1, 'ukeafffsmc00:000000003', 'BE', 'message')
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id2, 'TRITON_outputs_Other', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id2, 'TRITON_outputs_Other', 'P', 1, 'C', 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "TRITON_outputs_Other"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
 
       insert into fff_staging.timeseries_staging_exception
         (id, source_id, source_type, csv_error, csv_type, fews_parameters, payload, timeseries_header_id, description, exception_time)
       values
-        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()));
+        (@id3, 'StringTRITON_outputs_BER', 'P', 0, null, 'fews_parameters', '{"taskRunId": "ukeafffsmc00:000000003", "plotId": "StringTRITON_outputs_BER"}', @id1, 'Error text', dateadd(hour, -1, getutcdate()))
     `)
   }
 })

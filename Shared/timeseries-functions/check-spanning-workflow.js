@@ -1,4 +1,4 @@
-const sql = require('mssql')
+import sql from 'mssql'
 
 const query = `
   select
@@ -28,7 +28,8 @@ const query = `
       0
     end as span_workflow
 `
-module.exports = async function (context, preparedStatement, taskRunData) {
+
+export default async function (context, preparedStatement, taskRunData) {
   await preparedStatement.input('workflowId', sql.NVarChar)
   await preparedStatement.prepare(query)
 

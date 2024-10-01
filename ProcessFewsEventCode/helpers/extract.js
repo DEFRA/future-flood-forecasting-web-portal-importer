@@ -1,6 +1,6 @@
-const createStagingException = require('../../Shared/timeseries-functions/create-staging-exception')
+import createStagingException from '../../Shared/timeseries-functions/create-staging-exception.js'
 
-module.exports = async function (context, extractionData) {
+export default async function (context, extractionData) {
   const matches = extractionData.regex.exec(extractionData.taskRunData.message)
   // If the message contains the expected number of matches from the specified regular expression return
   // the match indicated by the caller.

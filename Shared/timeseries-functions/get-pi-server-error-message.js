@@ -1,8 +1,8 @@
-const { pipeline, Readable, Transform } = require('stream')
-const { promisify } = require('util')
+import { pipeline, Readable, Transform } from 'stream'
+import { promisify } from 'util'
 const pipe = promisify(pipeline)
 
-module.exports = async function (context, err) {
+export default async function (context, err) {
   let errorMessage
   if (err && ((err.response && err.response.data) || err.message)) {
     errorMessage = await getErrorMessageFromError(err)

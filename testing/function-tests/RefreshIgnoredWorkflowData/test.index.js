@@ -1,16 +1,15 @@
-const CommonWorkflowCsvTestUtils = require('../shared/common-workflow-csv-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const { doInTransaction } = require('../../../Shared/transaction-helper')
-const message = require('../mocks/defaultMessage')
-const messageFunction = require('../../../RefreshIgnoredWorkflowData/index')
-const fetch = require('node-fetch')
-const sql = require('mssql')
-const fs = require('fs')
+import CommonWorkflowCsvTestUtils from '../shared/common-workflow-csv-test-utils'
+import ConnectionPool from '../../../Shared/connection-pool'
+import Context from '../mocks/defaultContext'
+import { doInTransaction } from '../../../Shared/transaction-helper.js'
+import message from '../mocks/defaultMessage'
+import messageFunction from '../../../RefreshIgnoredWorkflowData/index.mjs'
+import fetch from 'node-fetch'
+import sql from 'mssql'
+import fs from 'fs'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-jest.mock('node-fetch')
-
-module.exports = describe('Ignored workflow loader tests', () => {
+export const refreshIgnoredWorkflowDataTests = () => describe('Refresh ignored workflow data tests', () => {
   const STATUS_CODE_200 = 200
   const STATUS_TEXT_OK = 'OK'
   const TEXT_CSV = 'text/csv'
@@ -20,8 +19,8 @@ module.exports = describe('Ignored workflow loader tests', () => {
   let context
   let dummyData
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const request = new sql.Request(pool)
 
   describe('The refresh ignored workflow data function:', () => {
@@ -30,7 +29,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     })
 
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       const config = {
@@ -50,7 +49,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
     afterAll(async () => {
       await request.batch('delete from fff_staging.ignored_workflow')
       await request.batch('delete from fff_staging.csv_staging_exception')
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
 
@@ -142,7 +141,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       fetch.mockImplementation(() => {
         throw new Error('connect ECONNREFUSED mockhost')
       })
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
     })
     it('should throw an exception when the ignored workflow table is in use', async () => {
       // If the ignored workflow table is being refreshed messages are eligible for replay a certain number of times
@@ -178,7 +177,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
         headers: { 'Content-Type': 'application/javascript' },
         url: '.json'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         ignoredWorkflowData: dummyData,
@@ -186,7 +185,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
       }
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should not refresh if csv endpoint is not found(404)', async () => {
@@ -197,7 +196,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
         headers: { 'Content-Type': HTML },
         url: '.html'
       }
-      await fetch.mockResolvedValue(mockResponse)
+      fetch.mockResolvedValue(mockResponse)
 
       const expectedData = {
         ignoredWorkflowData: dummyData,
@@ -206,7 +205,7 @@ module.exports = describe('Ignored workflow loader tests', () => {
 
       const expectedError = new Error('No csv file detected')
 
-      await expect(messageFunction(context, message)).rejects.toEqual(expectedError)
+      await expect(messageFunction(context, message)).rejects.toThrow(expectedError)
       await checkExpectedResults(expectedData)
     })
     it('should allow optional use of a HTTP Authorization header ', async () => {
@@ -357,12 +356,12 @@ module.exports = describe('Ignored workflow loader tests', () => {
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for workflow1', 'ukeafffsmc00:000000001', 'P', 'workflow1', getutcdate());
+        ('ukeafffsmc00:000000001 message', 'Missing PI Server input data for workflow1', 'ukeafffsmc00:000000001', 'P', 'workflow1', getutcdate())
 
       insert into
         fff_staging.staging_exception (payload, description, task_run_id, source_function, workflow_id, exception_time)
       values
-        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate());
+        ('ukeafffsmc00:000000002 message', 'Missing PI Server input data for Missing Workflow', 'ukeafffsmc00:000000002', 'P', 'Missing Workflow', getutcdate())
     `)
   }
 })

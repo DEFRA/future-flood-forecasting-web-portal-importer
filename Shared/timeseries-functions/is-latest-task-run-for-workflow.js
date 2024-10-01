@@ -1,8 +1,8 @@
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
-const { addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData } = require('../utils')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
+import { addLatestTaskRunCompletionPropertiesFromQueryResultToTaskRunData } from '../utils.js'
+import sql from 'mssql'
 
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   return Promise.resolve(await executePreparedStatementInTransaction(isLatestTaskRunForWorkflow, context, taskRunData.transaction, taskRunData))
 }
 

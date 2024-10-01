@@ -1,16 +1,19 @@
-const taskRunCompleteMessages = require('./messages/task-run-complete/fluvial-display-group-messages')
-const CommonFluvialTimeseriesTestUtils = require('../shared/common-fluvial-timeseries-test-utils')
-const ProcessFewsEventCodeTestUtils = require('./process-fews-event-code-test-utils')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
-const sql = require('mssql')
+import { loadJsonFile } from '../../../Shared/utils.js'
+import CommonFluvialTimeseriesTestUtils from '../shared/common-fluvial-timeseries-test-utils.js'
+import ProcessFewsEventCodeTestUtils from './process-fews-event-code-test-utils.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import sql from 'mssql'
+import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
-module.exports = describe('Tests for import timeseries display groups', () => {
+const taskRunCompleteMessages = loadJsonFile('testing/function-tests/ProcessFewsEventCode/messages/task-run-complete/fluvial-display-group-messages.json')
+
+export const fluvialDisplayGroupProcessFewsEventCodeTests = () => describe('Fluvial display group process FEWS event code tests', () => {
   let context
   let processFewsEventCodeTestUtils
 
-  const jestConnectionPool = new ConnectionPool()
-  const pool = jestConnectionPool.pool
+  const viConnectionPool = new ConnectionPool()
+  const pool = viConnectionPool.pool
   const commonFluvialTimeseriesTestUtils = new CommonFluvialTimeseriesTestUtils(pool, taskRunCompleteMessages)
 
   const expectedData = {
@@ -46,7 +49,7 @@ module.exports = describe('Tests for import timeseries display groups', () => {
       await commonFluvialTimeseriesTestUtils.beforeAll()
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
       context.bindings.importFromFews = []

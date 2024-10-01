@@ -1,5 +1,5 @@
-const sql = require('mssql')
-const { executePreparedStatementInTransaction } = require('../transaction-helper')
+import sql from 'mssql'
+import { executePreparedStatementInTransaction } from '../transaction-helper.js'
 
 const deactivateBySourceFunctionAndTaskRunIdQuery = `
   insert into
@@ -80,13 +80,12 @@ const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFiltersQ
       )
 `
 
-module.exports = {
-  deactivateStagingExceptionBySourceFunctionAndTaskRunId: async function (context, stagingExceptionData) {
-    await buildConfigurationAndPerformQuery(context, stagingExceptionData, deactivateBySourceFunctionAndTaskRunIdQuery, 'sourceFunction')
-  },
-  deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters: async function (context, taskRunData) {
-    await buildConfigurationAndPerformQuery(context, taskRunData, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFiltersQuery, 'workflowId')
-  }
+export const deactivateStagingExceptionBySourceFunctionAndTaskRunId = async function (context, stagingExceptionData) {
+  await buildConfigurationAndPerformQuery(context, stagingExceptionData, deactivateBySourceFunctionAndTaskRunIdQuery, 'sourceFunction')
+}
+
+export const deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFilters = async function (context, taskRunData) {
+  await buildConfigurationAndPerformQuery(context, taskRunData, deactivateTimeseriesStagingExceptionsForNonExistentTaskRunPlotsAndFiltersQuery, 'workflowId')
 }
 
 async function buildConfigurationAndPerformQuery (context, data, query, requiredParameterName) {

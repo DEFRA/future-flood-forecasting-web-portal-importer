@@ -1,4 +1,4 @@
-const sql = require('mssql')
+import sql from 'mssql'
 
 const startOfServiceConfigurationUpdateDetectionQueryWhenCheckingWorkflowCsvTablesOnly = `
   select
@@ -19,26 +19,26 @@ const serviceConfigurationUpdateCompletedMessage = `{
   "input": "notify"
 }`
 
-module.exports = {
-  shouldServiceConfigurationUpdateNotificationBeSent: function (context) {
-    return shouldServiceConfigurationUpdateNotificationBeSentInternal(context)
-  },
-  processServiceConfigurationUpdateForAllCsvDataIfNeeded: async function (context, preparedStatement) {
-    // Determine if a service configuration update for all CSV data has occurred.
-    const parameters = {
-      secondsSinceCsvRefreshed: process.env.SERVICE_CONFIG_UPDATE_DETECTION_LIMIT || 300
-    }
+export const shouldServiceConfigurationUpdateNotificationBeSent = function (context) {
+  return shouldServiceConfigurationUpdateNotificationBeSentInternal(context)
+}
 
-    await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, false)
-    const result = await preparedStatement.execute(parameters)
-
-    if (result && result.recordset && result.recordset[0]) {
-      await prepareToEnableCoreEngineTaskRunProcessingIfNeeded(context)
-    }
-  },
-  prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData: async function (context, preparedStatement) {
-    return await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, true)
+export const processServiceConfigurationUpdateForAllCsvDataIfNeeded = async function (context, preparedStatement) {
+  // Determine if a service configuration update for all CSV data has occurred.
+  const parameters = {
+    secondsSinceCsvRefreshed: process.env.SERVICE_CONFIG_UPDATE_DETECTION_LIMIT || 300
   }
+
+  await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, false)
+  const result = await preparedStatement.execute(parameters)
+
+  if (result && result.recordset && result.recordset[0]) {
+    await prepareToEnableCoreEngineTaskRunProcessingIfNeeded(context)
+  }
+}
+
+export const prepareServiceConfigurationUpdateDetectionQueryForWorkflowCsvData = async function (context, preparedStatement) {
+  return await prepareServiceConfigurationUpdateDetectionQuery(context, preparedStatement, true)
 }
 
 async function prepareServiceConfigurationUpdateDetectionQuery (context, preparedStatement, checkWorkflowCsvTablesOnly) {

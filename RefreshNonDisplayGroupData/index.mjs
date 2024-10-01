@@ -1,7 +1,7 @@
-const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
-const { isBoolean } = require('../Shared/utils')
+import refresh from '../Shared/csv-load/shared-refresh-csv-rows.js'
+import { isBoolean } from '../Shared/utils.js'
 
-module.exports = async function (context) {
+export default async function (context) {
   const refreshData = {
     csvUrl: process.env.NON_DISPLAY_GROUP_WORKFLOW_URL,
     workflowRefreshCsvType: 'N',

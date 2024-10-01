@@ -1,8 +1,9 @@
-const transactionHelper = require('../../../Shared/transaction-helper')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
+import * as transactionHelper from '../../../Shared/transaction-helper.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-module.exports = describe('Test connection pool management', () => {
+export const connectionPoolManagementTests = () => describe('Test connection pool management', () => {
   let pool
 
   describe('A connection pool', () => {

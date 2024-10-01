@@ -1,6 +1,6 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const getItemsToBeProcessedAsArray = require('./get-items-to-be-processed-as-array')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import getItemsToBeProcessedAsArray from './get-items-to-be-processed-as-array.js'
+import sql from 'mssql'
 
 const query = `
   select distinct
@@ -37,7 +37,7 @@ const query = `
     th.id = tse.timeseries_header_id and
     th.task_run_id = @taskRunId
 `
-module.exports = async function (context, taskRunData) {
+export default async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getUnprocessedTaskRunPlotsAndFilters, context, taskRunData.transaction, taskRunData)
 }
 

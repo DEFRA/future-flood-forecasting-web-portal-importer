@@ -1,8 +1,8 @@
-const { executePreparedStatementInTransaction } = require('../../Shared/transaction-helper')
-const getItemsToBeProcessedAsArray = require('./get-items-to-be-processed-as-array')
-const getLocationsToImportForTaskRunPlot = require('../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot')
-const TimeseriesStagingError = require('../../Shared/timeseries-functions/timeseries-staging-error')
-const sql = require('mssql')
+import { executePreparedStatementInTransaction } from '../../Shared/transaction-helper.js'
+import getItemsToBeProcessedAsArray from './get-items-to-be-processed-as-array.js'
+import getLocationsToImportForTaskRunPlot from '../../Shared/timeseries-functions/get-locations-to-import-for-task-run-plot.js'
+import TimeseriesStagingError from '../../Shared/timeseries-functions/timeseries-staging-error.js'
+import sql from 'mssql'
 
 // Note that table locks are held on each table used by the workflow view for the duration of the transaction to
 // guard against a workflow table refresh during processing.
@@ -68,7 +68,8 @@ const workflowPlotsQuery = `
     workflow_id = @workflowId and
     source_type = 'P'
 `
-module.exports = async function (context, taskRunData) {
+
+export default async function (context, taskRunData) {
   await executePreparedStatementInTransaction(getTaskRunPlotsAndFiltersWithActiveTimeseriesStagingExceptions, context, taskRunData.transaction, taskRunData)
 
   // If individual lines of a plot based CSV loaded previously contained a typo in the plot name, it is possible

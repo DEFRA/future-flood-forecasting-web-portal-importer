@@ -1,4 +1,4 @@
-const refresh = require('../Shared/csv-load/shared-refresh-csv-rows')
+import refresh from '../Shared/csv-load/shared-refresh-csv-rows.js'
 
 const functionSpecificData = [
   { tableColumnName: 'LOCATION_ID', tableColumnType: 'NVarChar', expectedCSVKey: 'LOCATIONID' },
@@ -11,7 +11,7 @@ const functionSpecificData = [
   { tableColumnName: 'DESCRIPTION', tableColumnType: 'NVarChar', expectedCSVKey: 'DESCRIPTION' }
 ]
 
-module.exports = async function (context) {
+export default async function (context) {
   const refreshData = {
     nonWorkflowRefreshCsvType: 'LTH',
     csvUrl: process.env.LOCATION_THRESHOLDS_URL,

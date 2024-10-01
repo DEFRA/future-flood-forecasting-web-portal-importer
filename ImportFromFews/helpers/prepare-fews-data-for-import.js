@@ -1,18 +1,18 @@
-const doIfMaximumDelayForPiServerIndexingIsNotExceeded =
-  require('../../Shared/timeseries-functions/do-if-maximum-delay-for-pi-server-indexing-is-not-exceeded')
-const { getEnvironmentVariableAsAbsoluteInteger } = require('../../Shared/utils')
-const PartialFewsDataError = require('../../Shared/message-replay/partial-fews-data-error')
-const JSONStream = require('jsonstream-next')
-const { pipeline, Transform } = require('stream')
-const { createGzip } = require('zlib')
-const { promisify } = require('util')
+import doIfMaximumDelayForPiServerIndexingIsNotExceeded from
+  '../../Shared/timeseries-functions/do-if-maximum-delay-for-pi-server-indexing-is-not-exceeded.js'
+import { getEnvironmentVariableAsAbsoluteInteger } from '../../Shared/utils.js'
+import PartialFewsDataError from '../../Shared/message-replay/partial-fews-data-error.js'
+import JSONStream from 'jsonstream-next'
+import { pipeline, Transform } from 'stream'
+import { createGzip } from 'zlib'
+import { promisify } from 'util'
 const pipe = promisify(pipeline)
 
 // Delay message replay for thirty seconds by default to mitigate the risk of PI Server overload.
 const MESSAGE_REPLAY_DELAY_MILLIS =
   getEnvironmentVariableAsAbsoluteInteger('CHECK_FOR_TASK_RUN_MISSING_EVENTS_DELAY_MILLIS') || 30000
 
-module.exports = async function (context, taskRunData, jsonStream) {
+export default async function (context, taskRunData, jsonStream) {
   const buffers = []
   let buffersLength = 0
 

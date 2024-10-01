@@ -1,5 +1,7 @@
-const moment = require('moment')
-const sql = require('mssql')
+import moment from 'moment'
+import sql from 'mssql'
+import { expect, vi } from 'vitest'
+import * as azureServiceBus from '@azure/service-bus'
 
 const COASTAL_DISPLAY_GROUP_WORKFLOW_LOCK_TIMEOUT_QUERY = `
   insert into
@@ -48,7 +50,7 @@ const lockTimeoutData = {
   }
 }
 
-module.exports = function (pool) {
+export default function (pool) {
   const deleteWorkflowData = async function (request) {
     await request.batch('delete from fff_staging.coastal_display_group_workflow')
     await request.batch('delete from fff_staging.fluvial_display_group_workflow')
@@ -88,7 +90,7 @@ module.exports = function (pool) {
     `)
   }
   this.beforeEach = async function () {
-    // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+    // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
     // function implementation for the function context needs creating for each test.
     const request = new sql.Request(pool)
     await deleteTimeseriesData(request)
@@ -97,7 +99,7 @@ module.exports = function (pool) {
     const request = new sql.Request(pool)
     await deleteWorkflowData(request)
     await deleteTimeseriesData(request)
-    // Closing the DB connection allows Jest to exit successfully.
+    // Closing the DB connection allows Vitest to exit successfully.
     await pool.close()
   }
   this.checkNumberOfActiveStagingExceptionsForSourceFunctionOfWorkflow = async function (config) {
@@ -169,15 +171,14 @@ module.exports = function (pool) {
   }
 
   this.mockAzureServiceBusClient = function () {
-    const azureServiceBus = require('@azure/service-bus')
-    const sendMessages = jest.fn().mockImplementation(messages => {})
-    const serviceBusClientClose = jest.fn()
-    const serviceBusSenderClose = jest.fn()
+    const sendMessages = vi.fn().mockImplementation(messages => {})
+    const serviceBusClientClose = vi.fn()
+    const serviceBusSenderClose = vi.fn()
 
-    azureServiceBus.ServiceBusClient = jest.fn().mockImplementation(connectionString => {
+    vi.spyOn(azureServiceBus, 'ServiceBusClient').mockImplementation(connectionString => {
       return {
         close: serviceBusClientClose,
-        createSender: jest.fn().mockImplementation(destinationName => {
+        createSender: vi.fn().mockImplementation(destinationName => {
           return {
             close: serviceBusSenderClose,
             sendMessages

@@ -1,150 +1,125 @@
-const sql = require('mssql')
-const { doInTransaction, executePreparedStatementInTransaction } = require('../../../Shared/transaction-helper')
-const ConnectionPool = require('../../../Shared/connection-pool')
-const Context = require('../mocks/defaultContext')
+import sql from 'mssql'
+import { doInTransaction, executePreparedStatementInTransaction } from '../../../Shared/transaction-helper.js'
+import ConnectionPool from '../../../Shared/connection-pool.js'
+import Context from '../mocks/defaultContext.js'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const jestConnectionPool = new ConnectionPool()
-const pool = jestConnectionPool.pool
+const viConnectionPool = new ConnectionPool()
+const pool = viConnectionPool.pool
 const errorMessage = 'ERROR'
 
 let context
 
-module.exports = describe('Test transaction helper', () => {
+export const transactionHelperTests = () => describe('Test transaction helper', () => {
   describe('The transaction helper', () => {
     beforeAll(async () => {
       await pool.connect()
     })
     beforeEach(async () => {
-      // As mocks are reset and restored between each test (through configuration in package.json), the Jest mock
+      // As mocks are reset and restored between each test (through configuration in package.json), the Vitest mock
       // function implementation for the function context needs creating for each test.
       context = new Context()
+      await import('mssql')
+    })
+
+    afterEach(async () => {
+      vi.doUnmock('mssql')
     })
 
     afterAll(async () => {
-      // Closing the DB connection allows Jest to exit successfully.
+      // Closing the DB connection allows Vitest to exit successfully.
       await pool.close()
     })
-    it('should throw an exception following a failure to commit a transaction', done => {
-      jest.isolateModules(async () => {
-        try {
-          jest.spyOn(sql, 'Request').mockImplementation(() => {
-            return {
-              batch: jest.fn(),
-              query: jest.fn()
-            }
-          })
-          jest.spyOn(sql, 'Transaction').mockImplementation(() => {
-            return {
-              begin: jest.fn(),
-              commit: jest.fn().mockImplementation(() => {
-                throw new Error(errorMessage)
-              })
-            }
-          })
-          await expect(doInTransaction({ fn: () => {}, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
-          done()
-        } catch (err) {
-          done(err)
+    it('should throw an exception following a failure to commit a transaction', async () => {
+      vi.spyOn(sql, 'Request').mockImplementation(() => {
+        return {
+          batch: vi.fn(),
+          query: vi.fn()
         }
       })
+      vi.spyOn(sql, 'Transaction').mockImplementation(() => {
+        return {
+          begin: vi.fn(),
+          commit: vi.fn().mockImplementation(() => {
+            throw new Error(errorMessage)
+          })
+        }
+      })
+      await expect(doInTransaction({ fn: () => {}, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
     })
-    it('should throw an exception following a failure to unprepare a PreparedStatement', done => {
-      jest.isolateModules(async () => {
-        try {
-          jest.spyOn(sql, 'PreparedStatement').mockImplementation(() => {
-            return {
-              prepare: jest.fn(),
-              prepared: true,
-              unprepare: jest.fn().mockImplementation(() => {
-                throw new Error(errorMessage)
-              })
-            }
+    it('should throw an exception following a failure to unprepare a PreparedStatement', async () => {
+      vi.spyOn(sql, 'PreparedStatement').mockImplementation(() => {
+        return {
+          prepare: vi.fn(),
+          prepared: true,
+          unprepare: vi.fn().mockImplementation(() => {
+            throw new Error(errorMessage)
           })
-          jest.spyOn(sql, 'Request').mockImplementation(() => {
-            return {
-              batch: jest.fn(),
-              query: jest.fn()
-            }
-          })
-          jest.spyOn(sql, 'Transaction').mockImplementation(() => {
-            return {
-              begin: jest.fn(),
-              commit: jest.fn()
-            }
-          })
-          await expect(doInTransaction({ fn: testExecutePreparedStatementInTransaction, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
-          done()
-        } catch (err) {
-          done(err)
         }
       })
+      vi.spyOn(sql, 'Request').mockImplementation(() => {
+        return {
+          batch: vi.fn(),
+          query: vi.fn()
+        }
+      })
+      vi.spyOn(sql, 'Transaction').mockImplementation(() => {
+        return {
+          begin: vi.fn(),
+          commit: vi.fn()
+        }
+      })
+      await expect(doInTransaction({ fn: testExecutePreparedStatementInTransaction, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
     })
-    it('should throw an exception if a transaction is not present following a failure', done => {
-      jest.isolateModules(async () => {
-        try {
-          jest.spyOn(sql, 'Request').mockImplementation(() => {
-            return {
-              batch: jest.fn(),
-              query: jest.fn()
-            }
-          })
-          jest.spyOn(sql, 'Transaction').mockImplementation(() => {})
-          await expect(doInTransaction({ fn: () => {}, context, errorMessage: 'Error' })).rejects.toThrow('transaction.begin is not a function')
-          done()
-        } catch (err) {
-          done(err)
+    it('should throw an exception if a transaction is not present following a failure', async () => {
+      vi.spyOn(sql, 'Request').mockImplementation(() => {
+        return {
+          batch: vi.fn(),
+          query: vi.fn()
         }
       })
+      vi.spyOn(sql, 'Transaction').mockImplementation(() => {
+        return {
+          acquire: vi.fn()
+        }
+      })
+      await expect(doInTransaction({ fn: () => {}, context, errorMessage: 'Error' })).rejects.toThrow('transaction.begin is not a function')
     })
-    it('should not attempt to commit an aborted transaction', done => {
-      jest.isolateModules(async () => {
-        try {
-          jest.spyOn(sql, 'Request').mockImplementation(() => {
-            return {
-              batch: jest.fn(),
-              query: jest.fn()
-            }
-          })
-          jest.spyOn(sql, 'Transaction').mockImplementation(() => {
-            return {
-              _aborted: true,
-              begin: jest.fn(),
-              commit: jest.fn().mockImplementation(() => {
-                throw new Error('COMMIT ERROR')
-              })
-            }
-          })
-          await expect(doInTransaction({ fn: () => { throw new Error(errorMessage) }, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
-          done()
-        } catch (err) {
-          done(err)
+    it('should not attempt to commit an aborted transaction', async () => {
+      vi.spyOn(sql, 'Request').mockImplementation(() => {
+        return {
+          batch: vi.fn(),
+          query: vi.fn()
         }
       })
+      vi.spyOn(sql, 'Transaction').mockImplementation(() => {
+        return {
+          _aborted: true,
+          begin: vi.fn(),
+          commit: vi.fn().mockImplementation(() => {
+            throw new Error('COMMIT ERROR')
+          })
+        }
+      })
+      await expect(doInTransaction({ fn: () => { throw new Error(errorMessage) }, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
     })
-    it('should not attempt to commit a transaction for which rollback has been requested', done => {
-      jest.isolateModules(async () => {
-        try {
-          jest.spyOn(sql, 'Request').mockImplementation(() => {
-            return {
-              batch: jest.fn(),
-              query: jest.fn()
-            }
-          })
-          jest.spyOn(sql, 'Transaction').mockImplementation(() => {
-            return {
-              _rollbackRequested: true,
-              begin: jest.fn(),
-              commit: jest.fn().mockImplementation(() => {
-                throw new Error('COMMIT ERROR')
-              })
-            }
-          })
-          await expect(doInTransaction({ fn: () => { throw new Error(errorMessage) }, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
-          done()
-        } catch (err) {
-          done(err)
+    it('should not attempt to commit a transaction for which rollback has been requested', async () => {
+      vi.spyOn(sql, 'Request').mockImplementation(() => {
+        return {
+          batch: vi.fn(),
+          query: vi.fn()
         }
       })
+      vi.spyOn(sql, 'Transaction').mockImplementation(() => {
+        return {
+          _rollbackRequested: true,
+          begin: vi.fn(),
+          commit: vi.fn().mockImplementation(() => {
+            throw new Error('COMMIT ERROR')
+          })
+        }
+      })
+      await expect(doInTransaction({ fn: () => { throw new Error(errorMessage) }, context, errorMessage: 'Error' })).rejects.toThrow(errorMessage)
     })
   })
 })

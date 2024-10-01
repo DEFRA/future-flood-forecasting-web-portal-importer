@@ -1,4 +1,4 @@
-const sql = require('mssql')
+import sql from 'mssql'
 
 const countQueries = {
   coastal_display_group_workflow_temp: 'select count(*) as number from #coastal_display_group_workflow_temp',
@@ -13,7 +13,7 @@ const deleteAndTransferAggregatedRecordQueries = {
   // as this appears to cause intermittent connection state problems.
   // Deletion of local temporary tables associated with pooled database connections is performed manually.
   fluvial_display_group_workflow: `
-    delete from fff_staging.fluvial_display_group_workflow;
+    delete from fff_staging.fluvial_display_group_workflow
     insert into fff_staging.fluvial_display_group_workflow (workflow_id, plot_id, location_ids)
     select
       workflow_id,
@@ -22,10 +22,10 @@ const deleteAndTransferAggregatedRecordQueries = {
     from #fluvial_display_group_workflow_temp
     group by
       workflow_id,
-      plot_id;
+      plot_id
     drop table if exists #fluvial_display_group_workflow_temp;`,
   coastal_display_group_workflow: `
-    delete from fff_staging.coastal_display_group_workflow;
+    delete from fff_staging.coastal_display_group_workflow
     insert into fff_staging.coastal_display_group_workflow (workflow_id, plot_id, location_ids)
     select
       workflow_id,
@@ -34,11 +34,11 @@ const deleteAndTransferAggregatedRecordQueries = {
     from #coastal_display_group_workflow_temp
     group by
       workflow_id,
-      plot_id;
+      plot_id
     drop table if exists #coastal_display_group_workflow_temp;`
 }
 
-module.exports = async function refreshDisplayGroupTable (transaction, context, tempTableName, tableName) {
+export default async function refreshDisplayGroupTable (transaction, context, tempTableName, tableName) {
   try {
     const tempRecordCount = await countTableRecords(context, transaction, tempTableName, countQueries[tempTableName])
     context.log.info(`There are ${tempRecordCount} rows in the temp table. Now commencing concatenation of locations for each combination of workflow ID and plot ID.`)
