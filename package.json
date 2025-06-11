@@ -20,7 +20,7 @@
     "pino": "^9.6.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
+    "jest": "^30.0.0",
     "markdownlint-cli": "^0.44.0",
     "pino-pretty": "^13.0.0",
     "standard": "^17.1.2"
