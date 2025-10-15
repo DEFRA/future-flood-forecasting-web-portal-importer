@@ -81,6 +81,7 @@ jobs:
           QLTY_COVERAGE_TOKEN: "${{ secrets.QLTY_COVERAGE_TOKEN }}"
         run: |
           curl https://qlty.sh | sh
+          . ~/.config/.bashrc
           qlty coverage publish --override-commit-sha $GIT_COMMIT_SHA --override-branch $GIT_BRANCH testing/coverge/lcov.info
 
 
