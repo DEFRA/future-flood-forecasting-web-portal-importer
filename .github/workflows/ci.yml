@@ -67,6 +67,7 @@ jobs:
         run:
           npm test
       - name: Upload test coverage to qlty
+        uses: qltysh/qlty-action/coverage@v2
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           files: testing/coverage/lcov.info
