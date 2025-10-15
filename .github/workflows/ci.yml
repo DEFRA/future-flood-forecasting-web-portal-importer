@@ -45,6 +45,15 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
+      # https://stackoverflow.com/questions/58033366/how-to-get-current-branch-within-github-actions
+      - name: Set pull request GIT_BRANCH environment variable for qlty
+        if: github.event_name == 'pull_request'
+        run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
+      - name: Set non-pull request GIT_BRANCH environment variable for qlty
+        if: github.event_name != 'pull_request'
+        run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      - name: Set GITHUB_SHA environment variable for qlty
+        run: echo "GIT_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
       - name: Run unit tests
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
@@ -66,9 +75,12 @@ jobs:
           SQLDB_TRUST_SERVER_CERTIFICATE: "${{ secrets.SQLDB_TRUST_SERVER_CERTIFICATE }}"
         run:
           npm test
+      # https://docs.qlty.sh/coverage/quickstart
       - name: Upload test coverage to qlty
-        uses: qltysh/qlty-action/coverage@v2
-        with:
-          token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
-          files: testing/coverage/lcov.info
+        env:
+          QLTY_COVERAGE_TOKEN: "${{ secrets.QLTY_COVERAGE_TOKEN }}"
+        run: |
+          curl https://qlty.sh | sh
+          qlty coverage publish --override-commit-sha $GIT_COMMIT_SHA --override-branch $GIT_BRANCH testing/coverge/lcov.info
+
 
