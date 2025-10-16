@@ -1,8 +1,6 @@
 # Incident Management Forecasting (Known Previously As Future Flood Forecasting) Web Portal Importer
 
 [![CI](https://github.com/DEFRA/future-flood-forecasting-web-portal-importer/actions/workflows/ci.yml/badge.svg)](https://github.com/DEFRA/future-flood-forecasting-web-portal-importer/actions/workflows/ci.yml)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/1ac657643bee19c0a22a/test_coverage)](https://codeclimate.com/github/DEFRA/future-flood-forecasting-web-portal-importer/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/1ac657643bee19c0a22a/maintainability)](https://codeclimate.com/github/DEFRA/future-flood-forecasting-web-portal-importer/maintainability)
 
 Node.js Microsoft Azure functions responsible for extracting data from the [core forecasting engine](https://www.deltares.nl/en/software/flood-forecasting-system-delft-fews-2/) and importing it into a [staging database](https://github.com/DEFRA/future-flood-forecasting-web-portal-staging) prior to transformation for reporting and visualisation purposes external to the core forecasting engine. Data extraction is configuration based, message driven and achieved using a [REST API](https://publicwiki.deltares.nl/display/FEWSDOC/FEWS+PI+REST+Web+Service). Data extraction and import activites are performed in a fault tolerant manner to maxmise the amount of data available for reporting and visualisation purposes.
 

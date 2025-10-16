@@ -45,26 +45,6 @@ jobs:
       - name: Run markdown linting check
         run: |
           node_modules/.bin/markdownlint $PWD --ignore node_modules
-      # https://docs.codeclimate.com/docs/github-actions-test-coverage
-      # https://stackoverflow.com/questions/58033366/how-to-get-current-branch-within-github-actions
-      - name: Set pull request GIT_BRANCH environment variable for code climate
-        if: github.event_name == 'pull_request'
-        run: echo "GIT_BRANCH=${GITHUB_HEAD_REF}" >> $GITHUB_ENV
-      - name: Set non-pull request GIT_BRANCH environment variable for code climate
-        if: github.event_name != 'pull_request'
-        run: echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-      - name: Set GITHUB_SHA environment variable for code climate
-        run: echo "GIT_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
-      - name: Set up code climate for test coverage reporting
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
-          ./cc-test-reporter before-build
-          # The test coverage files are in a nested location so create a symbolic link for the code climate test
-          # reporter to use.
-          ln -s testing/coverage coverage
       - name: Run unit tests
         env:
           AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS: "${{ secrets.AZURE_SERVICE_BUS_MAX_CONCURRENT_CALLS }}"
@@ -86,9 +66,4 @@ jobs:
           SQLDB_TRUST_SERVER_CERTIFICATE: "${{ secrets.SQLDB_TRUST_SERVER_CERTIFICATE }}"
         run:
           npm test
-      - name: Upload test coverage to code climate        
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        run: |
-          ./cc-test-reporter after-build -t lcov --exit-code $?
 
