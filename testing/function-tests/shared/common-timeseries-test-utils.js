@@ -191,10 +191,10 @@ module.exports = function (pool) {
 
   this.checkServiceBusClientCalls = function (config) {
     const expectedNumberOfAzureServiceBusMockCalls = config.messageSchedulingExpected ? 1 : 0
-    expect(config.azureServiceBus.ServiceBusClient).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
-    expect(config.sendMessages).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
-    expect(config.serviceBusSenderClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
-    expect(config.serviceBusClientClose).toBeCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.azureServiceBus.ServiceBusClient).toHaveBeenCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.sendMessages).toHaveBeenCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.serviceBusSenderClose).toHaveBeenCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
+    expect(config.serviceBusClientClose).toHaveBeenCalledTimes(expectedNumberOfAzureServiceBusMockCalls)
   }
 
   this.checkMessageScheduling = function (config) {
