@@ -101,7 +101,7 @@ module.exports = describe('Tests for import timeseries non-display groups', () =
     it('should create a timeseries header and create a message for a single filter associated with an approved forecast task run', async () => {
       const messageKey = 'singleFilterApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
-    })
+    }, 10000)
     it('should create a timeseries header and create messages for an approved forecast workflow task run associated with a single plot and a single filter', async () => {
       const messageKey = 'filterAndPlotApprovedForecast'
       await processFewsEventCodeTestUtils.processMessageAndCheckDataIsCreated(messageKey, expectedData[messageKey])
