@@ -8,7 +8,7 @@ pool:
 
 pr: none
 trigger:
-  - master
+  - feature/update-for-java17-and-nodejs22
 
 steps:
   - task: NodeTool@0
