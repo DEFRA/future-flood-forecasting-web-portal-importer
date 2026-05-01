@@ -14,7 +14,7 @@
     "axios": "1.15.0",
     "jsonstream-next": "3.0.0",
     "moment": "2.30.1",
-    "mssql": "12.1.0",
+    "mssql": "12.5.0",
     "neat-csv": "5.2.0",
     "node-fetch": "2.7.0",
     "pino": "10.1.0"
