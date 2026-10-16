@@ -13,7 +13,7 @@
     "@azure/service-bus": "7.9.5",
     "axios": "1.20.0",
     "jsonstream-next": "3.0.0",
-    "moment": "2.30.1",
+    "moment": "2.31.0",
     "mssql": "12.5.5",
     "neat-csv": "5.2.0",
     "node-fetch": "2.7.0",
