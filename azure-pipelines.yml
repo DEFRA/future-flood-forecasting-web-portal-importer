@@ -6,7 +6,7 @@ resources:
 pool:
   vmImage: ubuntu-24.04
 
-# pr: none
+pr: none
 trigger:
   - master
 
